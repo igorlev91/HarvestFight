@@ -21,6 +21,15 @@ class PROTOTYPE2_API UPrototypeGameInstance : public UGameInstance
 public:
 	UPrototypeGameInstance();
 
+	UFUNCTION(BlueprintCallable)
+    void CreateServer();
+   
+    UFUNCTION(BlueprintCallable)
+    void JoinServer();
+
+	UFUNCTION(BlueprintCallable)
+    void StopServer();
+
 protected:
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
@@ -31,10 +40,7 @@ protected:
 	virtual void OnCreateSessionComplete(FName sessionName, bool succeeded);
 	virtual void OnFindSessionComplete(bool succeeded);
 	virtual void OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result);
+	virtual void OnEndSessionComplete(FName sessionName, bool succeeded);
 
-	UFUNCTION(BlueprintCallable)
-	void CreateServer();
 
-	UFUNCTION(BlueprintCallable)
-	void JoinServer();
 };

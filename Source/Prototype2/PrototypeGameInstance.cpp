@@ -22,6 +22,7 @@ void UPrototypeGameInstance::Init()
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UPrototypeGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPrototypeGameInstance::OnFindSessionComplete);
 			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPrototypeGameInstance::OnJoinSessionComplete);
+			SessionInterface->OnEndSessionCompleteDelegates.AddUObject(this, &UPrototypeGameInstance::OnEndSessionComplete);
 		}
 	}
 }
@@ -30,7 +31,7 @@ void UPrototypeGameInstance::OnCreateSessionComplete(FName sessionName, bool suc
 {
 	if (succeeded)
 	{
-		GetWorld()->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen");
+		GetWorld()->ServerTravel("/Game/Maps/Level_Main?listen");
 	}
 }
 
@@ -49,6 +50,8 @@ void UPrototypeGameInstance::OnJoinSessionComplete(FName sessionName, EOnJoinSes
 
 void UPrototypeGameInstance::CreateServer()
 {
+
+	
 	FOnlineSessionSettings sessionSettings;
 	sessionSettings.bAllowJoinInProgress = true;
 	sessionSettings.bIsDedicated = false;
@@ -69,15 +72,37 @@ void UPrototypeGameInstance::JoinServer()
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
+void UPrototypeGameInstance::StopServer()
+{
+	if (SessionInterface->GetNamedSession(FName("New Session")))
+	{
+		SessionInterface->EndSession(FName("New Session"));
+	}
+}
+
 void UPrototypeGameInstance::OnFindSessionComplete(bool succeeded)
 {
+	
 	if (succeeded)
 	{
 		TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
 
-		if (SearchResults.Num())
+		UE_LOG(LogTemp, Warning, TEXT("Sessions Found: %s"), *FString::FromInt(SearchResults.Num()) );
+		if (SearchResults.Num() > 0)
 		{
 			SessionInterface->JoinSession(0, FName("New Session"), SearchResults[0]);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Session Not Found") );
+	}
+}
+
+void UPrototypeGameInstance::OnEndSessionComplete(FName sessionName, bool succeeded)
+{
+	if(APlayerController* PController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		PController->ClientTravel("/Game/Maps/Level_MainMenu", ETravelType::TRAVEL_Absolute);
 	}
 }
