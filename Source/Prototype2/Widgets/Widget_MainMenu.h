@@ -14,15 +14,11 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 
-	UFUNCTION()
-	void OnCreateServerPreessed();
-	UFUNCTION()
-	void OnJoinServerPreessed();
-
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class UButton* Host;
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class UButton* Join;
 
+	UPROPERTY(VisibleAnywhere)
 	class UPrototypeGameInstance* GameInstance;
 };

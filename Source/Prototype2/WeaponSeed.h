@@ -17,6 +17,6 @@ class PROTOTYPE2_API AWeaponSeed : public ASeed
 	UPROPERTY(EditAnywhere)
 	AWeapon* weaponToGrow = nullptr;
 
-	void Grow();
+	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
 };

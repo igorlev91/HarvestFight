@@ -17,6 +17,6 @@ class PROTOTYPE2_API APlantSeed : public ASeed
 	UPROPERTY(EditAnywhere)
 	APlant* plantToGrow = nullptr;
 
-	void Grow();
+	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
 };

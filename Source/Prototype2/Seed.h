@@ -19,4 +19,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool isPlanted;
+
+	virtual void Grow();
 };

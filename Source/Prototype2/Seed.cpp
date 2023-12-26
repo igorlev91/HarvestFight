@@ -3,3 +3,7 @@
 
 #include "Seed.h"
 
+void ASeed::Grow()
+{
+	
+}
