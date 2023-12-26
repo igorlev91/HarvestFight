@@ -5,9 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Widgets/Widget_IngameMenu.h"
 #include "Prototype2Character.generated.h"
-
 
 UCLASS(config=Game)
 class APrototype2Character : public ACharacter
@@ -38,10 +36,6 @@ class APrototype2Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	// UI
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MenuAction;
-
 public:
 	APrototype2Character();
 	
@@ -53,7 +47,6 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
 
 protected:
 	// APawn interface
@@ -62,18 +55,10 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
-
-
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-	// UI
-	//UPROPERTY(EditAnywhere) TSubclassOf<UWidget_IngameMenu> WidgetIngameMenu;
-	//UWidget_IngameMenu* WidgetIngameMenuInstance;
-	
-	void OpenIngameMenu();
 };
 

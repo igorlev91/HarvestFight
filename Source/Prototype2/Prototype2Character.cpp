@@ -66,8 +66,6 @@ void APrototype2Character::BeginPlay()
 	}
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -86,8 +84,6 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APrototype2Character::Look);
 
-		// UI
-		EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Triggered, this, &APrototype2Character::OpenIngameMenu);
 	}
 
 }
@@ -130,8 +126,4 @@ void APrototype2Character::Look(const FInputActionValue& Value)
 
 
 
-void APrototype2Character::OpenIngameMenu()
-{
-	//WidgetIngameMenuInstance = CreateWidget<UWidget_IngameMenu>(GetWorld(), WidgetIngameMenu);
-	//WidgetIngameMenuInstance->AddToViewport();
-}
+
