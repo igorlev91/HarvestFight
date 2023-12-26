@@ -13,5 +13,14 @@ UCLASS()
 class PROTOTYPE2_API APrototype2PlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+
+	// UI
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
+	UWidget_PlayerHUD* PlayerHUDRef;
+
 	
+	virtual void BeginPlay() override;
 };
