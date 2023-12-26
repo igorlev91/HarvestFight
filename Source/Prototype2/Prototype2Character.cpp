@@ -9,10 +9,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InteractInterface.h"
+#include "PickUpItem.h"
+#include "Components/SphereComponent.h"
+#include "DynamicMesh/ColliderMesh.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetGuidLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 
-
-//////////////////////////////////////////////////////////////////////////
-// APrototype2Character
 
 APrototype2Character::APrototype2Character()
 {
@@ -47,8 +51,6 @@ APrototype2Character::APrototype2Character()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
 void APrototype2Character::BeginPlay()
@@ -66,17 +68,100 @@ void APrototype2Character::BeginPlay()
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Input
+void APrototype2Character::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// So when Interact is called, we have reference to nearest interactible item
+	CheckForInteractables();
+
+	// Attack
+	if (bIsChargingAttack)
+	{
+		AttackChargeAmount += DeltaSeconds;
+	}
+}
+
+void APrototype2Character::ChargeAttack()
+{
+	bIsChargingAttack = true;
+}
+
+void APrototype2Character::ReleaseAttack()
+{
+	bIsChargingAttack = false;
+	AttackChargeAmount = 0.0f;
+}
+
+void APrototype2Character::Interact()
+{
+	if (HeldItem)
+	{
+		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+        // HeldItem->EnablePhysics // Needs the ItemComponent stuff
+		HeldItem = nullptr;
+	}
+	else
+	{
+		// Pickup closest interactable item
+		if(ClosestInteractableItem)
+		{
+			ClosestInteractableItem->Interact();
+		}
+	}
+}
+
+void APrototype2Character::CheckForInteractables()
+{
+	// create tarray for hit results
+	TArray<FHitResult> outHits;
+	
+	// start and end locations
+	FVector sweepStart = GetActorLocation();
+	FVector sweepEnd = GetActorLocation();
+
+	// create a collision sphere
+	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
+
+	// draw collision sphere
+	DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, true);
+	
+	// check if something got hit in the sweep
+	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_WorldStatic, colSphere);
+
+	if (isHit)
+	{
+		TArray<AActor*> interactableActors;
+		
+		// loop through TArray
+		for (auto& hit : outHits)
+		{
+			// screen log information on what was hit
+			UE_LOG(LogTemp, Warning, TEXT(" %s "), *hit.GetActor()->GetName());
+			
+			if (Cast<IInteractInterface>(hit.GetActor()))
+			{
+				interactableActors.Add(hit.GetActor());
+			}
+		}
+
+		float distanceToClosest;
+		ClosestInteractableItem = Cast<IInteractInterface>(UGameplayStatics::FindNearestActor(GetActorLocation(), interactableActors, distanceToClosest));
+	}
+	else
+	{
+		ClosestInteractableItem = nullptr;
+	}
+}
 
 void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
-		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		////Jumping
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APrototype2Character::Move);
@@ -84,8 +169,16 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APrototype2Character::Look);
 
-	}
+		// UI
+		EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Triggered, this, &APrototype2Character::OpenIngameMenu);
 
+		// Attack
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::ChargeAttack);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &APrototype2Character::ReleaseAttack);
+
+		// Interact
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::Interact);
+	}
 }
 
 void APrototype2Character::Move(const FInputActionValue& Value)
@@ -126,4 +219,8 @@ void APrototype2Character::Look(const FInputActionValue& Value)
 
 
 
-
+void APrototype2Character::OpenIngameMenu()
+{
+	//WidgetIngameMenuInstance = CreateWidget<UWidget_IngameMenu>(GetWorld(), WidgetIngameMenu);
+	//WidgetIngameMenuInstance->AddToViewport();
+}
