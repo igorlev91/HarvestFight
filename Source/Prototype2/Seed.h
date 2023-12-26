@@ -14,6 +14,9 @@ class PROTOTYPE2_API ASeed : public APickUpItem
 {
 	GENERATED_BODY()
 public:
+	virtual void Interact() override;
+	
+public:
 	UPROPERTY(EditAnywhere)
 	float growtime;
 

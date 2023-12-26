@@ -4,6 +4,11 @@
 #include "PlantSeed.h"
 #include "Plant.h"
 
+void APlantSeed::Interact()
+{
+	Super::Interact();
+}
+
 void APlantSeed::Grow()
 {
 	if (growtime <= 0)

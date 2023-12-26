@@ -13,5 +13,13 @@ UCLASS()
 class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+
+public:
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_InteractionPanel* InteractionPanel;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_IngameMenu* IngameMenu;
 };

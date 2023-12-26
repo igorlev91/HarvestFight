@@ -14,9 +14,12 @@ UCLASS()
 class PROTOTYPE2_API AWeaponSeed : public ASeed
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
-	AWeapon* weaponToGrow = nullptr;
-
+public:
+	virtual void Interact() override;
 	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
+
+private:
+	UPROPERTY(EditAnywhere)
+	AWeapon* weaponToGrow = nullptr;
 };

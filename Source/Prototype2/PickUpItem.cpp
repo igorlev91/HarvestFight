@@ -9,6 +9,7 @@ APickUpItem::APickUpItem()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -25,8 +26,8 @@ void APickUpItem::Tick(float DeltaTime)
 
 }
 
-void APickUpItem::PickUp()
-{
-	
-}
+//void APickUpItem::PickUp()
+//{
+//	
+//}
 

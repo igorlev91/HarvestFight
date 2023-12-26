@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Widgets/Widget_IngameMenu.h"
 #include "Prototype2Character.generated.h"
 
 UCLASS(config=Game)
@@ -14,12 +13,6 @@ class APrototype2Character : public ACharacter
 	GENERATED_BODY()
 public:
 	APrototype2Character();	
-
-	// UI
-	//UPROPERTY(EditAnywhere) TSubclassOf<UWidget_IngameMenu> WidgetIngameMenu;
-	//UWidget_IngameMenu* WidgetIngameMenuInstance;
-	
-	void OpenIngameMenu();
 	
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -43,7 +36,10 @@ protected:
 	/* Pickup/Plant/Sell */
 	void Interact();
 
-	void CheckForInteractables();	
+	void CheckForInteractables();
+
+	// UI
+	void OpenIngameMenu();
 
 private: 
 	/** MappingContext */
@@ -78,17 +74,19 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DropAction;
 
+	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere)
-	float InteractRadius = 500.0f;
-protected:
+	float InteractRadius = 100.0f;
+	
 	/* Weapon Held */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class AWeapon* Weapon;
 
 	/* Currently held item */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
 	
+protected:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;

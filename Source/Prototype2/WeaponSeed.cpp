@@ -4,6 +4,11 @@
 #include "WeaponSeed.h"
 #include "Weapon.h"
 
+void AWeaponSeed::Interact()
+{
+	Super::Interact();
+}
+
 void AWeaponSeed::Grow()
 {
 	if (growtime <= 0)

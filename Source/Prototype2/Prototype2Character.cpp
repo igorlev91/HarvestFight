@@ -11,11 +11,15 @@
 #include "EnhancedInputSubsystems.h"
 #include "InteractInterface.h"
 #include "PickUpItem.h"
+#include "Prototype2PlayerController.h"
 #include "Components/SphereComponent.h"
 #include "DynamicMesh/ColliderMesh.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetGuidLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Widgets/Widget_InteractionPanel.h"
+#include "Widgets/Widget_IngameMenu.h"
+#include "Widgets/Widget_PlayerHUD.h"
 
 
 APrototype2Character::APrototype2Character()
@@ -124,7 +128,7 @@ void APrototype2Character::CheckForInteractables()
 	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
 
 	// draw collision sphere
-	DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, true);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, true);
 	
 	// check if something got hit in the sweep
 	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_WorldStatic, colSphere);
@@ -217,10 +221,17 @@ void APrototype2Character::Look(const FInputActionValue& Value)
 	}
 }
 
-
-
 void APrototype2Character::OpenIngameMenu()
 {
-	//WidgetIngameMenuInstance = CreateWidget<UWidget_IngameMenu>(GetWorld(), WidgetIngameMenu);
-	//WidgetIngameMenuInstance->AddToViewport();
+	if (auto* playercontroller = Cast<APrototype2PlayerController>(Controller))
+	{
+		if (playercontroller->PlayerHUDRef->IngameMenu->GetVisibility() == ESlateVisibility::Hidden)
+		{
+			playercontroller->PlayerHUDRef->IngameMenu->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			playercontroller->PlayerHUDRef->IngameMenu->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
 }

@@ -14,9 +14,12 @@ UCLASS()
 class PROTOTYPE2_API APlantSeed : public ASeed
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
-	APlant* plantToGrow = nullptr;
-
+public:
+	virtual void Interact() override;
 	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
+
+private:
+	UPROPERTY(EditAnywhere)
+	APlant* plantToGrow = nullptr;
 };

@@ -13,6 +13,8 @@ class APrototype2GameMode : public AGameModeBase
 
 public:
 	APrototype2GameMode();
+
+	// Timer
 };
 
 

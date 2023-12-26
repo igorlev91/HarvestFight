@@ -6,13 +6,13 @@
 #include "PickUpItem.h"
 #include "Weapon.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API AWeapon : public APickUpItem
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
-	int numberOfHits;
+	//UPROPERTY(EditAnywhere)
+	//int numberOfHits; replaced with ItemComponent->Durability
+
+public:
+	virtual void Interact() override;
 };

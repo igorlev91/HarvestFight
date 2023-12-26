@@ -6,13 +6,14 @@
 #include "PickUpItem.h"
 #include "Plant.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API APlant : public APickUpItem
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
-	float value;
+public:
+	virtual void Interact() override;
+	
+	//UPROPERTY(EditAnywhere)
+	//float value; // Moved to ItemComponent
+	
 };

@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "InteractInterface.h"
+#include "ItemComponent.h"
 #include "PickUpItem.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API APickUpItem : public AActor
+class PROTOTYPE2_API APickUpItem : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
@@ -23,6 +25,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void PickUp();
+	/*	get character
+		attach mesh to characters hand
+		set characters HeldItem to this */
+	virtual void Interact(){}
+
+public:
+	UPROPERTY(EditAnywhere)
+	UItemComponent* ItemComponent;
 
 };
