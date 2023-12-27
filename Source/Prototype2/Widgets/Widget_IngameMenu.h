@@ -18,7 +18,8 @@ class PROTOTYPE2_API UWidget_IngameMenu : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintCallable)
+	void EnableDisableMenu();
+	
+	UFUNCTION(BlueprintCallable)
 	void ReturnToMenu();
-
-
 };

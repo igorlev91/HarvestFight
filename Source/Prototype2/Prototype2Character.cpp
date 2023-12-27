@@ -225,13 +225,6 @@ void APrototype2Character::OpenIngameMenu()
 {
 	if (auto* playercontroller = Cast<APrototype2PlayerController>(Controller))
 	{
-		if (playercontroller->PlayerHUDRef->IngameMenu->GetVisibility() == ESlateVisibility::Hidden)
-		{
-			playercontroller->PlayerHUDRef->IngameMenu->SetVisibility(ESlateVisibility::Visible);
-		}
-		else
-		{
-			playercontroller->PlayerHUDRef->IngameMenu->SetVisibility(ESlateVisibility::Hidden);
-		}
+		playercontroller->PlayerHUDRef->EnableDisableMenu();
 	}
 }

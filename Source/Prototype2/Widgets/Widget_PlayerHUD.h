@@ -22,4 +22,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
+	
+public:
+	// Functions
+	UFUNCTION(BlueprintCallable)
+	void EnableDisableMenu();
 };
