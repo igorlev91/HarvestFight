@@ -91,26 +91,105 @@ void APrototype2Character::BeginPlay()
 void APrototype2Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	// Stun
+	if (bIsStunned)
+	{
+		bIsChargingAttack = false;
 
-	// So when Interact is called, we have reference to nearest interactible item
-	CheckForInteractables();
+		// Set animation to stun
+		
+		StunTimer -= DeltaSeconds;
+		if (StunTimer < 0.0f)
+		{
+			bIsStunned = false;
 
+			// Enable input
+		}
+	}
+	
 	// Attack
 	if (bIsChargingAttack)
 	{
 		AttackChargeAmount += DeltaSeconds;
 	}
+
+	// Check if anything is around to be interacted with
+	CheckForInteractables();
 }
 
 void APrototype2Character::ChargeAttack()
 {
 	bIsChargingAttack = true;
+	
+	// todo: Set animation to raise hand/hands
 }
 
 void APrototype2Character::ReleaseAttack()
 {
+	// todo: Set animation to execute the attack
+	
+	// Cap attack charge
+	if (AttackChargeAmount > MaxAttackCharge)
+	{
+		AttackChargeAmount = MaxAttackCharge;
+	}
+
+	// Create a sphere collider, check if player hit, call player hit
+	int32 attackSphereRadius;
+	if (Weapon)
+	{
+		// Create a larger sphere of effect
+		attackSphereRadius = 100.0f + AttackChargeAmount * 10.0f;
+	}
+	else
+	{
+		// Create a smaller sphere of effect
+		attackSphereRadius = 50.0f + AttackChargeAmount * 10.0f;
+	}
+
+	ExecuteAttack(attackSphereRadius);
+	
+	// Reset Attack variables
 	bIsChargingAttack = false;
 	AttackChargeAmount = 0.0f;
+}
+
+void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
+{
+	// create tarray for hit results
+	TArray<FHitResult> outHits;
+	
+	// start and end locations
+	FVector inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) +  (GetActorForwardVector() * 30.0f);
+	FVector sweepStart = inFrontOfPlayer;
+	FVector sweepEnd = inFrontOfPlayer;
+
+	// create a collision sphere
+	FCollisionShape colSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Sphere Radius = %s"), *FString::SanitizeFloat(AttackSphereRadius));
+	// draw collision sphere
+	DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
+	
+	// check if something got hit in the sweep
+	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_WorldStatic, colSphere);
+
+	if (isHit)
+	{
+		// loop through TArray
+		for (auto& hit : outHits)
+		{
+			if (auto* hitPlayer = Cast<APrototype2Character>(hit.GetActor()))
+			{
+				if (hitPlayer != this)
+				{
+					// screen log information on what was hit
+					UE_LOG(LogTemp, Warning, TEXT(" %s  was hit by an attack!"), *hit.GetActor()->GetName());
+					hitPlayer->GetHit(AttackChargeAmount);
+				}
+			}
+		}
+	}
 }
 
 void APrototype2Character::Interact()
@@ -157,7 +236,7 @@ void APrototype2Character::CheckForInteractables()
 		for (auto& hit : outHits)
 		{
 			// screen log information on what was hit
-			UE_LOG(LogTemp, Warning, TEXT(" %s "), *hit.GetActor()->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT(" %s "), *hit.GetActor()->GetName());
 			
 			if (Cast<IInteractInterface>(hit.GetActor()))
 			{
@@ -172,6 +251,14 @@ void APrototype2Character::CheckForInteractables()
 	{
 		ClosestInteractableItem = nullptr;
 	}
+}
+
+void APrototype2Character::GetHit(float AttackCharge)
+{
+	// Disable input
+	
+	bIsStunned = true;
+	StunTimer = AttackCharge;
 }
 
 void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -193,11 +280,11 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 		EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Triggered, this, &APrototype2Character::OpenIngameMenu);
 
 		// Attack
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::ChargeAttack);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &APrototype2Character::ReleaseAttack);
+		EnhancedInputComponent->BindAction(ChargeAttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::ChargeAttack);
+		EnhancedInputComponent->BindAction(ReleaseAttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::ReleaseAttack);
 
 		// Interact
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APrototype2Character::Interact);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APrototype2Character::Interact);
 	}
 }
 

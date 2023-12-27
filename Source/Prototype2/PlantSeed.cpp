@@ -3,10 +3,11 @@
 
 #include "PlantSeed.h"
 #include "Plant.h"
+#include "Prototype2Character.h"
 
-void APlantSeed::Interact()
+void APlantSeed::Interact(APrototype2Character* player)
 {
-	Super::Interact();
+	Super::Interact(player);
 }
 
 void APlantSeed::Grow()

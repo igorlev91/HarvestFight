@@ -2,6 +2,7 @@
 
 
 #include "PickUpItem.h"
+#include "Prototype2Character.h"
 
 // Sets default values
 APickUpItem::APickUpItem()

@@ -3,10 +3,11 @@
 
 #include "WeaponSeed.h"
 #include "Weapon.h"
+#include "Prototype2Character.h"
 
-void AWeaponSeed::Interact()
+void AWeaponSeed::Interact(APrototype2Character* player)
 {
-	Super::Interact();
+	Super::Interact(player);
 }
 
 void AWeaponSeed::Grow()

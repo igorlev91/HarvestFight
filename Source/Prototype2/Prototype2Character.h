@@ -14,7 +14,7 @@ class APrototype2Character : public ACharacter
 public:
 	APrototype2Character();	
 	
-protected:
+protected: // Protected Functions
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	virtual void BeginPlay();
@@ -33,15 +33,22 @@ protected:
 	/* Release Attack */
 	void ReleaseAttack();
 
+	/* Execute Attack */
+	void ExecuteAttack(float AttackSphereRadius);
+
 	/* Pickup/Plant/Sell */
 	void Interact();
 
+	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
 
-	// UI
+	/* Called when hit by another player */
+	void GetHit(float AttackCharge);
+	
+	/* UI */
 	void OpenIngameMenu();
 
-private: 
+private: // Input actions
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -64,19 +71,23 @@ private:
 
 	/* Attack */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* AttackAction;
+	class UInputAction* ChargeAttackAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReleaseAttackAction;
 
 	/* PickUp/Plant/Sell */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InteractAction;
 
-	/* Drop */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* DropAction;
+private: // Private variables
 
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere)
 	float InteractRadius = 100.0f;
+
+	/* Maximum amount of Attack Charge */
+	UPROPERTY(EditAnywhere)
+	float MaxAttackCharge = 5.0f;
 	
 	/* Weapon Held */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -105,4 +116,6 @@ private:
 	class IInteractInterface* ClosestInteractableItem;
 	bool bIsChargingAttack;
 	float AttackChargeAmount;
+	bool bIsStunned;
+	float StunTimer;
 };

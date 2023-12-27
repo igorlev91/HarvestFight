@@ -11,7 +11,7 @@ class PROTOTYPE2_API APlant : public APickUpItem
 {
 	GENERATED_BODY()
 public:
-	virtual void Interact() override;
+	virtual void Interact(APrototype2Character* player) override;
 	
 	//UPROPERTY(EditAnywhere)
 	//float value; // Moved to ItemComponent

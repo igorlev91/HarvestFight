@@ -8,6 +8,7 @@
 #include "ItemComponent.h"
 #include "PickUpItem.generated.h"
 
+class APrototype2Character;
 UCLASS()
 class PROTOTYPE2_API APickUpItem : public AActor, public IInteractInterface
 {
@@ -28,9 +29,8 @@ public:
 	/*	get character
 		attach mesh to characters hand
 		set characters HeldItem to this */
-	virtual void Interact(){}
-
-public:
+	virtual void Interact(APrototype2Character* player){}
+	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
 

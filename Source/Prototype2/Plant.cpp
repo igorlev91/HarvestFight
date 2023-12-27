@@ -2,8 +2,9 @@
 
 
 #include "Plant.h"
+#include "Prototype2Character.h"
 
-void APlant::Interact()
+void APlant::Interact(APrototype2Character* player)
 {
-	Super::Interact();
+	player->HeldItem = this;
 }

@@ -15,7 +15,7 @@ class PROTOTYPE2_API AWeaponSeed : public ASeed
 {
 	GENERATED_BODY()
 public:
-	virtual void Interact() override;
+	virtual void Interact(APrototype2Character* player) override;
 	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
 

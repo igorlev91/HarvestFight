@@ -3,9 +3,11 @@
 
 #include "Seed.h"
 
-void ASeed::Interact()
+#include "Prototype2Character.h"
+
+void ASeed::Interact(APrototype2Character* player)
 {
-	Super::Interact();
+	player->HeldItem = this;
 }
 
 void ASeed::Grow()

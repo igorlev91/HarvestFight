@@ -3,7 +3,7 @@
 
 #include "Weapon.h"
 
-void AWeapon::Interact()
+void AWeapon::Interact(APrototype2Character* player)
 {
-	Super::Interact();
+	Super::Interact(player);
 }

@@ -14,5 +14,5 @@ class PROTOTYPE2_API AWeapon : public APickUpItem
 	//int numberOfHits; replaced with ItemComponent->Durability
 
 public:
-	virtual void Interact() override;
+	virtual void Interact(APrototype2Character* player) override;
 };

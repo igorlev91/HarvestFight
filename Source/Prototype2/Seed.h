@@ -14,7 +14,7 @@ class PROTOTYPE2_API ASeed : public APickUpItem
 {
 	GENERATED_BODY()
 public:
-	virtual void Interact() override;
+	virtual void Interact(APrototype2Character* player) override;
 	
 public:
 	UPROPERTY(EditAnywhere)
