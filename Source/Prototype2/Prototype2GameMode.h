@@ -14,7 +14,18 @@ class APrototype2GameMode : public AGameModeBase
 public:
 	APrototype2GameMode();
 
+	virtual void BeginPlay() override;
+
+	
 	// Timer
+	UPROPERTY(EditAnywhere)
+	int Minutes{5};
+
+	UPROPERTY(EditAnywhere)
+	int Seconds;
+
+public:
+	void Countdown();
 };
 
 
