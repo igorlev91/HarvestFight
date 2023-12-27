@@ -17,10 +17,6 @@ class PROTOTYPE2_API APrototype2PlayerController : public APlayerController
 public:
 
 	// UI
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
-	UWidget_PlayerHUD* PlayerHUDRef;
 
-	
 	virtual void BeginPlay() override;
 };
