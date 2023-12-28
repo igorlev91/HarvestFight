@@ -1,5 +1,7 @@
 #include "LobbyGamestate.h"
 
+#include "Net/UnrealNetwork.h"
+
 ALobbyGamestate::ALobbyGamestate()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -8,9 +10,7 @@ ALobbyGamestate::ALobbyGamestate()
 void ALobbyGamestate::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	GetWorldTimerManager().SetTimer(LobbyTimerHandle, this, &ALobbyGamestate::CountdownLobbyTimer, 1.0f, true, 0.0f);
-	GetWorldTimerManager().PauseTimer(LobbyTimerHandle);
+
 	
 }
 
@@ -18,40 +18,52 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (PreviousServerTravel != ShouldServerTravel)
+	if (HasAuthority())
 	{
-		PreviousServerTravel = ShouldServerTravel;
-
-		if (ShouldServerTravel)
+		if (PreviousServerTravel != ShouldServerTravel)
 		{
-			if (LobbyLengthSeconds > 0 || LobbyLengthMinutes > 0)
+			PreviousServerTravel = ShouldServerTravel;
+
+			if (ShouldServerTravel)
 			{
-				GetWorldTimerManager().UnPauseTimer(LobbyTimerHandle);
+				if (LobbyLengthSeconds > 0 || LobbyLengthMinutes > 0)
+				{
+					IsCountingDown = true;
+				}
+				PreviousServerTravel = false;
+				ShouldServerTravel = false;
 			}
-			PreviousServerTravel = false;
-			ShouldServerTravel = false;
+		}
+
+		if (IsCountingDown)
+		{
+			if (LobbyLengthSeconds > 0)
+			{
+				LobbyLengthSeconds -= DeltaSeconds;
+			}
+			else
+			{
+				if (LobbyLengthMinutes <= 0)
+				{
+					// End of timer
+					GetWorld()->ServerTravel("Level_Main");
+				}
+				else
+				{
+					LobbyLengthMinutes--;
+					LobbyLengthSeconds = 60;
+				}
+			}
 		}
 	}
 }
 
-void ALobbyGamestate::CountdownLobbyTimer()
+void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (LobbyLengthSeconds > 0)
-	{
-		LobbyLengthSeconds--;
-	}
-	else
-	{
-		if (LobbyLengthMinutes <= 0)
-		{
-			// End of timer
-			GetWorldTimerManager().PauseTimer(LobbyTimerHandle);
-			GetWorld()->ServerTravel("Level_Main");
-		}
-		else
-		{
-			LobbyLengthMinutes--;
-			LobbyLengthSeconds = 59;
-		}
-	}
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ALobbyGamestate, LobbyLengthMinutes);
+	DOREPLIFETIME(ALobbyGamestate, LobbyLengthSeconds);
+	DOREPLIFETIME(ALobbyGamestate, IsCountingDown);
+	DOREPLIFETIME(ALobbyGamestate, PreviousServerTravel);
 }
+

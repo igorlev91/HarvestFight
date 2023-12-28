@@ -20,6 +20,12 @@ void APickUpItem::BeginPlay()
 	
 }
 
+void APickUpItem::AttachMesh()
+{
+	mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	RootComponent = mesh;
+}
+
 // Called every frame
 void APickUpItem::Tick(float DeltaTime)
 {

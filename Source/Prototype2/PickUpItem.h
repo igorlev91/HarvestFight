@@ -22,6 +22,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void AttachMesh();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -33,5 +35,8 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* mesh;
 
 };

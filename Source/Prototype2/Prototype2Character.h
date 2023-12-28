@@ -87,6 +87,13 @@ private: // Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InteractAction;
 
+private: // Animation
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* PickupMontage;
+	
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* AttackMontage;
+	
 private: // Private variables
 
 	/* Interact radius for checking closest item */

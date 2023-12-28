@@ -28,27 +28,47 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	{
 		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthMinutes)));
 		Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
-	}
 
-	//for(auto player:GameStateRef->PlayerArray)
-	//{
-	//	player->GetPlayerController()->GetPlayerState<APrototype2PlayerState>()->Coins;
-	//}
-
-	for (int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
-	{
-		switch(i)
+		// Updating points/coins
+		for (int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
 		{
-		case 0:
+			if (auto player = GameStateRef->PlayerArray[i])
 			{
-				//auto coins = GameStateRef->PlayerArray[i]->GetPlayerController()->GetPlayerState<APrototype2PlayerState>()->Coins;
-				//Coins->SetText(FText::FromString(FString::FromInt(coins)));
-				break;
-			}
-
-		default:
-			{
-				break;
+				if (auto* playerController = player->GetPlayerController())
+				{
+					if (auto* playerstate = playerController->GetPlayerState<APrototype2PlayerState>())
+					{
+						auto coins = playerstate->Coins;
+					
+						switch(i)
+						{
+						case 0:
+							{
+								Player1Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								break;
+							}
+						case 1:
+							{
+								Player2Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								break;
+							}
+						case 2:
+							{
+								Player3Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								break;
+							}
+						case 3:
+							{
+								Player4Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								break;
+							}
+						default:
+							{
+								break;
+							}
+						}
+					}
+				}
 			}
 		}
 	}

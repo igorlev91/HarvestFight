@@ -15,19 +15,19 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{true};
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int LobbyLengthMinutes{0};
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int LobbyLengthSeconds{30};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	float LobbyLengthSeconds{30.0f};
 
 private:
-	void CountdownLobbyTimer();
-	
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool IsCountingDown{};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool PreviousServerTravel{};
-	
-	FTimerHandle LobbyTimerHandle;
 };

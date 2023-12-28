@@ -18,5 +18,5 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 public:
 
 	UPROPERTY(EditAnywhere)
-	int Coins;
+	int Coins{5};
 };

@@ -7,3 +7,8 @@ void AWeapon::Interact(APrototype2Character* player)
 {
 	Super::Interact(player);
 }
+
+AWeapon::AWeapon()
+{
+	AttachMesh();
+}

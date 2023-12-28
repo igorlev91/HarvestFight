@@ -27,3 +27,8 @@ void AWeaponSeed::Tick(float DeltaSeconds)
 		Grow();
 	}
 }
+
+AWeaponSeed::AWeaponSeed()
+{
+	AttachMesh();
+}

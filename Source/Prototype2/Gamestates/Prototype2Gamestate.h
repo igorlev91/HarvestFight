@@ -15,19 +15,19 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{true};
-
-	UPROPERTY(EditAnywhere)
-	int MatchLengthMinutes{5};
-	UPROPERTY(EditAnywhere)
-	int MatchLengthSeconds{0};
 	
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	int MatchLengthMinutes{5};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	float MatchLengthSeconds{0};
+
 private:
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool IsCountingDown{};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool PreviousServerTravel{};
-
-
-	FTimerHandle MatchTimerHandle;
-public:
-	void CountdownMatchTimer();
 };

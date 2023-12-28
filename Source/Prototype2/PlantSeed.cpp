@@ -27,3 +27,8 @@ void APlantSeed::Tick(float DeltaSeconds)
 		Grow();
 	}
 }
+
+APlantSeed::APlantSeed()
+{
+	AttachMesh();
+}

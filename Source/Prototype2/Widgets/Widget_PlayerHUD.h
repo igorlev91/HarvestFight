@@ -29,7 +29,13 @@ public:
 
 	// Player scores
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Coins;
+	class UTextBlock* Player1Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player2Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player3Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player4Coins;
 	
 public:
 	// Functions

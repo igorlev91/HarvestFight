@@ -14,7 +14,7 @@ UItemComponent::UItemComponent()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	if(GetOwner())
 	{
-		Mesh->SetupAttachment(GetOwner()->GetRootComponent());
+		GetOwner()->SetRootComponent(Mesh);
 	}
 }
 

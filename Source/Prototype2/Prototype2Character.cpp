@@ -193,8 +193,22 @@ void APrototype2Character::Interact()
 		// Pickup closest interactable item
 		if(ClosestInteractableItem)
 		{
-			ClosestInteractableItem->Interact();
+			// Call the InteractInterface interact function
+			ClosestInteractableItem->Interact(this);
+
+			if (HeldItem)
+			{
+				// Attach to socket
+				HeldItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("HeldItemSocket"));
+
+				if (PickupMontage)
+				{
+					// Animation
+					GetMesh()->GetAnimInstance()->Montage_Play(PickupMontage);
+				}
+			}
 		}
+
 	}
 }
 

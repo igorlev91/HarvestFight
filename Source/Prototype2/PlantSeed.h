@@ -20,6 +20,9 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
+	APlantSeed();
 	UPROPERTY(EditAnywhere)
 	APlant* plantToGrow = nullptr;
+
+	
 };

@@ -18,6 +18,7 @@ public:
 	virtual void Interact(APrototype2Character* player) override;
 	virtual void Grow() override;
 	virtual void Tick(float DeltaSeconds) override;
+	AWeaponSeed();
 
 private:
 	UPROPERTY(EditAnywhere)

@@ -8,3 +8,8 @@ void APlant::Interact(APrototype2Character* player)
 {
 	player->HeldItem = this;
 }
+
+APlant::APlant()
+{
+	AttachMesh();
+}
