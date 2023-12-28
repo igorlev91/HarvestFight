@@ -10,15 +10,24 @@ class PROTOTYPE2_API APrototype2Gamestate : public AGameStateBase
 	GENERATED_BODY()
 
 public:
+	APrototype2Gamestate();
 	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool ShouldServerTravel{true};
+
+	UPROPERTY(EditAnywhere)
+	int MatchLengthMinutes{5};
+	UPROPERTY(EditAnywhere)
+	int MatchLengthSeconds{0};
 	
-	// Timer
-	UPROPERTY(EditAnywhere)
-	int Minutes{5};
+private:
+	bool PreviousServerTravel{};
 
-	UPROPERTY(EditAnywhere)
-	int Seconds;
 
+	FTimerHandle MatchTimerHandle;
 public:
-	void Countdown();
+	void CountdownMatchTimer();
 };

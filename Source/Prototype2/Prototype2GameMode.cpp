@@ -2,6 +2,8 @@
 
 #include "Prototype2GameMode.h"
 #include "Prototype2Character.h"
+#include "Gamestates/Prototype2Gamestate.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
 APrototype2GameMode::APrototype2GameMode()
@@ -14,4 +16,10 @@ APrototype2GameMode::APrototype2GameMode()
 	}
 	
 }
+
+void APrototype2GameMode::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 

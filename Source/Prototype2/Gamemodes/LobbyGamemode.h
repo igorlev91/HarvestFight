@@ -12,11 +12,5 @@ class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
 
 	ALobbyGamemode();
 public:
-	virtual void Tick(float DeltaSeconds) override;
 
-	UPROPERTY(EditAnywhere)
-	bool ShouldServerTravel{};
-
-private:
-	bool PreviousServerTravel{};
 };

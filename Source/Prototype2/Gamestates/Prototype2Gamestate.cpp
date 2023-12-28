@@ -1,31 +1,61 @@
 #include "Prototype2Gamestate.h"
 
 
+APrototype2Gamestate::APrototype2Gamestate()
+{
+	PrimaryActorTick.bCanEverTick = true;
+}
+
 void APrototype2Gamestate::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetWorldTimerManager().SetTimer(MatchTimerHandle, this, &APrototype2Gamestate::CountdownMatchTimer, 1.0f, true, 0.0f);
+	GetWorldTimerManager().PauseTimer(MatchTimerHandle);
 	
-	// Setup timer start
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &APrototype2Gamestate::Countdown, 1.0f, true, 0.0f);
 }
 
-void APrototype2Gamestate::Countdown()
+void APrototype2Gamestate::Tick(float DeltaSeconds)
 {
-	if (Seconds != 0)
+	Super::Tick(DeltaSeconds);
+
+	if (PreviousServerTravel != ShouldServerTravel)
 	{
-		Seconds--;
+		PreviousServerTravel = ShouldServerTravel;
+
+		if (ShouldServerTravel)
+		{
+			if (MatchLengthSeconds > 0 || MatchLengthMinutes > 0)
+			{
+				GetWorldTimerManager().UnPauseTimer(MatchTimerHandle);
+			}
+			PreviousServerTravel = false;
+			ShouldServerTravel = false;
+		}
+	}
+}
+
+void APrototype2Gamestate::CountdownMatchTimer()
+{
+	if (MatchLengthSeconds > 0)
+	{
+		MatchLengthSeconds--;
 	}
 	else
 	{
-		if (Minutes == 0)
+		if (MatchLengthMinutes <= 0)
 		{
 			// End of timer
+			GetWorldTimerManager().PauseTimer(MatchTimerHandle);
+			if (HasAuthority())
+				GetWorld()->ServerTravel("Level_MainMenu");
 		}
 		else
 		{
-			Minutes--;
-			Seconds = 59;
+			MatchLengthMinutes--;
+			MatchLengthSeconds = 59;
 		}
 	}
 }
+
+

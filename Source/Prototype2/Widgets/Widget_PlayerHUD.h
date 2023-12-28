@@ -20,12 +20,16 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
+	// Timer
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Minutes;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Seconds;
 
+	// Player scores
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Coins;
 	
 public:
 	// Functions

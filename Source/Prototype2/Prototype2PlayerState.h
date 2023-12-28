@@ -13,5 +13,10 @@ UCLASS()
 class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 {
 	GENERATED_BODY()
-	
+
+
+public:
+
+	UPROPERTY(EditAnywhere)
+	int Coins;
 };
