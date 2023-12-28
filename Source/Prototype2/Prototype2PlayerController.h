@@ -19,4 +19,7 @@ public:
 	// UI
 
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void KickFromLobby();
 };

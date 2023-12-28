@@ -6,7 +6,7 @@
 
 void UWidget_IngameMenu::ReturnToMenu()
 {
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("Level_MainMenu")));
+	//UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/Game/Maps/Level_MainMen")));
 }
 
 void UWidget_IngameMenu::EnableDisableMenu()

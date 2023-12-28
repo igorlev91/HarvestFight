@@ -73,19 +73,7 @@ void APrototype2Character::BeginPlay()
 		}
 	}
 
-	if (PlayerHudPrefab)
-	{
-		if (Controller)
-		{
-			if (auto* playerController = Cast<APrototype2PlayerController>(Controller))
-			{
-				PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(playerController, PlayerHudPrefab);
-
-				if (PlayerHUDRef)
-					PlayerHUDRef->AddToViewport();
-			}
-		}
-	}
+	Server_AddHUD();
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
@@ -330,5 +318,27 @@ void APrototype2Character::OpenIngameMenu()
 	{
 		if (PlayerHUDRef)
 			PlayerHUDRef->EnableDisableMenu();
+	}
+}
+
+void APrototype2Character::Server_AddHUD_Implementation()
+{
+	Client_AddHUD();
+}
+
+void APrototype2Character::Client_AddHUD_Implementation()
+{
+	if (PlayerHudPrefab)
+	{
+		if (Controller)
+		{
+			if (auto* playerController = Cast<APrototype2PlayerController>(Controller))
+			{
+				PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(playerController, PlayerHudPrefab);
+
+				if (PlayerHUDRef)
+					PlayerHUDRef->AddToViewport();
+			}
+		}
 	}
 }

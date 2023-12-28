@@ -48,6 +48,14 @@ protected: // Protected Functions
 	/* UI */
 	void OpenIngameMenu();
 
+	UFUNCTION(Server, Reliable)
+	void Server_AddHUD();
+	void Server_AddHUD_Implementation();
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddHUD();
+	void Client_AddHUD_Implementation();
+	
 private: // Input actions
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))

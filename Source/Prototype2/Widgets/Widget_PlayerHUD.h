@@ -4,12 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Prototype2/Prototype2GameMode.h"
 #include "Widget_PlayerHUD.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 {
@@ -36,7 +32,7 @@ public:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	APrototype2GameMode* GameModeRef;
+	class APrototype2Gamestate* GameStateRef;
 	
 	UFUNCTION(BlueprintCallable)
 	void EnableDisableMenu();
