@@ -14,9 +14,10 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 {
 	GENERATED_BODY()
 
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	int Coins{5};
 };

@@ -30,5 +30,4 @@ void APlantSeed::Tick(float DeltaSeconds)
 
 APlantSeed::APlantSeed()
 {
-	AttachMesh();
 }

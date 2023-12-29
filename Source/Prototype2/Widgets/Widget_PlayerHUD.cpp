@@ -30,42 +30,50 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
 
 		// Updating points/coins
+		//if (!GetOwningPlayerPawn()->HasAuthority())
+		//	UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->PlayerArray.Num()));
+		
 		for (int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
 		{
 			if (auto player = GameStateRef->PlayerArray[i])
 			{
-				if (auto* playerController = player->GetPlayerController())
+				if (auto* playerState = Cast<APrototype2PlayerState>(player))
 				{
-					if (auto* playerstate = playerController->GetPlayerState<APrototype2PlayerState>())
+					auto coins = playerState->Coins;
+					if (!GetOwningPlayerPawn()->HasAuthority())
 					{
-						auto coins = playerstate->Coins;
-					
-						switch(i)
+						UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->PlayerArray.Num()));
+						UE_LOG(LogTemp, Warning, TEXT("Players Array [%s] = %s"), *FString::FromInt(i), *FString::FromInt(coins));
+					}
+					switch(i)
+					{
+					case 0:
 						{
-						case 0:
-							{
-								Player1Coins->SetText(FText::FromString(FString::FromInt(coins)));
-								break;
-							}
-						case 1:
-							{
-								Player2Coins->SetText(FText::FromString(FString::FromInt(coins)));
-								break;
-							}
-						case 2:
-							{
-								Player3Coins->SetText(FText::FromString(FString::FromInt(coins)));
-								break;
-							}
-						case 3:
-							{
-								Player4Coins->SetText(FText::FromString(FString::FromInt(coins)));
-								break;
-							}
-						default:
-							{
-								break;
-							}
+							Player1Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								
+							break;
+						}
+					case 1:
+						{
+							Player2Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								
+							break;
+						}
+					case 2:
+						{
+							Player3Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								
+							break;
+						}
+					case 3:
+						{
+							Player4Coins->SetText(FText::FromString(FString::FromInt(coins)));
+								
+							break;
+						}
+					default:
+						{
+							break;
 						}
 					}
 				}

@@ -10,5 +10,5 @@ void AWeapon::Interact(APrototype2Character* player)
 
 AWeapon::AWeapon()
 {
-	AttachMesh();
+	
 }

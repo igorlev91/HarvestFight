@@ -11,5 +11,5 @@ void APlant::Interact(APrototype2Character* player)
 
 APlant::APlant()
 {
-	AttachMesh();
+	
 }

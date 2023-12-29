@@ -24,7 +24,7 @@ public:
 	int MatchLengthMinutes{5};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	float MatchLengthSeconds{0};
-
+	
 private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool IsCountingDown{};

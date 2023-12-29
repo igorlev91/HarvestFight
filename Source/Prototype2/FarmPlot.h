@@ -6,32 +6,26 @@
 #include "GameFramework/Actor.h"
 #include "InteractInterface.h"
 #include "ItemComponent.h"
-#include "PickUpItem.generated.h"
+#include "FarmPlot.generated.h"
 
-class APrototype2Character;
+class AGrowSpot;
 UCLASS()
-class PROTOTYPE2_API APickUpItem : public AActor, public IInteractInterface
+class PROTOTYPE2_API AFarmPlot : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	APickUpItem();
+	AFarmPlot();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	/*	get character
-		attach mesh to characters hand
-		set characters HeldItem to this */
-	virtual void Interact(APrototype2Character* player){}
-	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
-
 };
