@@ -7,3 +7,8 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ALobbyPlayerState, IsReady);
 }
+
+void ALobbyPlayerState::SetIsReady(bool _isReady)
+{
+	IsReady = _isReady;
+}

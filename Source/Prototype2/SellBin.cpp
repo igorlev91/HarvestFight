@@ -3,6 +3,11 @@
 
 #include "SellBin.h"
 
+#include "Plant.h"
+#include "Prototype2Character.h"
+#include "Prototype2PlayerState.h"
+#include "GameFramework/PlayerState.h"
+
 // Sets default values
 ASellBin::ASellBin()
 {
@@ -25,5 +30,18 @@ void ASellBin::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ASellBin::Interact(APrototype2Character* player)
+{
+	if (player->HeldItem)
+	{
+		if (auto* plant = Cast<APlant>(player->HeldItem))
+		{
+			Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue;
+			Destroy(player->HeldItem);
+			player->HeldItem = nullptr;
+		}
+	}
 }
 

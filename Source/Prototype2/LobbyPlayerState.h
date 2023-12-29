@@ -14,4 +14,6 @@ class PROTOTYPE2_API ALobbyPlayerState : public APlayerState
 public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool IsReady{};
+	
+	void SetIsReady(bool _isReady);
 };

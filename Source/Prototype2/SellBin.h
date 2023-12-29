@@ -8,8 +8,9 @@
 #include "ItemComponent.h"
 #include "SellBin.generated.h"
 
+class APrototype2Character;
 UCLASS()
-class PROTOTYPE2_API ASellBin : public AActor
+class PROTOTYPE2_API ASellBin : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
@@ -27,5 +28,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
+
+	virtual void Interact(APrototype2Character* player) override;
 
 };

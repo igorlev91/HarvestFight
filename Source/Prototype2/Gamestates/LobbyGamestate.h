@@ -18,12 +18,12 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool ShouldServerTravel{true};
+	bool ShouldServerTravel{false};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int LobbyLengthMinutes{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
-	float LobbyLengthSeconds{30.0f};
+	float LobbyLengthSeconds{10.0f};
 
 private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))

@@ -5,6 +5,7 @@
 #include "InteractInterface.generated.h"
 
 class APrototype2Character;
+class APlant;
 // This class does not need to be modified.
 UINTERFACE()
 class UInteractInterface : public UInterface
