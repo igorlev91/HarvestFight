@@ -47,7 +47,15 @@ protected: // Protected Functions
 	
 	/* UI */
 	void OpenIngameMenu();
-
+	
+	void PlayNetworkMontage(UAnimMontage* _montage);
+	UFUNCTION(Server, Reliable)
+	void Server_PlayNetworkMontage(UAnimMontage* _montage);
+	void Server_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayNetworkMontage(UAnimMontage* _montage);
+	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
+	
 	UFUNCTION(Server, Reliable)
 	void Server_AddHUD();
 	void Server_AddHUD_Implementation();
@@ -98,7 +106,7 @@ private: // Private variables
 
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere)
-	float InteractRadius = 100.0f;
+	float InteractRadius = 200.0f;
 
 	/* Maximum amount of Attack Charge */
 	UPROPERTY(EditAnywhere)

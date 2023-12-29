@@ -57,6 +57,8 @@ APrototype2Character::APrototype2Character()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 }
 
 void APrototype2Character::BeginPlay()
@@ -160,7 +162,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
 	
 	// check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_WorldStatic, colSphere);
+	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere);
 
 	if (isHit)
 	{
@@ -184,18 +186,29 @@ void APrototype2Character::Interact()
 {
 	if (HeldItem)
 	{
-		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		
         // HeldItem->EnablePhysics // Needs the ItemComponent stuff
 		HeldItem = nullptr;
 	}
 	else
 	{
+		if (PickupMontage)
+		{
+			// Animation
+			GetMesh()->GetAnimInstance()->Montage_Play(PickupMontage);
+		}
 		// Pickup closest interactable item
 		if(ClosestInteractableItem)
 		{
 			// Call the InteractInterface interact function
 			ClosestInteractableItem->Interact(this);
-
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No Items Found"));
 			if (HeldItem)
 			{
 				// Attach to socket
@@ -204,12 +217,16 @@ void APrototype2Character::Interact()
 				if (PickupMontage)
 				{
 					// Animation
-					GetMesh()->GetAnimInstance()->Montage_Play(PickupMontage);
+					PlayNetworkMontage(PickupMontage);
 				}
 			}
 		}
 
 	}
+	
+	// Debug draw collision sphere
+	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
+	DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
 }
 
 void APrototype2Character::CheckForInteractables()
@@ -225,20 +242,21 @@ void APrototype2Character::CheckForInteractables()
 	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
 
 	// draw collision sphere
-	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, true);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 0.1f);
 	
 	// check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_WorldStatic, colSphere);
+	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere);
 
 	if (isHit)
 	{
 		TArray<AActor*> interactableActors;
-		
+		int32 numActorsHit = 0;
 		// loop through TArray
 		for (auto& hit : outHits)
 		{
-			// screen log information on what was hit
-			//UE_LOG(LogTemp, Warning, TEXT(" %s "), *hit.GetActor()->GetName());
+				numActorsHit++;
+				// screen log information on what was hit
+				// UE_LOG(LogTemp, Warning, TEXT(" %s, %s "), *hit.GetActor()->GetName(), *FString::FromInt(numActorsHit));				
 			
 			if (Cast<IInteractInterface>(hit.GetActor()))
 			{
@@ -333,6 +351,23 @@ void APrototype2Character::OpenIngameMenu()
 		if (PlayerHUDRef)
 			PlayerHUDRef->EnableDisableMenu();
 	}
+}
+
+void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
+{
+	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
+	Server_PlayNetworkMontage(_montage);
+}
+
+void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage* _montage)
+{
+	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
+	Multi_PlayNetworkMontage(_montage);
+}
+
+void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage)
+{
+	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
 }
 
 void APrototype2Character::Server_AddHUD_Implementation()

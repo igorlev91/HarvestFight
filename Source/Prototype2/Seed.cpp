@@ -7,7 +7,7 @@
 
 void ASeed::Interact(APrototype2Character* player)
 {
-	player->HeldItem = this;
+	ItemComponent->Interact(player, this);
 }
 
 void ASeed::Grow()
