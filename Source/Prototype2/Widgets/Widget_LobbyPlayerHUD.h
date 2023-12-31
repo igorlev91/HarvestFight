@@ -51,5 +51,4 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void SetReady();
-	
 };

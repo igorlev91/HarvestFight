@@ -3,9 +3,13 @@
 
 #include "Widget_LobbyPlayerHUD.h"
 
+#include <string>
+
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyPlayerState.h"
+#include "Prototype2/Prototype2PlayerController.h"
+#include "Prototype2/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
 void UWidget_LobbyPlayerHUD::NativeOnInitialized()
@@ -24,177 +28,116 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 
 	if (GameStateRef)
 	{
-		if (GameStateRef->PlayerArray.Num() == 2)
-		{
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[0]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player1ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player1ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[1]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-
-			// Turn off other text
+		Player1ReadyText->SetVisibility(ESlateVisibility::Hidden);
+		Player2ReadyText->SetVisibility(ESlateVisibility::Hidden);
+		Player3ReadyText->SetVisibility(ESlateVisibility::Hidden);
+		Player4ReadyText->SetVisibility(ESlateVisibility::Hidden);
+		Player1Text->SetVisibility(ESlateVisibility::Hidden);
+		Player2Text->SetVisibility(ESlateVisibility::Hidden);
+		Player3Text->SetVisibility(ESlateVisibility::Hidden);
+		Player4Text->SetVisibility(ESlateVisibility::Hidden);
+		
+		if (GameStateRef->Server_Players.Num() >= 1)
+			Player1Text->SetVisibility(ESlateVisibility::Visible);
+		if (GameStateRef->Server_Players.Num() >= 2)
 			Player2Text->SetVisibility(ESlateVisibility::Visible);
-			Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
-			Player3Text->SetVisibility(ESlateVisibility::Hidden);
-			Player3ReadyText->SetVisibility(ESlateVisibility::Hidden);
-			Player4Text->SetVisibility(ESlateVisibility::Hidden);
-			Player4ReadyText->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else if (GameStateRef->PlayerArray.Num() == 3)
-		{
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[0]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player1ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player1ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[1]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[2]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-
-			// Turn off other text
-			Player2Text->SetVisibility(ESlateVisibility::Visible);
-			Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
+		if (GameStateRef->Server_Players.Num() >= 3)
 			Player3Text->SetVisibility(ESlateVisibility::Visible);
-			Player3ReadyText->SetVisibility(ESlateVisibility::Visible);
-			Player4Text->SetVisibility(ESlateVisibility::Hidden);
-			Player4ReadyText->SetVisibility(ESlateVisibility::Hidden);
-			
-		}
-		else if (GameStateRef->PlayerArray.Num() == 4)
-		{
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[0]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player1ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player1ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[1]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[2]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[3]))
-			{
-				if (playerstate->IsReady == true)
-				{
-					Player2ReadyText->SetText(FText::FromString("Ready"));
-				}
-				else
-				{
-					Player2ReadyText->SetText(FText::FromString("Not Ready"));
-				}
-			}
-
-			// Turn off other text
-			Player2Text->SetVisibility(ESlateVisibility::Visible);
-			Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
-			Player3Text->SetVisibility(ESlateVisibility::Visible);
-			Player3ReadyText->SetVisibility(ESlateVisibility::Visible);
+		if (GameStateRef->Server_Players.Num() >= 4)
 			Player4Text->SetVisibility(ESlateVisibility::Visible);
-			Player4ReadyText->SetVisibility(ESlateVisibility::Visible);
-		}
-		else
+		
+		for(int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{
-			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->PlayerArray[0]))
+			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[i]))
 			{
-				if (playerstate->IsReady == true)
+				switch(i)
 				{
-					Player1ReadyText->SetText(FText::FromString("Ready"));
+				case 0:
+					{
+						if (playerstate->IsReady == true)
+						{
+							Player1ReadyText->SetText(FText::FromString("Ready"));
+							Player1ReadyText->SetVisibility(ESlateVisibility::Visible);
+						}
+						else
+						{
+							Player1ReadyText->SetText(FText::FromString("Not Ready"));
+						}
+						break;
+					}
+				case 1:
+					{
+						if (playerstate->IsReady == true)
+						{
+							Player2ReadyText->SetText(FText::FromString("Ready"));
+							Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
+						}
+						else
+						{
+							Player2ReadyText->SetText(FText::FromString("Not Ready"));
+						}
+						break;
+					}
+				case 2:
+					{
+						if (playerstate->IsReady == true)
+						{
+							Player3ReadyText->SetText(FText::FromString("Ready"));
+							Player3ReadyText->SetVisibility(ESlateVisibility::Visible);
+						}
+						else
+						{
+							Player3ReadyText->SetText(FText::FromString("Not Ready"));
+						}
+						break;
+					}
+				case 3:
+					{
+						if (playerstate->IsReady == true)
+						{
+							Player4ReadyText->SetText(FText::FromString("Ready"));
+							Player4ReadyText->SetVisibility(ESlateVisibility::Visible);
+						}
+						else
+						{
+							Player4ReadyText->SetText(FText::FromString("Not Ready"));
+						}
+						break;
+					}
+				default:
+					break;
 				}
-				else
-				{
-					Player1ReadyText->SetText(FText::FromString("Not Ready"));
-				}
+					
 			}
-			// Turn off other text
-			Player2Text->SetVisibility(ESlateVisibility::Hidden);
-			Player2ReadyText->SetVisibility(ESlateVisibility::Hidden);
-			Player3Text->SetVisibility(ESlateVisibility::Hidden);
-			Player3ReadyText->SetVisibility(ESlateVisibility::Hidden);
-			Player4Text->SetVisibility(ESlateVisibility::Hidden);
-			Player4ReadyText->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
 
 void UWidget_LobbyPlayerHUD::SetReady()
 {
-	if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	if (auto* playerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 	{
-		if (controller->GetPlayerState<ALobbyPlayerState>()->IsReady == true)
+		auto playerID = playerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
+		if (playerController->IsLocalPlayerController())
+			UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
+		
+		if (GameStateRef->Server_Players.Num() >= playerID)
 		{
-			controller->GetPlayerState<ALobbyPlayerState>()->SetIsReady(false);
-			IsReadyButtonText->SetText(FText::FromString("Ready"));
+			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[playerID]))
+			{
+				if (playerState->IsReady == true)
+				{
+					playerController->SetIsReady(playerID, false);
+					IsReadyButtonText->SetText(FText::FromString("Ready"));
 
-		}
-		else
-		{
-			controller->GetPlayerState<ALobbyPlayerState>()->SetIsReady(true);
-			IsReadyButtonText->SetText(FText::FromString("Not Ready"));
+				}
+				else
+				{
+					playerController->SetIsReady(playerID, true);
+					IsReadyButtonText->SetText(FText::FromString("Not Ready"));
+				}
+			}
 		}
 	}
+	
 }

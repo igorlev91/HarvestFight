@@ -11,6 +11,7 @@ class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
 	GENERATED_BODY()
 
 	ALobbyGamemode();
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 public:
 
 };
