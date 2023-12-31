@@ -9,6 +9,8 @@
 #include "FarmPlot.generated.h"
 
 class AGrowSpot;
+class ASeed;
+class AWeaponSeed;
 UCLASS()
 class PROTOTYPE2_API AFarmPlot : public AActor, public IInteractInterface
 {
@@ -30,4 +32,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
+
+	UPROPERTY(EditAnywhere)
+	AGrowSpot* growSpots[4];
 };

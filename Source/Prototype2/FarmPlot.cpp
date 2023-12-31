@@ -3,6 +3,10 @@
 
 #include "FarmPlot.h"
 
+#include "Prototype2Character.h"
+#include "WeaponSeed.h"
+#include "Seed.h"
+
 // Sets default values
 AFarmPlot::AFarmPlot()
 {
@@ -28,5 +32,13 @@ void AFarmPlot::Tick(float DeltaTime)
 
 void AFarmPlot::Interact(APrototype2Character* player)
 {
+	if (auto* seed = Cast<AWeaponSeed>(player->HeldItem))
+	{
+		
+	}
+	else if (auto* seed = Cast<ASeed>(player->HeldItem))
+	{
+		
+	}
 }
 

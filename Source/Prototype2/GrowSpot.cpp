@@ -2,6 +2,10 @@
 
 
 #include "GrowSpot.h"
+#include "Plant.h"
+#include "Prototype2Character.h"
+#include "Seed.h"
+#include "WeaponSeed.h"
 
 // Sets default values
 AGrowSpot::AGrowSpot()
@@ -24,6 +28,38 @@ void AGrowSpot::BeginPlay()
 void AGrowSpot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (growingPlant)
+	{
+		growTime -= GetWorld()->GetDeltaSeconds();
+		if (growTime <= 0)
+		{
+			plantGrown = true;
+			growingPlant = false;
+		}
+	}
 
+}
+
+void AGrowSpot::Interact(APrototype2Character* player)
+{
+	if (plant)
+	{
+		if (plantGrown)
+		{
+			player->HeldItem = plant;
+			plant = nullptr;
+			plantGrown = false;
+		}
+	}
+}
+
+void AGrowSpot::SetPlant(APlant* _plant, float _growTime)
+{
+	if (!plant)
+	{
+		plant = _plant;
+		growTime = _growTime;
+		growingPlant = true;
+	}
 }
 

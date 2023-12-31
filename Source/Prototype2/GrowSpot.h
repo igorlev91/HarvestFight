@@ -8,8 +8,11 @@
 #include "ItemComponent.h"
 #include "GrowSpot.generated.h"
 
+class APlant;
+class ASeed;
+class AWeaponSeed;
 UCLASS()
-class PROTOTYPE2_API AGrowSpot : public AActor
+class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
@@ -28,4 +31,13 @@ public:
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
 
+	virtual void Interact(APrototype2Character* player) override;
+
+	void SetPlant(APlant* _plant, float _growTime);
+
+	APlant* plant = nullptr;
+
+	float growTime;
+	bool growingPlant = false;
+	bool plantGrown = false;
 };

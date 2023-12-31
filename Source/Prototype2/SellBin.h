@@ -9,6 +9,7 @@
 #include "SellBin.generated.h"
 
 class APrototype2Character;
+class APlant;
 UCLASS()
 class PROTOTYPE2_API ASellBin : public AActor, public IInteractInterface
 {
