@@ -35,14 +35,14 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		
 		for (int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
 		{
-			if (auto player = GameStateRef->PlayerArray[i])
+			if (auto player = GameStateRef->Server_Players[i])
 			{
 				if (auto* playerState = Cast<APrototype2PlayerState>(player))
 				{
 					auto coins = playerState->Coins;
 					if (!GetOwningPlayerPawn()->HasAuthority())
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->PlayerArray.Num()));
+						UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->Server_Players.Num()));
 						UE_LOG(LogTemp, Warning, TEXT("Players Array [%s] = %s"), *FString::FromInt(i), *FString::FromInt(coins));
 					}
 					switch(i)

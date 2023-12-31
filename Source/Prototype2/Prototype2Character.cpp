@@ -57,8 +57,11 @@ APrototype2Character::APrototype2Character()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// Set collisions	
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
 void APrototype2Character::BeginPlay()
@@ -134,7 +137,7 @@ void APrototype2Character::ReleaseAttack()
 	else
 	{
 		// Create a smaller sphere of effect
-		attackSphereRadius = 50.0f + AttackChargeAmount * 10.0f;
+		attackSphereRadius = 50.0f;
 	}
 
 	ExecuteAttack(attackSphereRadius);
@@ -150,7 +153,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	TArray<FHitResult> outHits;
 	
 	// start and end locations
-	FVector inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) +  (GetActorForwardVector() * 30.0f);
+	FVector inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * 30.0f);
 	FVector sweepStart = inFrontOfPlayer;
 	FVector sweepEnd = inFrontOfPlayer;
 
@@ -162,7 +165,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
 	
 	// check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere);
+	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Pawn, colSphere);
 
 	if (isHit)
 	{
@@ -175,7 +178,9 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 				{
 					// screen log information on what was hit
 					UE_LOG(LogTemp, Warning, TEXT(" %s  was hit by an attack!"), *hit.GetActor()->GetName());
-					hitPlayer->GetHit(AttackChargeAmount);
+
+					FVector attackerLocation = GetActorLocation();
+					hitPlayer->GetHit(AttackChargeAmount, attackerLocation);
 				}
 			}
 		}
@@ -269,9 +274,13 @@ void APrototype2Character::CheckForInteractables()
 	}
 }
 
-void APrototype2Character::GetHit(float AttackCharge)
+void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 {
 	// Disable input
+
+	// Knockback
+	GetCharacterMovement()->Velocity = (GetActorLocation() - AttackerLocation).GetSafeNormal() * AttackCharge * KnockBackAmount;
+
 	
 	bIsStunned = true;
 	StunTimer = AttackCharge;

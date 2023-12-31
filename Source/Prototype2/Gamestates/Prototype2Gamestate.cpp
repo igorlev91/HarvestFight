@@ -66,5 +66,6 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, IsCountingDown);
 	DOREPLIFETIME(APrototype2Gamestate, PreviousServerTravel);
 	
+	DOREPLIFETIME(APrototype2Gamestate, Server_Players);
 }
 

@@ -43,7 +43,7 @@ protected: // Protected Functions
 	void CheckForInteractables();
 
 	/* Called when hit by another player */
-	void GetHit(float AttackCharge);
+	void GetHit(float AttackCharge, FVector AttackerLocation);
 	
 	/* UI */
 	void OpenIngameMenu();
@@ -111,6 +111,10 @@ private: // Private variables
 	/* Maximum amount of Attack Charge */
 	UPROPERTY(EditAnywhere)
 	float MaxAttackCharge = 5.0f;
+
+	/* Amount of knockback applied which is multiplied by charge */
+	UPROPERTY(EditAnywhere)
+	float KnockBackAmount = 1000.0f;
 	
 	/* Weapon Held */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

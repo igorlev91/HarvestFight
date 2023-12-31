@@ -1,10 +1,13 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Prototype2GameMode.h"
-#include "Prototype2Character.h"
+
 #include "Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
-#include "UObject/ConstructorHelpers.h"
+#include "Prototype2/Prototype2PlayerState.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
+
+class ALobbyGamestate;
 
 APrototype2GameMode::APrototype2GameMode()
 {
@@ -20,6 +23,23 @@ APrototype2GameMode::APrototype2GameMode()
 void APrototype2GameMode::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	if (HasAuthority())
+	{
+		if (auto* playerState = NewPlayer->GetPlayerState<APrototype2PlayerState>())
+		{
+			if (auto* gamestate = GetGameState<APrototype2Gamestate>())
+			{
+				gamestate->Server_Players.Add(playerState);
+				playerState->Player_ID = gamestate->Server_Players.Num() - 1;
+			}
+		}
+	}
 }
 
 
