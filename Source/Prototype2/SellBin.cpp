@@ -16,6 +16,7 @@ ASellBin::ASellBin()
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 
+	InterfaceType = EInterfaceType::SellBin;
 }
 
 // Called when the game starts or when spawned
@@ -39,7 +40,7 @@ void ASellBin::Interact(APrototype2Character* player)
 		if (auto* plant = Cast<APlant>(player->HeldItem))
 		{
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue;
-			Destroy(player->HeldItem);
+			player->HeldItem->Destroy();
 			player->HeldItem = nullptr;
 		}
 	}

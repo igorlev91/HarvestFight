@@ -184,49 +184,45 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 
 void APrototype2Character::Interact()
 {
-	if (HeldItem)
+	// If player is holding nothing, and there is something to pickup in range
+	if(ClosestInteractableItem && !HeldItem)
 	{
-		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		// Call the InteractInterface interact function
+		ClosestInteractableItem->Interact(this);
 		
-        // HeldItem->EnablePhysics // Needs the ItemComponent stuff
-		HeldItem = nullptr;
-	}
-	else
-	{
-		if (PickupMontage)
+		if (PickupMontage &&
+			ClosestInteractableItem->InterfaceType != EInterfaceType::SellBin)
 		{
 			// Animation
-			GetMesh()->GetAnimInstance()->Montage_Play(PickupMontage);
+			PlayNetworkMontage(PickupMontage);
 		}
-		// Pickup closest interactable item
-		if(ClosestInteractableItem)
+	}
+	else if (HeldItem)
+	{
+		// If Sell Bin close, sell - which destroys HeldItem
+		if (ClosestInteractableItem)
 		{
-			// Call the InteractInterface interact function
-			ClosestInteractableItem->Interact(this);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("No Items Found"));
-			if (HeldItem)
+			if (ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin)
 			{
-				// Attach to socket
-				HeldItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("HeldItemSocket"));
-
-				if (PickupMontage)
-				{
-					// Animation
-					PlayNetworkMontage(PickupMontage);
-				}
-			}
+				// Sell to item bin
+				ClosestInteractableItem->Interact(this);
+			}			
 		}
 
+		// If item wasn't sold, drop it
+		if(HeldItem)
+		{
+			// Drop into world
+			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			HeldItem = nullptr;
+		}
 	}
 	
 	// Debug draw collision sphere
-	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
-	DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
+	//FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
 }
 
 void APrototype2Character::CheckForInteractables()
@@ -258,7 +254,7 @@ void APrototype2Character::CheckForInteractables()
 				// screen log information on what was hit
 				// UE_LOG(LogTemp, Warning, TEXT(" %s, %s "), *hit.GetActor()->GetName(), *FString::FromInt(numActorsHit));				
 			
-			if (Cast<IInteractInterface>(hit.GetActor()))
+			if (Cast<IInteractInterface>(hit.GetActor()) && hit.GetActor() != HeldItem)
 			{
 				interactableActors.Add(hit.GetActor());
 			}

@@ -26,6 +26,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void Interact(APrototype2Character* player) override;
+
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
 };

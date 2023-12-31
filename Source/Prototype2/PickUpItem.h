@@ -10,7 +10,7 @@
 
 class APrototype2Character;
 UCLASS()
-class PROTOTYPE2_API APickUpItem : public AActor, public IInteractInterface
+class PROTOTYPE2_API APickUpItem : public AActor
 {
 	GENERATED_BODY()
 	
@@ -27,11 +27,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	/*	get character
-		attach mesh to characters hand
-		set characters HeldItem to this */
-	virtual void Interact(APrototype2Character* player){}
+	
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;

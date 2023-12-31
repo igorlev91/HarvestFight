@@ -7,14 +7,13 @@
 #include "Plant.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API APlant : public APickUpItem
+class PROTOTYPE2_API APlant : public APickUpItem, public IInteractInterface
 {
 	GENERATED_BODY()
 public:
-	virtual void Interact(APrototype2Character* player) override;
-
-private:
 	APlant();
+	virtual void BeginPlay() override;
+	virtual void Interact(APrototype2Character* player) override;
 	
 	//UPROPERTY(EditAnywhere)
 	//float value; // Moved to ItemComponent

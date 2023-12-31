@@ -7,7 +7,7 @@
 #include "Weapon.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API AWeapon : public APickUpItem
+class PROTOTYPE2_API AWeapon : public APickUpItem, public IInteractInterface
 {
 	GENERATED_BODY()
 	//UPROPERTY(EditAnywhere)

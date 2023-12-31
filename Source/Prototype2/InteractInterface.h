@@ -6,6 +6,14 @@
 
 class APrototype2Character;
 class APlant;
+
+UENUM()
+enum class EInterfaceType : uint8
+{
+	SellBin     UMETA(DisplayName = "SellShop"),
+	Default      UMETA(DisplayName = "Default"),
+};
+
 // This class does not need to be modified.
 UINTERFACE()
 class UInteractInterface : public UInterface
@@ -19,5 +27,7 @@ class PROTOTYPE2_API IInteractInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface
 public:
-	virtual void Interact(APrototype2Character* player) {}
+	virtual void Interact(APrototype2Character* player) = 0;
+
+	EInterfaceType InterfaceType = EInterfaceType::Default;
 };

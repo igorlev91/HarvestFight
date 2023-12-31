@@ -4,12 +4,17 @@
 #include "Plant.h"
 #include "Prototype2Character.h"
 
-void APlant::Interact(APrototype2Character* player)
-{
-	player->HeldItem = this;
-}
-
 APlant::APlant()
 {
-	
+}
+
+void APlant::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+
+void APlant::Interact(APrototype2Character* player)
+{
+	ItemComponent->Interact(player, this);
 }

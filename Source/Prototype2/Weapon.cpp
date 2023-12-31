@@ -2,10 +2,10 @@
 
 
 #include "Weapon.h"
-
+#include "Prototype2Character.h"
 void AWeapon::Interact(APrototype2Character* player)
 {
-	Super::Interact(player);
+	ItemComponent->Interact(player, this);
 }
 
 AWeapon::AWeapon()
