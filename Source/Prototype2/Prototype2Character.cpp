@@ -31,7 +31,8 @@
 #include "Widgets/Widget_PlayerHUD.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundCue.h"
-
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 
 APrototype2Character::APrototype2Character()
@@ -52,7 +53,7 @@ APrototype2Character::APrototype2Character()
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
@@ -79,6 +80,12 @@ APrototype2Character::APrototype2Character()
 	Weapon->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 
 	ChargeAttackAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("ChargeAttackAudioComponent"));
+
+	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
+	InteractSystem->SetupAttachment(RootComponent);
+
+	DizzyComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Dizzy Component"));
+	DizzyComponent->SetupAttachment(GetMesh(), FName("Base-HumanHead"));
 }
 
 void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -88,6 +95,11 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, HeldItem);
 	DOREPLIFETIME(APrototype2Character, PlayerMat);
 	DOREPLIFETIME(APrototype2Character, PlayerID);
+	DOREPLIFETIME(APrototype2Character, bIsChargingAttack);
+	DOREPLIFETIME(APrototype2Character, AttackChargeAmount);
+	DOREPLIFETIME(APrototype2Character, bIsStunned);
+	DOREPLIFETIME(APrototype2Character, StunTimer);
+	DOREPLIFETIME(APrototype2Character, LocationWhenStunned);
 }
 
 void APrototype2Character::BeginPlay()
@@ -116,6 +128,11 @@ void APrototype2Character::BeginPlay()
 		if (PlayerHUDRef)
 			PlayerHUDRef->AddToViewport();
 	}
+
+	if (ParticleSystem)
+	{
+		InteractSystem->SetAsset(ParticleSystem);
+	}
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
@@ -129,6 +146,7 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	// Stun
 	if (bIsStunned)
 	{
+		
 		bIsChargingAttack = false;
 
 		// Set animation to stun
@@ -137,9 +155,27 @@ void APrototype2Character::Tick(float DeltaSeconds)
 		if (StunTimer < 0.0f)
 		{
 			bIsStunned = false;
-
+			//Server_Ragdoll(false);
 			// Enable input
 			EnableInput(this->GetLocalViewingPlayerController());
+		}
+	}
+
+	// Sprint
+	if (SprintTimer < 0.0f && CanSprintTimer)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		if (RunAnimation)
+		{
+			RunAnimation->RateScale = 1.25f;
+		}
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+		if(RunAnimation)
+		{
+			RunAnimation->RateScale = 2.50f;
 		}
 	}
 	
@@ -158,69 +194,28 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	// Countdown timers
 	InteractTimer -= DeltaSeconds;
 	AttackTimer -= DeltaSeconds;
+	SprintTimer -= DeltaSeconds;
+	CanSprintTimer -= DeltaSeconds;
 
-	
-	
+	if (GetVelocity().Length() > 1.0f)
+	{
+		InteractSystem->Activate();		
+	}
+	else
+	{
+		InteractSystem->Deactivate();
+	}
 }
 
 void APrototype2Character::ChargeAttack()
 {
-	if (AttackTimer < 0.0f)
-	{
-		if (HeldItem)
-		{
-			Server_DropItem();
-		}
-		
-		bIsChargingAttack = true;
-
-		if (Weapon)
-		{
-			Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
-		}
-
-		ChargeAttackAudioComponent->Play();
-	}
+	Server_StartAttack();
 }
 
 void APrototype2Character::ReleaseAttack()
 {
-	if (bIsChargingAttack)
-	{
-		ChargeAttackAudioComponent->Stop();
-		PlaySoundAtLocation(GetActorLocation(), ExecuteCue);
-		
-		// Reset Attack Timer
-		AttackTimer = AttackTimerTime;
-		
-		// Cap attack charge
-		if (AttackChargeAmount > MaxAttackCharge)
-		{
-			AttackChargeAmount = MaxAttackCharge;
-		}
-
-		// Create a sphere collider, check if player hit, call player hit
-		int32 attackSphereRadius;
-		if (Weapon)
-		{
-			// Create a larger sphere of effect
-			attackSphereRadius = 75.0f + AttackChargeAmount * 30.0f;
-		}
-		else
-		{
-			// Create a smaller sphere of effect
-			attackSphereRadius = 50.0f;
-		}
-
-		ExecuteAttack(attackSphereRadius);
-		
-		// Reset Attack variables
-		bIsChargingAttack = false;
-		AttackChargeAmount = 0.0f;
-
-		// Stop the player Interacting while "executing attack"
-		InteractTimer = InteractTimerTime;
-	}
+	// 
+	Server_ReleaseAttack();
 }
 
 void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
@@ -261,12 +256,22 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 			}
 		}
 	}
+	
+	// Reset Attack Timer
+	AttackTimer = AttackTimerTime;
 
-	// Animation
-	if(ExecuteAttackMontage)
-	{
-		PlayNetworkMontage(ExecuteAttackMontage);
-	}
+	// Reset Attack variables
+	bIsChargingAttack = false;
+	AttackChargeAmount = 0.0f;
+
+	// audio
+	ChargeAttackAudioComponent->Stop();
+	PlaySoundAtLocation(GetActorLocation(), ExecuteCue);
+
+	// Stop the player Interacting while "executing attack"
+	InteractTimer = InteractTimerTime;
+
+	bCanAttack = true;
 }
 
 void APrototype2Character::Interact()
@@ -275,12 +280,20 @@ void APrototype2Character::Interact()
 	{
 		// Reset the Interact Timer when Player Interacts
 		InteractTimer = InteractTimerTime;
-		
-		PlayerHUDRef->UpdatePickupUI(EPickup::None);
+
+		if(!HeldItem)
+		{
+			PlayerHUDRef->UpdatePickupUI(EPickup::None);
+		}
 		
 		if (!bIsChargingAttack)
 		{
 			Server_TryInteract();
+		}
+
+		if(!HeldItem)
+		{
+			PlayerHUDRef->UpdatePickupUI(EPickup::None);
 		}
 
 	}
@@ -288,6 +301,19 @@ void APrototype2Character::Interact()
 	// Debug draw collision sphere
 	//FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
 	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 3.0f);
+}
+
+void APrototype2Character::Sprint()
+{
+	if (CanSprintTimer < 0.0f && !bIsChargingAttack)
+	{
+		SprintTimer = SprintTime;
+		CanSprintTimer = CanSprintTime;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
+	}
 }
 
 void APrototype2Character::CheckForInteractables()
@@ -337,6 +363,9 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 	// Disable input
 	DisableInput(this->GetLocalViewingPlayerController());
 
+	Server_FireDizzySystem();
+	//Server_Ragdoll(true);
+
 	// Drop item
 	if (HeldItem)
 	{
@@ -385,6 +414,9 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 
 		// Interact
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APrototype2Character::Interact);
+
+		// Sprint
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APrototype2Character::Sprint);
 	}
 }
 
@@ -439,7 +471,82 @@ void APrototype2Character::UpdateAllPlayerIDs()
 
 void APrototype2Character::PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay)
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundToPlay, Location);
+	Server_PlaySoundAtLocation(Location,SoundToPlay );
+}
+
+void APrototype2Character::Ragdoll(bool _ragdoll)
+{
+	if (_ragdoll)
+	{
+		SetReplicateMovement(false);
+		
+		/* Disable all collision on capsule */
+		UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		SetActorEnableCollision(true);
+
+		GetMesh()->SetAllBodiesSimulatePhysics(true);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->WakeAllRigidBodies();
+		GetMesh()->bBlendPhysics = true;
+		
+
+		UCharacterMovementComponent* CharacterComp = Cast<UCharacterMovementComponent>(GetMovementComponent());
+		if (CharacterComp)
+		{
+			CharacterComp->StopMovementImmediately();
+			CharacterComp->DisableMovement();
+			CharacterComp->SetComponentTickEnabled(false);
+		}
+	}
+	else
+	{
+		SetActorEnableCollision(false);
+		GetMesh()->SetAllBodiesSimulatePhysics(false);
+		GetMesh()->SetSimulatePhysics(false);
+		GetMesh()->bBlendPhysics = false;
+		SetReplicateMovement(true);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetRelativeTransform(MeshLocationWhenStunned);
+		SetActorTransform(LocationWhenStunned);
+		
+		
+		/* Disable all collision on capsule */
+		UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		
+
+
+
+
+		UCharacterMovementComponent* CharacterComp = Cast<UCharacterMovementComponent>(GetMovementComponent());
+		if (CharacterComp)
+		{
+			CharacterComp->SetMovementMode(EMovementMode::MOVE_Walking);
+			CharacterComp->SetComponentTickEnabled(true);
+		}
+
+
+	}
+	
+}
+
+void APrototype2Character::Server_Ragdoll_Implementation(bool _ragdoll)
+{
+	if (_ragdoll)
+	{
+		LocationWhenStunned = GetActorTransform();
+		MeshLocationWhenStunned = GetMesh()->GetRelativeTransform();
+	}
+
+	Multi_Ragdoll(_ragdoll);
+}
+
+void APrototype2Character::Multi_Ragdoll_Implementation(bool _ragdoll)
+{
+	Ragdoll(_ragdoll);
 }
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
@@ -480,6 +587,102 @@ void APrototype2Character::Multi_Client_AddHUD_Implementation()
     		if (PlayerHUDRef)
     			PlayerHUDRef->AddToViewport();
     	}
+}
+
+void APrototype2Character::Server_StartAttack_Implementation()
+{
+	if (AttackTimer < 0.0f)
+	{
+		if (HeldItem)
+		{
+			Server_DropItem();
+		}
+		
+		bIsChargingAttack = true;
+
+		if (Weapon)
+		{
+			Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
+		}
+
+		ChargeAttackAudioComponent->Play();
+	}
+}
+
+void APrototype2Character::Multi_StartAttack_Implementation()
+{
+	
+}
+
+void APrototype2Character::Server_ReleaseAttack_Implementation()
+{
+	// Create a sphere collider, check if player hit, call player hit
+	
+	if (bIsChargingAttack && bCanAttack)
+	{
+		bCanAttack = false;
+		
+		// Cap attack charge
+		if (AttackChargeAmount > MaxAttackCharge)
+		{
+			AttackChargeAmount = MaxAttackCharge;
+		}
+		
+		int32 attackSphereRadius;
+		if (Weapon)
+		{
+			// Create a larger sphere of effect
+			attackSphereRadius = 75.0f + AttackChargeAmount * 30.0f;
+		}
+		else
+		{
+			// Create a smaller sphere of effect
+			attackSphereRadius = 50.0f;
+		}
+
+		// If attack button is clicked without being held
+		if (AttackChargeAmount < InstantAttackThreshold)
+		{
+			// Animation
+			if(ExecuteAttackMontage_LongerWindUp)
+			{
+				PlayNetworkMontage(ExecuteAttackMontage_LongerWindUp);
+			}
+			// Delayed attack
+			FTimerHandle Handle;
+			GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, attackSphereRadius] { ExecuteAttack(attackSphereRadius); }), 0.5f, false);	
+		}
+		else
+		{
+			// Animation
+			if(ExecuteAttackMontage)
+			{
+				PlayNetworkMontage(ExecuteAttackMontage);
+			}
+			
+			ExecuteAttack(attackSphereRadius);
+		}
+	}
+
+	// empty
+	Multi_ReleaseAttack();
+}
+
+void APrototype2Character::Multi_ReleaseAttack_Implementation()
+{
+}
+
+void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue)
+{
+	Multi_PlaySoundAtLocation(_location, _soundQueue);
+}
+
+void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue)
+{
+	if (SoundAttenuationSettings)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, SoundAttenuationSettings);
+	else
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 0.5f);
 }
 
 void APrototype2Character::Client_AddHUD_Implementation()
@@ -533,6 +736,17 @@ void APrototype2Character::Server_TryInteract_Implementation()
 		{
 			// Call the InteractInterface interact function
 			ClosestInteractableItem->Interact(this);
+
+			if (HeldItem)
+			{
+				if (HeldItem->ItemComponent->PickupType == EPickup::Mandrake)
+				{
+					if (MandrakeScreamCue)
+					{
+						PlaySoundAtLocation(GetActorLocation(), MandrakeScreamCue);
+					}
+				}
+			}
 		}
 	}
 	else if (HeldItem) // If holding item
@@ -544,11 +758,11 @@ void APrototype2Character::Server_TryInteract_Implementation()
 		{
 			ClosestInteractableItem->Interact(this);
 
-			if(ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin)
+			if(ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin && !HeldItem)
 			{
 				PlaySoundAtLocation(GetActorLocation(), SellCue);
 			}
-			if(ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot)
+			if(ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot && !HeldItem)
 			{
 				PlaySoundAtLocation(GetActorLocation(), PlantCue);
 			}
@@ -643,4 +857,19 @@ void APrototype2Character::Multi_ReceiveMaterialsArray_Implementation(
 			meshComponent->SetMaterial(i, _inMaterialsArray[i]);
 		}
 	}
+}
+
+void APrototype2Character::Server_FireDizzySystem_Implementation()
+{
+	Multi_FireParticleSystem();
+}
+
+void APrototype2Character::Multi_FireParticleSystem_Implementation()
+{
+	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DizzySystem, InteractSystem->GetComponentLocation());
+	NiagaraComponent->SetIsReplicated(true);
+	// Set the NiagaraComponent to auto-destroy itself after it finishes playing
+	NiagaraComponent->SetAutoDestroy(true);
+	NiagaraComponent->Activate();
+	NiagaraComponent->AttachToComponent(DizzyComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }

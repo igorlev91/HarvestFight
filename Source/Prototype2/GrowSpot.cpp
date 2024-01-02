@@ -2,11 +2,15 @@
 
 
 #include "GrowSpot.h"
+#include "GrowSpot.h"
 #include "Plant.h"
 #include "Prototype2Character.h"
 #include "Prototype2PlayerState.h"
 #include "Seed.h"
+#include "GrowableWeapon.h"
 #include "Net/UnrealNetwork.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 AGrowSpot::AGrowSpot()
@@ -16,6 +20,9 @@ AGrowSpot::AGrowSpot()
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 	bReplicates = true;
+
+	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
+	InteractSystem->SetupAttachment(RootComponent);
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -38,6 +45,11 @@ void AGrowSpot::BeginPlay()
 	GrowSpotState = EGrowSpotState::Empty;
 
 	ItemComponent->Mesh->SetCollisionProfileName("OverlapAll");
+
+	if (ParticleSystem)
+	{
+		InteractSystem->SetAsset(ParticleSystem);
+	}
 }
 
 void AGrowSpot::Multi_Plant_Implementation()
@@ -55,22 +67,37 @@ void AGrowSpot::Multi_Plant_Implementation()
 	}
 }
 
-void AGrowSpot::GrowPlantOnTick(float DeltaTime)
+void AGrowSpot::Multi_FireParticleSystem_Implementation()
+{
+	// Spawn a one-shot emitter at the InteractSystem's location
+	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ParticleSystem, InteractSystem->GetComponentLocation());
+	NiagaraComponent->SetIsReplicated(true);
+	// Set the NiagaraComponent to auto-destroy itself after it finishes playing
+	NiagaraComponent->SetAutoDestroy(true);
+}
+
+void AGrowSpot::GrowPlantOnTick(float _deltaTime)
 {
 	if (growingPlant && HasAuthority())
 	{
 		if (growTimer > 0)
 		{
 			GrowSpotState = EGrowSpotState::Growing;
-			growTimer -= DeltaTime;
+			growTimer -= _deltaTime;
+
+			if (growTimer <= 0)
+			{
+				Multi_FireParticleSystem();
+				//InteractSystem->Activate();
+				//InteractSystem->ResetSystem();
+				
+				plantGrown = true;
+				growingPlant = false;
+				GrowSpotState = EGrowSpotState::Grown;
+			}
 		}
 			
-		if (growTimer <= 0)
-		{
-			plantGrown = true;
-			growingPlant = false;
-			GrowSpotState = EGrowSpotState::Grown;
-		}
+		
 	}
 	
 	if (plant)
@@ -83,6 +110,18 @@ void AGrowSpot::GrowPlantOnTick(float DeltaTime)
 		plant->ItemComponent->Mesh->SetWorldScale3D(scale);
 		plant->SetActorLocation(pos);
 		plant->SetActorRotation(FRotator(0,0,0));
+	}
+
+	if (weapon)
+	{
+		FVector scale = FMath::Lerp<FVector>({2.0f, 2.0f, 2.0f}, {0.1f, 0.1f, 0.1f}, growTimer / growTime);
+		FVector pos = FMath::Lerp<FVector>({GetActorLocation()}, GetActorLocation() + FVector::UpVector * 10.0f, growTimer / growTime);
+		ItemComponent->Mesh->SetCollisionProfileName("OverlapAll");
+		weapon->ItemComponent->Mesh->SetSimulatePhysics(false);
+		weapon->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		weapon->ItemComponent->Mesh->SetWorldScale3D(scale);
+		//weapon->SetActorLocation(pos);
+		//weapon->SetActorRotation(FRotator(0,0,0));
 	}
 }
 
@@ -97,6 +136,7 @@ void AGrowSpot::Tick(float DeltaTime)
 	{
 	case EGrowSpotState::Growing:
 		{
+			InteractSystem->Deactivate();
 			if (plant)
 				plant->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -129,27 +169,47 @@ void AGrowSpot::Interact(APrototype2Character* player)
 			{
 				if (auto* seed = Cast<ASeed>(player->HeldItem))
 				{
-					if (!plant && GrowSpotState == EGrowSpotState::Empty)
+					if (seed->isWeapon)
 					{
-						if (seed->plantToGrow)
+						if (!plant && GrowSpotState == EGrowSpotState::Empty)
 						{
-							growTime = player->HeldItem->ItemComponent->GrowTime;
-							SetPlant(GetWorld()->SpawnActor<APlant>(seed->plantToGrow), growTime);
-							Multi_Plant();
+							if (seed->plantToGrow)
+							{
+								if (seed->isWeapon)
+								{
+									//Multi_FireParticleSystem();
+									growTime = player->HeldItem->ItemComponent->GrowTime;
+									SetWeapon(GetWorld()->SpawnActor<AGrowableWeapon>(seed->plantToGrow), growTime);
+									Multi_Plant();
 						
-							if (seed)
-								seed->Destroy();
+									if (seed)
+										seed->Destroy();
 
-							// Seed is now planted so remove from player
-							player->HeldItem = nullptr;
+									// Seed is now planted so remove from player
+									player->HeldItem = nullptr;
+								}
+								else
+								{
+									//Multi_FireParticleSystem();
+									growTime = player->HeldItem->ItemComponent->GrowTime;
+									SetPlant(GetWorld()->SpawnActor<APlant>(seed->plantToGrow), growTime);
+									Multi_Plant();
+						
+									if (seed)
+										seed->Destroy();
 
+									// Seed is now planted so remove from player
+									player->HeldItem = nullptr;
+								}
+							}
 						}
 					}
 				}
-				else if (plant)
+				else if (plant && !player->HeldItem)
 				{
 					if (plantGrown && GrowSpotState == EGrowSpotState::Grown)
 					{
+						Multi_FireParticleSystem();
 						player->HeldItem = plant;
 						player->Server_PickupItem(plant->ItemComponent, plant);
 						plant->isGrown = true;
@@ -158,7 +218,12 @@ void AGrowSpot::Interact(APrototype2Character* player)
 						growingPlant = false;
 						growTimer = 0.0f;
 						GrowSpotState = EGrowSpotState::Empty;
+
 					}
+				}
+				else if (player->HeldItem)
+				{
+					player->Server_DropItem();
 				}
 			}
 		}
@@ -223,7 +288,7 @@ void AGrowSpot::SetPlant(APlant* _plant, float _growTime)
 	}
 }
 
-void AGrowSpot::SetWeapon(AWeapon* _weapon, float _growTime)
+void AGrowSpot::SetWeapon(AGrowableWeapon* _weapon, float _growTime)
 {
 	if (!weapon)
 	{

@@ -3,6 +3,7 @@
 
 #include "Plant.h"
 #include "Prototype2Character.h"
+#include "Kismet/GameplayStatics.h"
 
 APlant::APlant()
 {

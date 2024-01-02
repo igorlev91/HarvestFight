@@ -4,35 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "PickUpItem.h"
-#include "Seed.generated.h"
+#include "GrowableWeapon.generated.h"
 
-/**
- * 
- */
-class APlant;
+class UWeapon;
 UCLASS()
-class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
+class PROTOTYPE2_API AGrowableWeapon : public APickUpItem, public IInteractInterface
 {
 	GENERATED_BODY()
-
-
 public:
-	ASeed();
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UWeapon* Weapon;
+	AGrowableWeapon();
 	virtual void Interact(APrototype2Character* player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
-	
-public:
-	UPROPERTY(EditAnywhere)
-	float growtime;
-
-	UPROPERTY(EditAnywhere)
-	bool isPlanted;
-
-	UPROPERTY(EditAnywhere)
-	bool isWeapon;
-
-	virtual void Grow();
-	
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> plantToGrow;
 };

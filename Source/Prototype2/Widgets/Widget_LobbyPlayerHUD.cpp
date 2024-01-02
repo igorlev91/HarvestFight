@@ -25,6 +25,7 @@ void UWidget_LobbyPlayerHUD::NativeOnInitialized()
 
 	// Make cancel hidden
 	CancelButton->SetVisibility(ESlateVisibility::Hidden);
+	StartCountDown->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -45,6 +46,16 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 		Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+
+		if (GameStateRef->IsCountingDown)
+		{
+			StartCountDown->SetVisibility(ESlateVisibility::Visible);
+			StartCountDown->SetText(FText::FromString(FString::FromInt(GameStateRef->LobbyLengthSeconds)));
+		}
+		else
+		{
+			StartCountDown->SetVisibility(ESlateVisibility::Hidden);
+		}
 		
 		if (GameStateRef->Server_Players.Num() >= 1)
 			Player1Text->SetVisibility(ESlateVisibility::Visible);

@@ -41,7 +41,57 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	if (GameStateRef)
 	{
 		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthMinutes)));
-		Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
+		//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
+		
+		int seconds = (int)GameStateRef->MatchLengthSeconds;
+
+		if (seconds == 1)
+		{
+			Seconds->SetText(FText::FromString("01"));
+		}
+		else if (seconds == 2)
+		{
+			Seconds->SetText(FText::FromString("02"));
+		}
+		else if (seconds == 3)
+		{
+			Seconds->SetText(FText::FromString("03"));
+		}
+		else if (seconds == 4)
+		{
+			Seconds->SetText(FText::FromString("04"));
+		}
+		else if (seconds == 5)
+		{
+			Seconds->SetText(FText::FromString("05"));
+		}
+		else if (seconds == 6)
+		{
+			Seconds->SetText(FText::FromString("06"));
+		}
+		else if (seconds == 7)
+		{
+			Seconds->SetText(FText::FromString("07"));
+		}
+		else if (seconds == 8)
+		{
+			Seconds->SetText(FText::FromString("08"));
+		}
+		else if (seconds == 9)
+		{
+			Seconds->SetText(FText::FromString("09"));
+		}
+		else if (seconds == 0)
+		{
+			Seconds->SetText(FText::FromString("00"));
+		}
+		else
+		{
+			Seconds->SetText(FText::FromString(FString::FromInt(seconds)));
+			//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
+		}
+
+		
 
 		// Updating points/coins
 		//if (!GetOwningPlayerPawn()->HasAuthority())
@@ -52,32 +102,96 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			if (auto player = GameStateRef->Server_Players[i])
 			{
 				auto coins = player->Coins;
+				auto extraCoins = FString::FromInt(player->ExtraCoins);
+				auto isShowingExtraCoins = player->IsShowingExtraCoins;
+				
 				//UE_LOG(LogTemp, Warning, TEXT("Player [%s] ID = %s"), *FString::FromInt(i), *FString::FromInt(player->Player_ID));
-								
+				
+				P2Icon->SetBrushFromTexture(PlayerIcons[4]);
+				P3Icon->SetBrushFromTexture(PlayerIcons[4]);
+				P4Icon->SetBrushFromTexture(PlayerIcons[4]);
 				switch(i)
 				{
 				case 0:
 					{
-						Player1Coins->SetText(FText::FromString(FString::FromInt(coins)));
-						//P1Icon->SetBrushFromTexture(PlayerIcons[0]);	
+						Player1Coins->SetText(FText::FromString(FString::FromInt(coins))); // Set player score
+						// Showing coin increase
+						if (isShowingExtraCoins == true)
+						{
+							Player1ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + extraCoins;
+							
+							Player1ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+						}
+						else
+						{
+							Player1ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+						}
+						
+						if (GameStateRef->Server_Players.Num() >= 1)
+							P1Icon->SetBrushFromTexture(PlayerIcons[0]);
 						break;
 					}
 				case 1:
 					{
 						Player2Coins->SetText(FText::FromString(FString::FromInt(coins)));
-						//P2Icon->SetBrushFromTexture(PlayerIcons[1]);				
+						// Showing coin increase
+						if (isShowingExtraCoins == true)
+						{
+							Player2ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + extraCoins;
+							
+							Player2ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+						}
+						else
+						{
+							Player2ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+						}
+						
+						if (GameStateRef->Server_Players.Num() >= 2)
+							P2Icon->SetBrushFromTexture(PlayerIcons[1]);
 						break;
 					}
 				case 2:
 					{
 						Player3Coins->SetText(FText::FromString(FString::FromInt(coins)));
-						//P3Icon->SetBrushFromTexture(PlayerIcons[2]);					
+						// Showing coin increase
+						if (isShowingExtraCoins == true)
+						{
+							Player3ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + extraCoins;
+							
+							Player3ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+						}
+						else
+						{
+							Player3ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+						}
+						if (GameStateRef->Server_Players.Num() >= 3)
+							P3Icon->SetBrushFromTexture(PlayerIcons[2]);
 						break;
 					}
 				case 3:
 					{
 						Player4Coins->SetText(FText::FromString(FString::FromInt(coins)));
-						//P4Icon->SetBrushFromTexture(PlayerIcons[3]);					
+						// Showing coin increase
+						if (isShowingExtraCoins == true)
+						{
+							Player4ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + extraCoins;
+							
+							Player4ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+						}
+						else
+						{
+							Player4ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+						}
+						if (GameStateRef->Server_Players.Num() >= 4)
+							P4Icon->SetBrushFromTexture(PlayerIcons[3]);
 						break;
 					}
 				default:

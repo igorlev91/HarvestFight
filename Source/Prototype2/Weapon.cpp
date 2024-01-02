@@ -2,6 +2,8 @@
 
 
 #include "Weapon.h"
+#include "InteractInterface.h"
+#include "PickUpItem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Prototype2Character.h"
 

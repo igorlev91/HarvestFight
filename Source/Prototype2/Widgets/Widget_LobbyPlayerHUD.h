@@ -54,7 +54,8 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* Player4ReadyImage;
 
-	
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* StartCountDown;
 public:
 
 	virtual void NativeOnInitialized() override;

@@ -47,7 +47,7 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 				if (LobbyLengthMinutes <= 0)
 				{
 					// End of timer
-					GetWorld()->ServerTravel("Level_Main");
+					GetWorld()->ServerTravel("Level_Main", false, false);
 				}
 				else
 				{
@@ -79,14 +79,14 @@ void ALobbyGamestate::SetIsReady(int _player, bool _isReady)
 	if (isEveryoneReady && Server_Players.Num() >= 1)
 	{
 		ShouldServerTravel = true;
-		LobbyLengthSeconds = 10.0f;
+		LobbyLengthSeconds = 7.0f;
 	}
 	else
 	{
 		ShouldServerTravel = false;
 		IsCountingDown = false;
 		PreviousServerTravel = false;
-		LobbyLengthSeconds = 10.0f;
+		LobbyLengthSeconds = 7.0f;
 	}
 }
 

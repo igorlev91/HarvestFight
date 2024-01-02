@@ -42,6 +42,27 @@ public: // Public Networking functions
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Client_AddHUD();
 	void Multi_Client_AddHUD_Implementation();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StartAttack();
+	void Server_StartAttack_Implementation();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_StartAttack();
+	void Multi_StartAttack_Implementation();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseAttack();
+	void Server_ReleaseAttack_Implementation();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ReleaseAttack();
+	void Multi_ReleaseAttack_Implementation();
+
+	UFUNCTION(Server, Reliable)
+	void Server_PlaySoundAtLocation(FVector _location, USoundCue* _soundQueue);
+	void Server_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlaySoundAtLocation(FVector _location, USoundCue* _soundQueue);
+	void Multi_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_AddHUD();
@@ -49,6 +70,9 @@ public: // Public Networking functions
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UMaterialInstance* PlayerMat;
+
+	UPROPERTY(EditAnywhere, Replicated)
+	USoundAttenuation* SoundAttenuationSettings;
 protected: // Protected Networking functions
 	void PlayNetworkMontage(UAnimMontage* _montage);
 	
@@ -110,6 +134,9 @@ protected: // Protected Functions
 	/* Pickup/Plant/Sell */
 	void Interact();
 
+	/* Activate Sprint */
+	void Sprint();
+	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
 
@@ -131,7 +158,12 @@ protected: // Protected Functions
 
 	ENetRole IdealNetRole{ROLE_AutonomousProxy};
 
-
+	UFUNCTION(Server, Reliable)
+	void Server_FireDizzySystem();
+	void Server_FireDizzySystem_Implementation();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_FireParticleSystem();
+	void Multi_FireParticleSystem_Implementation();
 
 private: // Input actions
 	/** MappingContext */
@@ -164,12 +196,19 @@ private: // Input actions
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InteractAction;
 
+	/* Sprint */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SprintAction;
+
 private: // Animation
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* PickupMontage;
 	
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* ExecuteAttackMontage;
+
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* ExecuteAttackMontage_LongerWindUp;
 private: // Private variables
 
 	/* Interact radius for checking closest item */
@@ -200,6 +239,14 @@ private: // Private variables
 
 public: // audio
 	void PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay);
+
+	void Ragdoll(bool _ragdoll);
+	UFUNCTION(Server, Reliable)
+	void Server_Ragdoll(bool _ragdoll);
+	void Server_Ragdoll_Implementation(bool _ragdoll);
+	UFUNCTION(NetMulticast, Reliable)
+    void Multi_Ragdoll(bool _ragdoll);
+    void Multi_Ragdoll_Implementation(bool _ragdoll);
 	
 	UAudioComponent* ChargeAttackAudioComponent;
 
@@ -217,6 +264,8 @@ public: // audio
 	USoundCue* PlantCue;
 	UPROPERTY(EditAnywhere)
 	USoundCue* GetHitCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* MandrakeScreamCue;
 	
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -227,10 +276,20 @@ public:
 	class APickUpItem* HeldItem;
 
 	/* Is player holding down attack */
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bIsChargingAttack;
 
 	class IInteractInterface* ClosestInteractableItem;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* ParticleSystem;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraComponent* InteractSystem;
+	UPROPERTY(EditAnywhere)
+	class UNiagaraComponent* DizzyComponent;
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* DizzySystem;
 	
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -243,10 +302,31 @@ protected:
 
 
 private:
-	
+	// Sprint Variables
+	UPROPERTY(EditAnywhere)
+	UAnimSequence* RunAnimation;
+	float WalkSpeed = 500.f;
+	UPROPERTY(EditAnywhere)
+	float SprintSpeed = 750.0f;
+	UPROPERTY(EditAnywhere)
+	float SprintTime = 2.0f;
+	float SprintTimer;
+	UPROPERTY(EditAnywhere)
+	float CanSprintTime = 5.0f;
+	float CanSprintTimer;
+	UPROPERTY(EditAnywhere)
+	float InstantAttackThreshold = 1.0f; // Todo: Does this need to be replicated? -ben
+	bool bCanAttack = true;
+	UPROPERTY(Replicated)
 	float AttackChargeAmount;
+	UPROPERTY(Replicated)
 	bool bIsStunned;
+	UPROPERTY(Replicated)
 	float StunTimer;
 	bool DoOnce{};
-	
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FTransform LocationWhenStunned{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FTransform MeshLocationWhenStunned{};
 };

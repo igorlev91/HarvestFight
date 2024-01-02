@@ -8,7 +8,7 @@ public class Prototype2 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput","OnlineSubsystem", "OnlineSubsystemUtils", "UMG", "Navmesh", "NavigationSystem" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput","OnlineSubsystem", "OnlineSubsystemUtils", "UMG", "Navmesh", "NavigationSystem", "Niagara", "NiagaraCore"});
 		DynamicallyLoadedModuleNames.AddRange(new string[] {  "OnlineSubsystemSteam" });
 	}
 }

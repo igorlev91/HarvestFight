@@ -45,18 +45,26 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player1Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player1ExtraCoins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player2Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player2ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player3Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player3ExtraCoins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player4ExtraCoins;
 
 	// Weapon UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* WeaponImage;
 
 	UPROPERTY(EditAnywhere)
-	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}};
+	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}, {}, {}, {}, {}};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P1Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

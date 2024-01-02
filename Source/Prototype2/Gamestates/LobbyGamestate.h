@@ -21,6 +21,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{false};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool IsCountingDown{};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int LobbyLengthMinutes{0};
@@ -30,8 +33,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class ALobbyPlayerState>> Server_Players;
 private:
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	bool IsCountingDown{};
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool PreviousServerTravel{};
 };
