@@ -3,6 +3,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyCharacter.h"
 #include "Prototype2/LobbyPlayerState.h"
+#include "Prototype2/Prototype2Character.h"
+#include "Prototype2/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
 
@@ -34,8 +36,10 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 
 				if (auto* character = Cast<ALobbyCharacter>(NewPlayer->GetCharacter()))
 				{
-					character->PlayerMat = PlayerMaterials[playerState->Player_ID];
-
+					character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+					NewPlayer->Possess(character);
+					character->SetOwner(NewPlayer);
+					
 					switch(playerState->Player_ID)
 					{
 					case 0:
@@ -63,9 +67,29 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 						break;
 					}
 				}
-				
-				
 			}
+		}
+	}
+}
+
+void ALobbyGamemode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (auto gamestate = GetGameState<ALobbyGamestate>())
+	{
+		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
+		{
+			if (auto playerState = gamestate->Server_Players[i])
+			{
+				auto character = Cast<ALobbyCharacter>(playerState->GetPlayerController()->GetCharacter());
+					
+				if (character)
+				{
+					character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+				}
+			}
+					
 		}
 	}
 }

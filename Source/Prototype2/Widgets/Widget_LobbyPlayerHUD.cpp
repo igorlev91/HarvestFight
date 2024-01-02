@@ -141,9 +141,9 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			MapChoiceWidget->MapChoiceTimer->SetVisibility(ESlateVisibility::Visible);
 			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateRef->MapChoiceLengthSeconds)));
 		}
-		if (GameStateRef->MapChoiceLengthSeconds < 0)
+		if (GameStateRef->MapChoiceLengthSeconds <= 0)
 		{
-			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("Loading Level...")));
+			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 		}
 	}
 }

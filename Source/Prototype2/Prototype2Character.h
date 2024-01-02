@@ -76,6 +76,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SquashWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void SocketWeapon(FName Socket);
 	
 	// HUD
 	UFUNCTION(Server, Reliable)

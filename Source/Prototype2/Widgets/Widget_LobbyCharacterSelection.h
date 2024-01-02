@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Prototype2/PrototypeGameInstance.h"
 #include "Widget_LobbyCharacterSelection.generated.h"
 
 /**
  * 
  */
 
-UENUM(BlueprintType)
+/*UENUM(BlueprintType)
 enum class ECharacters : uint8
 {
 	COW,
@@ -26,7 +27,7 @@ enum class ECharacterColours : uint8
 	BLUE,
 	GREEN,
 	YELLOW
-};
+};*/
 
 UCLASS()
 class PROTOTYPE2_API UWidget_LobbyCharacterSelection : public UUserWidget
@@ -35,7 +36,6 @@ class PROTOTYPE2_API UWidget_LobbyCharacterSelection : public UUserWidget
 
 public:
 	class APrototype2Gamestate* GameStateRef;
-
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PlayerImage;
@@ -54,16 +54,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Texture_CowYellow;
 	
-	// Character & Colour
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ECharacters Character{ECharacters::COW};
+	ECharacters IdealCharacter{ECharacters::COW};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ECharacterColours CharacterColour{ECharacterColours::RED};
-
-	// Functions
+	ECharacterColours IdealCharacterColour{ECharacterColours::RED};
+	
 
 	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeCharacterLeft();
@@ -79,5 +78,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateCharacterImage();
-	
+
+	UFUNCTION(BlueprintCallable)
+	void ChangeCharacterColour(bool _right);
+
+
 };

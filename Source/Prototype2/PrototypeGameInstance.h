@@ -17,8 +17,24 @@ USTRUCT(BlueprintType)
 struct FSearchResults
 {
 	GENERATED_BODY()
+};
 
-	
+UENUM(BlueprintType)
+enum class ECharacters : uint8
+{
+	COW,
+	PIG,
+	CHICKEN,
+	DUCK
+};
+
+UENUM(BlueprintType)
+enum class ECharacterColours : uint8
+{
+	RED,
+	BLUE,
+	GREEN,
+	YELLOW
 };
 
 UCLASS()
@@ -69,6 +85,7 @@ public:
 	FSearchResults LatestSearchResults;
 
 
+	
 protected:
 	bool HostSession(FUniqueNetIdRepl UserId, FName SessionName, bool bIsLAN = true, bool bIsPresence = true, int32  = 12);
 	void FindSessions(FUniqueNetIdRepl UserId, bool bIsLAN = true, bool bIsPresence = true);

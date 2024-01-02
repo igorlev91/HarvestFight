@@ -2,8 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "Prototype2/PrototypeGameInstance.h"
 #include "LobbyGamestate.generated.h"
 
+
+class ALobbyCharacter;
 UENUM(BlueprintType)
 enum class EFarm : uint8 
 {
@@ -28,6 +31,8 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	void UpdateCharacterMaterial(int _player,ECharacters _character, ECharacterColours _characterColour);
+	
 	// Server travelling
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{false};
@@ -65,6 +70,7 @@ public:
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class ALobbyPlayerState>> Server_Players;
+	
 private:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))

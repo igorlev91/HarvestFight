@@ -12,7 +12,11 @@ class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
 
 	ALobbyGamemode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	virtual void Tick(float DeltaSeconds) override;
+	
 public:
+	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 };

@@ -14,9 +14,9 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UButton* Host;
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	class UButton* Join;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))

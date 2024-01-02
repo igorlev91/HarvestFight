@@ -1,7 +1,9 @@
 #include "LobbyGamestate.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/LobbyCharacter.h"
 #include "Prototype2/LobbyPlayerState.h"
+#include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Widgets/Widget_IngameMenu.h"
 #include "Prototype2/Widgets/Widget_MapChoice.h"
 
@@ -157,5 +159,17 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
 	
 	
+}
+
+void ALobbyGamestate::UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour)
+{
+	
+	if (Server_Players.Num() >= _player)
+	{
+		if (auto playerState = Server_Players[_player])
+		{
+			playerState->UpdateCharacterMaterial(_character, _characterColour);
+		}
+	}
 }
 

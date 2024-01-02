@@ -45,7 +45,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 				if (auto* character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
 				{
 					//character->GetMesh()->SetMaterial(0, PlayerMaterials[playerState->Player_ID]);
-					character->PlayerMat = PlayerMaterials[playerState->Player_ID];
+					//character->PlayerMat = PlayerMaterials[playerState->Player_ID];
 					character->PlayerID = playerState->Player_ID;
 					//character->Client_AddHUD();
 					switch(playerState->Player_ID)

@@ -5,6 +5,7 @@
 
 #include "Widget_EndgameMenu.h"
 #include "Widget_IngameMenu.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
@@ -21,6 +22,7 @@
 #include "Prototype2/Prototype2PlayerController.h"
 #include "Widgets/SOverlay.h"
 #include "Layout/Margin.h"
+#include "Prototype2/PrototypeGameInstance.h"
 
 void UWidget_PlayerHUD::NativeOnInitialized()
 {
@@ -35,9 +37,23 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	UpdatePickupUI(None);
 
 	// Set interaction text to be hidden on start
-	InteractionText->SetVisibility(ESlateVisibility::Hidden);
-	InteractionButtonImage->SetVisibility(ESlateVisibility::Hidden);
+	InteractionUI->SetVisibility(ESlateVisibility::Hidden);
+	InteractionText->SetVisibility(ESlateVisibility::Visible);
 	interactionButtonTimer = interactionButtonMaxTime;
+
+	//UWorld* World = GetWorld();
+	//if (World != nullptr)
+	//{
+	//	UGameInstance* GameInstance = World->GetGameInstance();
+	//	if (GameInstance != nullptr)
+	//	{
+	//		IOnlineSessionPtr OnlineSessionPtr = GameInstance->GetSubsystem<IOnlineSubsystem>()->GetSessionInterface();
+	//		if (OnlineSessionPtr.IsValid())
+	//		{
+	//			OnlineSessionPtr->GetSessionSettings()->m
+	//		}
+	//	}
+	//}
 	
 }
 
@@ -269,6 +285,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			}
 		}
 	}
+
+	InteractionImagePulse(InDeltaTime);
 }
 
 void UWidget_PlayerHUD::EnableDisableMenu()
@@ -280,6 +298,7 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 {
 	IngameMenu->DisableMenu();
 	EndgameMenu->EnableEndgameMenu();
+	bEndgame = true;
 }
 
 void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
@@ -350,7 +369,6 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 			
 		}
 	}
-	
 }
 
 void UWidget_PlayerHUD::UpdateWeaponUI(EPickup _weapon)
@@ -378,15 +396,13 @@ void UWidget_PlayerHUD::SetHUDInteractText(FString _interactionText)
 {
 	if (_interactionText == "")
 	{
-		InteractionText->SetVisibility(ESlateVisibility::Hidden);
-		InteractionButtonImage->SetVisibility(ESlateVisibility::Hidden);
+		InteractionUI->SetVisibility(ESlateVisibility::Hidden);
 		bInteractionButtonShowing = false;
 	}
 	else
 	{
-		InteractionText->SetVisibility(ESlateVisibility::Visible);
+		InteractionUI->SetVisibility(ESlateVisibility::Visible);
 		InteractionText->SetText(FText::FromString(_interactionText));
-		InteractionButtonImage->SetVisibility(ESlateVisibility::Visible);
 		bInteractionButtonShowing = true;
 	}
 }
@@ -413,7 +429,6 @@ void UWidget_PlayerHUD::InteractionImagePulse(float _dt)
 			interactionButtonTimer = interactionButtonMaxTime;
 		}
 	}
-	
 }
 
 void UWidget_PlayerHUD::SetPlayerSprintTimer(float _sprintTime)

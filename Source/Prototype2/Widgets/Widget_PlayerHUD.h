@@ -30,11 +30,14 @@ public:
 	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	//class UWidget_InteractionPanel* InteractionPanel;
 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_EndgameMenu* EndgameMenu;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bEndgame{false};
 
 	// Timer
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -122,6 +125,8 @@ public:
 	class UTextBlock* InteractionText; 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* InteractionButtonImage;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UHorizontalBox* InteractionUI;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* ETexture1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -131,7 +136,7 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	bool bShowETexture1{true};
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	float interactionButtonMaxTime{0.5f};
+	float interactionButtonMaxTime{0.2f};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	float interactionButtonTimer{};
 	
