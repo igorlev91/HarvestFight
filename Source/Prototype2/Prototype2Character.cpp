@@ -12,6 +12,7 @@
 #include "InteractInterface.h"
 #include "PickUpItem.h"
 #include "Prototype2PlayerController.h"
+#include "Weapon.h"
 #include "Components/SphereComponent.h"
 #include "DynamicMesh/ColliderMesh.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,6 +21,7 @@
 #include "Widgets/Widget_InteractionPanel.h"
 #include "Widgets/Widget_IngameMenu.h"
 #include "Blueprint/UserWidget.h"
+#include "Net/UnrealNetwork.h"
 #include "Widgets/Widget_PlayerHUD.h"
 
 
@@ -62,6 +64,13 @@ APrototype2Character::APrototype2Character()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+}
+
+void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APrototype2Character, Weapon);
+	DOREPLIFETIME(APrototype2Character, HeldItem);
 }
 
 void APrototype2Character::BeginPlay()
@@ -113,7 +122,11 @@ void APrototype2Character::Tick(float DeltaSeconds)
 void APrototype2Character::ChargeAttack()
 {
 	bIsChargingAttack = true;
-	
+
+	if (Weapon)
+	{
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHeldSocket"));
+	}
 	// todo: Set animation to raise hand/hands
 }
 
@@ -185,45 +198,17 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 			}
 		}
 	}
+
+	// Animation
+	if(AttackMontage)
+	{
+		PlayNetworkMontage(AttackMontage);
+	}
 }
 
 void APrototype2Character::Interact()
 {
-	// If player is holding nothing, and there is something to pickup in range
-	if(ClosestInteractableItem && !HeldItem)
-	{
-		// Call the InteractInterface interact function
-		ClosestInteractableItem->Interact(this);
-		
-		if (PickupMontage &&
-			ClosestInteractableItem->InterfaceType != EInterfaceType::SellBin)
-		{
-			// Animation
-			PlayNetworkMontage(PickupMontage);
-		}
-	}
-	else if (HeldItem)
-	{
-		// If Sell Bin close, sell - which destroys HeldItem
-		if (ClosestInteractableItem)
-		{
-			if (ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin)
-			{
-				// Sell to item bin
-				ClosestInteractableItem->Interact(this);
-			}			
-		}
-
-		// If item wasn't sold, drop it
-		if(HeldItem)
-		{
-			// Drop into world
-			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			HeldItem = nullptr;
-		}
-	}
+	Server_TryInteract();
 	
 	// Debug draw collision sphere
 	//FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius);
@@ -393,4 +378,65 @@ void APrototype2Character::Client_AddHUD_Implementation()
 			}
 		}
 	}
+}
+
+void APrototype2Character::Server_TryInteract_Implementation()
+{
+	// If player is holding nothing, and there is something to pickup in range
+	if(ClosestInteractableItem && !HeldItem)
+	{
+		// Call the InteractInterface interact function
+		ClosestInteractableItem->Interact(this);
+		
+		if (PickupMontage && ClosestInteractableItem->InterfaceType != EInterfaceType::SellBin)
+		{
+			// Animation
+			PlayNetworkMontage(PickupMontage);
+		}
+	}
+	else if (HeldItem)
+	{
+		// If Sell Bin close, sell - which destroys HeldItem
+		if (ClosestInteractableItem)
+		{
+			ClosestInteractableItem->Interact(this);
+		}
+
+		// If item wasn't sold, drop it
+		Server_DropItem();
+	}
+}
+
+void APrototype2Character::Server_DropItem_Implementation()
+{
+	Multi_DropItem();
+}
+
+void APrototype2Character::Multi_DropItem_Implementation()
+{
+	if(HeldItem)
+	{
+		// Drop into world
+		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		HeldItem = nullptr;
+	}
+}
+
+void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
+{
+	Multi_PickupItem(itemComponent, _item);
+}
+
+void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
+{
+	itemComponent->Mesh->SetSimulatePhysics(false);
+	itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	// Attach to socket
+	_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+	
+	// Assign Players HeldItem
+	HeldItem = _item;
 }

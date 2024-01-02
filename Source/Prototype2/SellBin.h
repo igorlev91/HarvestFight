@@ -32,4 +32,5 @@ public:
 
 	virtual void Interact(APrototype2Character* player) override;
 
+private:
 };

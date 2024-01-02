@@ -30,5 +30,5 @@ void AWeaponSeed::Tick(float DeltaSeconds)
 
 AWeaponSeed::AWeaponSeed()
 {
-	
+	bReplicates = true;
 }

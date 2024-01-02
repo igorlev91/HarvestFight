@@ -6,6 +6,7 @@
 
 APlant::APlant()
 {
+	bReplicates = true;
 }
 
 void APlant::BeginPlay()
@@ -16,5 +17,8 @@ void APlant::BeginPlay()
 
 void APlant::Interact(APrototype2Character* player)
 {
-	ItemComponent->Interact(player, this);
+	if (isGrown)
+	{
+		ItemComponent->Interact(player, this);
+	}
 }

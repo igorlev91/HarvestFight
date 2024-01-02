@@ -5,6 +5,11 @@
 
 #include "Prototype2Character.h"
 
+ASeed::ASeed()
+{
+	bReplicates = true;
+}
+
 void ASeed::Interact(APrototype2Character* player)
 {
 	ItemComponent->Interact(player, this);

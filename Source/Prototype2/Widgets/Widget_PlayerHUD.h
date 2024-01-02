@@ -6,11 +6,19 @@
 #include "Blueprint/UserWidget.h"
 #include "Widget_PlayerHUD.generated.h"
 
+UENUM(BlueprintType)
+enum EPickup
+{
+	None,
+	Carrot,
+	Cabbage,
+	Mandrake
+};
+
 UCLASS()
 class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 {
 	GENERATED_BODY()
-
 
 public:
 
@@ -41,11 +49,20 @@ public:
 	class UTextBlock* Player4Coins;
 
 	// Weapon UI
-
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* WeaponImage;
 
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PickupImage;
+	// Textures
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CarrotTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CabbageTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* MandrakeTexture;
+	
 	
 public:
 	// Functions
@@ -60,5 +77,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EnableEndgameMenu();
 
-	
+	//UFUNCTION(BlueprintCallable)
+	//void UpdateWeaponUI();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdatePickupUI(EPickup _pickup);
 };

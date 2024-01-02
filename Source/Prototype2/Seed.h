@@ -14,7 +14,10 @@ UCLASS()
 class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
 {
 	GENERATED_BODY()
+
+
 public:
+	ASeed();
 	virtual void Interact(APrototype2Character* player) override;
 	
 public:

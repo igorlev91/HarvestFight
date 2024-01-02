@@ -12,6 +12,7 @@ UItemComponent::UItemComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+	
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	if(GetOwner())
@@ -44,17 +45,7 @@ void UItemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 void UItemComponent::Interact(APrototype2Character* player, APickUpItem* itemPickedUp)
 {
 	// Setup Mesh
-	Mesh->SetSimulatePhysics(false);
-	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	// Set players HeldItem
-	player->HeldItem = itemPickedUp;
-	
-	// Attach to socket
-	itemPickedUp->AttachToComponent(player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-	
-	// Assign Players HeldItem
-	player->HeldItem = itemPickedUp;
+	player->Server_PickupItem(this, itemPickedUp);
 
 	// Debug
 	UE_LOG(LogTemp, Warning, TEXT("HeldItem attached to hand"));	

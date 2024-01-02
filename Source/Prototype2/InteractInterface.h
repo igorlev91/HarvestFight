@@ -10,8 +10,10 @@ class APlant;
 UENUM()
 enum class EInterfaceType : uint8
 {
-	SellBin     UMETA(DisplayName = "SellShop"),
-	Default      UMETA(DisplayName = "Default"),
+	SellBin			UMETA(DisplayName = "SellShop"),
+	GrowSpot		UMETA(DisplayName = "SellShop"),
+	Weapon			UMETA(DisplayName = "SellShop"),
+	Default			UMETA(DisplayName = "Default"),
 };
 
 // This class does not need to be modified.

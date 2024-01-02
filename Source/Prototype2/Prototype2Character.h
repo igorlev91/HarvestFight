@@ -7,13 +7,23 @@
 #include "InputActionValue.h"
 #include "Prototype2Character.generated.h"
 
+class UItemComponent;
 UCLASS(config=Game)
 class APrototype2Character : public ACharacter
 {
 	GENERATED_BODY()
 public:
 	APrototype2Character();	
-	
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(Server, Reliable)
+	void Server_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
+	void Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
+
+	UFUNCTION(Server, Reliable)
+	void Server_DropItem();
+	void Server_DropItem_Implementation();
 protected: // Protected Functions
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -63,6 +73,20 @@ protected: // Protected Functions
 	UFUNCTION(Client, Reliable)
 	void Client_AddHUD();
 	void Client_AddHUD_Implementation();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_TryInteract();
+	void Server_TryInteract_Implementation();
+
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DropItem();
+	void Multi_DropItem_Implementation();
+	
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
+	void Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
 	
 private: // Input actions
 	/** MappingContext */
@@ -122,11 +146,11 @@ private: // Private variables
 
 public:
 	/* Weapon Held */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class AWeapon* Weapon;
 	
 	/* Currently held item */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
 	
 protected:
