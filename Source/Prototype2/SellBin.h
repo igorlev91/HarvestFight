@@ -27,7 +27,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 	
 	UFUNCTION(Server, Reliable)
     void Server_FireParticleSystem();
@@ -66,9 +65,7 @@ public:
 
 	UPROPERTY(Replicated)
 	bool bWidgetVisible{};
-
 	
-
 	virtual void Interact(APrototype2Character* player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
 private:

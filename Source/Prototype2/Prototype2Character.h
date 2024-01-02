@@ -19,6 +19,10 @@ public:
 	APrototype2Character();	
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	bool IsSprinting();
+
+	void CheckForFloorSurface();
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int PlayerID{-1};
@@ -63,6 +67,16 @@ public:
 	void Multi_ReleaseAttack();
 	void Multi_ReleaseAttack_Implementation();
 
+	// VFX events
+	UFUNCTION(BlueprintImplementableEvent)
+	void TriggerAttackVFX(FVector Position, float Radius, float Charge);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void StretchWeapon();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SquashWeapon();
+	
 	// HUD
 	UFUNCTION(Server, Reliable)
 	void Server_AddHUD();
@@ -207,6 +221,8 @@ protected: /* Protected non-network Functions */
 	void OpenIngameMenu();
 	
 	void UpdateAllPlayerIDs();
+
+
 
 public: /* Public variables */
 
@@ -381,6 +397,9 @@ private: /* Private variables */
 	/* Sprint/Walk/Slow Walk */
 	UPROPERTY(EditAnywhere)
 	UAnimSequence* RunAnimation;
+
+	UPROPERTY(EditAnywhere)
+	float IceFriction{0.1f};
 	
 	float WalkSpeed = 500.f;
 

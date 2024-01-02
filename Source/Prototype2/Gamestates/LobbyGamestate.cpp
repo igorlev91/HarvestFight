@@ -48,9 +48,6 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					// End of timer
-					//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
-
 					// Show map choice
 					bShowMapChoice = true;
 					
@@ -60,15 +57,14 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 					int totalVotes = Farm + WinterFarm;
 					if (totalVotes == Server_Players.Num())
 					{
+						bMapChosen = true; // Turned true so that it will change HUD visibility for timer
 						if (Farm > WinterFarm)
 						{
 							MapChoice = "Level_Main";
-							//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 						}
 						else if (WinterFarm > Farm)
 						{
 							MapChoice = "Level_Winter";
-							//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 						}
 						else
 						{
@@ -82,8 +78,13 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 								MapChoice = "Level_Winter";
 							}
 						}
-						GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 
+						// Countdown between all players choosing map and actually starting
+						MapChoiceLengthSeconds -= DeltaSeconds;
+						if (MapChoiceLengthSeconds <= 0)
+						{
+							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+						}
 					}
 				}
 				else
@@ -116,14 +117,14 @@ void ALobbyGamestate::SetIsReady(int _player, bool _isReady)
 	if (isEveryoneReady && Server_Players.Num() >= 1)
 	{
 		ShouldServerTravel = true;
-		LobbyLengthSeconds = 7.0f;
+		LobbyLengthSeconds = 2.0f;
 	}
 	else
 	{
 		ShouldServerTravel = false;
 		IsCountingDown = false;
 		PreviousServerTravel = false;
-		LobbyLengthSeconds = 7.0f;
+		LobbyLengthSeconds = 2.0f;
 	}
 }
 
@@ -151,5 +152,10 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALobbyGamestate, Farm);
 	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
+
+	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
+	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
+	
+	
 }
 

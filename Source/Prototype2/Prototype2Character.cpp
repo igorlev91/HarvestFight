@@ -34,6 +34,8 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "GrowableWeapon.h"
+#include "SellBin_Winter.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 
 APrototype2Character::APrototype2Character()
@@ -163,6 +165,8 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	GetMesh()->SetMaterial(0, PlayerMat);
 	
 	UpdateAllPlayerIDs();
+
+	CheckForFloorSurface();
 	
 	// Stun
 	//if (bIsStunned)
@@ -196,6 +200,18 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	if (bIsChargingAttack)
 	{
 		AttackChargeAmount += DeltaSeconds;
+		
+		// Cap attack charge
+		if (AttackChargeAmount > MaxAttackCharge)
+		{
+			AttackChargeAmount = MaxAttackCharge;
+		}
+
+		// Stretch mesh
+		FVector newScale = {3.0f - AttackChargeAmount/5,
+							3.0f - AttackChargeAmount/5,
+							AttackChargeAmount/2 + 3.0f};
+		Weapon->Mesh->SetWorldScale3D(newScale);
 	}
 
 	if (InteractTimer < 0.0f)
@@ -253,7 +269,11 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	// create a collision sphere
 	FCollisionShape colSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
 	
-	UE_LOG(LogTemp, Warning, TEXT("Sphere Radius = %s"), *FString::SanitizeFloat(AttackSphereRadius));
+	FVector downVector = {inFrontOfPlayer.X, inFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
+	TriggerAttackVFX(downVector, AttackSphereRadius, AttackChargeAmount);	
+	
+	// For Debugging
+	// UE_LOG(LogTemp, Warning, TEXT("Sphere Radius = %s"), *FString::SanitizeFloat(AttackSphereRadius));
 	
 	// draw collision sphere
 	// DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 2.0f);
@@ -261,6 +281,8 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	// check if something got hit in the sweep
 	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Pawn, colSphere);
 
+	bool isPlayerHit = false;
+	
 	if (isHit)
 	{
 		// loop through TArray
@@ -271,24 +293,34 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 				if (hitPlayer != this)
 				{
 					// screen log information on what was hit
-					UE_LOG(LogTemp, Warning, TEXT(" %s  was hit by an attack!"), *hit.GetActor()->GetName());
+					// UE_LOG(LogTemp, Warning, TEXT(" %s  was hit by an attack!"), *hit.GetActor()->GetName());
 
 					FVector attackerLocation = GetActorLocation();
 					hitPlayer->GetHit(AttackChargeAmount, attackerLocation);
+
+					isPlayerHit = true;
 				}
+			}
+			else if (auto* hitSellBin = Cast<ASellBin_Winter>(hit.GetActor()))
+			{
+				FVector attackerLocation = GetActorLocation();
+				hitSellBin->GetHit(AttackChargeAmount, MaxAttackCharge ,attackerLocation);
 			}
 		}
 	}
 
 	// Lower weapon durability
-	WeaponCurrentDurability--;
-	PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
-	if (WeaponCurrentDurability <= 0)
+	if (isPlayerHit)
 	{
-		Multi_DropWeapon();
+		WeaponCurrentDurability--;
+		PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
+		if (WeaponCurrentDurability <= 0)
+		{
+			Multi_DropWeapon();
 
-		//// Update UI
-		//PlayerHUDRef->UpdateWeaponUI(EPickup::NoWeapon);
+			//// Update UI
+			//PlayerHUDRef->UpdateWeaponUI(EPickup::NoWeapon);
+		}
 	}
 	
 	// Reset Attack Timer
@@ -308,6 +340,9 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	InteractTimer = InteractTimerTime;
 
 	bCanAttack = true;
+
+	// Now resetting in blueprint
+	//Weapon->Mesh->SetWorldScale3D({3.0f, 3.0f, 3.0f});
 }
 
 void APrototype2Character::Interact()
@@ -550,6 +585,54 @@ void APrototype2Character::UpdateAllPlayerIDs()
 {
 }
 
+bool APrototype2Character::IsSprinting()
+{
+	return FMath::RoundToInt(GetMovementComponent()->GetMaxSpeed()) == FMath::RoundToInt(SprintSpeed);
+}
+
+void APrototype2Character::CheckForFloorSurface()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Ground Check"));
+	
+	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
+	FVector EndLocation = GetActorLocation() + FVector{0,0,-100}; // The end location of the line trace
+
+	TArray<FHitResult> HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.bTraceComplex = true; // Enable complex tracing for accurate physics material retrieval
+	QueryParams.bReturnPhysicalMaterial = true;
+
+	GetCharacterMovement()->bUseSeparateBrakingFriction = true;
+	GetCharacterMovement()->BrakingFriction = 2.0f;
+	GetCharacterMovement()->MaxAcceleration = 2048.0f;
+	GetCharacterMovement()->GroundFriction = 8.0f;
+
+	
+	// Perform the line trace
+	if (GetWorld()->LineTraceMultiByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	{
+		for(auto& result : HitResult)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit %s"), *FString(HitResult.Component->GetName()));
+			UPhysicalMaterial* PhysMaterial = result.PhysMaterial.Get();
+			if (PhysMaterial)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit Physcs Material"));
+				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), StartLocation, result.Location, FColor::Red, 0.1f, 5.0f);
+				float Friction = PhysMaterial->Friction;
+				if (Friction <= 0.5f)
+				{
+					GetCharacterMovement()->BrakingFriction = 0.0f;
+					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
+					GetCharacterMovement()->GroundFriction = 0.0f;
+					UE_LOG(LogTemp, Error, TEXT("Ground Check Hit Slippery"));
+					break;
+				}
+			}
+		}
+	}
+}
+
 void APrototype2Character::PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay, USoundAttenuation* _attenation)
 {
 	Server_PlaySoundAtLocation(Location,SoundToPlay, _attenation );
@@ -714,13 +797,8 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 	if (bIsChargingAttack && bCanAttack)
 	{
 		bCanAttack = false;
-		
-		// Cap attack charge
-		if (AttackChargeAmount > MaxAttackCharge)
-		{
-			AttackChargeAmount = MaxAttackCharge;
-		}
-		
+
+		// Set the radius of the sphere for attack
 		int32 attackSphereRadius;
 		if (!Weapon->Mesh->bHiddenInGame)
 		{
@@ -734,7 +812,7 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 		}
 
 		// If attack button is clicked without being held
-		if (AttackChargeAmount < InstantAttackThreshold)
+		if (AttackChargeAmount < MaxAttackCharge)//InstantAttackThreshold)
 		{
 			// Animation
 			if(ExecuteAttackMontage_LongerWindUp)

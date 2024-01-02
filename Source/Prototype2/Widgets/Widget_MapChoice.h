@@ -44,5 +44,8 @@ public:
 	// Winter Farm
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* WinterFarm_Counter;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* MapChoiceTimer;
 	
 };

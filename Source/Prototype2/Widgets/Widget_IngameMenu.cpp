@@ -17,7 +17,7 @@ void UWidget_IngameMenu::EnableDisableMenu()
 
 		if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
-			controller->SetInputMode(FInputModeUIOnly{});
+			controller->SetInputMode(FInputModeGameAndUI{});
 			controller->bShowMouseCursor = true;
 		}
 	}

@@ -27,7 +27,6 @@ void UWidget_LobbyPlayerHUD::NativeOnInitialized()
 
 	// Make cancel hidden
 	CancelButton->SetVisibility(ESlateVisibility::Hidden);
-	StartCountDown->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -41,15 +40,15 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 		Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 
-		if (GameStateRef->IsCountingDown)
-		{
-			StartCountDown->SetVisibility(ESlateVisibility::Visible);
-			StartCountDown->SetText(FText::FromString(FString::FromInt(GameStateRef->LobbyLengthSeconds)));
-		}
-		else
-		{
-			StartCountDown->SetVisibility(ESlateVisibility::Hidden);
-		}
+		//if (GameStateRef->IsCountingDown)
+		//{
+		//	StartCountDown->SetVisibility(ESlateVisibility::Visible);
+		//	StartCountDown->SetText(FText::FromString(FString::FromInt(GameStateRef->LobbyLengthSeconds)));
+		//}
+		//else
+		//{
+		//	StartCountDown->SetVisibility(ESlateVisibility::Hidden);
+		//}
 		
 		for(int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{
@@ -135,6 +134,16 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			{
 				MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Hidden);
 			}
+		}
+		// Show timer
+		if (GameStateRef->bMapChosen)
+		{
+			MapChoiceWidget->MapChoiceTimer->SetVisibility(ESlateVisibility::Visible);
+			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateRef->MapChoiceLengthSeconds)));
+		}
+		if (GameStateRef->MapChoiceLengthSeconds < 0)
+		{
+			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("Loading Level...")));
 		}
 	}
 }

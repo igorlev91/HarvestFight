@@ -3,6 +3,8 @@
 
 #include "RaidialSpawner.h"
 
+#include "Kismet/KismetMathLibrary.h"
+
 
 // Sets default values
 ARaidialSpawner::ARaidialSpawner()
@@ -57,16 +59,14 @@ void ARaidialSpawner::SetUp()
 		FVector ObjectSpawnPosition = SpawnLocation + FVector(OffsetX, OffsetY, 0.0f);
 
 		// Spawn the object at the calculated position
-		AActor* SpawnedObject = GetWorld()->SpawnActor<AActor>(plot, ObjectSpawnPosition, FRotator::ZeroRotator);
-
+		AActor* SpawnedObject = GetWorld()->SpawnActor<AActor>(plot, ObjectSpawnPosition, FRotator(0, Angle + 90, 0));
+		
 		if (SpawnedObject)
 		{
 			// Calculate the direction from the spawned object to the initial spawn location
 			FVector DirectionToInitialSpawn = (SpawnLocation - ObjectSpawnPosition).GetSafeNormal();
 
-			// Set the rotation of the spawned object to face towards the initial spawn location
-			FRotator NewRotation = DirectionToInitialSpawn.Rotation();
-			SpawnedObject->SetActorRotation(NewRotation);
+			
 		}
 	}
 	
