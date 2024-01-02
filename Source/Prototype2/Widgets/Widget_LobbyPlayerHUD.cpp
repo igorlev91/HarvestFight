@@ -5,8 +5,10 @@
 
 #include <string>
 
+#include "Widget_MapChoice.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyPlayerState.h"
@@ -138,6 +140,11 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 					
 			}
 		}
+		// Show map choice
+		if (GameStateRef->bHasCountedDown == true)
+		{
+			MapChoiceWidget->EnableMapChoice(); // Show map choice UI
+		}
 	}
 }
 
@@ -191,4 +198,9 @@ void UWidget_LobbyPlayerHUD::SetCancel()
 			}
 		}
 	}
+}
+
+void UWidget_LobbyPlayerHUD::ShowWaitingForHost()
+{
+	MapChoiceClientOverlay->SetVisibility(ESlateVisibility::Visible);
 }

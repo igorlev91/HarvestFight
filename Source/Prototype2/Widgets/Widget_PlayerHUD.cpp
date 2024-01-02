@@ -296,5 +296,21 @@ void UWidget_PlayerHUD::SetHUDInteractText(FString _interactionText)
 	}
 }
 
+void UWidget_PlayerHUD::SetPlayerSprintTimer(float _sprintTime)
+{
+	if (_sprintTime < 0.0f)
+	{
+		
+	}
+	else
+	{
+		
+	}
+}
+
+void UWidget_PlayerHUD::SetWeaponDurability(int _durability)
+{
+}
+
 
 

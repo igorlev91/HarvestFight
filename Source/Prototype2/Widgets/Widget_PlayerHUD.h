@@ -15,7 +15,8 @@ enum EPickup
 	Cabbage,
 	CabbageSeed,
 	Mandrake,
-	MandrakeSeed
+	MandrakeSeed,
+	Weapon
 };
 
 UCLASS()
@@ -116,4 +117,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetHUDInteractText(FString _interactionText);
+
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerSprintTimer(float _sprintTime);
+
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponDurability(int _durability);
 };

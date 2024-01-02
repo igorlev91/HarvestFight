@@ -107,7 +107,7 @@ bool UPrototypeGameInstance::HostSession(FUniqueNetIdRepl UserId, FName SessionN
 			SessionSettings->bAllowJoinViaPresence = true;
 			SessionSettings->bAllowJoinViaPresenceFriendsOnly = false;
 
-			SessionSettings->Set(SETTING_MAPNAME, FString("/Game/Maps/Level_Main"), EOnlineDataAdvertisementType::ViaOnlineService);
+			SessionSettings->Set(SETTING_MAPNAME, FString("/Game/Maps/Level_Main"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 			// Set the delegate to the Handle of the SessionInterface
 			OnCreateSessionCompleteDelegateHandle = Sessions->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
@@ -148,7 +148,7 @@ void UPrototypeGameInstance::FindSessions(FUniqueNetIdRepl UserId, bool bIsLAN, 
 			// We only want to set this Query Setting if "bIsPresence" is true
 			if (bIsPresence)
 			{
-				SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, bIsPresence, EOnlineComparisonOp::Equals);
+				SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, bIsPresence, EOnlineComparisonOp::Near);
 			}
 
 			TSharedRef<FOnlineSessionSearch> SearchSettingsRef = SessionSearch.ToSharedRef();

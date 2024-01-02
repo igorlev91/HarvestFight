@@ -24,12 +24,22 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool IsCountingDown{};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool bHasCountedDown{};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int LobbyLengthMinutes{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	float LobbyLengthSeconds{10.0f};
+	
+	// Map choice
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bMapChosen{false};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString MapChoice{"Level_Main"};
 
+	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class ALobbyPlayerState>> Server_Players;
 private:

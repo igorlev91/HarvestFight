@@ -19,6 +19,9 @@ public:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class UButton* Join;
 
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UCheckBox* LanCheck;
+	
 	UPROPERTY(VisibleAnywhere)
 	class UPrototypeGameInstance* GameInstance;
 };

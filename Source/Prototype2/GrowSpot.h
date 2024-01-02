@@ -56,17 +56,18 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	APlant* plant = nullptr;
+	UPROPERTY(Replicated, VisibleAnywhere)
 	AGrowableWeapon* weapon = nullptr;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	float growTimer{};
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	float growTime{10};
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	bool growingPlant = false;
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	bool plantGrown = false;
 
 	UPROPERTY(EditAnywhere)

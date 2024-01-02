@@ -11,6 +11,7 @@
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Weapon.h"
 
 // Sets default values
 AGrowSpot::AGrowSpot()
@@ -120,8 +121,8 @@ void AGrowSpot::GrowPlantOnTick(float _deltaTime)
 		weapon->ItemComponent->Mesh->SetSimulatePhysics(false);
 		weapon->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		weapon->ItemComponent->Mesh->SetWorldScale3D(scale);
-		//weapon->SetActorLocation(pos);
-		//weapon->SetActorRotation(FRotator(0,0,0));
+		weapon->SetActorLocation(pos);
+		weapon->SetActorRotation(FRotator(0,0,0));
 	}
 }
 
@@ -169,46 +170,73 @@ void AGrowSpot::Interact(APrototype2Character* player)
 			{
 				if (auto* seed = Cast<ASeed>(player->HeldItem))
 				{
-					if (seed->isWeapon)
+					if (!plant && GrowSpotState == EGrowSpotState::Empty)
 					{
-						if (!plant && GrowSpotState == EGrowSpotState::Empty)
+						if (seed->plantToGrow)
 						{
-							if (seed->plantToGrow)
+							// Audio
+							if (player->PlantCue)
 							{
-								if (seed->isWeapon)
-								{
-									//Multi_FireParticleSystem();
-									growTime = player->HeldItem->ItemComponent->GrowTime;
-									SetWeapon(GetWorld()->SpawnActor<AGrowableWeapon>(seed->plantToGrow), growTime);
-									Multi_Plant();
+								player->PlaySoundAtLocation(GetActorLocation(), player->PlantCue);
+							}
+							
+							if (seed->isWeapon)
+							{
+								//Multi_FireParticleSystem();
+								growTime = player->HeldItem->ItemComponent->GrowTime;
+								SetWeapon(GetWorld()->SpawnActor<AGrowableWeapon>(seed->plantToGrow), growTime);
+								Multi_Plant();
 						
-									if (seed)
-										seed->Destroy();
+								if (seed)
+									seed->Destroy();
 
-									// Seed is now planted so remove from player
-									player->HeldItem = nullptr;
-								}
-								else
-								{
-									//Multi_FireParticleSystem();
-									growTime = player->HeldItem->ItemComponent->GrowTime;
-									SetPlant(GetWorld()->SpawnActor<APlant>(seed->plantToGrow), growTime);
-									Multi_Plant();
+								// Seed is now planted so remove from player
+								player->HeldItem = nullptr;
+							}
+							else
+							{
+								//Multi_FireParticleSystem();
+								growTime = player->HeldItem->ItemComponent->GrowTime;
+								SetPlant(GetWorld()->SpawnActor<APlant>(seed->plantToGrow), growTime);
+								Multi_Plant();
 						
-									if (seed)
-										seed->Destroy();
+								if (seed)
+									seed->Destroy();
 
-									// Seed is now planted so remove from player
-									player->HeldItem = nullptr;
-								}
+								// Seed is now planted so remove from player
+								player->HeldItem = nullptr;
 							}
 						}
+					}
+				}
+				else if (weapon)
+				{
+					if (plantGrown && GrowSpotState == EGrowSpotState::Grown)
+					{
+						// replace here with weapon equip
+						player->Server_PickupItem(weapon->ItemComponent, weapon);
+						
+						Multi_FireParticleSystem();
+						weapon->isGrown = true;
+						
+						// Destroy the growable weapon
+						weapon->Destroy();
+						
+						weapon = nullptr;
+						plantGrown = false;
+						growingPlant = false;
+						growTimer = 0.0f;
+						GrowSpotState = EGrowSpotState::Empty;
+
 					}
 				}
 				else if (plant && !player->HeldItem)
 				{
 					if (plantGrown && GrowSpotState == EGrowSpotState::Grown)
 					{
+						// Put players weapon on back
+						player->Multi_SocketItem_Implementation(player->Weapon->Mesh, FName("WeaponHolsterSocket"));
+						
 						Multi_FireParticleSystem();
 						player->HeldItem = plant;
 						player->Server_PickupItem(plant->ItemComponent, plant);
@@ -219,6 +247,17 @@ void AGrowSpot::Interact(APrototype2Character* player)
 						growTimer = 0.0f;
 						GrowSpotState = EGrowSpotState::Empty;
 
+						// Special sound for mandrake when picked up
+						if (player->HeldItem)
+						{
+							if (player->HeldItem->ItemComponent->PickupType == EPickup::Mandrake)
+							{
+								if (player->MandrakeScreamCue)
+								{
+									player->PlaySoundAtLocation(GetActorLocation(), player->MandrakeScreamCue);
+								}
+							}
+						}
 					}
 				}
 				else if (player->HeldItem)
@@ -285,6 +324,10 @@ void AGrowSpot::SetPlant(APlant* _plant, float _growTime)
 		growTimer = _growTime;
 		growingPlant = true;
 		GrowSpotState = EGrowSpotState::Growing;
+		if (growTimer == 0)
+		{
+			growTimer = 1;
+		}
 	}
 }
 
@@ -296,6 +339,11 @@ void AGrowSpot::SetWeapon(AGrowableWeapon* _weapon, float _growTime)
 		weapon = _weapon;
 		growTimer = _growTime;
 		growingPlant = true;
+		GrowSpotState = EGrowSpotState::Growing;
+		if (growTimer == 0)
+		{
+			growTimer = 1;
+		}
 	}
 }
 

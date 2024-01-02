@@ -2,6 +2,8 @@
 
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/LobbyPlayerState.h"
+#include "Prototype2/Widgets/Widget_IngameMenu.h"
+#include "Prototype2/Widgets/Widget_MapChoice.h"
 
 ALobbyGamestate::ALobbyGamestate()
 {
@@ -47,7 +49,14 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 				if (LobbyLengthMinutes <= 0)
 				{
 					// End of timer
-					GetWorld()->ServerTravel("Level_Main", false, false);
+					//GetWorld()->ServerTravel(MapChoice, true, false); // Start level
+
+					// Show map choice
+					bHasCountedDown = true;
+					if (bMapChosen == true)
+					{
+						GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+					}
 				}
 				else
 				{

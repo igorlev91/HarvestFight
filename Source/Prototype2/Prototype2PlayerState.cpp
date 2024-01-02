@@ -8,6 +8,7 @@
 void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APrototype2PlayerState, Player_ID);
 	DOREPLIFETIME(APrototype2PlayerState, Coins);
 	DOREPLIFETIME(APrototype2PlayerState, ExtraCoins);
 	DOREPLIFETIME(APrototype2PlayerState, IsShowingExtraCoins);

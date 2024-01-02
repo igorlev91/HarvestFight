@@ -96,6 +96,12 @@ void ASellBin::Interact(APrototype2Character* player)
 	{
 		if (auto* plant = Cast<APlant>(player->HeldItem))
 		{
+			// Audio
+			if (player->SellCue)
+			{
+				player->PlaySoundAtLocation(GetActorLocation(), player->SellCue);
+			}
+			
 			//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->ExtraCoins = plant->ItemComponent->CropValue;
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->IsShowingExtraCoins = true; 

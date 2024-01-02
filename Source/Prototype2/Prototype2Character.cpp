@@ -33,6 +33,7 @@
 #include "Sound/SoundCue.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "GrowableWeapon.h"
 
 
 APrototype2Character::APrototype2Character()
@@ -74,6 +75,7 @@ APrototype2Character::APrototype2Character()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
+	// Weapon
 	Weapon = CreateDefaultSubobject<UWeapon>(TEXT("Weapon"));
 	Weapon->Mesh->SetSimulatePhysics(false);
 	Weapon->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -119,7 +121,8 @@ void APrototype2Character::BeginPlay()
 	ChargeAttackAudioComponent->SetSound(ChargeCue);
 
 	Weapon->Mesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("WeaponHolsterSocket"));
-
+	Weapon->Mesh->SetHiddenInGame(true);
+	
 	if (PlayerHudPrefab && !PlayerHUDRef)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
@@ -144,27 +147,29 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	UpdateAllPlayerIDs();
 	
 	// Stun
-	if (bIsStunned)
-	{
-		
-		bIsChargingAttack = false;
-
-		// Set animation to stun
-		
-		StunTimer -= DeltaSeconds;
-		if (StunTimer < 0.0f)
-		{
-			bIsStunned = false;
-			//Server_Ragdoll(false);
-			// Enable input
-			EnableInput(this->GetLocalViewingPlayerController());
-		}
-	}
+	//if (bIsStunned)
+	//{
+	//	
+	//	bIsChargingAttack = false;
+	//
+	//	// Set animation to stun
+	//	
+	//	StunTimer -= DeltaSeconds;
+	//	if (StunTimer < 0.0f)
+	//	{
+	//		bIsStunned = false;
+	//		//Server_Ragdoll(false);
+	//		// Enable input
+	//		EnableInput(this->GetLocalViewingPlayerController());
+	//	}
+	//}
 
 	// Sprint
-	if (SprintTimer < 0.0f && CanSprintTimer)
+	if (SprintTimer < 0.0f)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+
+		// Speed up animation
 		if (RunAnimation)
 		{
 			RunAnimation->RateScale = 1.25f;
@@ -196,6 +201,9 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	AttackTimer -= DeltaSeconds;
 	SprintTimer -= DeltaSeconds;
 	CanSprintTimer -= DeltaSeconds;
+
+	// Update sprint UI
+	PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
 
 	if (GetVelocity().Length() > 1.0f)
 	{
@@ -255,6 +263,14 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 				}
 			}
 		}
+	}
+
+	// Lower weapon durability
+	WeaponCurrentDurability--;
+	PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
+	if (WeaponCurrentDurability <= 0)
+	{
+		Weapon->Mesh->SetHiddenInGame(true);
 	}
 	
 	// Reset Attack Timer
@@ -365,21 +381,21 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 
 	Server_FireDizzySystem();
 	//Server_Ragdoll(true);
+	
+	// Knockback
+	GetCharacterMovement()->Velocity = (GetActorLocation() - AttackerLocation).GetSafeNormal() * AttackCharge * KnockBackAmount;
 
 	// Drop item
 	if (HeldItem)
 	{
 		Server_DropItem();
 	}
-	
-	// Knockback
-	GetCharacterMovement()->Velocity = (GetActorLocation() - AttackerLocation).GetSafeNormal() * AttackCharge * KnockBackAmount;
 
 	// debug attack
 	UE_LOG(LogTemp, Warning, TEXT("AttackCharge: %s"), *FString::SanitizeFloat(AttackCharge));
 	
-	bIsStunned = true;
-	StunTimer = 2.0f;
+	//bIsStunned = true;
+	//StunTimer = 2.0f;
 
 	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
 }
@@ -629,7 +645,7 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 		}
 		
 		int32 attackSphereRadius;
-		if (Weapon)
+		if (!Weapon->Mesh->bHiddenInGame)
 		{
 			// Create a larger sphere of effect
 			attackSphereRadius = 75.0f + AttackChargeAmount * 30.0f;
@@ -716,7 +732,51 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_TryInteract_Implementation()
 {
-	if((GetLocalRole() == IdealNetRole || GetLocalRole() == ROLE_Authority) && ClosestInteractableItem && !HeldItem)
+	if((GetLocalRole() == IdealNetRole || GetLocalRole() == ROLE_Authority))
+	{
+		// Drop HeldItem
+		if (!ClosestInteractableItem)
+		{
+			Multi_DropItem();
+			return;
+		}
+
+		// SellBin or GrowSpot
+		if (ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin ||
+			ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot ||
+			ClosestInteractableItem->InterfaceType == EInterfaceType::Weapon)
+		{			
+			ClosestInteractableItem->Interact(this);			
+			return;
+		}
+
+		// If something to pickup
+		if (ClosestInteractableItem && PickupMontage)
+		{
+			// Drop what they're carrying first
+			if (HeldItem)
+			{
+				Multi_DropItem();
+			}
+			
+			// Animation
+			PlayNetworkMontage(PickupMontage);
+			
+			// Call the InteractInterface interact function
+			ClosestInteractableItem->Interact(this);
+
+			// Put weapon on back
+			if (!Weapon->Mesh->bHiddenInGame)
+			{
+				Multi_SocketItem(Weapon->Mesh, FName("WeaponHolsterSocket"));
+			}
+			return;
+		}
+	}
+
+	
+	/* old */
+	/*if (ClosestInteractableItem && !HeldItem)
 	{
 		// If player is holding nothing, and there is something to pickup in range
 		if (PickupMontage &&
@@ -727,7 +787,7 @@ void APrototype2Character::Server_TryInteract_Implementation()
 			PlayNetworkMontage(PickupMontage);
 			
 			// Call the InteractInterface interact function
-			ClosestInteractableItem->Interact(this);
+			ClosestInteractableItem->Interact(this);					// ClosestInteractableItem->Interact(this);
 
 			// Put weapon on back
 			Multi_SocketItem(Weapon->Mesh,  FName("WeaponHolsterSocket"));
@@ -735,7 +795,7 @@ void APrototype2Character::Server_TryInteract_Implementation()
 		else if (ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot) // If the player is trying to pick up a plant from grow plot
 		{
 			// Call the InteractInterface interact function
-			ClosestInteractableItem->Interact(this);
+			ClosestInteractableItem->Interact(this);					// ClosestInteractableItem->Interact(this);
 
 			if (HeldItem)
 			{
@@ -756,7 +816,7 @@ void APrototype2Character::Server_TryInteract_Implementation()
 			(ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin ||
 			ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot))
 		{
-			ClosestInteractableItem->Interact(this);
+			ClosestInteractableItem->Interact(this);				// ClosestInteractableItem->Interact(this);
 
 			if(ClosestInteractableItem->InterfaceType == EInterfaceType::SellBin && !HeldItem)
 			{
@@ -771,7 +831,7 @@ void APrototype2Character::Server_TryInteract_Implementation()
 		{
 			Multi_DropItem();
 		}
-	}
+	}*/
 }
 
 void APrototype2Character::Server_DropItem_Implementation()
@@ -781,63 +841,91 @@ void APrototype2Character::Server_DropItem_Implementation()
 
 void APrototype2Character::Multi_DropItem_Implementation()
 {
+	// Drop into world
 	if(HeldItem)
 	{
-		// Drop into world
-		if(HeldItem)
-		{
-			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
+		// So that CheckForInteractables() can see it again
+		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 		
-			// So that CheckForInteractables() can see it again
-			HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		}
-		
-		HeldItem = nullptr;
-
-		// Set HUD image
-		if (PlayerHUDRef)
-			PlayerHUDRef->UpdatePickupUI(EPickup::None);
-
-		PlaySoundAtLocation(GetActorLocation(), DropCue);
+		// Launch the HeldItem towards the player instead of droppping
+		FVector LaunchItemVelocity = GetVelocity();
+		LaunchItemVelocity = LaunchItemVelocity.GetSafeNormal();
+		LaunchItemVelocity *= ItemLaunchStrength;
+		HeldItem->ItemComponent->Mesh->AddForce(LaunchItemVelocity);
 	}
+	
+	HeldItem = nullptr;
+	
+	// Set HUD image
+	if (PlayerHUDRef)
+		PlayerHUDRef->UpdatePickupUI(EPickup::None);
+	PlaySoundAtLocation(GetActorLocation(), DropCue);
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
 {
-
 	Multi_PickupItem(itemComponent, _item);
 }
 
 void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket)
 {
-
 	Multi_SocketItem(_object, _socket);
+}
+
+void APrototype2Character::Server_DropWeapon_Implementation()
+{
+	Multi_DropWeapon();
 }
 
 void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
 {
-	if (itemComponent->Mesh)
-	{
-		itemComponent->Mesh->SetSimulatePhysics(false);
-		itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-		// So that CheckForInteractables() cant see it while player is holding it
-		itemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	}
-	
-	_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-	
-	
-	// Assign Players HeldItem
-	HeldItem = _item;
-
-	// Set HUD image
-	if (PlayerHUDRef)
-		PlayerHUDRef->UpdatePickupUI(HeldItem->ItemComponent->PickupType);
-
+	// Audio
 	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
+
+	// Check if pick up is a weapon
+	if (itemComponent->PickupType == EPickup::Weapon)
+	{
+		//if (Weapon->Mesh->IsVisible())
+		//{
+		//	Server_DropWeapon();
+		//}
+		
+		// Fresh durability
+		WeaponCurrentDurability = WeaponMaxDurability;
+		
+		Weapon->Mesh->SetStaticMesh(itemComponent->Mesh->GetStaticMesh());
+		Weapon->Mesh->SetHiddenInGame(false);
+	}
+	else // pick up other
+	{
+		if (itemComponent->Mesh)
+		{
+			itemComponent->Mesh->SetSimulatePhysics(false);
+			itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
+			// So that CheckForInteractables() cant see it while player is holding it
+			itemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		}
+		
+		_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+		
+		// Assign Players HeldItem
+		HeldItem = _item;
+
+		// Set HUD image
+		if (PlayerHUDRef)
+			PlayerHUDRef->UpdatePickupUI(HeldItem->ItemComponent->PickupType);
+	}
+}
+
+void APrototype2Character::Multi_DropWeapon_Implementation()
+{
+	//GetWorld()->SpawnActor<AGrowableWeapon>(GetActorLocation(), GetActorRotation());
+	//Weapon->Mesh->SetHiddenInGame(true);
 }
 
 void APrototype2Character::Server_ReceiveMaterialsArray_Implementation(
