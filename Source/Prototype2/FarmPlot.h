@@ -32,7 +32,4 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
-
-	UPROPERTY(EditAnywhere)
-	AGrowSpot* growSpots[4];
 };

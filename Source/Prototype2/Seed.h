@@ -9,6 +9,7 @@
 /**
  * 
  */
+class APlant;
 UCLASS()
 class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
 {
@@ -24,4 +25,7 @@ public:
 	bool isPlanted;
 
 	virtual void Grow();
+	
+	UPROPERTY(EditAnywhere)
+	APlant* plantToGrow;
 };

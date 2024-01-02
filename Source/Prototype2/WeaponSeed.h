@@ -20,7 +20,6 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	AWeaponSeed();
 
-private:
 	UPROPERTY(EditAnywhere)
 	AWeapon* weaponToGrow = nullptr;
 };

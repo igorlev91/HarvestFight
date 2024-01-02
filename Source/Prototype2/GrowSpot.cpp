@@ -42,12 +42,35 @@ void AGrowSpot::Tick(float DeltaTime)
 
 void AGrowSpot::Interact(APrototype2Character* player)
 {
-	if (plant)
+	if (auto* weaponSeed = Cast<AWeaponSeed>(player->HeldItem))
+	{
+		if (!plant && !weapon)
+		{
+			SetWeapon(weaponSeed->weaponToGrow, weaponSeed->growtime);
+		}
+	}
+	else if (auto* seed = Cast<ASeed>(player->HeldItem))
+	{
+		if (!plant && !weapon)
+		{
+			SetPlant(seed->plantToGrow, seed->growtime);
+		}
+	}
+	else if (plant)
 	{
 		if (plantGrown)
 		{
 			player->HeldItem = plant;
 			plant = nullptr;
+			plantGrown = false;
+		}
+	}
+	else if (weapon)
+	{
+		if (plantGrown)
+		{
+			player->Weapon = weapon;
+			weapon = nullptr;
 			plantGrown = false;
 		}
 	}
@@ -58,6 +81,16 @@ void AGrowSpot::SetPlant(APlant* _plant, float _growTime)
 	if (!plant)
 	{
 		plant = _plant;
+		growTime = _growTime;
+		growingPlant = true;
+	}
+}
+
+void AGrowSpot::SetWeapon(AWeapon* _weapon, float _growTime)
+{
+	if (!weapon)
+	{
+		weapon = _weapon;
 		growTime = _growTime;
 		growingPlant = true;
 	}

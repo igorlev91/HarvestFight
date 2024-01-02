@@ -115,16 +115,16 @@ private: // Private variables
 	/* Amount of knockback applied which is multiplied by charge */
 	UPROPERTY(EditAnywhere)
 	float KnockBackAmount = 1000.0f;
-	
-	/* Weapon Held */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class AWeapon* Weapon;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	UWidget_PlayerHUD* PlayerHUDRef;
 
 public:
+	/* Weapon Held */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class AWeapon* Weapon;
+	
 	/* Currently held item */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;

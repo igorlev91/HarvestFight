@@ -9,6 +9,7 @@
 #include "GrowSpot.generated.h"
 
 class APlant;
+class AWeapon;
 class ASeed;
 class AWeaponSeed;
 UCLASS()
@@ -34,8 +35,10 @@ public:
 	virtual void Interact(APrototype2Character* player) override;
 
 	void SetPlant(APlant* _plant, float _growTime);
+	void SetWeapon(AWeapon* _weapon, float _growTime);
 
 	APlant* plant = nullptr;
+	AWeapon* weapon = nullptr;
 
 	float growTime;
 	bool growingPlant = false;

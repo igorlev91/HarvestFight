@@ -3,6 +3,7 @@
 
 #include "FarmPlot.h"
 
+#include "GrowSpot.h"
 #include "Prototype2Character.h"
 #include "WeaponSeed.h"
 #include "Seed.h"
@@ -32,13 +33,5 @@ void AFarmPlot::Tick(float DeltaTime)
 
 void AFarmPlot::Interact(APrototype2Character* player)
 {
-	if (auto* seed = Cast<AWeaponSeed>(player->HeldItem))
-	{
-		
-	}
-	else if (auto* seed = Cast<ASeed>(player->HeldItem))
-	{
-		
-	}
 }
 
