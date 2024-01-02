@@ -141,7 +141,7 @@ void APrototype2Character::BeginPlay()
 	
 	if (PlayerHudPrefab && !PlayerHUDRef)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
+		//UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
 		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(Cast<APrototype2PlayerController>(Controller), PlayerHudPrefab);
 
 		if (PlayerHUDRef)
@@ -471,7 +471,7 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 	}
 
 	// debug attack
-	UE_LOG(LogTemp, Warning, TEXT("AttackCharge: %s"), *FString::SanitizeFloat(AttackCharge));
+	//UE_LOG(LogTemp, Warning, TEXT("AttackCharge: %s"), *FString::SanitizeFloat(AttackCharge));
 	
 	//bIsStunned = true;
 	//StunTimer = 2.0f;
@@ -608,7 +608,7 @@ void APrototype2Character::CheckForFloorSurface()
 			UPhysicalMaterial* PhysMaterial = result.PhysMaterial.Get();
 			if (PhysMaterial)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit Physcs Material"));
+				//UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit Physcs Material"));
 				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), StartLocation, result.Location, FColor::Red, 0.1f, 5.0f);
 				float Friction = PhysMaterial->Friction;
 				if (Friction <= 0.5f)
@@ -616,7 +616,7 @@ void APrototype2Character::CheckForFloorSurface()
 					GetCharacterMovement()->BrakingFriction = 0.0f;
 					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
 					GetCharacterMovement()->GroundFriction = 0.0f;
-					UE_LOG(LogTemp, Error, TEXT("Ground Check Hit Slippery"));
+					//UE_LOG(LogTemp, Error, TEXT("Ground Check Hit Slippery"));
 					break;
 				}
 			}
@@ -734,7 +734,7 @@ void APrototype2Character::Server_Sprint_Implementation()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
+		//UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
 	}
 }
 
@@ -752,7 +752,7 @@ void APrototype2Character::Multi_Client_AddHUD_Implementation()
 {
 	if (PlayerHudPrefab && !PlayerHUDRef)
     	{
-    		UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
+    		//UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
     
     		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(UGameplayStatics::GetPlayerController(GetWorld(), PlayerID), PlayerHudPrefab);
     
@@ -858,7 +858,7 @@ void APrototype2Character::Client_AddHUD_Implementation()
 {
 	if (PlayerHudPrefab && !PlayerHUDRef)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
+		//UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
 		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(Cast<APrototype2PlayerController>(Controller), PlayerHudPrefab);
 
 		PlayerHUDRef->AddToViewport();
@@ -873,7 +873,7 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 		{
 			for(auto player : gamestate->PlayerArray)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Player Colour Assigned Locally"));
+				//UE_LOG(LogTemp, Warning, TEXT("Player Colour Assigned Locally"));
 				if (auto* character = Cast<APrototype2Character>(player->GetPlayerController()->GetCharacter()))
 				{
 					//character->GetMesh()->SetMaterial(0, gamemode->PlayerMaterials[Cast<APrototype2PlayerState>(player)->Player_ID]);

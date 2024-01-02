@@ -36,29 +36,7 @@ void ALobbyCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	GetMesh()->SetMaterial(0, PlayerMat);
-	
-	//if (HasAuthority())
-	//	Multi_UpdatePlayerMaterial();
-	//
-	//if (auto gamestate = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
-	//{
-	//	if (auto gameMode = Cast<ALobbyGamemode>(UGameplayStatics::GetGameMode(GetWorld())))
-	//	{
-	//		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
-	//		{
-	//			if (auto playerState = gamestate->Server_Players[i])
-	//			{
-	//				auto character = Cast<ALobbyCharacter>(playerState->GetPlayerController()->GetCharacter());
-	//				
-	//				if (character)
-	//				{
-	//					character->GetMesh()->SetMaterial(0, gameMode->PlayerMaterials[(int)playerState->CharacterColour]);
-	//				}
-	//			}
-	//				
-	//		}
-	//	}
-	//}
+
 }
 
 // Called to bind functionality to input
@@ -77,7 +55,7 @@ void ALobbyCharacter::Multi_UpdatePlayerMaterial_Implementation()
 {
 	if (auto gameMode = Cast<ALobbyGamemode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Player %s material set: %s"), *FString::FromInt(GetPlayerState<ALobbyPlayerState>()->Player_ID), *FString::FromInt((int)GetPlayerState<ALobbyPlayerState>()->CharacterColour));
+		//UE_LOG(LogTemp, Warning, TEXT("Player %s material set: %s"), *FString::FromInt(GetPlayerState<ALobbyPlayerState>()->Player_ID), *FString::FromInt((int)GetPlayerState<ALobbyPlayerState>()->CharacterColour));
 		GetMesh()->SetMaterial(0, gameMode->PlayerMaterials[(int)GetPlayerState<ALobbyPlayerState>()->CharacterColour]);
 	}
 }

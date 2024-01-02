@@ -27,6 +27,9 @@ public:
 	//UPROPERTY(EditAnywhere)
 	//float value; // Moved to ItemComponent
 
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* LeavesMesh;
+
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleGold();
 	void Server_ToggleGold_Implementation();

@@ -25,6 +25,20 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	float MatchLengthSeconds{0};
 
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	int CountdownLengthMinutes{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	float CountdownLengthSeconds{15.0f};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	bool GameHasStarted{};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	int MaxPlayersOnServer{0};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	int FinalConnectionCount{0};
+
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
 private:

@@ -2,7 +2,9 @@
 
 
 #include "RaidialSpawner.h"
-
+#include "RadialPlot.h"
+#include "Gamestates/Prototype2Gamestate.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 
@@ -31,6 +33,11 @@ void ARaidialSpawner::Tick(float DeltaTime)
 
 void ARaidialSpawner::SetUp()
 {
+	if (auto* gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		playercount = gamestate->FinalConnectionCount;
+	}
+	
 	FVector ReferenceLocation = FVector();
 	if (initialSpawn)
 	{
@@ -63,10 +70,10 @@ void ARaidialSpawner::SetUp()
 		
 		if (SpawnedObject)
 		{
-			// Calculate the direction from the spawned object to the initial spawn location
-			FVector DirectionToInitialSpawn = (SpawnLocation - ObjectSpawnPosition).GetSafeNormal();
-
-			
+			if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(SpawnedObject))
+			{
+				RadialPlot->SetPlayerID(Index);
+			}
 		}
 	}
 	

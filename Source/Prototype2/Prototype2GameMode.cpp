@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
+#include "Prototype2/Gamestates/LobbyGamestate.h"
 
 class ALobbyGamestate;
 
@@ -26,6 +27,13 @@ APrototype2GameMode::APrototype2GameMode()
 void APrototype2GameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (auto gamestate = GetGameState<APrototype2Gamestate>())
+	{
+		GameStateRef = gamestate;
+		gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
+		UE_LOG(LogTemp, Warning, TEXT("Final Connection Count : %s"), *FString::FromInt(gamestate->FinalConnectionCount));
+	}
 }
 
 void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
@@ -39,7 +47,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 		{
 			if (auto* gamestate = GetGameState<APrototype2Gamestate>())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
+				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
 				if (auto* character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
@@ -47,6 +55,9 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 					//character->GetMesh()->SetMaterial(0, PlayerMaterials[playerState->Player_ID]);
 					//character->PlayerMat = PlayerMaterials[playerState->Player_ID];
 					character->PlayerID = playerState->Player_ID;
+					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
+					gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
+					UE_LOG(LogTemp, Warning, TEXT("Final Connection Count: %s"), *FString::FromInt(gamestate->FinalConnectionCount));
 					//character->Client_AddHUD();
 					switch(playerState->Player_ID)
 					{
@@ -76,6 +87,56 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 					}
 				}
 			}
+		}
+	}
+}
+
+void APrototype2GameMode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+}
+
+void APrototype2GameMode::DisableControllerInput(APlayerController* PlayerController)
+{
+	if (PlayerController != nullptr)
+	{
+		PlayerController->DisableInput(PlayerController);
+		PlayerController->SetIgnoreMoveInput(true);
+		PlayerController->SetIgnoreLookInput(true);
+	}
+}
+
+void APrototype2GameMode::EnableControllerInput(APlayerController* PlayerController)
+{
+	if (PlayerController != nullptr)
+	{
+		PlayerController->EnableInput(PlayerController);
+		PlayerController->SetIgnoreMoveInput(false);
+		PlayerController->SetIgnoreLookInput(false);
+	}
+}
+
+void APrototype2GameMode::DisableControllerInputForAll()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PlayerController = It->Get();
+		if (PlayerController != nullptr)
+		{
+			DisableControllerInput(PlayerController);
+		}
+	}
+}
+
+void APrototype2GameMode::EnableControllerInputForAll()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		APlayerController* PlayerController = It->Get();
+		if (PlayerController != nullptr)
+		{
+			EnableControllerInput(PlayerController);
 		}
 	}
 }

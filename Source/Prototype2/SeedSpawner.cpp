@@ -1,7 +1,9 @@
 #include "SeedSpawner.h"
 
 #include "NavigationSystem.h"
+#include "PlantSeed.h"
 #include "Seed.h"
+#include "WeaponSeed.h"
 #include "AI/NavigationSystemBase.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -22,7 +24,7 @@ void ASeedSpawner::BeginPlay()
 void ASeedSpawner::SpawnSeedsOnTick(float DeltaTime)
 {
 	TArray<AActor*> SpawnedSeeds;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASeed::StaticClass(), SpawnedSeeds);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlantSeed::StaticClass(), SpawnedSeeds);
 	if (SeedPrefabs.Num() > 0 && SpawnedSeeds.Num() < MaxSeedPackets)
 	{
 		if (SpawnTimer > 0)
@@ -39,6 +41,27 @@ void ASeedSpawner::SpawnSeedsOnTick(float DeltaTime)
 				finalLocation.Z = 100.0f; // finalLocation.Z = 800.0f; for bens platform map
 				GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], finalLocation, {});
 				SpawnTimer = AverageSpawnTime + rand() % 4;
+			}
+		}
+	}
+
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWeaponSeed::StaticClass(), SpawnedSeeds);
+	if (WeaponSeeds.Num() > 0 && SpawnedSeeds.Num() < WeaponMaxSeedPackets)
+	{
+		if (WeaponSpawnTimer > 0)
+			WeaponSpawnTimer -= DeltaTime;
+		else 
+		{
+			// Spawn Seed
+			if (UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+			{
+				FNavLocation Result;
+				navSys->GetRandomPointInNavigableRadius(GetActorLocation(), WeaponMaxSpawnRadius, Result);
+				FVector finalLocation = Result.Location;
+				finalLocation += (Result.Location - GetActorLocation()).GetSafeNormal() * WeaponMinSpawnRadius;
+				finalLocation.Z = 100.0f; // finalLocation.Z = 800.0f; for bens platform map
+				GetWorld()->SpawnActor<ASeed>(WeaponSeeds[rand() % WeaponSeeds.Num()], finalLocation, {});
+				WeaponSpawnTimer = WeaponAverageSpawnTime + rand() % 4;
 			}
 		}
 	}

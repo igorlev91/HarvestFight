@@ -17,7 +17,16 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Tick(float DeltaSeconds) override;
 
+	void DisableControllerInput(APlayerController* PlayerController);
+	void EnableControllerInput(APlayerController* PlayerController);
+	void DisableControllerInputForAll();
+	void EnableControllerInputForAll();
+
+	UPROPERTY(VisibleAnywhere) 
+	class APrototype2Gamestate* GameStateRef{nullptr};
+	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 };

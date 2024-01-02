@@ -43,5 +43,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void KickFromLobby();
 
-	
+	UPROPERTY(VisibleAnywhere) 
+	class APrototype2Gamestate* GameStateRef{nullptr};
 };

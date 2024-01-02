@@ -11,19 +11,40 @@
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyCharacter.h"
 #include "Widgets/Widget_PlayerHUD.h"
+#include "Prototype2//Gamestates/Prototype2Gamestate.h"
 
 void APrototype2PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	PrimaryActorTick.bCanEverTick = true;
+	if (auto gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		GameStateRef = gamestate;
+	}
 }
 
 void APrototype2PlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	//Server_UpdateMaterial();
+	if (!GameStateRef)
+		return;
+
+	UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
+	
+	if (!GameStateRef->GameHasStarted)
+	{
+		DisableInput(this);
+		SetIgnoreLookInput(true);
+		SetIgnoreMoveInput(true);
+	}
+	else
+	{
+		EnableInput(this);
+		SetIgnoreLookInput(false);
+		SetIgnoreMoveInput(false);
+	}
 }
 
 void APrototype2PlayerController::SetIsReady(int _player, bool _isReady)

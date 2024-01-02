@@ -53,7 +53,7 @@ void ASellBin_Winter::GetHit(float AttackCharge, float _maxAttackCharge, FVector
 	FVector force = ((attackLoc - myLoc).GetSafeNormal()) * forceMultiplier;
 	ItemComponent->Mesh->AddImpulseAtLocation({0,0,ImpactLocationZ}, force);
 
-	UE_LOG(LogTemp, Warning, TEXT("Player hit Box with %s multiplier"), *FString::FromInt(forceMultiplier));
+	//UE_LOG(LogTemp, Warning, TEXT("Player hit Box with %s multiplier"), *FString::FromInt(forceMultiplier));
 }
 
 void ASellBin_Winter::OnCollision(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -67,7 +67,7 @@ void ASellBin_Winter::OnCollision(UPrimitiveComponent* OverlappedComponent, AAct
 			auto myLoc = FVector3d{GetActorLocation().X, GetActorLocation().Y, 0.0};
 			auto force = (attackLoc - myLoc).GetSafeNormal() * MinForceFromPlayerHit;
 			ItemComponent->Mesh->AddImpulseAtLocation({0,0,ImpactLocationZ}, force);
-			UE_LOG(LogTemp, Warning, TEXT("Player Touched Box"));
+			//UE_LOG(LogTemp, Warning, TEXT("Player Touched Box"));
 		}
 	}
 }

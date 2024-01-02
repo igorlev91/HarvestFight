@@ -37,6 +37,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{false};
 
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	int MaxPlayersOnServer{0};
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool IsCountingDown{};
 

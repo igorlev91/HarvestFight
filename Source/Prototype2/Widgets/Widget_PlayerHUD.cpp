@@ -5,6 +5,7 @@
 
 #include "Widget_EndgameMenu.h"
 #include "Widget_IngameMenu.h"
+#include "Widget_StartAndEndMenu.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/Overlay.h"
@@ -41,26 +42,62 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	InteractionText->SetVisibility(ESlateVisibility::Visible);
 	interactionButtonTimer = interactionButtonMaxTime;
 
-	//UWorld* World = GetWorld();
-	//if (World != nullptr)
-	//{
-	//	UGameInstance* GameInstance = World->GetGameInstance();
-	//	if (GameInstance != nullptr)
-	//	{
-	//		IOnlineSessionPtr OnlineSessionPtr = GameInstance->GetSubsystem<IOnlineSubsystem>()->GetSessionInterface();
-	//		if (OnlineSessionPtr.IsValid())
-	//		{
-	//			OnlineSessionPtr->GetSessionSettings()->m
-	//		}
-	//	}
-	//}
 	
+	// Set number of UI shown on screen
+	if (GameStateRef->FinalConnectionCount <= 4)
+	{
+		Overlay_P1->SetVisibility(ESlateVisibility::Visible);
+		Overlay_P2->SetVisibility(ESlateVisibility::Visible);
+		Overlay_P3->SetVisibility(ESlateVisibility::Visible);
+		Overlay_P4->SetVisibility(ESlateVisibility::Visible);
+			
+		if (GameStateRef->FinalConnectionCount <= 3)
+		{
+			Overlay_P4->SetVisibility(ESlateVisibility::Hidden);
+
+			if (GameStateRef->FinalConnectionCount <= 2)
+			{
+				Overlay_P3->SetVisibility(ESlateVisibility::Hidden);
+					
+				if (GameStateRef->FinalConnectionCount == 2)
+				{
+					Overlay_P2->SetVisibility(ESlateVisibility::Visible);
+
+				}
+				else if (GameStateRef->FinalConnectionCount == 1)
+				{
+					Overlay_P2->SetVisibility(ESlateVisibility::Hidden);
+				}
+				Overlay_P1->SetVisibility(ESlateVisibility::Visible);
+			
+				UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
+				overlaySlot->SetPadding(FMargin(0,0,0,0));
+			}
+		}
+	}
+
+	// Set positions of slots
+	if (GameStateRef->FinalConnectionCount == 4 || GameStateRef->FinalConnectionCount == 3)
+	{
+		UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+		overlaySlot->SetPadding(FMargin(0,0,650,0));
+		overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+		overlaySlot->SetPadding(FMargin(0,0,300,0));
+	}
+	else
+	{
+		UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+		overlaySlot->SetPadding(FMargin(0,0,400,0));
+		overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+		overlaySlot->SetPadding(FMargin(400,0,0,0));
+	}
+
 }
 
 void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
+	
 	if (GameStateRef)
 	{
 		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthMinutes)));
@@ -68,100 +105,15 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		
 		int seconds = (int)GameStateRef->MatchLengthSeconds;
 
-		if (seconds == 1)
-		{
-			Seconds->SetText(FText::FromString("01"));
-		}
-		else if (seconds == 2)
-		{
-			Seconds->SetText(FText::FromString("02"));
-		}
-		else if (seconds == 3)
-		{
-			Seconds->SetText(FText::FromString("03"));
-		}
-		else if (seconds == 4)
-		{
-			Seconds->SetText(FText::FromString("04"));
-		}
-		else if (seconds == 5)
-		{
-			Seconds->SetText(FText::FromString("05"));
-		}
-		else if (seconds == 6)
-		{
-			Seconds->SetText(FText::FromString("06"));
-		}
-		else if (seconds == 7)
-		{
-			Seconds->SetText(FText::FromString("07"));
-		}
-		else if (seconds == 8)
-		{
-			Seconds->SetText(FText::FromString("08"));
-		}
-		else if (seconds == 9)
-		{
-			Seconds->SetText(FText::FromString("09"));
-		}
-		else if (seconds == 0)
-		{
-			Seconds->SetText(FText::FromString("00"));
-		}
+		if (seconds < 10)
+			Seconds->SetText(FText::FromString("0" + FString::FromInt(seconds)));
 		else
-		{
 			Seconds->SetText(FText::FromString(FString::FromInt(seconds)));
-			//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
-		}
 
-		// Set number of UI shown on screen
-		if (GameStateRef->Server_Players.Num() <= 4)
-		{
-			Overlay_P1->SetVisibility(ESlateVisibility::Visible);
-			Overlay_P2->SetVisibility(ESlateVisibility::Visible);
-			Overlay_P3->SetVisibility(ESlateVisibility::Visible);
-			Overlay_P4->SetVisibility(ESlateVisibility::Visible);
-			
-			if (GameStateRef->Server_Players.Num() <= 3)
-			{
-				Overlay_P4->SetVisibility(ESlateVisibility::Hidden);
-
-				if (GameStateRef->Server_Players.Num() <= 2)
-				{
-					Overlay_P3->SetVisibility(ESlateVisibility::Hidden);
-					
-					if (GameStateRef->Server_Players.Num() == 2)
-					{
-						Overlay_P2->SetVisibility(ESlateVisibility::Visible);
-
-					}
-					else if (GameStateRef->Server_Players.Num() == 1)
-					{
-						Overlay_P2->SetVisibility(ESlateVisibility::Hidden);
-					}
-					Overlay_P1->SetVisibility(ESlateVisibility::Visible);
-			
-					UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
-					overlaySlot->SetPadding(FMargin(0,0,0,0));
-				}
-			}
-		}
-
-		// Set positions of slots
-		if (GameStateRef->Server_Players.Num() == 4 || GameStateRef->Server_Players.Num() == 3)
-		{
-			UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-			overlaySlot->SetPadding(FMargin(0,0,650,0));
-			overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-			overlaySlot->SetPadding(FMargin(0,0,300,0));
-		}
+		if (GameStateRef->GameHasStarted)
+			StartAndEndMenu->SetVisibility(ESlateVisibility::Hidden);
 		else
-		{
-			UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-			overlaySlot->SetPadding(FMargin(0,0,400,0));
-			overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-			overlaySlot->SetPadding(FMargin(400,0,0,0));
-		}
+			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
 		
 		// Updating points/coins
 		//if (!GetOwningPlayerPawn()->HasAuthority())

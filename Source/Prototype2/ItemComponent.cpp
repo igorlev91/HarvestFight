@@ -58,7 +58,7 @@ void UItemComponent::Interact(APrototype2Character* player, APickUpItem* itemPic
 	player->Server_PickupItem(this, itemPickedUp);
 
 	// Debug
-	UE_LOG(LogTemp, Warning, TEXT("HeldItem attached to hand"));	
+	//UE_LOG(LogTemp, Warning, TEXT("HeldItem attached to hand"));	
 }
 
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

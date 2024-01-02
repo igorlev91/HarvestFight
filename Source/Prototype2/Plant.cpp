@@ -9,12 +9,16 @@
 APlant::APlant()
 {
 	bReplicates = true;
+	LeavesMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Leaves Mesh"));
+	LeavesMesh->SetupAttachment(RootComponent);
 }
 
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
 	Server_ToggleGold();
+
+	LeavesMesh->SetupAttachment(RootComponent);
 }
 
 
@@ -59,7 +63,7 @@ void APlant::Multi_ToggleGold_Implementation()
 		}
 		if (goldMaterial2)
 		{
-			//ItemComponent->Mesh->SetMaterial(0, goldMaterial2);
+			LeavesMesh->SetMaterial(0, goldMaterial2);
 		}
 		ItemComponent->CropValue *= goldMultiplier;
 	}

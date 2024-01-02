@@ -153,8 +153,8 @@ void UWidget_LobbyPlayerHUD::SetReady()
 	if (auto* playerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 	{
 		auto playerID = playerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
-		if (playerController->IsLocalPlayerController())
-			UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
+		//if (playerController->IsLocalPlayerController())
+		//	UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
 		
 		if (GameStateRef->Server_Players.Num() >= playerID)
 		{
@@ -174,8 +174,8 @@ void UWidget_LobbyPlayerHUD::SetCancel()
 	if (auto* playerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 	{
 		auto playerID = playerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
-		if (playerController->IsLocalPlayerController())
-			UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
+		//if (playerController->IsLocalPlayerController())
+		//	UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
 		
 		if (GameStateRef->Server_Players.Num() >= playerID)
 		{

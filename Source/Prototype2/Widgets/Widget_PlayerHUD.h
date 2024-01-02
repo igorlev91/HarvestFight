@@ -139,7 +139,8 @@ public:
 	float interactionButtonMaxTime{0.2f};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	float interactionButtonTimer{};
-	
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	class UWidget_StartAndEndMenu* StartAndEndMenu;
 public:
 	// Functions
 	virtual void NativeOnInitialized() override;

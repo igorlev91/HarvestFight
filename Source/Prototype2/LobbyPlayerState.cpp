@@ -25,5 +25,5 @@ void ALobbyPlayerState::UpdateCharacterMaterial(ECharacters _character, ECharact
 	CharacterColour = _characterColour;
 
 	// Print
-	UE_LOG(LogTemp, Warning, TEXT("Player %s Colour Changed: %s"), *FString::FromInt(Player_ID), *FString::FromInt((int)CharacterColour));
+	//UE_LOG(LogTemp, Warning, TEXT("Player %s Colour Changed: %s"), *FString::FromInt(Player_ID), *FString::FromInt((int)CharacterColour));
 }

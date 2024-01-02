@@ -24,6 +24,9 @@ public:
 private:
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TArray<TSubclassOf<ASeed>> SeedPrefabs;
+
+	UPROPERTY(EditAnywhere, Category = WeaponSeeds, meta = (AllowPrivateAccess))
+	TArray<TSubclassOf<ASeed>> WeaponSeeds;
 private:
 	float SpawnTimer{};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
@@ -34,4 +37,14 @@ private:
 	float MinSpawnRadius{100.0f};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
 	float MaxSpawnRadius{800.0f};
+
+	float WeaponSpawnTimer{};
+	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
+	int32 WeaponMaxSeedPackets{3};
+	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
+	float WeaponAverageSpawnTime{2.0f};
+	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
+	float WeaponMinSpawnRadius{100.0f};
+	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
+	float WeaponMaxSpawnRadius{800.0f};
 };
