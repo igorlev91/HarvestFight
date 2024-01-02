@@ -19,6 +19,7 @@ class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
 public:
 	ASeed();
 	virtual void Interact(APrototype2Character* player) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
 	
 public:
 	UPROPERTY(EditAnywhere)

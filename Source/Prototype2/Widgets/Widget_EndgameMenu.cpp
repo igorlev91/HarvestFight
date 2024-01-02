@@ -16,6 +16,8 @@ void UWidget_EndgameMenu::NativeOnInitialized()
 	{
 		GameStateRef = gameState;
 	}
+
+	SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_EndgameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -27,6 +29,9 @@ void UWidget_EndgameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 void UWidget_EndgameMenu::UpdateWinnerText()
 {
+
+	// Getting highest score
+	
 	int winner{-1};
 	int winnerPoints{-1};
 	if (GameStateRef)
@@ -45,38 +50,161 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 		}
 	}
 
-	// Set text of who won
-	switch (winner)
+	// Checking for draws
+	bool IsP1{false};
+	bool IsP2{false};
+	bool IsP3{false};
+	bool IsP4{false};
+	
+	if (GameStateRef)
 	{
-	case 0:
+		// Check remaining players
+		for (int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{
-			GameWinnerText->SetText(FText::FromString("Player 1 Wins"));
-			break;
-		}
-	case 1:
-		{
-			GameWinnerText->SetText(FText::FromString("Player 2 Wins"));
-			break;
-		}
-	case 2:
-		{
-			GameWinnerText->SetText(FText::FromString("Player 3 Wins"));
-			break;
-		}
-	case 3:
-		{
-			GameWinnerText->SetText(FText::FromString("Player 4 Wins"));
-			break;
-		}
-	default:
-		{
-			GameWinnerText->SetText(FText::FromString("Winner Error: No Winner"));
-		break;
+			if (auto player = GameStateRef->Server_Players[i])
+			{
+				if (player->Coins == winnerPoints)
+				{
+					if (i == 0)
+					{
+						IsP1 = true;
+					}
+					else if (i == 1)
+					{
+						IsP2 = true;
+					}
+					else if (i == 2)
+					{
+						IsP3 = true;
+					}
+					else if (i == 3)
+					{
+						IsP4 = true;
+					}
+				}
+			}
 		}
 	}
+
+	// Update text
+	if (IsP1 == true && IsP2 == false && IsP3 == false  && IsP4 == false) // P1 wins
+	{
+		GameWinnerText->SetText(FText::FromString("WINNER!"));
+		GameWinnerText_1->SetText(FText::FromString("Player 1"));
+	}
+	else if (IsP1 == false && IsP2 == true && IsP3 == false  && IsP4 == false) // P2 Wins
+	{
+		GameWinnerText->SetText(FText::FromString("WINNER!"));
+		GameWinnerText_1->SetText(FText::FromString("Player 2"));
+	}
+	else if (IsP1 == false && IsP2 == false && IsP3 == true  && IsP4 == false) // P3 Wins
+	{
+		GameWinnerText->SetText(FText::FromString("WINNER!"));
+		GameWinnerText_1->SetText(FText::FromString("Player 3"));
+	}
+	else if (IsP1 == false && IsP2 == false && IsP3 == false  && IsP4 == true) // P4 Wins
+	{
+		GameWinnerText->SetText(FText::FromString("WINNER!"));
+		GameWinnerText_1->SetText(FText::FromString("Player 4"));
+	}
+	else if (IsP1 == true && IsP2 == true && IsP3 == false  && IsP4 == false) // P1 & P2 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1 & 2"));
+	}
+	else if (IsP1 == true && IsP2 == false && IsP3 == true  && IsP4 == false) // P1 & P3 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1 & 3"));
+	}
+	else if (IsP1 == true && IsP2 == false && IsP3 == false  && IsP4 == true) // P1 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1 & 4"));
+	}
+	else if (IsP1 == false && IsP2 == true && IsP3 == true  && IsP4 == false) // P2 & P3 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 2 & 3"));
+	}
+	else if (IsP1 == false && IsP2 == true && IsP3 == false  && IsP4 == true) // P2 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 2 & 4"));
+	}
+	else if (IsP1 == false && IsP2 == false && IsP3 == true  && IsP4 == true) // P3 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 3 & 4"));
+	}
+	else if (IsP1 == true && IsP2 == true && IsP3 == true  && IsP4 == false) // P1 & P2 & P3 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1, 2 & 3"));
+	}
+	else if (IsP1 == true && IsP2 == true && IsP3 == false  && IsP4 == true) // P1 & P2 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1, 2 & 4"));
+	}
+	else if (IsP1 == true && IsP2 == false && IsP3 == true  && IsP4 == true) // P1 & P3 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 1, 3 & 4"));
+	}
+	else if (IsP1 == false && IsP2 == true && IsP3 == true  && IsP4 == true) // P2 & P3 & P4 Draw
+	{
+		GameWinnerText->SetText(FText::FromString("Draw!"));
+		GameWinnerText_1->SetText(FText::FromString("Players 2, 3 & 4"));
+	}
+	else
+	{
+		GameWinnerText->SetText(FText::FromString("4 Cow Draw!"));
+		GameWinnerText_1->SetText(FText::FromString(""));
+	}
+		
+
+
+
+
+
 	
-	// Update points
-	GameWinnerPoints->SetText(FText::FromString(FString::FromInt(winnerPoints)));
+	
+	//// Set text of who won
+	//switch (winner)
+	//{
+	//case 0:
+	//	{
+//
+	//		GameWinnerText->SetText(FText::FromString("WINNER!"));
+	//		GameWinnerText_1->SetText(FText::FromString("Player 1"));
+//
+	//		break;
+	//	}
+	//case 1:
+	//	{
+	//		GameWinnerText->SetText(FText::FromString("WINNER!"));
+	//		GameWinnerText_1->SetText(FText::FromString("Player 2"));
+	//		break;
+	//	}
+	//case 2:
+	//	{
+	//		GameWinnerText->SetText(FText::FromString("WINNER!"));
+	//		GameWinnerText_1->SetText(FText::FromString("Player 3"));
+	//		break;
+	//	}
+	//case 3:
+	//	{
+	//		GameWinnerText->SetText(FText::FromString("WINNER!"));
+	//		GameWinnerText_1->SetText(FText::FromString("Player 4"));
+	//		break;
+	//	}
+	//default:
+	//	{
+	//		GameWinnerText->SetText(FText::FromString("Winner Error: No Winner"));
+	//	break;
+	//	}
+	//}
 }
 
 void UWidget_EndgameMenu::EnableEndgameMenu()

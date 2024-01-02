@@ -67,7 +67,8 @@ public:
 	void DestroySessionAndLeaveGame();
 
 	FSearchResults LatestSearchResults;
-	
+
+
 protected:
 	bool HostSession(FUniqueNetIdRepl UserId, FName SessionName, bool bIsLAN = true, bool bIsPresence = true, int32  = 12);
 	void FindSessions(FUniqueNetIdRepl UserId, bool bIsLAN = true, bool bIsPresence = true);

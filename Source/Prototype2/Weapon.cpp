@@ -30,4 +30,8 @@ void UWeapon::Interact(APrototype2Character* player)
 	UE_LOG(LogTemp, Warning, TEXT("Weapon attached to WeaponHolsterSocket"));	
 }
 
+void UWeapon::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
+{
+}
+
 

@@ -42,9 +42,13 @@ public:
 	UItemComponent* ItemComponent;
 
 	virtual void Interact(APrototype2Character* player) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
 
 	void SetPlant(APlant* _plant, float _growTime);
 	void SetWeapon(AWeapon* _weapon, float _growTime);
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	EGrowSpotState GrowSpotState = EGrowSpotState::Default;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	APlant* plant = nullptr;

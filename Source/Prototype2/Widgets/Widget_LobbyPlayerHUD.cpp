@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Components/Button.h"
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyPlayerState.h"
@@ -40,6 +41,10 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 		Player2Text->SetVisibility(ESlateVisibility::Hidden);
 		Player3Text->SetVisibility(ESlateVisibility::Hidden);
 		Player4Text->SetVisibility(ESlateVisibility::Hidden);
+		Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+		Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+		Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+		Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		
 		if (GameStateRef->Server_Players.Num() >= 1)
 			Player1Text->SetVisibility(ESlateVisibility::Visible);
@@ -62,10 +67,12 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 						{
 							Player1ReadyText->SetText(FText::FromString("Ready"));
 							Player1ReadyText->SetVisibility(ESlateVisibility::Visible);
+							Player1ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
 							Player1ReadyText->SetText(FText::FromString("Not Ready"));
+							Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
 					}
@@ -75,10 +82,12 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 						{
 							Player2ReadyText->SetText(FText::FromString("Ready"));
 							Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
+							Player2ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
 							Player2ReadyText->SetText(FText::FromString("Not Ready"));
+							Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
 					}
@@ -88,10 +97,12 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 						{
 							Player3ReadyText->SetText(FText::FromString("Ready"));
 							Player3ReadyText->SetVisibility(ESlateVisibility::Visible);
+							Player3ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
 							Player3ReadyText->SetText(FText::FromString("Not Ready"));
+							Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
 					}
@@ -101,10 +112,12 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 						{
 							Player4ReadyText->SetText(FText::FromString("Ready"));
 							Player4ReadyText->SetVisibility(ESlateVisibility::Visible);
+							Player4ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
 							Player4ReadyText->SetText(FText::FromString("Not Ready"));
+							Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
 					}

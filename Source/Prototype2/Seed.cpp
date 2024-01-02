@@ -15,6 +15,14 @@ void ASeed::Interact(APrototype2Character* player)
 	ItemComponent->Interact(player, this);
 }
 
+void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
+{
+	if (!owner->HeldItem)
+	{
+		_invokingWiget->SetHUDInteractText("Pick Up");
+	}
+}
+
 void ASeed::Grow()
 {
 	

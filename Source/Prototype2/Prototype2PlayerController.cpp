@@ -2,6 +2,8 @@
 
 
 #include "Prototype2PlayerController.h"
+
+#include "Prototype2GameMode.h"
 #include "Blueprint/UserWidget.h"
 #include "Gamestates/LobbyGamestate.h"
 #include "Kismet/GameplayStatics.h"
@@ -26,6 +28,8 @@ void APrototype2PlayerController::Server_SetIsReady_Implementation(int _player, 
 		gameState->SetIsReady(_player, _isReady);
 	}
 }
+
+
 
 void APrototype2PlayerController::KickFromLobby()
 {

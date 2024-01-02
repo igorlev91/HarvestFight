@@ -30,21 +30,29 @@ public:
 	class UTextBlock* Player1Text;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player1ReadyText;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* Player1ReadyImage;
 	// Player 2
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player2Text;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player2ReadyText;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* Player2ReadyImage;
 	// Player 3
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player3Text;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player3ReadyText;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* Player3ReadyImage;
 	// Player 4
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4Text;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4ReadyText;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* Player4ReadyImage;
 
 	
 public:

@@ -7,7 +7,10 @@
 #include "InputActionValue.h"
 #include "Prototype2Character.generated.h"
 
+class UAudioComponent;
+class USoundCue;
 class UItemComponent;
+
 UCLASS(config=Game)
 class APrototype2Character : public ACharacter
 {
@@ -16,7 +19,9 @@ public:
 	APrototype2Character();	
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int PlayerID{-1};
 public: // Public Networking functions
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
@@ -34,10 +39,16 @@ public: // Public Networking functions
 	void Server_AddHUD();
 	void Server_AddHUD_Implementation();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Client_AddHUD();
+	void Multi_Client_AddHUD_Implementation();
+	
 	UFUNCTION(Client, Reliable)
 	void Client_AddHUD();
 	void Client_AddHUD_Implementation();
 	
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UMaterialInstance* PlayerMat;
 protected: // Protected Networking functions
 	void PlayNetworkMontage(UAnimMontage* _montage);
 	
@@ -48,6 +59,14 @@ protected: // Protected Networking functions
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayNetworkMontage(UAnimMontage* _montage);
 	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerColour();
+	void Server_SetPlayerColour_Implementation();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlayerColour();
+	void Multi_SetPlayerColour_Implementation();
 	
 	UFUNCTION(Server, Reliable)
 	void Server_TryInteract();
@@ -64,7 +83,8 @@ protected: // Protected Networking functions
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SocketItem(UStaticMeshComponent* _object, FName _socket);
 	void Multi_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket);
-	
+
+
 protected: // Protected Functions
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -102,7 +122,16 @@ protected: // Protected Functions
 	
 	void UpdateAllPlayerIDs();
 
+	UFUNCTION(Server, Reliable)
+	void Server_ReceiveMaterialsArray(const TArray<UMaterialInstance*>& InMaterialsArray);
+	void Server_ReceiveMaterialsArray_Implementation(const TArray<UMaterialInstance*>& InMaterialsArray);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ReceiveMaterialsArray(const TArray<UMaterialInstance*>& InMaterialsArray);
+	void Multi_ReceiveMaterialsArray_Implementation(const TArray<UMaterialInstance*>& InMaterialsArray);
+
 	ENetRole IdealNetRole{ROLE_AutonomousProxy};
+
+
 
 private: // Input actions
 	/** MappingContext */
@@ -169,6 +198,26 @@ private: // Private variables
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	UWidget_PlayerHUD* PlayerHUDRef;
 
+public: // audio
+	void PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay);
+	
+	UAudioComponent* ChargeAttackAudioComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ChargeCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* ExecuteCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* PickUpCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* DropCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* SellCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* PlantCue;
+	UPROPERTY(EditAnywhere)
+	USoundCue* GetHitCue;
+	
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWeapon* Weapon;

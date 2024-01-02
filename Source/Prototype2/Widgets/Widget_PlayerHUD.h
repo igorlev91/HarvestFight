@@ -55,6 +55,17 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* WeaponImage;
 
+	UPROPERTY(EditAnywhere)
+	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}};
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P1Icon;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P2Icon;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P3Icon;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P4Icon;
+
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PickupImage;

@@ -19,7 +19,10 @@ public:
 	class UTextBlock* GameWinnerText;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* GameWinnerPoints;
+	class UTextBlock* GameWinnerText_1;
+
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//class UTextBlock* GameWinnerPoints;
 
 	class APrototype2Gamestate* GameStateRef;
 

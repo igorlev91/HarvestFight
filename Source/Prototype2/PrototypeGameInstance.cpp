@@ -3,6 +3,8 @@
 
 #include "PrototypeGameInstance.h"
 
+#include "Prototype2Character.h"
+
 UPrototypeGameInstance::UPrototypeGameInstance()
 {
 	OnCreateSessionCompleteDelegate = FOnCreateSessionCompleteDelegate::CreateUObject(this, &UPrototypeGameInstance::OnCreateSessionComplete);
@@ -68,6 +70,8 @@ void UPrototypeGameInstance::DestroySessionAndLeaveGame()
 		}
 	}
 }
+
+
 
 bool UPrototypeGameInstance::HostSession(FUniqueNetIdRepl UserId, FName SessionName, bool bIsLAN,
                                          bool bIsPresence, int32 MaxNumPlayers)

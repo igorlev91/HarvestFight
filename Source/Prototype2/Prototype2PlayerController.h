@@ -20,11 +20,11 @@ public:
 	virtual void BeginPlay() override;
 
 	void SetIsReady(int _player, bool _isReady);
-
+	
 	UFUNCTION(Server, Reliable)
 	void Server_SetIsReady(int _player, bool _isReady);
 	void Server_SetIsReady_Implementation(int _player, bool _isReady);
-
+	
 	UFUNCTION(BlueprintCallable)
 	void KickFromLobby();
 };
