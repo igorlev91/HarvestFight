@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Gamestates/LobbyGamestate.h"
 #include "LobbyPlayerState.generated.h"
 
 UCLASS()
@@ -19,4 +20,5 @@ public:
 	int Player_ID{};
 	
 	void SetIsReady(bool _isReady);
+	
 };

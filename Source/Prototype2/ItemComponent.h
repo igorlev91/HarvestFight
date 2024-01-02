@@ -39,6 +39,9 @@ public:
 	float CropValue;
 	
 	UPROPERTY(EditAnywhere)
+	bool gold = false;
+	
+	UPROPERTY(EditAnywhere)
 	int32 WeaponDurability;
 
 	// For HUD changing icons
@@ -46,5 +49,7 @@ public:
 	TEnumAsByte<EPickup> PickupType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float GrowTime;	
+	float GrowTime;
+
+	bool bIsGold;
 };

@@ -16,7 +16,8 @@ enum EPickup
 	CabbageSeed,
 	Mandrake,
 	MandrakeSeed,
-	Weapon
+	Weapon,
+	NoWeapon
 };
 
 UCLASS()
@@ -60,10 +61,6 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4ExtraCoins;
 
-	// Weapon UI
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* WeaponImage;
-
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}, {}, {}, {}, {}};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -75,9 +72,26 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P4Icon;
 
+	// Player UI overlays
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* TopOverlayUI;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* Overlay_P1;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* Overlay_P2;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* Overlay_P3;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* Overlay_P4;
+	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PickupImage;
+
+	// Weapon UI
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* WeaponImage;
+
 	// Textures
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CarrotTexture;
@@ -92,6 +106,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* MandrakeSeedTexture;
 
+	//// Sprint
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//class UImage* SprintImage;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CanSprintIconTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CanNotSprintIconTexture;
+	
 	// Interaction Text
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* InteractionText;
@@ -114,6 +136,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdatePickupUI(EPickup _pickup);
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponUI(EPickup _weapon);
 
 	UFUNCTION(BlueprintCallable)
 	void SetHUDInteractText(FString _interactionText);

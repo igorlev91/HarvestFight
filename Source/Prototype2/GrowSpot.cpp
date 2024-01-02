@@ -34,6 +34,7 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, growingPlant);
 	DOREPLIFETIME(AGrowSpot, plantGrown);
 	DOREPLIFETIME(AGrowSpot, plant);
+	DOREPLIFETIME(AGrowSpot, weapon);
 	DOREPLIFETIME(AGrowSpot, GrowSpotState);
 }
 
@@ -215,6 +216,10 @@ void AGrowSpot::Interact(APrototype2Character* player)
 					{
 						// replace here with weapon equip
 						player->Server_PickupItem(weapon->ItemComponent, weapon);
+						player->WeaponCurrentDurability = player->WeaponMaxDurability;
+						
+						//// Change the weapon UI for this player
+						//player->GetPlayerHUD()->UpdateWeaponUI(EPickup::Weapon);
 						
 						Multi_FireParticleSystem();
 						weapon->isGrown = true;
@@ -271,8 +276,8 @@ void AGrowSpot::Interact(APrototype2Character* player)
 
 void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
 {
-	UE_LOG(LogTemp, Warning, TEXT("PlayerID: %s"), *FString::FromInt(_playerID))
-	UE_LOG(LogTemp, Warning, TEXT("GrowSpotID: %s"), *FString::FromInt(Player_ID))
+	//UE_LOG(LogTemp, Warning, TEXT("PlayerID: %s"), *FString::FromInt(_playerID))
+	//UE_LOG(LogTemp, Warning, TEXT("GrowSpotID: %s"), *FString::FromInt(Player_ID))
 		
 	if (Player_ID == _playerID)
 	{

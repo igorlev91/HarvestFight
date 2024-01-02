@@ -36,14 +36,6 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 
 	if (GameStateRef)
 	{
-		Player1ReadyText->SetVisibility(ESlateVisibility::Hidden);
-		Player2ReadyText->SetVisibility(ESlateVisibility::Hidden);
-		Player3ReadyText->SetVisibility(ESlateVisibility::Hidden);
-		Player4ReadyText->SetVisibility(ESlateVisibility::Hidden);
-		Player1Text->SetVisibility(ESlateVisibility::Hidden);
-		Player2Text->SetVisibility(ESlateVisibility::Hidden);
-		Player3Text->SetVisibility(ESlateVisibility::Hidden);
-		Player4Text->SetVisibility(ESlateVisibility::Hidden);
 		Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 		Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
@@ -59,15 +51,6 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			StartCountDown->SetVisibility(ESlateVisibility::Hidden);
 		}
 		
-		if (GameStateRef->Server_Players.Num() >= 1)
-			Player1Text->SetVisibility(ESlateVisibility::Visible);
-		if (GameStateRef->Server_Players.Num() >= 2)
-			Player2Text->SetVisibility(ESlateVisibility::Visible);
-		if (GameStateRef->Server_Players.Num() >= 3)
-			Player3Text->SetVisibility(ESlateVisibility::Visible);
-		if (GameStateRef->Server_Players.Num() >= 4)
-			Player4Text->SetVisibility(ESlateVisibility::Visible);
-		
 		for(int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{
 			if (auto* playerstate = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[i]))
@@ -78,13 +61,10 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 					{
 						if (playerstate->IsReady == true)
 						{
-							Player1ReadyText->SetText(FText::FromString("Ready"));
-							Player1ReadyText->SetVisibility(ESlateVisibility::Visible);
 							Player1ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
-							Player1ReadyText->SetText(FText::FromString("Not Ready"));
 							Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
@@ -93,13 +73,10 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 					{
 						if (playerstate->IsReady == true)
 						{
-							Player2ReadyText->SetText(FText::FromString("Ready"));
-							Player2ReadyText->SetVisibility(ESlateVisibility::Visible);
 							Player2ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
-							Player2ReadyText->SetText(FText::FromString("Not Ready"));
 							Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
@@ -108,13 +85,10 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 					{
 						if (playerstate->IsReady == true)
 						{
-							Player3ReadyText->SetText(FText::FromString("Ready"));
-							Player3ReadyText->SetVisibility(ESlateVisibility::Visible);
 							Player3ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
-							Player3ReadyText->SetText(FText::FromString("Not Ready"));
 							Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
@@ -123,13 +97,10 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 					{
 						if (playerstate->IsReady == true)
 						{
-							Player4ReadyText->SetText(FText::FromString("Ready"));
-							Player4ReadyText->SetVisibility(ESlateVisibility::Visible);
 							Player4ReadyImage->SetVisibility(ESlateVisibility::Visible);
 						}
 						else
 						{
-							Player4ReadyText->SetText(FText::FromString("Not Ready"));
 							Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
 						}
 						break;
@@ -137,13 +108,33 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 				default:
 					break;
 				}
-					
 			}
 		}
 		// Show map choice
-		if (GameStateRef->bHasCountedDown == true)
+		if (GameStateRef->bShowMapChoice)
 		{
-			MapChoiceWidget->EnableMapChoice(); // Show map choice UI
+			MapChoiceWidget->SetVisibility(ESlateVisibility::Visible);
+			//MapChoiceWidget->EnableMapChoice(); // Show map choice UI
+			
+			MapChoiceWidget->Farm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->Farm)));
+			MapChoiceWidget->WinterFarm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->WinterFarm)));
+
+			if (GameStateRef->Farm > 0)
+			{
+				MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Visible);
+			}
+			else
+			{
+				MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Hidden);
+			}
+			if (GameStateRef->WinterFarm > 0)
+			{
+				MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Visible);
+			}
+			else
+			{
+				MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Hidden);
+			}
 		}
 	}
 }
@@ -160,20 +151,10 @@ void UWidget_LobbyPlayerHUD::SetReady()
 		{
 			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[playerID]))
 			{
-				//if (playerState->IsReady == true)
-				//{
-					playerController->SetIsReady(playerID, true);
+				playerController->SetIsReady(playerID, true);
 
-					ReadyButton->SetVisibility(ESlateVisibility::Hidden);
-					CancelButton->SetVisibility(ESlateVisibility::Visible);
-					//IsReadyButtonText->SetText(FText::FromString("Ready"));
-
-				//}
-				//else
-				//{
-				//	playerController->SetIsReady(playerID, true);
-				//	//IsReadyButtonText->SetText(FText::FromString("Not Ready"));
-				//}
+				ReadyButton->SetVisibility(ESlateVisibility::Hidden);
+				CancelButton->SetVisibility(ESlateVisibility::Visible);
 			}
 		}
 	}
@@ -200,7 +181,3 @@ void UWidget_LobbyPlayerHUD::SetCancel()
 	}
 }
 
-void UWidget_LobbyPlayerHUD::ShowWaitingForHost()
-{
-	MapChoiceClientOverlay->SetVisibility(ESlateVisibility::Visible);
-}

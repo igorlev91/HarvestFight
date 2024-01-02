@@ -32,9 +32,19 @@ public:
 	UFUNCTION(Server, Reliable)
     void Server_FireParticleSystem();
     void Server_FireParticleSystem_Implementation();
+	void FireSellFX(APlant* _plant, APrototype2Character* player);
+	UFUNCTION(Client, Reliable)
+	void Client_MoveUI(float DeltaTime);
+	void Client_MoveUI_Implementation(float DeltaTime);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_FireParticleSystem();
 	void Multi_FireParticleSystem_Implementation();
+	
+	void HideParticleSystem();
+
+	virtual void ClientInteract(APrototype2Character* player) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -53,6 +63,11 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	float movingTimer{};
 	void MoveUIComponent(float _dt);
+
+	UPROPERTY(Replicated)
+	bool bWidgetVisible{};
+
+	
 
 	virtual void Interact(APrototype2Character* player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;

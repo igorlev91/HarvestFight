@@ -49,14 +49,48 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 				if (LobbyLengthMinutes <= 0)
 				{
 					// End of timer
-					//GetWorld()->ServerTravel(MapChoice, true, false); // Start level
+					//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 
 					// Show map choice
-					bHasCountedDown = true;
-					if (bMapChosen == true)
-					{
-						GetWorld()->ServerTravel(MapChoice, false, false); // Start level
-					}
+					bShowMapChoice = true;
+					
+					UE_LOG(LogTemp, Warning, TEXT("Farm: %d"), Farm);
+					UE_LOG(LogTemp, Warning, TEXT("WinterFarm: %d"), WinterFarm);
+
+					//int totalVotes = Farm + WinterFarm;
+					//if (totalVotes == Server_Players.Num())
+					//{
+						if (Farm >= 1)
+						{
+							MapChoice = "Level_Main";
+							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+						}
+						else if (WinterFarm >= 1)
+						{
+							MapChoice = "Level_Winter";
+							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+						}
+						//else
+						//{
+						//	int randomNum = FMath::RandRange(0, 1);
+						//	if (randomNum == 0)
+						//	{
+						//		MapChoice = "Level_Main";
+						//	}
+						//	else
+						//	{
+						//		MapChoice = "Level_Winter";
+						//	}
+						//}
+
+
+						
+					//}
+					
+					//if (bMapChosen == true)
+					//{
+					//	GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+					//}
 				}
 				else
 				{
@@ -107,5 +141,9 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, IsCountingDown);
 	DOREPLIFETIME(ALobbyGamestate, PreviousServerTravel);
 	DOREPLIFETIME(ALobbyGamestate, Server_Players);
+	DOREPLIFETIME(ALobbyGamestate, bShowMapChoice);
+
+	DOREPLIFETIME(ALobbyGamestate, Farm);
+	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
 }
 

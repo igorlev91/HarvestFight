@@ -26,41 +26,27 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_MapChoice* MapChoiceWidget;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* MapChoiceClientOverlay;
 
-	// Player text -ready or not
+	// Player ready button (above character head)
 	// Player 1
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player1Text;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player1ReadyText;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* Player1ReadyImage;
 	// Player 2
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player2Text;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player2ReadyText;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* Player2ReadyImage;
 	// Player 3
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player3Text;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player3ReadyText;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* Player3ReadyImage;
 	// Player 4
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player4Text;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player4ReadyText;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* Player4ReadyImage;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* StartCountDown;
+
+	// Player number
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	int playerNumber{};
 public:
 
 	virtual void NativeOnInitialized() override;
@@ -73,6 +59,4 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCancel();
 
-	UFUNCTION(BlueprintCallable)
-	void ShowWaitingForHost();
 };

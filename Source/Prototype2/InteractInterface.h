@@ -39,6 +39,7 @@ class PROTOTYPE2_API IInteractInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface
 public:
 	virtual void Interact(APrototype2Character* player) = 0;
+	virtual void ClientInteract(APrototype2Character* player){};
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) = 0;
 
 	EInterfaceType InterfaceType = EInterfaceType::Default;

@@ -61,9 +61,9 @@ APrototype2Character::APrototype2Character()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-
+	
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
@@ -102,6 +102,9 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, bIsStunned);
 	DOREPLIFETIME(APrototype2Character, StunTimer);
 	DOREPLIFETIME(APrototype2Character, LocationWhenStunned);
+	DOREPLIFETIME(APrototype2Character, CanSprintTimer);
+	DOREPLIFETIME(APrototype2Character, SprintTimer);
+	DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
 }
 
 void APrototype2Character::BeginPlay()
@@ -136,6 +139,10 @@ void APrototype2Character::BeginPlay()
 	{
 		InteractSystem->SetAsset(ParticleSystem);
 	}
+
+	// Clamp the viewing angle of the camera
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMin = -40.0f;
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 0.0f;
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
@@ -165,23 +172,13 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	//}
 
 	// Sprint
-	if (SprintTimer < 0.0f)
+	if (bIsHoldingGold)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-
-		// Speed up animation
-		if (RunAnimation)
-		{
-			RunAnimation->RateScale = 1.25f;
-		}
+		UpdateCharacterSpeed(GoldPlantSpeed, WalkSpeed, 1.25f);
 	}
 	else
 	{
-		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-		if(RunAnimation)
-		{
-			RunAnimation->RateScale = 2.50f;
-		}
+		UpdateCharacterSpeed(WalkSpeed, SprintSpeed, 2.5f);
 	}
 	
 	// Attack
@@ -197,21 +194,28 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	}
 
 	// Countdown timers
-	InteractTimer -= DeltaSeconds;
-	AttackTimer -= DeltaSeconds;
-	SprintTimer -= DeltaSeconds;
-	CanSprintTimer -= DeltaSeconds;
-
-	// Update sprint UI
-	PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
-
-	if (GetVelocity().Length() > 1.0f)
+	if (InteractTimer >= 0)
+		InteractTimer -= DeltaSeconds;
+	if (AttackTimer >= 0)
+		AttackTimer -= DeltaSeconds;
+	if (SprintTimer >= 0)
+		SprintTimer -= DeltaSeconds;
+	if (CanSprintTimer >= 0)
+		CanSprintTimer -= DeltaSeconds;
+	
+	if (PlayerHUDRef)
 	{
-		InteractSystem->Activate();		
-	}
-	else
-	{
-		InteractSystem->Deactivate();
+		// Update sprint UI
+		PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
+		
+		if (GetVelocity().Length() > 1.0f)
+		{
+			InteractSystem->Activate();		
+		}
+		else
+		{
+			InteractSystem->Deactivate();
+		}
 	}
 }
 
@@ -222,7 +226,6 @@ void APrototype2Character::ChargeAttack()
 
 void APrototype2Character::ReleaseAttack()
 {
-	// 
 	Server_ReleaseAttack();
 }
 
@@ -240,8 +243,9 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	FCollisionShape colSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Sphere Radius = %s"), *FString::SanitizeFloat(AttackSphereRadius));
+	
 	// draw collision sphere
-	//DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 2.0f);
+	// DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 2.0f);
 	
 	// check if something got hit in the sweep
 	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Pawn, colSphere);
@@ -270,7 +274,10 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
 	if (WeaponCurrentDurability <= 0)
 	{
-		Weapon->Mesh->SetHiddenInGame(true);
+		Multi_DropWeapon();
+
+		//// Update UI
+		//PlayerHUDRef->UpdateWeaponUI(EPickup::NoWeapon);
 	}
 	
 	// Reset Attack Timer
@@ -304,6 +311,7 @@ void APrototype2Character::Interact()
 		
 		if (!bIsChargingAttack)
 		{
+			TryInteract();
 			Server_TryInteract();
 		}
 
@@ -321,20 +329,33 @@ void APrototype2Character::Interact()
 
 void APrototype2Character::Sprint()
 {
-	if (CanSprintTimer < 0.0f && !bIsChargingAttack)
+	Server_Sprint();
+}
+
+void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float MaxAnimationRateScale)
+{
+	if (SprintTimer < 0.0f)
 	{
-		SprintTimer = SprintTime;
-		CanSprintTimer = CanSprintTime;
+		GetCharacterMovement()->MaxWalkSpeed = _WalkSpeed;
+
+		// Speed up animation
+		if (RunAnimation)
+		{
+			RunAnimation->RateScale = MaxAnimationRateScale/2;
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
+		GetCharacterMovement()->MaxWalkSpeed = _SprintSpeed;
+		if(RunAnimation)
+		{
+			RunAnimation->RateScale = MaxAnimationRateScale;
+		}
 	}
 }
 
 void APrototype2Character::CheckForInteractables()
 {
-	
 	// create tarray for hit results
 	TArray<FHitResult> outHits;
 	
@@ -377,14 +398,33 @@ void APrototype2Character::CheckForInteractables()
 void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 {
 	// Disable input
-	DisableInput(this->GetLocalViewingPlayerController());
+	//DisableInput(this->GetLocalViewingPlayerController());
 
 	Server_FireDizzySystem();
 	//Server_Ragdoll(true);
 	
 	// Knockback
-	GetCharacterMovement()->Velocity = (GetActorLocation() - AttackerLocation).GetSafeNormal() * AttackCharge * KnockBackAmount;
+	FVector KnockAway = GetActorUpVector()/2 + (GetActorLocation() - AttackerLocation).GetSafeNormal();
 
+	// Set minimum attack charge for scaling knockback
+	if (AttackCharge < 1.0f)
+	{
+		AttackCharge = 1.0f;
+	}
+	
+	KnockAway *= AttackCharge * KnockBackAmount;
+	
+	UKismetSystemLibrary::PrintString(GetWorld(), "Pre limit: " + FString::SanitizeFloat(KnockAway.Size()));
+	// Limit the knockback to MaxKnockBackVelocity
+	if (KnockAway.Size() > MaxKnockBackVelocity)
+	{
+		KnockAway = KnockAway.GetSafeNormal() * MaxKnockBackVelocity;
+		UKismetSystemLibrary::PrintString(GetWorld(), "Post limit: " + FString::SanitizeFloat(KnockAway.Size()));
+	}
+
+	// Knock this player away
+	GetCharacterMovement()->Launch(KnockAway);
+	
 	// Drop item
 	if (HeldItem)
 	{
@@ -532,10 +572,6 @@ void APrototype2Character::Ragdoll(bool _ragdoll)
 		/* Disable all collision on capsule */
 		UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		
-
-
-
 
 		UCharacterMovementComponent* CharacterComp = Cast<UCharacterMovementComponent>(GetMovementComponent());
 		if (CharacterComp)
@@ -543,10 +579,7 @@ void APrototype2Character::Ragdoll(bool _ragdoll)
 			CharacterComp->SetMovementMode(EMovementMode::MOVE_Walking);
 			CharacterComp->SetComponentTickEnabled(true);
 		}
-
-
-	}
-	
+	}	
 }
 
 void APrototype2Character::Server_Ragdoll_Implementation(bool _ragdoll)
@@ -563,6 +596,12 @@ void APrototype2Character::Server_Ragdoll_Implementation(bool _ragdoll)
 void APrototype2Character::Multi_Ragdoll_Implementation(bool _ragdoll)
 {
 	Ragdoll(_ragdoll);
+}
+
+UWidget_PlayerHUD* APrototype2Character::GetPlayerHUD()
+{
+	// Update UI
+	return PlayerHUDRef;
 }
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
@@ -585,6 +624,19 @@ void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage*
 void APrototype2Character::Server_SetPlayerColour_Implementation()
 {
 	Multi_SetPlayerColour();
+}
+
+void APrototype2Character::Server_Sprint_Implementation()
+{
+	if (CanSprintTimer < 0.0f && !bIsChargingAttack)
+	{
+		SprintTimer = SprintTime;
+		CanSprintTimer = CanSprintTime;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
+	}
 }
 
 void APrototype2Character::Server_AddHUD_Implementation()
@@ -653,7 +705,7 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 		else
 		{
 			// Create a smaller sphere of effect
-			attackSphereRadius = 50.0f;
+			attackSphereRadius = 75.0f;
 		}
 
 		// If attack button is clicked without being held
@@ -666,7 +718,7 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 			}
 			// Delayed attack
 			FTimerHandle Handle;
-			GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, attackSphereRadius] { ExecuteAttack(attackSphereRadius); }), 0.5f, false);	
+			GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, attackSphereRadius] { ExecuteAttack(attackSphereRadius); }), InstantAttackDelay, false);	
 		}
 		else
 		{
@@ -681,7 +733,7 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 	}
 
 	// empty
-	Multi_ReleaseAttack();
+	//Multi_ReleaseAttack();
 }
 
 void APrototype2Character::Multi_ReleaseAttack_Implementation()
@@ -727,6 +779,14 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 				}
 			}
 		}
+	}
+}
+
+void APrototype2Character::TryInteract()
+{
+	if (ClosestInteractableItem)
+	{
+		ClosestInteractableItem->ClientInteract(this);		
 	}
 }
 
@@ -844,25 +904,34 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	// Drop into world
 	if(HeldItem)
 	{
+		// If Item was gold, set bool to return character to normal speed in tick
+		if (HeldItem->ItemComponent->gold)
+		{
+			bIsHoldingGold = false;
+		}
+		
 		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		//HeldItem->SetActorLocation({HeldItem->GetActorLocation().X,HeldItem->GetActorLocation().Y,0 });
 		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	
 		// So that CheckForInteractables() can see it again
 		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 		
-		// Launch the HeldItem towards the player instead of droppping
-		FVector LaunchItemVelocity = GetVelocity();
-		LaunchItemVelocity = LaunchItemVelocity.GetSafeNormal();
-		LaunchItemVelocity *= ItemLaunchStrength;
-		HeldItem->ItemComponent->Mesh->AddForce(LaunchItemVelocity);
+		//// Launch the HeldItem towards the player instead of droppping
+		//FVector LaunchItemVelocity = GetVelocity();
+		//LaunchItemVelocity = LaunchItemVelocity.GetSafeNormal();
+		//LaunchItemVelocity *= ItemLaunchStrength;
+		//HeldItem->ItemComponent->Mesh->AddForce(LaunchItemVelocity);
 	}
 	
 	HeldItem = nullptr;
 	
 	// Set HUD image
 	if (PlayerHUDRef)
+	{
 		PlayerHUDRef->UpdatePickupUI(EPickup::None);
+	}
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
 }
 
@@ -889,16 +958,9 @@ void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemC
 	// Check if pick up is a weapon
 	if (itemComponent->PickupType == EPickup::Weapon)
 	{
-		//if (Weapon->Mesh->IsVisible())
-		//{
-		//	Server_DropWeapon();
-		//}
-		
-		// Fresh durability
-		WeaponCurrentDurability = WeaponMaxDurability;
-		
 		Weapon->Mesh->SetStaticMesh(itemComponent->Mesh->GetStaticMesh());
 		Weapon->Mesh->SetHiddenInGame(false);
+		Weapon->Mesh->SetVisibility(true);
 	}
 	else // pick up other
 	{
@@ -912,20 +974,23 @@ void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemC
 		}
 		
 		_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-		
-		// Assign Players HeldItem
+
 		HeldItem = _item;
 
-		// Set HUD image
-		if (PlayerHUDRef)
+		// If item is the gold plant, slow down the player
+		if (HeldItem->ItemComponent->gold)
+		{
+			bIsHoldingGold = true;
+		}
+		
+		if (PlayerHUDRef && HeldItem)
 			PlayerHUDRef->UpdatePickupUI(HeldItem->ItemComponent->PickupType);
 	}
 }
 
 void APrototype2Character::Multi_DropWeapon_Implementation()
 {
-	//GetWorld()->SpawnActor<AGrowableWeapon>(GetActorLocation(), GetActorRotation());
-	//Weapon->Mesh->SetHiddenInGame(true);
+	Weapon->Mesh->SetVisibility(false);
 }
 
 void APrototype2Character::Server_ReceiveMaterialsArray_Implementation(

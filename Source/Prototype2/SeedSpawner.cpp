@@ -36,7 +36,7 @@ void ASeedSpawner::SpawnSeedsOnTick(float DeltaTime)
 				navSys->GetRandomPointInNavigableRadius(GetActorLocation(), MaxSpawnRadius, Result);
 				FVector finalLocation = Result.Location;
 				finalLocation += (Result.Location - GetActorLocation()).GetSafeNormal() * MinSpawnRadius;
-				finalLocation.Z = 100.0f;
+				finalLocation.Z = 100.0f; // finalLocation.Z = 800.0f; for bens platform map
 				GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], finalLocation, {});
 				SpawnTimer = AverageSpawnTime + rand() % 4;
 			}

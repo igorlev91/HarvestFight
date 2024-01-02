@@ -95,6 +95,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
     void Multi_Ragdoll(bool _ragdoll);
     void Multi_Ragdoll_Implementation(bool _ragdoll);
+	
+	class UWidget_PlayerHUD* GetPlayerHUD();
 
 protected: /* Protected Networking functions */
 	void PlayNetworkMontage(UAnimMontage* _montage);
@@ -110,10 +112,16 @@ protected: /* Protected Networking functions */
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerColour();
 	void Server_SetPlayerColour_Implementation();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Sprint();
+	void Server_Sprint_Implementation();
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetPlayerColour();
 	void Multi_SetPlayerColour_Implementation();
+
+	void TryInteract();
 	
 	UFUNCTION(Server, Reliable)
 	void Server_TryInteract();
@@ -176,6 +184,9 @@ protected: /* Protected non-network Functions */
 
 	/* Activate Sprint */
 	void Sprint();
+
+	/* Handle character speed */
+	void UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float MaxAnimationRateScale);
 	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
@@ -235,6 +246,27 @@ public: /* Public variables */
 	/* Is player holding down attack */
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bIsChargingAttack;
+
+	/* Maximum amount of Attack Charge */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxAttackCharge = 3.0f;
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	float AttackChargeAmount;
+
+	/* Sprint */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CanSprintTime = 5.0f;
+
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	float CanSprintTimer;
+
+	/* Weapon degrading */
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	int WeaponCurrentDurability;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int WeaponMaxDurability;
 
 	class IInteractInterface* ClosestInteractableItem;
 
@@ -308,14 +340,14 @@ private: /* Private variables */
 	UPROPERTY(EditAnywhere)
 	float InteractRadius = 200.0f;
 
-	/* Maximum amount of Attack Charge */
-	UPROPERTY(EditAnywhere)
-	float MaxAttackCharge = 3.0f;
+
 
 	/* Amount of knockback applied which is multiplied by charge */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = KnockBack)
 	float KnockBackAmount = 1000.0f;
-
+	UPROPERTY(EditAnywhere, Category = KnockBack)
+	float MaxKnockBackVelocity = 10000.0f;
+	
 	/* Interact timer */
 	UPROPERTY(EditAnywhere)
 	float InteractTimerTime = 1.0f;
@@ -325,7 +357,8 @@ private: /* Private variables */
 	UPROPERTY(EditAnywhere)
 	float AttackTimerTime = 1.0f;
 	float AttackTimer{};
-
+	UPROPERTY(EditAnywhere)
+	float InstantAttackDelay = 0.5f;
 	UPROPERTY(EditAnywhere)
 	float ItemLaunchStrength = 500000.0f;
 	
@@ -333,24 +366,30 @@ private: /* Private variables */
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	UWidget_PlayerHUD* PlayerHUDRef;
 	
-	/* Sprint */
+	/* Sprint/Walk/Slow Walk */
 	UPROPERTY(EditAnywhere)
 	UAnimSequence* RunAnimation;
 	
 	float WalkSpeed = 500.f;
+
+	float GoldPlantSpeed = 300.0f;
+
+	bool bIsHoldingGold;
 	
 	UPROPERTY(EditAnywhere)
 	float SprintSpeed = 750.0f;
 	
 	UPROPERTY(EditAnywhere)
 	float SprintTime = 2.0f;
-	
+
+	UPROPERTY(Replicated)
 	float SprintTimer;
 	
-	UPROPERTY(EditAnywhere)
-	float CanSprintTime = 5.0f;
-	
-	float CanSprintTimer;
+	//UPROPERTY(EditAnywhere)
+	//float CanSprintTime = 5.0f;
+//
+	//UPROPERTY(Replicated)
+	//float CanSprintTimer;
 
 	/* Attack */
 	UPROPERTY(EditAnywhere)
@@ -359,20 +398,14 @@ private: /* Private variables */
 	bool bCanAttack = true;
 	
 	UPROPERTY(Replicated)
-	float AttackChargeAmount;
-	
-	UPROPERTY(Replicated)
 	bool bIsStunned;
 	
 	UPROPERTY(Replicated)
 	float StunTimer;
-
-	UPROPERTY(EditAnywhere)
-	int WeaponCurrentDurability;
-
-	UPROPERTY(EditAnywhere)
-	int WeaponMaxDurability;
-
+		
+	UPROPERTY(EditAnywhere, Category=Attack)
+	FVector KnockUp = {1.0f, 1.0f, 100000000.0f};
+	
 	/* Other */
 	bool DoOnce{};
 

@@ -11,12 +11,28 @@ void UWidget_MapChoice::EnableMapChoice()
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-void UWidget_MapChoice::SelectLevel(FString _level)
+void UWidget_MapChoice::SelectLevel(EFarm _level)
 {
-	if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	//if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	//{
+	//	gameState->MapChoice = _level;
+	//	gameState->bMapChosen = true;
+	//}
+	if (bMapSelected == false)
 	{
-		gameState->MapChoice = _level;
-		gameState->bMapChosen = true;
+		bMapSelected = true;
+		
+		if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			if (_level == EFarm::FARM)
+			{
+				gameState->Farm = gameState->Farm + 1;
+			}
+			else if (_level == EFarm::WINTERFARM)
+			{
+				gameState->WinterFarm = gameState->WinterFarm + 1;
+			}
+		}
 	}
+	
 }
-

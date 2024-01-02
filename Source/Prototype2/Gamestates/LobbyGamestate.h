@@ -4,6 +4,13 @@
 #include "GameFramework/GameStateBase.h"
 #include "LobbyGamestate.generated.h"
 
+UENUM(BlueprintType)
+enum class EFarm : uint8 
+{
+	NONE,
+	FARM,
+	WINTERFARM
+};
 
 UCLASS()
 class PROTOTYPE2_API ALobbyGamestate : public AGameStateBase
@@ -34,10 +41,16 @@ public:
 	float LobbyLengthSeconds{10.0f};
 	
 	// Map choice
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bMapChosen{false};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool bShowMapChoice{false};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString MapChoice{"Level_Main"};
+
+	// Maps
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int Farm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int WinterFarm{0};
 
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)

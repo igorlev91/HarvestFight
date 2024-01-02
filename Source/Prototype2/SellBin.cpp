@@ -12,6 +12,7 @@
 #include "Particles/ParticleSystem.h"
 #include "GameFramework/PlayerState.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Widgets/Widget_SellCropUI.h"
 
 // Sets default values
@@ -25,6 +26,7 @@ ASellBin::ASellBin()
 	// Sell UI
 	SellAmountWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("SellAmountWidgetComponent"));
 	SellAmountWidgetComponent->SetupAttachment(RootComponent);
+	SellAmountWidgetComponent->SetIsReplicated(false);
 	
 	InterfaceType = EInterfaceType::SellBin;
 
@@ -38,8 +40,10 @@ void ASellBin::BeginPlay()
 	Super::BeginPlay();
 
 	// Sell UI related
-	startPosition = SellAmountWidgetComponent->GetComponentLocation(); // Set UI start location variable
+	startPosition = FVector(0, 0, 0);// SellAmountWidgetComponent->GetComponentLocation(); // Set UI start location variable
 	movingTimer = movingTime; // Set starting timer to equal max time
+
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 }
 
 // Called every frame
@@ -47,15 +51,39 @@ void ASellBin::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (isMoving == true)
-	{
-		MoveUIComponent(DeltaTime);
-	}
+	MoveUIComponent(DeltaTime);
 }
 
 void ASellBin::Server_FireParticleSystem_Implementation()
 {
 	//Multi_FireParticleSystem();
+}
+
+void ASellBin::FireSellFX(APlant* _plant, APrototype2Character* player)
+{
+	if (player->IsLocallyControlled())
+	{
+		// Selling UI - Show in-game UI when selling
+		if (SellAmountWidgetComponent->GetWidget())
+		{
+			SellAmountWidgetComponent->SetRelativeLocation(FVector(startPosition)); // Reset text to start position
+				
+			if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+			{
+				SellCropUI->SetCropValue(_plant->ItemComponent->CropValue);
+				SellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
+				isMoving = true;
+			}
+		}
+	}
+}
+
+void ASellBin::Client_MoveUI_Implementation(float DeltaTime)
+{
+	if (isMoving == true)
+	{
+		
+	}
 }
 
 void ASellBin::Multi_FireParticleSystem_Implementation()
@@ -66,6 +94,37 @@ void ASellBin::Multi_FireParticleSystem_Implementation()
 	//// Set the NiagaraComponent to auto-destroy itself after it finishes playing
 	//NiagaraComponent->SetAutoDestroy(true);
 	//NiagaraComponent->Activate();
+}
+
+void ASellBin::HideParticleSystem()
+{
+	bWidgetVisible = false;
+	if (SellAmountWidgetComponent->GetWidget())
+	{
+		if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+		{
+			SellCropUI->SellText->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ASellBin::ClientInteract(APrototype2Character* player)
+{
+	if (player->HeldItem)
+	{
+		if (auto* plant = Cast<APlant>(player->HeldItem))
+		{
+			bWidgetVisible = true;
+			FireSellFX(plant, player);
+		}
+	}
+}
+
+void ASellBin::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASellBin, bWidgetVisible);
 }
 
 void ASellBin::MoveUIComponent(float _dt)
@@ -79,15 +138,8 @@ void ASellBin::MoveUIComponent(float _dt)
 	{
 		movingTimer = movingTime;
 		isMoving = false;
-		if (SellAmountWidgetComponent->GetWidget())
-		{
-			if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
-			{
-				SellCropUI->SellText->SetVisibility(ESlateVisibility::Hidden);
-			}
-		}
+		HideParticleSystem();
 	}
-	
 }
 
 void ASellBin::Interact(APrototype2Character* player)
@@ -112,18 +164,7 @@ void ASellBin::Interact(APrototype2Character* player)
 			
 			//Server_FireParticleSystem();
 
-			// Selling UI - Show in-game UI when selling
-			if (SellAmountWidgetComponent->GetWidget())
-			{
-				SellAmountWidgetComponent->SetRelativeLocation(FVector(startPosition)); // Reset text to start position
-				
-				if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
-				{
-					SellCropUI->SetCropValue(plant->ItemComponent->CropValue);
-					SellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
-					isMoving = true;
-				}
-			}
+
 		}
 	}
 }
