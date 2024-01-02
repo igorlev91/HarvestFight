@@ -24,6 +24,7 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 			{
 				gamestate->Server_Players.Add(playerState);
 				playerState->Player_ID = gamestate->Server_Players.Num() - 1;
+
 			}
 		}
 	}

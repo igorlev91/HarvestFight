@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyPlayerState.h"
@@ -20,6 +21,9 @@ void UWidget_LobbyPlayerHUD::NativeOnInitialized()
 	{
 		GameStateRef = gameState;
 	}
+
+	// Make cancel hidden
+	CancelButton->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -125,19 +129,42 @@ void UWidget_LobbyPlayerHUD::SetReady()
 		{
 			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[playerID]))
 			{
-				if (playerState->IsReady == true)
-				{
-					playerController->SetIsReady(playerID, false);
-					IsReadyButtonText->SetText(FText::FromString("Ready"));
-
-				}
-				else
-				{
+				//if (playerState->IsReady == true)
+				//{
 					playerController->SetIsReady(playerID, true);
-					IsReadyButtonText->SetText(FText::FromString("Not Ready"));
-				}
+
+					ReadyButton->SetVisibility(ESlateVisibility::Hidden);
+					CancelButton->SetVisibility(ESlateVisibility::Visible);
+					//IsReadyButtonText->SetText(FText::FromString("Ready"));
+
+				//}
+				//else
+				//{
+				//	playerController->SetIsReady(playerID, true);
+				//	//IsReadyButtonText->SetText(FText::FromString("Not Ready"));
+				//}
 			}
 		}
 	}
-	
+}
+
+void UWidget_LobbyPlayerHUD::SetCancel()
+{
+	if (auto* playerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	{
+		auto playerID = playerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
+		if (playerController->IsLocalPlayerController())
+			UE_LOG(LogTemp, Warning, TEXT("Players ID = %s"), *FString::FromInt(playerID));
+		
+		if (GameStateRef->Server_Players.Num() >= playerID)
+		{
+			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateRef->Server_Players[playerID]))
+			{
+				playerController->SetIsReady(playerID, false);
+
+				ReadyButton->SetVisibility(ESlateVisibility::Visible);
+				CancelButton->SetVisibility(ESlateVisibility::Hidden);
+			}
+		}
+	}
 }

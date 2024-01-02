@@ -11,8 +11,17 @@ UENUM()
 enum class EInterfaceType : uint8
 {
 	SellBin			UMETA(DisplayName = "SellShop"),
-	GrowSpot		UMETA(DisplayName = "SellShop"),
-	Weapon			UMETA(DisplayName = "SellShop"),
+	GrowSpot		UMETA(DisplayName = "GrowSpot"),	
+	Weapon			UMETA(DisplayName = "Weapon"),
+	Default			UMETA(DisplayName = "Default"),
+};
+
+UENUM()
+enum class EGrowSpotState : uint8
+{
+	Empty			UMETA(DisplayName = "Empty"),
+	Growing			UMETA(DisplayName = "Growing"),	
+	Grown			UMETA(DisplayName = "Grown"),
 	Default			UMETA(DisplayName = "Default"),
 };
 
@@ -32,4 +41,7 @@ public:
 	virtual void Interact(APrototype2Character* player) = 0;
 
 	EInterfaceType InterfaceType = EInterfaceType::Default;
+
+	// For setting HUD text in Prototype2Character::SetHUDText
+	EGrowSpotState GrowSpotState = EGrowSpotState::Default;
 };

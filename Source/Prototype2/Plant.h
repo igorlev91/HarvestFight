@@ -15,7 +15,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Interact(APrototype2Character* player) override;
 	bool isGrown = false;
-	
 	//UPROPERTY(EditAnywhere)
 	//float value; // Moved to ItemComponent
 	

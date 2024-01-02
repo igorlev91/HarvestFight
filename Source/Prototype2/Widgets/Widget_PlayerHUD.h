@@ -11,8 +11,11 @@ enum EPickup
 {
 	None,
 	Carrot,
+	CarrotSeed,
 	Cabbage,
-	Mandrake
+	CabbageSeed,
+	Mandrake,
+	MandrakeSeed
 };
 
 UCLASS()
@@ -22,8 +25,8 @@ class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 
 public:
 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UWidget_InteractionPanel* InteractionPanel;
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//class UWidget_InteractionPanel* InteractionPanel;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
@@ -59,10 +62,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CarrotTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CarrotSeedTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CabbageTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CabbageSeedTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* MandrakeTexture;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* MandrakeSeedTexture;
+
+	// Interaction Text
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* InteractionText;
 	
 public:
 	// Functions
@@ -82,4 +94,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdatePickupUI(EPickup _pickup);
+
+	UFUNCTION(BlueprintCallable)
+	void SetHUDInteractText(FString _interactionText);
 };

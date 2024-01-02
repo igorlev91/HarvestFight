@@ -23,8 +23,20 @@ public: // Public Networking functions
 	void Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
 
 	UFUNCTION(Server, Reliable)
+	void Server_SocketItem(UStaticMeshComponent* _object, FName _socket);
+	void Server_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket);
+
+	UFUNCTION(Server, Reliable)
 	void Server_DropItem();
 	void Server_DropItem_Implementation();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_AddHUD();
+	void Server_AddHUD_Implementation();
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddHUD();
+	void Client_AddHUD_Implementation();
 	
 protected: // Protected Networking functions
 	void PlayNetworkMontage(UAnimMontage* _montage);
@@ -38,14 +50,6 @@ protected: // Protected Networking functions
 	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
 	
 	UFUNCTION(Server, Reliable)
-	void Server_AddHUD();
-	void Server_AddHUD_Implementation();
-
-	UFUNCTION(Client, Reliable)
-	void Client_AddHUD();
-	void Client_AddHUD_Implementation();
-	
-	UFUNCTION(Server, Reliable)
 	void Server_TryInteract();
 	void Server_TryInteract_Implementation();
 
@@ -56,6 +60,10 @@ protected: // Protected Networking functions
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
 	void Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SocketItem(UStaticMeshComponent* _object, FName _socket);
+	void Multi_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket);
 	
 protected: // Protected Functions
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -86,10 +94,15 @@ protected: // Protected Functions
 	void CheckForInteractables();
 
 	/* Called when hit by another player */
+	UFUNCTION(BlueprintCallable)
 	void GetHit(float AttackCharge, FVector AttackerLocation);
 	
 	/* UI */
 	void OpenIngameMenu();
+	
+	void UpdateAllPlayerIDs();
+
+	ENetRole IdealNetRole{ROLE_AutonomousProxy};
 
 private: // Input actions
 	/** MappingContext */
@@ -127,9 +140,6 @@ private: // Animation
 	class UAnimMontage* PickupMontage;
 	
 	UPROPERTY(EditAnywhere)
-	class UAnimMontage* ChargeAttackMontage;
-	
-	UPROPERTY(EditAnywhere)
 	class UAnimMontage* ExecuteAttackMontage;
 private: // Private variables
 
@@ -139,23 +149,29 @@ private: // Private variables
 
 	/* Maximum amount of Attack Charge */
 	UPROPERTY(EditAnywhere)
-	float MaxAttackCharge = 5.0f;
+	float MaxAttackCharge = 3.0f;
 
 	/* Amount of knockback applied which is multiplied by charge */
 	UPROPERTY(EditAnywhere)
 	float KnockBackAmount = 1000.0f;
 
+	/* Interact timer */
+	UPROPERTY(EditAnywhere)
+	float InteractTimerTime = 1.0f;
+	float InteractTimer{};
+	
+	/* Attack timer */
+	UPROPERTY(EditAnywhere)
+	float AttackTimerTime = 1.0f;
+	float AttackTimer{};
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	UWidget_PlayerHUD* PlayerHUDRef;
 
 public:
-	/* Weapon Held */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class AWeapon> WeaponPrefab;
-
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class AWeapon* Weapon;
+	class UWeapon* Weapon;
 	
 	/* Currently held item */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -164,6 +180,8 @@ public:
 	/* Is player holding down attack */
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsChargingAttack;
+
+	class IInteractInterface* ClosestInteractableItem;
 	
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -174,9 +192,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+
 private:
-	class IInteractInterface* ClosestInteractableItem;
+	
 	float AttackChargeAmount;
 	bool bIsStunned;
 	float StunTimer;
+	bool DoOnce{};
+	
 };

@@ -17,7 +17,10 @@ class PROTOTYPE2_API UWidget_LobbyPlayerHUD : public UUserWidget
 public:
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* IsReadyButtonText;
+	class UButton* ReadyButton;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UButton* CancelButton;
 
 	class ALobbyGamestate* GameStateRef;
 
@@ -51,4 +54,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void SetReady();
+
+	UFUNCTION(BlueprintCallable)
+	void SetCancel();
 };

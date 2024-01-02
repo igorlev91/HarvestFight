@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Widgets/Widget_PlayerHUD.h"
 #include "ItemComponent.generated.h"
 
 
@@ -38,4 +39,11 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	int32 WeaponDurability;
+
+	// For HUD changing icons
+	UPROPERTY(BlueprintReadWrite)
+	TEnumAsByte<EPickup> PickupType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float GrowTime;	
 };

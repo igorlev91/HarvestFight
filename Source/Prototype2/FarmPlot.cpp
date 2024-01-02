@@ -5,7 +5,6 @@
 
 #include "GrowSpot.h"
 #include "Prototype2Character.h"
-#include "WeaponSeed.h"
 #include "Seed.h"
 
 // Sets default values

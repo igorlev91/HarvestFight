@@ -9,9 +9,12 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GrowSpot.h"
 #include "InteractInterface.h"
 #include "PickUpItem.h"
 #include "Prototype2PlayerController.h"
+#include "Prototype2PlayerState.h"
+#include "PrototypeGameInstance.h"
 #include "Weapon.h"
 #include "Components/SphereComponent.h"
 #include "DynamicMesh/ColliderMesh.h"
@@ -21,6 +24,8 @@
 #include "Widgets/Widget_InteractionPanel.h"
 #include "Widgets/Widget_IngameMenu.h"
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerState.h"
+#include "Gamestates/Prototype2Gamestate.h"
 #include "Net/UnrealNetwork.h"
 #include "Widgets/Widget_PlayerHUD.h"
 
@@ -65,6 +70,11 @@ APrototype2Character::APrototype2Character()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
+	Weapon = CreateDefaultSubobject<UWeapon>(TEXT("Weapon"));
+	Weapon->Mesh->SetSimulatePhysics(false);
+	Weapon->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Weapon->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+    Weapon->Mesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("WeaponHolsterSocket"));
 }
 
 void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -88,25 +98,17 @@ void APrototype2Character::BeginPlay()
 		}
 	}
 	
-	// Setup Weapon
-	if (WeaponPrefab)
-	{
-		Weapon = GetWorld()->SpawnActor<AWeapon>(WeaponPrefab);
-	
-		Weapon->ItemComponent->Mesh->SetSimulatePhysics(false);
-		Weapon->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Weapon->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	
-		// Attach to socket
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket"));
-	}
-	
 	Server_AddHUD();
+
+	
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	UpdateAllPlayerIDs();
+	
 	// Stun
 	if (bIsStunned)
 	{
@@ -120,6 +122,7 @@ void APrototype2Character::Tick(float DeltaSeconds)
 			bIsStunned = false;
 
 			// Enable input
+			EnableInput(this->GetLocalViewingPlayerController());
 		}
 	}
 	
@@ -129,57 +132,73 @@ void APrototype2Character::Tick(float DeltaSeconds)
 		AttackChargeAmount += DeltaSeconds;
 	}
 
-	// Check if anything is around to be interacted with
-	CheckForInteractables();
+	if (InteractTimer < 0.0f)
+	{
+		// Check if anything is around to be interacted with
+		CheckForInteractables();
+	}
+
+	// Countdown timers
+	InteractTimer -= DeltaSeconds;
+	AttackTimer -= DeltaSeconds;
+
+	
+	
 }
 
 void APrototype2Character::ChargeAttack()
 {
-	if (HeldItem)
+	if (AttackTimer < 0.0f)
 	{
-		Server_DropItem();
-	}
-	
-	bIsChargingAttack = true;
+		if (HeldItem)
+		{
+			Server_DropItem();
+		}
+		
+		bIsChargingAttack = true;
 
-	if (Weapon)
-	{
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHeldSocket"));
-	}
-	
-	// Animation
-	if(ChargeAttackMontage)
-	{
-		PlayNetworkMontage(ChargeAttackMontage);
+		if (Weapon)
+		{
+			Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
+		}
 	}
 }
 
 void APrototype2Character::ReleaseAttack()
 {
-	// Cap attack charge
-	if (AttackChargeAmount > MaxAttackCharge)
+	if (bIsChargingAttack)
 	{
-		AttackChargeAmount = MaxAttackCharge;
-	}
+		// Reset Attack Timer
+		AttackTimer = AttackTimerTime;
+		
+		// Cap attack charge
+		if (AttackChargeAmount > MaxAttackCharge)
+		{
+			AttackChargeAmount = MaxAttackCharge;
+		}
 
-	// Create a sphere collider, check if player hit, call player hit
-	int32 attackSphereRadius;
-	if (Weapon)
-	{
-		// Create a larger sphere of effect
-		attackSphereRadius = 75.0f + AttackChargeAmount * 30.0f;
-	}
-	else
-	{
-		// Create a smaller sphere of effect
-		attackSphereRadius = 50.0f;
-	}
+		// Create a sphere collider, check if player hit, call player hit
+		int32 attackSphereRadius;
+		if (Weapon)
+		{
+			// Create a larger sphere of effect
+			attackSphereRadius = 75.0f + AttackChargeAmount * 30.0f;
+		}
+		else
+		{
+			// Create a smaller sphere of effect
+			attackSphereRadius = 50.0f;
+		}
 
-	ExecuteAttack(attackSphereRadius);
-	
-	// Reset Attack variables
-	bIsChargingAttack = false;
-	AttackChargeAmount = 0.0f;
+		ExecuteAttack(attackSphereRadius);
+		
+		// Reset Attack variables
+		bIsChargingAttack = false;
+		AttackChargeAmount = 0.0f;
+
+		// Stop the player Interacting while "executing attack"
+		InteractTimer = InteractTimerTime;
+	}
 }
 
 void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
@@ -197,7 +216,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	
 	UE_LOG(LogTemp, Warning, TEXT("Sphere Radius = %s"), *FString::SanitizeFloat(AttackSphereRadius));
 	// draw collision sphere
-	DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 2.0f);
+	//DrawDebugSphere(GetWorld(), inFrontOfPlayer, colSphere.GetSphereRadius(), 50, FColor::Purple, false, 2.0f);
 	
 	// check if something got hit in the sweep
 	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Pawn, colSphere);
@@ -230,9 +249,15 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 
 void APrototype2Character::Interact()
 {
-	if (!bIsChargingAttack)
+	if (InteractTimer < 0.0f)
 	{
-		Server_TryInteract();
+		// Reset the Interact Timer when Player Interacts
+		InteractTimer = InteractTimerTime;
+		
+		if (!bIsChargingAttack)
+		{
+			Server_TryInteract();
+		}
 	}
 	
 	// Debug draw collision sphere
@@ -242,6 +267,7 @@ void APrototype2Character::Interact()
 
 void APrototype2Character::CheckForInteractables()
 {
+	
 	// create tarray for hit results
 	TArray<FHitResult> outHits;
 	
@@ -256,9 +282,7 @@ void APrototype2Character::CheckForInteractables()
 	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 0.1f);
 	
 	// check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere);
-
-	if (isHit)
+	if (GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere))
 	{
 		TArray<AActor*> interactableActors;
 
@@ -286,6 +310,7 @@ void APrototype2Character::CheckForInteractables()
 void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 {
 	// Disable input
+	DisableInput(this->GetLocalViewingPlayerController());
 
 	// Drop item
 	if (HeldItem)
@@ -303,15 +328,21 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 	StunTimer = AttackCharge;
 }
 
+void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket)
+{
+	_object->SetSimulatePhysics(false);
+	_object->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	_object->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	
+	_object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_socket));
+}
+
 void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
 		
-		////Jumping
-		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		//EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APrototype2Character::Move);
 
@@ -375,6 +406,10 @@ void APrototype2Character::OpenIngameMenu()
 	}
 }
 
+void APrototype2Character::UpdateAllPlayerIDs()
+{
+}
+
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
 {
 	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
@@ -401,24 +436,20 @@ void APrototype2Character::Client_AddHUD_Implementation()
 {
 	if (PlayerHudPrefab)
 	{
-		if (Controller)
-		{
-			if (auto* playerController = Cast<APrototype2PlayerController>(Controller))
-			{
-				PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(playerController, PlayerHudPrefab);
+		UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
 
-				if (PlayerHUDRef)
-					PlayerHUDRef->AddToViewport();
-			}
-		}
+		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0), PlayerHudPrefab);
+
+		if (PlayerHUDRef)
+			PlayerHUDRef->AddToViewport();
 	}
 }
 
 void APrototype2Character::Server_TryInteract_Implementation()
 {
-	// If player is holding nothing, and there is something to pickup in range
-	if(ClosestInteractableItem && !HeldItem)
+	if((GetLocalRole() == IdealNetRole || GetLocalRole() == ROLE_Authority) && ClosestInteractableItem && !HeldItem)
 	{
+		// If player is holding nothing, and there is something to pickup in range
 		if (PickupMontage &&
 			ClosestInteractableItem->InterfaceType != EInterfaceType::SellBin &&
 			ClosestInteractableItem->InterfaceType != EInterfaceType::GrowSpot)
@@ -430,9 +461,9 @@ void APrototype2Character::Server_TryInteract_Implementation()
 			ClosestInteractableItem->Interact(this);
 
 			// Put weapon on back
-			Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket"));
+			Multi_SocketItem(Weapon->Mesh,  FName("WeaponHolsterSocket"));
 		}
-		else if (ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot)
+		else if (ClosestInteractableItem->InterfaceType == EInterfaceType::GrowSpot) // If the player is trying to pick up a plant from grow plot
 		{
 			// Call the InteractInterface interact function
 			ClosestInteractableItem->Interact(this);
@@ -449,14 +480,15 @@ void APrototype2Character::Server_TryInteract_Implementation()
 		}
 		else
 		{
-			// If item wasn't sold, drop it
-			Server_DropItem();
+			Multi_DropItem();
 		}
 	}
 }
 
 void APrototype2Character::Server_DropItem_Implementation()
 {
+
+	
 	Multi_DropItem();
 }
 
@@ -465,33 +497,52 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	if(HeldItem)
 	{
 		// Drop into world
-		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		if(HeldItem)
+		{
+			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		
-		// So that CheckForInteractables() can see it again
-		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+			// So that CheckForInteractables() can see it again
+			HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		}
 		
 		HeldItem = nullptr;
+
+		// Set HUD image
 	}
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
 {
+
 	Multi_PickupItem(itemComponent, _item);
+}
+
+void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket)
+{
+
+	Multi_SocketItem(_object, _socket);
 }
 
 void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
 {
-	itemComponent->Mesh->SetSimulatePhysics(false);
-	itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (itemComponent->Mesh)
+	{
+		itemComponent->Mesh->SetSimulatePhysics(false);
+		itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
-	// So that CheckForInteractables() cant see it while player is holding it
-	itemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		// So that CheckForInteractables() cant see it while player is holding it
+		itemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	}
 	
-	// Attach to socket
 	_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
 	
+	
 	// Assign Players HeldItem
-	HeldItem = _item;	
+	HeldItem = _item;
+
+	// Set HUD image
+	//if (PlayerHUDRef)
+	//	PlayerHUDRef->UpdatePickupUI(HeldItem->ItemComponent->PickupType);	
 }
