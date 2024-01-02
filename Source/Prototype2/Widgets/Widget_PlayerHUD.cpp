@@ -36,7 +36,8 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 
 	// Set interaction text to be hidden on start
 	InteractionText->SetVisibility(ESlateVisibility::Hidden);
-
+	InteractionButtonImage->SetVisibility(ESlateVisibility::Hidden);
+	interactionButtonTimer = interactionButtonMaxTime;
 	
 }
 
@@ -285,9 +286,14 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 {
 	if (_pickup != None)
 	{
-		if (PickupImage->GetVisibility() == ESlateVisibility::Hidden)
+		//if (PickupImage->GetVisibility() == ESlateVisibility::Hidden)
+		//{
+		//	PickupImage->SetVisibility(ESlateVisibility::Visible);
+		//}
+
+		if (OverlayPickup->GetVisibility() == ESlateVisibility::Hidden)
 		{
-			PickupImage->SetVisibility(ESlateVisibility::Visible);
+			OverlayPickup->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 	
@@ -295,7 +301,8 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 	{
 	case None:
 		{
-			PickupImage->SetVisibility(ESlateVisibility::Hidden);
+			//PickupImage->SetVisibility(ESlateVisibility::Hidden);
+			OverlayPickup->SetVisibility(ESlateVisibility::Hidden);
 			break;
 		}
 	case Carrot:
@@ -328,16 +335,16 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 			PickupImage->SetBrushFromTexture(MandrakeSeedTexture);
 			break;
 		}
-	case Weapon:
-		{
-			WeaponImage->SetVisibility(ESlateVisibility::Visible);
-			break;
-		}
-	case NoWeapon:
-		{
-			WeaponImage->SetVisibility(ESlateVisibility::Hidden);
-			break;
-		}
+	//case Weapon:
+	//	{
+	//		WeaponImage->SetVisibility(ESlateVisibility::Visible);
+	//		break;
+	//	}
+	//case NoWeapon:
+	//	{
+	//		WeaponImage->SetVisibility(ESlateVisibility::Hidden);
+	//		break;
+	//	}
 	default:
 		{
 			
@@ -372,12 +379,41 @@ void UWidget_PlayerHUD::SetHUDInteractText(FString _interactionText)
 	if (_interactionText == "")
 	{
 		InteractionText->SetVisibility(ESlateVisibility::Hidden);
+		InteractionButtonImage->SetVisibility(ESlateVisibility::Hidden);
+		bInteractionButtonShowing = false;
 	}
 	else
 	{
 		InteractionText->SetVisibility(ESlateVisibility::Visible);
 		InteractionText->SetText(FText::FromString(_interactionText));
+		InteractionButtonImage->SetVisibility(ESlateVisibility::Visible);
+		bInteractionButtonShowing = true;
 	}
+}
+
+void UWidget_PlayerHUD::InteractionImagePulse(float _dt)
+{
+	if (bInteractionButtonShowing == true)
+	{
+		interactionButtonTimer -= _dt;
+
+		if (interactionButtonTimer <= 0)
+		{
+			if (bShowETexture1 == true)
+			{
+				bShowETexture1 = false;
+				InteractionButtonImage->SetBrushFromTexture(ETexture1);
+			}
+			else
+			{
+				bShowETexture1 = true;
+				InteractionButtonImage->SetBrushFromTexture(ETexture2);
+			}
+
+			interactionButtonTimer = interactionButtonMaxTime;
+		}
+	}
+	
 }
 
 void UWidget_PlayerHUD::SetPlayerSprintTimer(float _sprintTime)

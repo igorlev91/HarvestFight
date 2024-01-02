@@ -87,6 +87,9 @@ public:
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PickupImage;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UOverlay* OverlayPickup;
+	
 
 	// Weapon UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -114,9 +117,23 @@ public:
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	//UTexture2D* CanNotSprintIconTexture;
 	
-	// Interaction Text
+	// Interaction image and text
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
+	class UTextBlock* InteractionText; 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* InteractionText;
+	class UImage* InteractionButtonImage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* ETexture1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* ETexture2;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	bool bInteractionButtonShowing{false};
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	bool bShowETexture1{true};
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	float interactionButtonMaxTime{0.5f};
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	float interactionButtonTimer{};
 	
 public:
 	// Functions
@@ -142,6 +159,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetHUDInteractText(FString _interactionText);
+
+	UFUNCTION(BlueprintCallable)
+	void InteractionImagePulse(float _dt);
 
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerSprintTimer(float _sprintTime);

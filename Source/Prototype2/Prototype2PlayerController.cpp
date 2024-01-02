@@ -29,7 +29,19 @@ void APrototype2PlayerController::Server_SetIsReady_Implementation(int _player, 
 	}
 }
 
+void APrototype2PlayerController::VoteMap(int _player, EFarm _level)
+{
+	Server_VoteMap(_player, _level);
+}
 
+
+void APrototype2PlayerController::Server_VoteMap_Implementation(int _player, EFarm _level)
+{
+	if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		gameState->VoteMap(_player, _level);
+	}
+}
 
 void APrototype2PlayerController::KickFromLobby()
 {

@@ -259,7 +259,14 @@ void AGrowSpot::Interact(APrototype2Character* player)
 							{
 								if (player->MandrakeScreamCue)
 								{
-									player->PlaySoundAtLocation(GetActorLocation(), player->MandrakeScreamCue);
+									if (MandrakeAttenuationSettings)
+									{
+										player->PlaySoundAtLocation(GetActorLocation(), player->MandrakeScreamCue, MandrakeAttenuationSettings);
+									}
+									else
+									{
+										player->PlaySoundAtLocation(GetActorLocation(), player->MandrakeScreamCue); 
+									}
 								}
 							}
 						}

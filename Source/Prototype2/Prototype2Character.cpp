@@ -82,6 +82,8 @@ APrototype2Character::APrototype2Character()
 	Weapon->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 
 	ChargeAttackAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("ChargeAttackAudioComponent"));
+	ChargeAttackAudioComponent->SetIsReplicated(true);
+	ChargeAttackAudioComponent->SetupAttachment(RootComponent);
 
 	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
 	InteractSystem->SetupAttachment(RootComponent);
@@ -105,6 +107,10 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, CanSprintTimer);
 	DOREPLIFETIME(APrototype2Character, SprintTimer);
 	DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
+	DOREPLIFETIME(APrototype2Character, DizzyComponent);
+	DOREPLIFETIME(APrototype2Character, SoundAttenuationSettings);
+	DOREPLIFETIME(APrototype2Character, ChargeAttackAudioComponent);
+	DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
 }
 
 void APrototype2Character::BeginPlay()
@@ -120,8 +126,13 @@ void APrototype2Character::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	
 	
 	ChargeAttackAudioComponent->SetSound(ChargeCue);
+	ChargeAttackAudioComponent->SetIsReplicated(true);
+	ChargeAttackAudioComponent->SetVolumeMultiplier(1.0f);
+	ChargeAttackAudioComponent->AttenuationSettings = SoundAttenuationSettings;
 
 	Weapon->Mesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("WeaponHolsterSocket"));
 	Weapon->Mesh->SetHiddenInGame(true);
@@ -288,7 +299,9 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	AttackChargeAmount = 0.0f;
 
 	// audio
+
 	ChargeAttackAudioComponent->Stop();
+	Server_ToggleChargeSound(false);
 	PlaySoundAtLocation(GetActorLocation(), ExecuteCue);
 
 	// Stop the player Interacting while "executing attack"
@@ -449,6 +462,18 @@ void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent*
 	_object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_socket));
 }
 
+void APrototype2Character::Multi_ToggleChargeSound_Implementation(bool _soundEnabled)
+{
+	if (_soundEnabled && !ChargeAttackAudioComponent->IsPlaying())
+	{
+		ChargeAttackAudioComponent->Play();
+	}
+	else
+	{
+		ChargeAttackAudioComponent->Stop();
+	}	
+}
+
 void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -525,9 +550,9 @@ void APrototype2Character::UpdateAllPlayerIDs()
 {
 }
 
-void APrototype2Character::PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay)
+void APrototype2Character::PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay, USoundAttenuation* _attenation)
 {
-	Server_PlaySoundAtLocation(Location,SoundToPlay );
+	Server_PlaySoundAtLocation(Location,SoundToPlay, _attenation );
 }
 
 void APrototype2Character::Ragdoll(bool _ragdoll)
@@ -673,7 +698,7 @@ void APrototype2Character::Server_StartAttack_Implementation()
 			Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
 		}
 
-		ChargeAttackAudioComponent->Play();
+		Server_ToggleChargeSound(true);
 	}
 }
 
@@ -740,17 +765,17 @@ void APrototype2Character::Multi_ReleaseAttack_Implementation()
 {
 }
 
-void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue)
+void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue, USoundAttenuation* _attenation)
 {
-	Multi_PlaySoundAtLocation(_location, _soundQueue);
+	Multi_PlaySoundAtLocation(_location, _soundQueue, _attenation);
 }
 
-void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue)
+void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue, USoundAttenuation* _attenation)
 {
-	if (SoundAttenuationSettings)
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, SoundAttenuationSettings);
+	if (_attenation)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, _attenation);
 	else
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 0.5f);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, SoundAttenuationSettings);
 }
 
 void APrototype2Character::Client_AddHUD_Implementation()
@@ -1019,10 +1044,12 @@ void APrototype2Character::Server_FireDizzySystem_Implementation()
 
 void APrototype2Character::Multi_FireParticleSystem_Implementation()
 {
-	UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DizzySystem, InteractSystem->GetComponentLocation());
-	NiagaraComponent->SetIsReplicated(true);
-	// Set the NiagaraComponent to auto-destroy itself after it finishes playing
-	NiagaraComponent->SetAutoDestroy(true);
-	NiagaraComponent->Activate();
-	NiagaraComponent->AttachToComponent(DizzyComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	DizzyComponent->SetAsset(DizzySystem);
+    DizzyComponent->Activate();
+    DizzyComponent->SetAutoDestroy(false);
+}
+
+void APrototype2Character::Server_ToggleChargeSound_Implementation(bool _soundEnabled)
+{
+	Multi_ToggleChargeSound(_soundEnabled);
 }

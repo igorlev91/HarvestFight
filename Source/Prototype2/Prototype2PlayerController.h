@@ -24,6 +24,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetIsReady(int _player, bool _isReady);
 	void Server_SetIsReady_Implementation(int _player, bool _isReady);
+
+	void VoteMap(int _player, EFarm _level);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_VoteMap(int _player, EFarm _level);
+	void Server_VoteMap_Implementation(int _player, EFarm _level);
 	
 	UFUNCTION(BlueprintCallable)
 	void KickFromLobby();

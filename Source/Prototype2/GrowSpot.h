@@ -75,4 +75,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraComponent* InteractSystem;
+
+	UPROPERTY(EditAnywhere)
+	USoundAttenuation* MandrakeAttenuationSettings;
 };

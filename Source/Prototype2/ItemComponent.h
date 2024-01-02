@@ -30,16 +30,18 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	void Interact(APrototype2Character* player, APickUpItem* itemPickedUp);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 public:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
 	
 	UPROPERTY(EditAnywhere)
-	float CropValue;
+	float CropValue; 
 	
-	UPROPERTY(EditAnywhere)
-	bool gold = false;
+	UPROPERTY(Replicated , EditAnywhere)
+	bool gold{};
 	
 	UPROPERTY(EditAnywhere)
 	int32 WeaponDurability;
@@ -51,5 +53,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float GrowTime;
 
+	UPROPERTY(Replicated)
 	bool bIsGold;
 };

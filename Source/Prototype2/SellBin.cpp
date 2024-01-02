@@ -158,6 +158,9 @@ void ASellBin::Interact(APrototype2Character* player)
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->ExtraCoins = plant->ItemComponent->CropValue;
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->IsShowingExtraCoins = true; 
 
+			// Reset player speed incase of gold plant
+			player->bIsHoldingGold = false;
+			
 			// Destroy the crop the player is holding
 			player->HeldItem->Destroy();
 			player->HeldItem = nullptr;

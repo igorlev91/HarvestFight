@@ -24,6 +24,8 @@ public:
 
 	void SetIsReady(int _player, bool _isReady);
 
+	void VoteMap(int _player, EFarm _level);
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
