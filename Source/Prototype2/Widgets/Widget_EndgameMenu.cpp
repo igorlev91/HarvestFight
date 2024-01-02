@@ -21,63 +21,62 @@ void UWidget_EndgameMenu::NativeOnInitialized()
 void UWidget_EndgameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
+	UpdateWinnerText();
 
 }
 
 void UWidget_EndgameMenu::UpdateWinnerText()
 {
+	int winner{-1};
+	int winnerPoints{-1};
 	if (GameStateRef)
 	{
-		// Set first player as winner
-		Winner = 0;
-		if (auto player = GameStateRef->Server_Players[0])
-		{
-			if (auto* playerState = Cast<APrototype2PlayerState>(player))
-			{
-				WinnerPoints = playerState->Coins;
-			}
-		}
-
 		// Check remaining players
-		for (int i = 1; i < GameStateRef->Server_Players.Num(); i++)
+		for (int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{
 			if (auto player = GameStateRef->Server_Players[i])
 			{
-				if (auto* playerState = Cast<APrototype2PlayerState>(player))
+				if (player->Coins > winnerPoints)
 				{
-					if (playerState->Coins > WinnerPoints)
-					{
-						Winner = i;
-						WinnerPoints = playerState->Coins;
-					}
+					winner = i;
+					winnerPoints = player->Coins;
 				}
 			}
 		}
 	}
 
 	// Set text of who won
-	if (Winner == 0)
+	switch (winner)
 	{
-		GameWinnerText->SetText(FText::FromString("Player 1 Wins"));
-	}
-	else if (Winner == 1)
-	{
-		GameWinnerText->SetText(FText::FromString("Player 2 Wins"));
-	}
-	else if (Winner == 2)
-	{
-		GameWinnerText->SetText(FText::FromString("Player 3 Wins"));
-	}
-	else
-	{
-		GameWinnerText->SetText(FText::FromString("Player 4 Wins"));
+	case 0:
+		{
+			GameWinnerText->SetText(FText::FromString("Player 1 Wins"));
+			break;
+		}
+	case 1:
+		{
+			GameWinnerText->SetText(FText::FromString("Player 2 Wins"));
+			break;
+		}
+	case 2:
+		{
+			GameWinnerText->SetText(FText::FromString("Player 3 Wins"));
+			break;
+		}
+	case 3:
+		{
+			GameWinnerText->SetText(FText::FromString("Player 4 Wins"));
+			break;
+		}
+	default:
+		{
+			GameWinnerText->SetText(FText::FromString("Winner Error: No Winner"));
+		break;
+		}
 	}
 	
 	// Update points
-	GameWinnerPoints->SetText(FText::FromString(FString::FromInt(WinnerPoints)));
-
-	
+	GameWinnerPoints->SetText(FText::FromString(FString::FromInt(winnerPoints)));
 }
 
 void UWidget_EndgameMenu::EnableEndgameMenu()

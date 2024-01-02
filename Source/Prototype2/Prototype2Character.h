@@ -17,6 +17,7 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public: // Public Networking functions
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
 	void Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
@@ -24,6 +25,38 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem();
 	void Server_DropItem_Implementation();
+	
+protected: // Protected Networking functions
+	void PlayNetworkMontage(UAnimMontage* _montage);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_PlayNetworkMontage(UAnimMontage* _montage);
+	void Server_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayNetworkMontage(UAnimMontage* _montage);
+	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_AddHUD();
+	void Server_AddHUD_Implementation();
+
+	UFUNCTION(Client, Reliable)
+	void Client_AddHUD();
+	void Client_AddHUD_Implementation();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_TryInteract();
+	void Server_TryInteract_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DropItem();
+	void Multi_DropItem_Implementation();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
+	void Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
+	
 protected: // Protected Functions
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -57,37 +90,7 @@ protected: // Protected Functions
 	
 	/* UI */
 	void OpenIngameMenu();
-	
-	void PlayNetworkMontage(UAnimMontage* _montage);
-	UFUNCTION(Server, Reliable)
-	void Server_PlayNetworkMontage(UAnimMontage* _montage);
-	void Server_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayNetworkMontage(UAnimMontage* _montage);
-	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage);
-	
-	UFUNCTION(Server, Reliable)
-	void Server_AddHUD();
-	void Server_AddHUD_Implementation();
 
-	UFUNCTION(Client, Reliable)
-	void Client_AddHUD();
-	void Client_AddHUD_Implementation();
-	
-	UFUNCTION(Server, Reliable)
-	void Server_TryInteract();
-	void Server_TryInteract_Implementation();
-
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_DropItem();
-	void Multi_DropItem_Implementation();
-	
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PickupItem(UItemComponent* itemComponent, APickUpItem* _item);
-	void Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item);
-	
 private: // Input actions
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -124,8 +127,10 @@ private: // Animation
 	class UAnimMontage* PickupMontage;
 	
 	UPROPERTY(EditAnywhere)
-	class UAnimMontage* AttackMontage;
+	class UAnimMontage* ChargeAttackMontage;
 	
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* ExecuteAttackMontage;
 private: // Private variables
 
 	/* Interact radius for checking closest item */
@@ -146,12 +151,19 @@ private: // Private variables
 
 public:
 	/* Weapon Held */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AWeapon> WeaponPrefab;
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class AWeapon* Weapon;
 	
 	/* Currently held item */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
+
+	/* Is player holding down attack */
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsChargingAttack;
 	
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -164,7 +176,6 @@ protected:
 
 private:
 	class IInteractInterface* ClosestInteractableItem;
-	bool bIsChargingAttack;
 	float AttackChargeAmount;
 	bool bIsStunned;
 	float StunTimer;

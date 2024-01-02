@@ -23,12 +23,6 @@ public:
 
 	class APrototype2Gamestate* GameStateRef;
 
-	UPROPERTY(VisibleAnywhere)
-	int Winner{};
-
-	UPROPERTY(VisibleAnywhere)
-	int WinnerPoints{};
-
 	
 public:
 	// Functions

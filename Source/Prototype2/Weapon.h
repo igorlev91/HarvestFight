@@ -16,6 +16,6 @@ class PROTOTYPE2_API AWeapon : public APickUpItem, public IInteractInterface
 public:
 	virtual void Interact(APrototype2Character* player) override;
 
-private:
+//private:
 	AWeapon();
 };

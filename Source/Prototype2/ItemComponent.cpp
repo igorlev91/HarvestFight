@@ -31,7 +31,11 @@ void UItemComponent::BeginPlay()
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	Mesh->SetSimulatePhysics(true);
+	
+	if (Mesh->Mobility.GetValue() == EComponentMobility::Movable)
+	{
+		Mesh->SetSimulatePhysics(true);
+	}
 }
 
 // Called every frame

@@ -20,9 +20,6 @@ void AWeapon::Interact(APrototype2Character* player)
 	
 	// Attach to socket
 	this->AttachToComponent(player->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket"));
-	
-	// Assign Players HeldItem
-	player->Weapon = this;
 
 	// Debug
 	UE_LOG(LogTemp, Warning, TEXT("Weapon attached to WeaponHolsterSocket"));	
