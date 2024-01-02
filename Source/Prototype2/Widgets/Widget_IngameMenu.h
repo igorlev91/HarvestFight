@@ -19,6 +19,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void EnableDisableMenu();
+
+	// Turns off ingame menu if visible
+	UFUNCTION(BlueprintCallable)
+	void DisableMenu();
 	
 	UFUNCTION(BlueprintCallable)
 	void ReturnToMenu();

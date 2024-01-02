@@ -20,6 +20,9 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_EndgameMenu* EndgameMenu;
+
 	// Timer
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Minutes;
@@ -36,6 +39,13 @@ public:
 	class UTextBlock* Player3Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4Coins;
+
+	// Weapon UI
+
+
+	// Pickup UI
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* PickupImage;
 	
 public:
 	// Functions
@@ -46,4 +56,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void EnableDisableMenu();
+
+	UFUNCTION(BlueprintCallable)
+	void EnableEndgameMenu();
+
+	
 };

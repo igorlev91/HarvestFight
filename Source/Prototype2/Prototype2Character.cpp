@@ -251,14 +251,10 @@ void APrototype2Character::CheckForInteractables()
 	if (isHit)
 	{
 		TArray<AActor*> interactableActors;
-		int32 numActorsHit = 0;
+
 		// loop through TArray
 		for (auto& hit : outHits)
 		{
-				numActorsHit++;
-				// screen log information on what was hit
-				// UE_LOG(LogTemp, Warning, TEXT(" %s, %s "), *hit.GetActor()->GetName(), *FString::FromInt(numActorsHit));				
-			
 			if (Cast<IInteractInterface>(hit.GetActor()) && hit.GetActor() != HeldItem)
 			{
 				interactableActors.Add(hit.GetActor());
@@ -281,6 +277,8 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 	// Knockback
 	GetCharacterMovement()->Velocity = (GetActorLocation() - AttackerLocation).GetSafeNormal() * AttackCharge * KnockBackAmount;
 
+	// debug attack
+	UE_LOG(LogTemp, Warning, TEXT("AttackCharge: %s"), *FString::SanitizeFloat(AttackCharge));
 	
 	bIsStunned = true;
 	StunTimer = AttackCharge;

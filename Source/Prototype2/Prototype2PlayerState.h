@@ -21,5 +21,5 @@ public:
     int Player_ID{};
 	
 	UPROPERTY(Replicated, EditAnywhere)
-	int Coins{5};
+	int Coins{0};
 };

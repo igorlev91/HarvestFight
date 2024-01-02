@@ -4,15 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "InteractInterface.h"
-#include "ItemComponent.h"
 #include "FarmPlot.generated.h"
 
 class AGrowSpot;
-class ASeed;
-class AWeaponSeed;
 UCLASS()
-class PROTOTYPE2_API AFarmPlot : public AActor, public IInteractInterface
+class PROTOTYPE2_API AFarmPlot : public AActor
 {
 	GENERATED_BODY()
 	
@@ -26,10 +22,5 @@ protected:
 
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void Interact(APrototype2Character* player) override;
-
-	UPROPERTY(EditAnywhere)
-	UItemComponent* ItemComponent;
+	virtual void Tick(float DeltaTime) override;;
 };

@@ -31,7 +31,7 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 	{
 		// Set first player as winner
 		Winner = 0;
-		if (auto player = GameStateRef->PlayerArray[0])
+		if (auto player = GameStateRef->Server_Players[0])
 		{
 			if (auto* playerState = Cast<APrototype2PlayerState>(player))
 			{
@@ -40,9 +40,9 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 		}
 
 		// Check remaining players
-		for (int i = 1; i < GameStateRef->PlayerArray.Num(); i++)
+		for (int i = 1; i < GameStateRef->Server_Players.Num(); i++)
 		{
-			if (auto player = GameStateRef->PlayerArray[i])
+			if (auto player = GameStateRef->Server_Players[i])
 			{
 				if (auto* playerState = Cast<APrototype2PlayerState>(player))
 				{
@@ -78,4 +78,15 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 	GameWinnerPoints->SetText(FText::FromString(FString::FromInt(WinnerPoints)));
 
 	
+}
+
+void UWidget_EndgameMenu::EnableEndgameMenu()
+{
+	SetVisibility(ESlateVisibility::Visible);
+	
+	if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		controller->SetInputMode(FInputModeUIOnly{});
+		controller->bShowMouseCursor = true;
+	}
 }

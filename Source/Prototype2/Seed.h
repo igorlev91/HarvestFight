@@ -27,5 +27,5 @@ public:
 	virtual void Grow();
 	
 	UPROPERTY(EditAnywhere)
-	APlant* plantToGrow;
+	TSubclassOf<AActor> plantToGrow;
 };

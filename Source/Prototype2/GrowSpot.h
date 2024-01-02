@@ -21,6 +21,8 @@ public:
 	// Sets default values for this actor's properties
 	AGrowSpot();
 
+	int playerNumber = 0;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

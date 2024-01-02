@@ -46,7 +46,7 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 				if (MatchLengthMinutes <= 0)
 				{
 					// End of timer
-					GetWorld()->ServerTravel("Level_MainMenu");
+					//GetWorld()->ServerTravel("Level_MainMenu");
 				}
 				else
 				{

@@ -37,5 +37,6 @@ public:
 
 	void UpdateWinnerText();
 
+	void EnableEndgameMenu();
 	
 };

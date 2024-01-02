@@ -32,3 +32,11 @@ void UWidget_IngameMenu::EnableDisableMenu()
 		SetVisibility(ESlateVisibility::Hidden);
 	}
 }
+
+void UWidget_IngameMenu::DisableMenu()
+{
+	if (GetVisibility() == ESlateVisibility::Visible)
+	{
+		SetVisibility(ESlateVisibility::Hidden);
+	}
+}
