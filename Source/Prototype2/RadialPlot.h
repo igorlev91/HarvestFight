@@ -20,6 +20,16 @@ public:
 	UPROPERTY(EditAnywhere)
 	int Player_ID;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlotMaterial(int _id);
+	void Multi_SetPlotMaterial_Implementation(int _id);
+
+	UPROPERTY(EditAnywhere)
+	TArray<UMaterialInstance*> PlotSignMaterials;
+
+	UPROPERTY(EditAnywhere)
+	class UStaticMeshComponent* PlotSignMesh;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGrowSpot> GrowSpotPrefab;
 

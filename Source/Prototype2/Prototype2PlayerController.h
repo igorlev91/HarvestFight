@@ -46,7 +46,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
-
-protected:
 	bool bEnableMovement{false};
+protected:
+
 };

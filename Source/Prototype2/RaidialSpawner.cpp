@@ -4,6 +4,7 @@
 #include "RaidialSpawner.h"
 
 #include "GrowSpot.h"
+#include "Prototype2GameMode.h"
 #include "RadialPlot.h"
 #include "Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
@@ -43,7 +44,7 @@ void ARaidialSpawner::SetUp()
 		}
 		if (playercount <= 0)
 		{
-			return;
+			playercount = 1;
 		}
 	}
 	
@@ -74,32 +75,56 @@ void ARaidialSpawner::SetUp()
 		FVector SpawnLocation = OwningLocation;
 		FVector ObjectSpawnPosition = SpawnLocation + FVector(OffsetX, OffsetY, 0.0f);
 
+		// Spawn and align center plot
+
+		auto plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
+		plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		plot->SetActorRelativeLocation(ObjectSpawnPosition);
+		plot->Player_ID = Index;
+
+		FVector sourceLocation = plot->GetActorLocation();
+		FVector targetLocation = RootComponent->GetComponentLocation();
+		FVector direction = targetLocation - sourceLocation;
+		direction.Z = 0.0f;
+		FRotator desiredRotation = FRotationMatrix::MakeFromX(direction).Rotator();
+		float rotationAngle = desiredRotation.Yaw;
+		plot->SetActorRelativeRotation({plot->GetActorRotation().Pitch, rotationAngle, plot->GetActorRotation().Roll});
+		plot->SetPlayerID(Index);
+		
+		/*auto centerPlot = GetWorld()->SpawnActor<AGrowSpot>(PlotPrefab);
+		int distance = 400;
+		{
+			centerPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+			centerPlot->SetActorRelativeLocation(ObjectSpawnPosition);
+			centerPlot->Player_ID = Index;
+
+			FVector sourceLocation = centerPlot->GetActorLocation();
+			FVector targetLocation = RootComponent->GetComponentLocation();
+			FVector direction = targetLocation - sourceLocation;
+			direction.Z = 0.0f;
+			FRotator desiredRotation = FRotationMatrix::MakeFromX(direction).Rotator();
+			float rotationAngle = desiredRotation.Yaw;
+			centerPlot->SetActorRelativeRotation({centerPlot->GetActorRotation().Pitch, rotationAngle, centerPlot->GetActorRotation().Roll});
+		}
+		
 		for(int i = 0; i < 3; i++)
 		{
 			for(int j = 0; j < 3; j++)
 			{
-				if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(PlotPrefab, RootComponent->GetComponentTransform()))
+				if (j == 1 && i == 1)
 				{
-					newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-					int distance = 180;
-					newPlot->SetActorRelativeLocation(ObjectSpawnPosition + FVector{((float)i - 1.5f) * distance, ((float)j - 1.5f) * distance, 100.0f});
-					newPlot->Player_ID = Index;
-
-					FHitResult HitResult;
-					FVector Start = newPlot->GetActorLocation();
-					FVector End = Start + FVector(0, 0, -1000);
-					FCollisionQueryParams Params;
-					Params.AddIgnoredActor(newPlot);
-
-					bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-					if (bHit)
-					{
-						newPlot->SetActorLocation(FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z));
-						//newPlot->SetActorRotation(FRotator(HitResult.ImpactNormal.Rotation().Pitch + 90, 0, HitResult.ImpactNormal.Rotation().Roll + 180));
+				}
+				else
+				{
+					if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(PlotPrefab))
+					{ 
+						newPlot->AttachToActor(centerPlot, FAttachmentTransformRules::SnapToTargetIncludingScale);
+						newPlot->SetActorRelativeLocation(FVector{(((float)i - 1.5f) * distance) + (distance / (2)), (((float)j - 1.5f) * distance)  + (distance / (2)), 0});
+						newPlot->Player_ID = Index;
 					}
 				}
 			}
-		}
+		}*/
 	}
 }
 

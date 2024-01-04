@@ -20,6 +20,9 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(EditAnywhere, Category = "Spawn Amount Curve")
+	class UCurveFloat* FloatCurve;
 
 private:
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
@@ -32,6 +35,12 @@ private:
 	std::vector<FVector> currentSpawnPos;
 	std::vector<float> distances;
 	int size = 3;
+
+	int MatchLengthSeconds{};
+	int CurrentMatchLengthSeconds{};
+
+	UPROPERTY(EditAnywhere)
+	int SpawnHeight{1200};
 
 private:
 	float SpawnTimer{};

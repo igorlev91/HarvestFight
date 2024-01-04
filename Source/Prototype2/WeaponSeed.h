@@ -13,5 +13,8 @@ UCLASS()
 class PROTOTYPE2_API AWeaponSeed : public ASeed
 {
 	GENERATED_BODY()
-	
+
+	AWeaponSeed();
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 };

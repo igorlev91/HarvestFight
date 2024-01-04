@@ -64,6 +64,31 @@ void ASellBin::Tick(float DeltaTime)
 	MoveUIComponent(DeltaTime);
 }
 
+bool ASellBin::IsInteractable(APrototype2PlayerState* player)
+{
+	if (!player)
+		return false;
+
+	if (auto controller = player->GetPlayerController())
+	{
+		if (auto character = controller->GetCharacter())
+		{
+			if (auto casted = Cast<APrototype2Character>(character))
+			{
+				if (casted->HeldItem)
+				{
+					if (Cast<APlant>(casted->HeldItem))
+					{
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 void ASellBin::Server_FireParticleSystem_Implementation()
 {
 	//Multi_FireParticleSystem();
@@ -122,10 +147,11 @@ void ASellBin::ClientInteract(APrototype2Character* player)
 {
 	if (player->HeldItem)
 	{
-		if (auto* plant = Cast<APlant>(player->HeldItem))
+		if (auto plant = Cast<APlant>(player->HeldItem))
 		{
 			bWidgetVisible = true;
 			FireSellFX(plant, player);
+			player->UpdateDecalDirection(false);
 		}
 	}
 }

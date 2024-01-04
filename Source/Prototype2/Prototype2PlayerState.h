@@ -34,6 +34,8 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 	
 	
 public:
+	bool SkinSet{};
+	
 	UPROPERTY(Replicated, VisibleAnywhere)
     int Player_ID{};
 	

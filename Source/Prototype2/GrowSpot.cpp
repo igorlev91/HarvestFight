@@ -39,7 +39,85 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, plant);
 	DOREPLIFETIME(AGrowSpot, weapon);
 	DOREPLIFETIME(AGrowSpot, GrowSpotState);
+	DOREPLIFETIME(AGrowSpot, Player_ID);
 	DOREPLIFETIME(AGrowSpot, PlantReadySparkle_NiagaraComponent);
+}
+
+bool AGrowSpot::IsInteractable(APrototype2PlayerState* player)
+{
+	if (!player)
+		return false;
+	
+	if (auto controller = player->GetPlayerController())
+	{
+		if (auto character = controller->GetCharacter())
+		{
+			if (auto casted = Cast<APrototype2Character>(character))
+			{
+				if (player->Player_ID == Player_ID)
+				{
+					switch(GrowSpotState)
+					{
+					case EGrowSpotState::Empty:
+						{
+							if (Cast<ASeed>(casted->HeldItem))
+							{
+								return true;
+							}
+							break;
+						}
+					case EGrowSpotState::Growing:
+						{
+							break;
+						}
+					case EGrowSpotState::Grown:
+						{
+							return true;
+						}
+					default:
+						break;
+					}
+				}
+			}
+		}
+	}
+	
+
+	return false;
+}
+
+void AGrowSpot::ClientInteract(APrototype2Character* player)
+{
+	IInteractInterface::ClientInteract(player);
+
+	if (player->PlayerID == Player_ID)
+	{
+		switch(GrowSpotState)
+		{
+		case EGrowSpotState::Empty:
+			{
+				if (Cast<ASeed>(player->HeldItem))
+				{
+					player->UpdateDecalDirection(false, false);
+				}
+				break;
+			}
+		case EGrowSpotState::Growing:
+			{
+				break;
+			}
+		case EGrowSpotState::Grown:
+			{
+				if (plant)
+					player->UpdateDecalDirection(true, true);
+				else
+					player->UpdateDecalDirection(false);
+			}
+		default:
+			break;
+		}
+	}
+	
 }
 
 // Called when the game starts or when spawned
@@ -162,6 +240,8 @@ void AGrowSpot::Tick(float DeltaTime)
 	{
 		Multi_SetPlantReadySparkle_Implementation(false);
 	}
+
+	
 }
 
 void AGrowSpot::Multi_GrowOnTick_Implementation(float _deltaTime)
@@ -254,7 +334,8 @@ void AGrowSpot::Interact(APrototype2Character* player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
 					player->Server_DropItem();
-					player->UpdateDecalDirection(true, true);
+					
+					//player->UpdateDecalDirection(true, true);
 					player->HeldItem = nullptr;
 					if (player->PlayerHUDRef)
 					{
@@ -290,7 +371,7 @@ void AGrowSpot::Interact(APrototype2Character* player)
 					// Put players weapon on back
 					player->Multi_SocketItem_Implementation(player->Weapon->Mesh, FName("WeaponHolsterSocket"));
 					player->Server_PickupItem(plant->ItemComponent, plant);
-					player->UpdateDecalDirection(true, true);
+					//player->UpdateDecalDirection(true, true);
 
 					player->HeldItem = plant;
 					
@@ -354,6 +435,10 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, c
 
 						owner->EnableStencil(true);
 					}
+					else
+					{
+						owner->EnableStencil(false);
+					}
 					break;
 				}
 			case EGrowSpotState::Growing:
@@ -370,11 +455,16 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, c
 						_invokingWiget->SetHUDInteractText("Pick Up");
 						owner->EnableStencil(true);
 					}
+					else
+					{
+						owner->EnableStencil(false);
+					}
 					
 					break;
 				}
 			default:
 				{
+					owner->EnableStencil(false);
 					break;
 				}
 			}						

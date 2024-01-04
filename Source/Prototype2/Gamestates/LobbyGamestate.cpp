@@ -93,6 +93,12 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 
 									for(auto player : Server_Players)
 									{
+										IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+										if (IdentityInterface.IsValid())
+										{
+											gameInstance->FinalPlayerNames.Add(IdentityInterface->GetPlayerNickname(player->Player_ID));
+										}
+										
 										gameInstance->FinalCharacters.Add(player->Character);
 										gameInstance->FinalColours.Add(player->CharacterColour);
 									}

@@ -4,6 +4,7 @@
 #include "UObject/Interface.h"
 #include "InteractInterface.generated.h"
 
+class APrototype2PlayerState;
 class APrototype2Character;
 class APlant;
 
@@ -41,7 +42,7 @@ public:
 	virtual void Interact(APrototype2Character* player) = 0;
 	virtual void ClientInteract(APrototype2Character* player){};
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) = 0;
-
+	virtual bool IsInteractable(APrototype2PlayerState* player) = 0;
 	EInterfaceType InterfaceType = EInterfaceType::Default;
 
 	// For setting HUD text in Prototype2Character::SetHUDText

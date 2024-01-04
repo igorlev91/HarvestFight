@@ -36,17 +36,19 @@ AEndGamePodium::AEndGamePodium()
 	P3WinPosition->SetupAttachment(RootComponent);
 	P4WinPosition = CreateDefaultSubobject<UArrowComponent>(FName("P4 Win Spawn Pos"));
 	P4WinPosition->SetupAttachment(RootComponent);
-	
 }
 
 // Called when the game starts or when spawned
 void AEndGamePodium::BeginPlay()
 {
 	Super::BeginPlay();
+
 	if (EndGameCameraPrefab)
 	{
 		EndGameCamera = GetWorld()->SpawnActor<AEndGameCamera>(EndGameCameraPrefab ,FVector{755.20f,-309.04f,619.70f}, FRotator{0.0f, 16.9f, 0.0f});
 		//EndGameCamera->AttachToComponent(ThirdPlaceMeshes[0], FAttachmentTransformRules::KeepRelativeTransform);
+		EndGameCamera->SetReplicates(true);
+		EndGameCamera->SetReplicatingMovement(true);
 		EndGameCamera->AttachToComponent(PodiumMeshes[0], FAttachmentTransformRules::KeepRelativeTransform);
 		EndGameCamera->SetActorRelativeLocation(FVector{-798.702375,-395.890137,509.317685});
 		EndGameCamera->SetActorRelativeRotation(FRotator{-10.000000,18.409999,-0.000000});

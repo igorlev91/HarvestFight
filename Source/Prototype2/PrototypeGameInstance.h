@@ -90,6 +90,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int FinalConnectionCount{0};
 
+	TArray<FString> FinalPlayerNames;
 	TArray<ECharacters> FinalCharacters;
 	TArray<ECharacterColours> FinalColours;
 	

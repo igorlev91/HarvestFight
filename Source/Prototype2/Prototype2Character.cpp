@@ -35,6 +35,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "GrowableWeapon.h"
 #include "SellBin_Winter.h"
+#include "EndGameCamera.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -188,12 +189,9 @@ void APrototype2Character::BeginPlay()
 	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 0.0f;
 
 	// Set start position - for decal arrow
-	StartPosition = GetActorLocation();
+	
 
-	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
-	{
-		UpdateDecalDirection(false);
-	}
+	UpdateDecalDirection(false);
 
 	// Find and store sell bin
 	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
@@ -209,19 +207,66 @@ void APrototype2Character::BeginPlay()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("No shipping bin found"));
 		}
-
-		DecalArmSceneComponent->SetIsReplicated(false);
-		DecalComponent->SetIsReplicated(false);
 	}
-	
+
+	DecalArmSceneComponent->SetIsReplicated(false);
+	DecalComponent->SetIsReplicated(false);
+	DecalComponent->SetVisibility(false);
+	DecalArmSceneComponent->SetVisibility(false);
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+
+
+	if (PlayerHUDRef)
+	{
+		//PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+		PlayerHUDRef->SetHUDInteractText("");
+	}
+	
+	if (!EndGameCam)
+	{
+		if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			if (auto endGamePodium = gamemode->EndGamePodium)
+			{
+				EndGameCam = endGamePodium->EndGameCamera;
+			}
+		}
+	}
 	
 	if (PlayerStateRef)
 	{
+		auto gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+		if (!gamestate->GameHasStarted)
+		{
+			StartPosition = GetActorLocation();
+		}
+		if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+		{
+			if (EndGameCam)
+			{
+				
+				if (gamestate->HasGameFinished)
+				{
+					if (auto castedController = Cast<APrototype2PlayerController>(PlayerStateRef->GetPlayerController()))
+					{
+						castedController->SetViewTarget(EndGameCam);
+						GetCharacterMovement()->StopActiveMovement();
+						GetCharacterMovement()->StopMovementImmediately();
+						GetCharacterMovement()->Velocity = {};
+						GetCharacterMovement()->Deactivate();
+						castedController->bEnableMovement = false;
+						castedController->UnPossess();
+						UE_LOG(LogTemp, Warning, TEXT("Game is over, Change the camera now please."));
+					}
+				}
+			}
+		}
+		
 		// Set the reference to the run animation based on the skin (Cow, Pig, etc)
 		if (RunAnimations[(int32)PlayerStateRef->Character])
 		{		
@@ -271,7 +316,8 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	
 	if (PlayerHUDRef)
 	{
-		Server_CountdownTimers(DeltaSeconds);
+		if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+			Server_CountdownTimers(DeltaSeconds);
 		
 		// Update sprint UI
 		PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
@@ -286,15 +332,19 @@ void APrototype2Character::Tick(float DeltaSeconds)
 	//		GetController()->SetIgnoreMoveInput(true);
 	//	}
 	//}
-
-	// Update decal rotation
-	if (bDecalOn && GetLocalRole() == ROLE_AutonomousProxy)
-	{
-		UpdateDecalAngle();
-	}
-	
+	//if (IsLocallyControlled())
+	//{
+	//	if (HeldItem != nullptr)
+	//	{
+	//		UpdateDecalDirection(false);
+	//	}
+	//		
+	//}
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
+		UpdateDecalAngle();
+		
+		
 		if (GetCharacterMovement()->Velocity.Size() < 50.0f)
 		{
 			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::WALKPOOF);
@@ -324,6 +374,7 @@ void APrototype2Character::Server_CountdownTimers_Implementation(float DeltaSeco
 
 void APrototype2Character::ChargeAttack()
 {
+	UpdateDecalDirection(false);
 	Server_StartAttack();
 }
 
@@ -420,7 +471,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 
 	bCanAttack = true;
 
-	UpdateDecalDirection(false); // Turn off decal as dropped any item
+	//UpdateDecalDirection(false); // Turn off decal as dropped any item
 
 	Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
 }
@@ -430,7 +481,7 @@ void APrototype2Character::Interact()
 	if(!HeldItem)
 	{
 		PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-		UpdateDecalDirection(false);
+		//UpdateDecalDirection(false);
 	}
 	if (!Weapon)
 	{
@@ -493,6 +544,7 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 
 void APrototype2Character::CheckForInteractables()
 {
+	
 	TArray<FHitResult> outHits;
 	FVector sweepStart = GetActorLocation();
 	FVector sweepEnd = GetActorLocation();
@@ -505,15 +557,39 @@ void APrototype2Character::CheckForInteractables()
 		TArray<AActor*> interactableActors;
 		for (auto& hit : outHits)
 		{
-			if (Cast<IInteractInterface>(hit.GetActor()))
+			if (auto interface = Cast<IInteractInterface>(hit.GetActor()))
 			{
-				interactableActors.Add(hit.GetActor());
+				if (GetPlayerState<APrototype2PlayerState>())
+				{
+					if (interface->IsInteractable(GetPlayerState<APrototype2PlayerState>()))
+						interactableActors.Add(hit.GetActor());
+				}
 			}
+		}
+
+		bool emptyArray{};
+		AActor* sellBin;
+		for(auto actors : interactableActors)
+		{
+			float dist = FVector::Distance(actors->GetActorLocation(), GetActorLocation());
+			if (dist <= InteractRadius)
+			{
+				if (Cast<ASellBin>(actors))
+				{
+					emptyArray = true;
+					sellBin = actors;
+					break;
+				}
+			}
+		}
+		if (emptyArray)
+		{
+			interactableActors.Empty();
+			interactableActors.Add(sellBin);
 		}
 
 		float distanceToClosest;
 		auto nearestActor = UGameplayStatics::FindNearestActor(GetActorLocation(), interactableActors, distanceToClosest);
-		
 		if (distanceToClosest <= InteractRadius && nearestActor)
 		{
 			if (ClosestInteractableActor && ClosestInteractableActor != nearestActor)
@@ -533,6 +609,7 @@ void APrototype2Character::CheckForInteractables()
 	else
 	{
 		// null both references
+		EnableStencil(false);
 		ClosestInteractableItem = nullptr;
 		ClosestInteractableActor = nullptr;
 	}
@@ -547,6 +624,11 @@ void APrototype2Character::EnableStencil(bool _on)
 			if (auto itemComponent = Cast<UItemComponent>(component))
 			{
 				itemComponent->Mesh->SetRenderCustomDepth(_on);
+
+				if (auto plant = Cast<APlant>(ClosestInteractableActor))
+				{
+					plant->LeavesMesh->SetRenderCustomDepth(_on);
+				}
 			}
 		}
 	}
@@ -563,6 +645,8 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 	//Server_FireParticleSystem(Dizzy_NiagaraSystem, Dizzy_NiagaraComponent->GetComponentLocation());
 	
 	//Server_Ragdoll(true);
+
+	UpdateDecalDirection(false);
 	
 	// Knockback
 	FVector KnockAway = GetActorUpVector()/2 + (GetActorLocation() - AttackerLocation).GetSafeNormal();
@@ -859,28 +943,47 @@ void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArr
 			break;
 		}
 	}
-	
-
 }
 
 void APrototype2Character::UpdateDecalDirection(bool _on)
 {
-	DecalComponent->SetVisibility(_on);
+	if (IsLocallyControlled())
+	{
+		DecalComponent->SetVisibility(_on);
+	}
 }
 
 void APrototype2Character::UpdateDecalDirection(bool _on, bool _targetShippingBin)
 {
-	DecalComponent->SetVisibility(_on);
+	if (IsLocallyControlled())
+	{
+		DecalComponent->SetVisibility(_on);
 
-	if (_on)
-	{
-		bDecalOn = true;
-		bDecalTargetShippingBin = _targetShippingBin;
+		if (_on)
+		{
+			bDecalOn = true;
+			bDecalTargetShippingBin = _targetShippingBin;
+		}
+		else
+		{
+			bDecalOn = false;
+		}
 	}
-	else
+}
+
+void APrototype2Character::TeleportToLocation(FVector DestinationLocation, FRotator DestinationRotation)
+{
+	if (GetLocalRole() == ROLE_Authority || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		bDecalOn = false;
+		Server_TeleportToLocation(DestinationLocation, DestinationRotation);
 	}
+}
+
+void APrototype2Character::Server_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation)
+{
+	SetActorLocation(DestinationLocation);
+	SetActorRotation(DestinationRotation);
+	Multi_TeleportToLocation(DestinationLocation, DestinationRotation);
 }
 
 bool APrototype2Character::IsSprinting()
@@ -1008,6 +1111,12 @@ UWidget_PlayerHUD* APrototype2Character::GetPlayerHUD()
 {
 	// Update UI
 	return PlayerHUDRef;
+}
+
+void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation)
+{
+	SetActorLocation(DestinationLocation);
+	SetActorRotation(DestinationRotation);
 }
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
@@ -1200,12 +1309,14 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::TryInteract()
 {
-	//if ((HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy))
-	//	ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::TEST);
-	
 	if (ClosestInteractableItem)
 	{
 		ClosestInteractableItem->ClientInteract(this);
+	}
+	
+	if (ClosestInteractableItem == nullptr)
+	{
+		UpdateDecalDirection(false);
 	}
 }
 
@@ -1217,6 +1328,8 @@ void APrototype2Character::Server_TryInteract_Implementation()
 
 		UE_LOG(LogTemp, Warning, TEXT("Attempted to Interact!"));
 		ClosestInteractableItem->Interact(this);
+
+		EnableStencil(false);
 		
 		if (HeldItem)
 		{
@@ -1235,7 +1348,7 @@ void APrototype2Character::Server_TryInteract_Implementation()
 	}
 	else if (HeldItem && !ClosestInteractableItem)
 	{
-		UpdateDecalDirection(false); // Turn off decal as dropped any item
+		//UpdateDecalDirection(false); // Turn off decal as dropped any item
 		InteractTimer = InteractTimerTime;
 		Multi_DropItem();
 	}

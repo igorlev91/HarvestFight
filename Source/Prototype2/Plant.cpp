@@ -3,6 +3,7 @@
 
 #include "Plant.h"
 #include "Prototype2Character.h"
+#include "Prototype2PlayerState.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -37,6 +38,7 @@ void APlant::Interact(APrototype2Character* player)
 			player->PlayerHUDRef->SetHUDInteractText("");
 		}
 		ItemComponent->Mesh->SetRenderCustomDepth(false);
+		LeavesMesh->SetRenderCustomDepth(false);
 	}
 }
 
@@ -58,6 +60,28 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, clas
 
 		owner->EnableStencil(true);
 	}
+}
+
+bool APlant::IsInteractable(APrototype2PlayerState* player)
+{
+	if (!player)
+		return false;
+
+	if (auto controller = player->GetPlayerController())
+	{
+		if (auto character = controller->GetCharacter())
+		{
+			if (auto casted = Cast<APrototype2Character>(character))
+			{
+				if (!casted->HeldItem || casted->HeldItem != this)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
 }
 
 void APlant::Server_ToggleGold_Implementation()

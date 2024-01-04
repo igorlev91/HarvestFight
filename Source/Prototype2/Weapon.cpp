@@ -21,4 +21,9 @@ void UWeapon::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, cla
 {
 }
 
+bool UWeapon::IsInteractable(APrototype2PlayerState* player)
+{
+	return false;
+}
+
 

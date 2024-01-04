@@ -140,7 +140,19 @@ public:
 	/* Decal Arrow */
 	void UpdateDecalDirection(bool _on);
 	void UpdateDecalDirection(bool _on, bool _targetShippingBin);
+	
+	void TeleportToLocation(FVector DestinationLocation, FRotator DestinationRotation = FRotator::ZeroRotator);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_TeleportToLocation(FVector DestinationLocation, FRotator DestinationRotation);
+	void Server_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_TeleportToLocation(FVector DestinationLocation, FRotator DestinationRotation);
+	void Multi_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation);
+
+	class AEndGameCamera* EndGameCam;
+	
 protected: /* Protected Networking functions */
 	void PlayNetworkMontage(UAnimMontage* _montage);
 	

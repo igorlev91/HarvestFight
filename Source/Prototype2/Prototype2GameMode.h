@@ -32,6 +32,8 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	void TeleportEveryoneToPodium();
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_TeleportEveryoneToPodium();
 	void Multi_TeleportEveryoneToPodium_Implementation();
@@ -39,6 +41,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DetachShippingBinComponents();
 	void Multi_DetachShippingBinComponents_Implementation();
+
+	void KeepPlayersAtSpawnPositionUntilStart();
 	
 	bool HasGameFinishedLocal{};
 	bool TpHasHappened{};

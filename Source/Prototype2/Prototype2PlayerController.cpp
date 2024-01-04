@@ -40,21 +40,7 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 
 	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
 	{
-		if (GameStateRef->HasGameFinished)
-		{
-			if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-			{
-				if (auto endGamePodium = gamemode->EndGamePodium)
-				{
-					if (auto endGameCamera = endGamePodium->EndGameCamera)
-					{
-						SetViewTarget(endGameCamera);
-						UnPossess();
-					}
-				}
-			}
-		}
-		else if (!GameStateRef->HasGameFinished && GameStateRef->GameHasStarted)
+		if (!GameStateRef->HasGameFinished && GameStateRef->GameHasStarted)
 		{
 			if (bEnableMovement == false)
 			{
@@ -62,6 +48,7 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 				bEnableMovement = true;
 			}
 		}
+		
 	
 		if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 		{
