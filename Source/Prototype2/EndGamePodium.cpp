@@ -3,6 +3,7 @@
 
 #include "EndGamePodium.h"
 #include "Components/ArrowComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Prototype2/EndGameCamera.h"
 
 // Sets default values
@@ -54,5 +55,11 @@ void AEndGamePodium::BeginPlay()
 void AEndGamePodium::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AEndGamePodium::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AEndGamePodium, EndGameCamera);
 }
 

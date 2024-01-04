@@ -27,4 +27,5 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeOnInitialized() override;
 	void UpdateTimerText();
+	void CheckForGameFinished();
 };

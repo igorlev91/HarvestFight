@@ -110,10 +110,18 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		else
 			Seconds->SetText(FText::FromString(FString::FromInt(seconds)));
 
-		if (GameStateRef->GameHasStarted)
-			StartAndEndMenu->SetVisibility(ESlateVisibility::Hidden);
-		else
+		if (GameStateRef->HasGameFinished)
+		{
 			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+		else if (GameStateRef->GameHasStarted)
+		{
+			StartAndEndMenu->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
 		
 		// Updating points/coins
 		//if (!GetOwningPlayerPawn()->HasAuthority())
@@ -223,7 +231,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 				}
 			}
 		}
-		if (GameStateRef->MatchLengthMinutes <= 0 && GameStateRef->MatchLengthSeconds <= 0)
+		if (GameStateRef->GameReadyForVote)
 		{
 			EnableEndgameMenu();
 		}

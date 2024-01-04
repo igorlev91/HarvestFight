@@ -46,26 +46,55 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 					{
 					case 0:
 						{
-							character->SetActorLocation({567.373744f,-143.041463f,97.0});
+							if (gamestate->MaxPlayersOnServer == 4)
+							{
+								character->SetActorLocation({Position1});
+							}
+							else if (gamestate->MaxPlayersOnServer == 3)
+							{
+								character->SetActorLocation({Position2});
+							}
+							else
+							{
+								character->SetActorLocation({Position3});
+							}
 							break;
 						}
 					case 1:
 						{
-							character->SetActorLocation({324.557804,-231.419228,97.0});
+							if (gamestate->MaxPlayersOnServer == 4)
+							{
+								character->SetActorLocation({Position3});
+							}
+							else if (gamestate->MaxPlayersOnServer == 3)
+							{
+								character->SetActorLocation({Position4});
+							}
+							else
+							{
+								character->SetActorLocation({Position5});
+							}
 							break;
 						}
 					case 2:
 						{
-							character->SetActorLocation({99.813257,-313.219544,97.0});
+							if (gamestate->MaxPlayersOnServer == 4)
+							{
+								character->SetActorLocation({Position5});
+							}
+							else
+							{
+								character->SetActorLocation({Position6});
+							}
 							break;
 						}
 					case 3:
 						{
-							character->SetActorLocation({-122.669679,-394.196701,97.0});
+							character->SetActorLocation({Position7});
 							break;
 						}
 					default:
-						character->SetActorLocation({567.373744f,-143.041463f,97.0});
+						
 						break;
 					}
 				}
@@ -94,9 +123,6 @@ void ALobbyGamemode::Tick(float DeltaSeconds)
 				}
 			}
 		}
-
-		
-		
 	}
 }
 

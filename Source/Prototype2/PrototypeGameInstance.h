@@ -89,6 +89,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int FinalConnectionCount{0};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ECharacters Character{ECharacters::COW};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ECharacterColours CharacterColour{ECharacterColours::RED};
 	
 protected:
 	bool HostSession(FUniqueNetIdRepl UserId, FName SessionName, bool bIsLAN = true, bool bIsPresence = true, int32  = 12);

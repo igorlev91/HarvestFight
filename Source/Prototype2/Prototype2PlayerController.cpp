@@ -5,11 +5,14 @@
 
 #include "LobbyPlayerState.h"
 #include "Prototype2GameMode.h"
+#include "Prototype2PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Gamemodes/LobbyGamemode.h"
 #include "Gamestates/LobbyGamestate.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/LobbyCharacter.h"
+#include "Prototype2/EndGameCamera.h"
+#include "Prototype2/EndGamePodium.h"
 #include "Widgets/Widget_PlayerHUD.h"
 #include "Prototype2//Gamestates/Prototype2Gamestate.h"
 
@@ -22,6 +25,8 @@ void APrototype2PlayerController::BeginPlay()
 	{
 		GameStateRef = gamestate;
 	}
+
+	bCanPossessWithoutAuthority = true;
 }
 
 void APrototype2PlayerController::Tick(float DeltaSeconds)
@@ -31,8 +36,24 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 	if (!GameStateRef)
 		return;
 
-	UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
+	//UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
 	
+	if (GameStateRef->HasGameFinished)
+	{
+		if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			if (auto endGamePodium = gamemode->EndGamePodium)
+			{
+				if (auto endGameCamera = endGamePodium->EndGameCamera)
+				{
+					SetViewTarget(endGameCamera);
+					UnPossess();
+					SetViewTarget(endGameCamera);
+				}
+			}
+		}
+	}
+
 	if (!GameStateRef->GameHasStarted || GameStateRef->HasGameFinished)
 	{
 		DisableInput(this);
@@ -44,6 +65,14 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 		EnableInput(this);
 		SetIgnoreLookInput(false);
 		SetIgnoreMoveInput(false);
+	}
+
+	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		if (auto playerState = GetPlayerState<APrototype2PlayerState>())
+		{
+			UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
+		}
 	}
 }
 
@@ -82,9 +111,13 @@ void APrototype2PlayerController::UpdateCharacterMaterial(int _player, ECharacte
 void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(int _player, ECharacters _character,
 	ECharacterColours _characterColour)
 {
-	if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		gameState->UpdateCharacterMaterial(_player, _character, _characterColour);
+	}
+	else if (auto protoGameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		protoGameState->UpdateCharacterMaterial(_player, _character, _characterColour);
 	}
 }
 

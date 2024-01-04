@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PrototypeGameInstance.h"
 #include "GameFramework/PlayerState.h"
 #include "Prototype2PlayerState.generated.h"
 
@@ -36,6 +37,13 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float TimerExtraCoins{};
 
+	void UpdateCharacterMaterial(ECharacters _character, ECharacterColours _characterColour);
 
+	// Character & Colour
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	ECharacters Character{ECharacters::COW};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	ECharacterColours CharacterColour{ECharacterColours::RED};
 	
 };

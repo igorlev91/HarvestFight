@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Prototype2/EndGamePodium.h"
+#include "Prototype2/Prototype2Character.h"
+#include "Prototype2/Prototype2PlayerState.h"
 #include "Prototype2GameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -25,20 +28,33 @@ public:
 	void EnableControllerInputForAll();
 
 	void LookOutForGameEnd();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_TeleportEveryoneToPodium();
+	void Multi_TeleportEveryoneToPodium_Implementation();
+	
 	bool HasGameFinishedLocal{};
+	bool TpHasHappened{};
 
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AEndGamePodium> EndGamePodiumPrefab;
+	TSubclassOf<AEndGamePodium> EndGamePodiumPrefab;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	class AEndGamePodium* EndGamePodium{};
 	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<APrototype2Character>> Server_Characters;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<APrototype2PlayerState>> Server_PlayerStates;
 };
 
 

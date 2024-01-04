@@ -14,6 +14,9 @@ void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(APrototype2PlayerState, IsShowingExtraCoins);
 	DOREPLIFETIME(APrototype2PlayerState, MaxTimeShowExtraCoins);
 	DOREPLIFETIME(APrototype2PlayerState, TimerExtraCoins);
+
+	DOREPLIFETIME(APrototype2PlayerState, Character);
+	DOREPLIFETIME(APrototype2PlayerState, CharacterColour);
 }
 
 APrototype2PlayerState::APrototype2PlayerState()
@@ -44,4 +47,10 @@ void APrototype2PlayerState::Tick(float DeltaSeconds)
 			IsShowingExtraCoins = false;
 		}
 	}
+}
+
+void APrototype2PlayerState::UpdateCharacterMaterial(ECharacters _character, ECharacterColours _characterColour)
+{
+	Character = _character;
+	CharacterColour = _characterColour;
 }

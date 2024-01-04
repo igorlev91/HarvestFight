@@ -23,6 +23,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UPROPERTY(EditAnywhere)
 	class UArrowComponent* P1Position;
 	UPROPERTY(EditAnywhere)
@@ -30,7 +32,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	class UArrowComponent* P3Position;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Transient, Replicated, EditAnywhere)
 	class AEndGameCamera* EndGameCamera;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;

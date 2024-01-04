@@ -36,4 +36,21 @@ void UWidget_StartAndEndMenu::UpdateTimerText()
 		TimerText->SetVisibility(ESlateVisibility::Hidden);
 		BackgroundBorder->SetVisibility(ESlateVisibility::Hidden);
 	}
+
+	CheckForGameFinished();
+}
+
+void UWidget_StartAndEndMenu::CheckForGameFinished()
+{
+	if (GameStateRef->HasGameFinished && !GameStateRef->GameReadyForVote && GameStateRef->BriefTimesUpEndGameLengthSeconds > 0)
+	{
+		TimerText->SetText(FText::FromString("Times Up!"));
+		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
+		BackgroundBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
+	else if (GameStateRef->HasGameFinished && GameStateRef->GameReadyForVote && GameStateRef->BriefTimesUpEndGameLengthSeconds <= 0)
+	{
+		TimerText->SetVisibility(ESlateVisibility::Hidden);
+		BackgroundBorder->SetVisibility(ESlateVisibility::Hidden);
+	}
 }

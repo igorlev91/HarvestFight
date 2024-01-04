@@ -8,6 +8,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Prototype2/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
@@ -23,7 +24,7 @@ APrototype2GameMode::APrototype2GameMode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 	
-
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void APrototype2GameMode::BeginPlay()
@@ -101,6 +102,29 @@ void APrototype2GameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	LookOutForGameEnd();
 	
+	if (auto gamestate = GetGameState<APrototype2Gamestate>())
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
+		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
+		{
+			if (auto playerState = gamestate->Server_Players[i])
+			{
+				if (auto controller = playerState->GetPlayerController())
+				{
+					//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Controller"));
+					if (auto character = Cast<APrototype2Character>(controller->GetCharacter()))
+					{
+						//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Character"));
+						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
+						{
+							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
+							character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* PlayerController)
@@ -151,9 +175,87 @@ void APrototype2GameMode::LookOutForGameEnd()
 {
 	if (GameStateRef)
 	{
-		if (HasGameFinishedLocal != GameStateRef->HasGameFinished)
+		if (Server_Characters.Num() < GameStateRef->Server_Players.Num())
 		{
-			// TP everyone to the podium
+			Server_Characters.Empty();
+			Server_Characters = {};
+			for(auto playerState : GameStateRef->Server_Players)
+			{
+				if (auto* character = Cast<APrototype2Character>(playerState->GetPlayerController()->GetCharacter()))
+				{
+					Server_Characters.Add(character);
+				}
+			}
+		}
+
+		if (Server_PlayerStates.Num() < GameStateRef->Server_Players.Num())
+			Server_PlayerStates = GameStateRef->Server_Players;
+		
+		if (GameStateRef->HasGameFinished && HasAuthority() && !TpHasHappened)
+		{
+			Multi_TeleportEveryoneToPodium();
+			TpHasHappened = true;
+		}
+	}
+}
+
+void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APrototype2GameMode, EndGamePodium);
+}
+
+void APrototype2GameMode::Multi_TeleportEveryoneToPodium_Implementation()
+{
+	APrototype2Character* firstPlace{nullptr};
+	APrototype2Character* secondPlace{nullptr};
+	APrototype2Character* thirdPlace{nullptr};
+	int highestCoins{};
+	int secondHighestCoins{};
+			
+	for(int i = 0; i < Server_PlayerStates.Num(); i++)
+	{
+		if (auto* character = Cast<APrototype2Character>(Server_Characters[i]))
+		{
+			if (Server_PlayerStates[i].Get()->Coins > highestCoins)
+			{
+				highestCoins = Server_PlayerStates[i].Get()->Coins;
+				firstPlace = character;
+			}
+			else if (Server_PlayerStates[i].Get()->Coins > secondHighestCoins)
+			{
+				secondHighestCoins = Server_PlayerStates[i].Get()->Coins;
+				secondPlace = character;
+			}
+			else
+			{
+				thirdPlace = character;
+			}
+		}
+	}
+
+	if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if (auto endGamePodium = gamemode->EndGamePodium)
+		{
+			FTransform defautTransform{};
+			defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
+			// Tp Everyone
+			if (firstPlace)
+			{
+				firstPlace->AttachToComponent(endGamePodium->P1Position,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				firstPlace->SetActorRelativeTransform(defautTransform);
+			}
+			if (secondPlace)
+			{
+				secondPlace->AttachToComponent(endGamePodium->P2Position,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				secondPlace->SetActorRelativeTransform(defautTransform);
+			}
+			if (thirdPlace)
+			{
+				thirdPlace->AttachToComponent(endGamePodium->P3Position,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				thirdPlace->SetActorRelativeTransform(defautTransform);
+			}
 		}
 	}
 }

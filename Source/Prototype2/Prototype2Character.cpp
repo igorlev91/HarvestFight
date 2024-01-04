@@ -162,7 +162,7 @@ void APrototype2Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	//GetMesh()->SetMaterial(0, PlayerMat);
+	GetMesh()->SetMaterial(0, PlayerMat);
 	
 	UpdateAllPlayerIDs();
 
@@ -236,6 +236,14 @@ void APrototype2Character::Tick(float DeltaSeconds)
 		else
 		{
 			InteractSystem->Deactivate();
+		}
+	}
+
+	if (auto gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if (gameState->HasGameFinished)
+		{
+			GetMovementComponent()->SetActive(false);
 		}
 	}
 }
