@@ -8,6 +8,7 @@
 ARadialPlot::ARadialPlot()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -21,9 +22,10 @@ void ARadialPlot::BeginPlay()
 		{
 			for(int j = 0; j < 3; j++)
 			{
-				if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, {((float)i - 1.5f) * PlotSpread, ((float)j - 1.5f) * PlotSpread, PlotZHeight}, FRotator::ZeroRotator))
+				if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, RootComponent->GetComponentTransform()))
 				{
-					newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+					newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+					newPlot->SetActorRelativeLocation({((float)i - 1.5f) * PlotSpread, ((float)j - 1.5f) * PlotSpread, PlotZHeight});
 					newPlot->Player_ID = Player_ID;
 					growSpots.Add(newPlot);
 				}

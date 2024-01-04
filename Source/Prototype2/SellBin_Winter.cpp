@@ -13,34 +13,24 @@ ASellBin_Winter::ASellBin_Winter()
 	Collision = CreateDefaultSubobject<UBoxComponent>("Collision Box");
 	Collision->SetupAttachment(RootComponent);
 	Collision->SetBoxExtent({115,115,175});
+	Collision->SetGenerateOverlapEvents(true);
+	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	IcePlane = CreateDefaultSubobject<UStaticMeshComponent>("Ice Plane");
-	IcePlane->SetupAttachment(RootComponent);
+	IcePlane->SetWorldLocation({-104.559325,-72.190911,-13.473242});
 	
 	IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
-	IceBoundary->SetupAttachment(RootComponent);
+	IceBoundary->SetWorldLocation({-104.559325,-72.190911,300});
 
 	InterfaceType = EInterfaceType::SellBin;
+
+
 }
 
 void ASellBin_Winter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InterfaceType = EInterfaceType::SellBin;
-
-	IcePlane->SetupAttachment(RootComponent);
-	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-
-	IceBoundary->SetupAttachment(RootComponent);
-	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	
-	Collision->SetGenerateOverlapEvents(true);
-	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	
-	Collision->SetupAttachment(RootComponent);
-	Collision->SetBoxExtent({115,115,175});
-	
 	ItemComponent->Mesh->SetSimulatePhysics(true);
 	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
@@ -60,8 +50,49 @@ void ASellBin_Winter::GetHit(float AttackCharge, float _maxAttackCharge, FVector
 	//UE_LOG(LogTemp, Warning, TEXT("Player hit Box with %s multiplier"), *FString::FromInt(forceMultiplier));
 }
 
+void ASellBin_Winter::SetShippingBinPosition_Networked(FVector _pos)
+{
+	IcePlane->SetupAttachment(RootComponent);
+	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	IcePlane->SetRelativeLocation({});
+
+	IceBoundary->SetupAttachment(RootComponent);
+	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	IceBoundary->SetRelativeLocation({});
+	
+
+}
+
+void ASellBin_Winter::Server_DetachComponents_Implementation(FVector _pos)
+{
+	
+}
+
+void ASellBin_Winter::Multi_DetachComponents_Implementation(FVector _pos)
+{
+	SetActorLocation(_pos);
+
+	IcePlane->SetupAttachment(RootComponent);
+	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	IcePlane->SetRelativeLocation({});
+
+	IceBoundary->SetupAttachment(RootComponent);
+	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	IceBoundary->SetRelativeLocation({});
+	
+	Collision->SetGenerateOverlapEvents(true);
+	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	
+	Collision->SetupAttachment(RootComponent);
+	Collision->SetBoxExtent({115,115,175});
+	
+	ItemComponent->Mesh->SetSimulatePhysics(true);
+	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+}
+
 void ASellBin_Winter::OnCollision(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+                                  UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
 {
 	if (auto* player = Cast<APrototype2Character>(OtherActor))
 	{

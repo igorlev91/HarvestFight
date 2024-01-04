@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "InteractInterface.h"
 #include "ItemComponent.h"
+#include "NiagaraComponent.h"
 #include "GrowSpot.generated.h"
 
 class APlant;
@@ -50,6 +51,10 @@ public:
 	void Multi_UpdateState(EGrowSpotState _newState);
 	void Multi_UpdateState_Implementation(EGrowSpotState _newState);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlantReadySparkle(bool _bIsActive);
+	void Multi_SetPlantReadySparkle_Implementation(bool _bIsActive);
+	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
 
@@ -81,4 +86,11 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* MandrakeAttenuationSettings;
+
+	// Plant ready sparkle VFX
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraSystem* PlantReadySparkle_NiagaraSystem;
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* PlantReadySparkle_NiagaraComponent;
 };
+

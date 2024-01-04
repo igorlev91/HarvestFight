@@ -22,6 +22,16 @@ public:
 	
 	void GetHit(float AttackCharge, float _maxAttackCharge, FVector AttackerLocation);
 
+	void SetShippingBinPosition_Networked(FVector _pos = FVector(-104.559325,-72.190911,-13.473242));
+
+	UFUNCTION(Server, Reliable)
+	void Server_DetachComponents(FVector _pos);
+	void Server_DetachComponents_Implementation(FVector _pos);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DetachComponents(FVector _pos);
+	void Multi_DetachComponents_Implementation(FVector _pos);
+	
 	UPROPERTY(EditAnywhere)
 	float MaxForceFromPlayerHit{5000};
 
@@ -30,7 +40,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float ImpactLocationZ{50};
-private:
+public:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UBoxComponent* Collision{nullptr};

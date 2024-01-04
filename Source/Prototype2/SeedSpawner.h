@@ -27,6 +27,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = WeaponSeeds, meta = (AllowPrivateAccess))
 	TArray<TSubclassOf<ASeed>> WeaponSeeds;
+
+	FVector previousSpawnPos = FVector(0, 0, 0);
+	std::vector<FVector> currentSpawnPos;
+	std::vector<float> distances;
+	int size = 3;
+
 private:
 	float SpawnTimer{};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))

@@ -48,7 +48,7 @@ void ASellBin::BeginPlay()
 	startPosition = FVector(0, 0, 0);// SellAmountWidgetComponent->GetComponentLocation(); // Set UI start location variable
 	movingTimer = movingTime; // Set starting timer to equal max time
 
-	//ItemComponent->Mesh->SetSimulatePhysics(false);
+	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	
 }

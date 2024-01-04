@@ -26,6 +26,9 @@ AGrowSpot::AGrowSpot()
 	InteractSystem->SetupAttachment(RootComponent);
 
 	InterfaceType = EInterfaceType::GrowSpot;
+
+	PlantReadySparkle_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Attack Component"));
+	PlantReadySparkle_NiagaraComponent->SetupAttachment(RootComponent);
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -36,6 +39,7 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, plant);
 	DOREPLIFETIME(AGrowSpot, weapon);
 	DOREPLIFETIME(AGrowSpot, GrowSpotState);
+	DOREPLIFETIME(AGrowSpot, PlantReadySparkle_NiagaraComponent);
 }
 
 // Called when the game starts or when spawned
@@ -56,6 +60,11 @@ void AGrowSpot::BeginPlay()
 	{
 		InteractSystem->SetupAttachment(RootComponent);
 		InteractSystem->SetAsset(ParticleSystem);
+	}
+	
+	if (PlantReadySparkle_NiagaraComponent)
+	{
+		PlantReadySparkle_NiagaraComponent->SetAsset(PlantReadySparkle_NiagaraSystem);
 	}
 }
 
@@ -105,6 +114,7 @@ void AGrowSpot::GrowPlantOnTick(float _deltaTime)
 		{
 			GrowSpotState = EGrowSpotState::Grown;
 		}
+
 	}
 }
 
@@ -118,8 +128,8 @@ void AGrowSpot::Tick(float DeltaTime)
 	
 	if (plant)
 	{
-		FVector scale = FMath::Lerp<FVector>({2.0f, 2.0f, 2.0f}, {0.1f, 0.1f, 0.1f}, growTimer / growTime);
-		FVector pos = FMath::Lerp<FVector>({GetActorLocation()}, GetActorLocation() + FVector::UpVector * 20.0f, growTimer / growTime);
+		FVector scale = FMath::Lerp<FVector>({2.0f, 2.0f, 2.0f}, {0.3f, 0.3f, 0.3f}, growTimer / growTime);
+		FVector pos = FMath::Lerp<FVector>({GetActorLocation()}, GetActorLocation() + FVector::UpVector * 0.0f, growTimer / growTime);
 		plant->ItemComponent->Mesh->SetSimulatePhysics(false);
 		plant->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		plant->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
@@ -142,6 +152,16 @@ void AGrowSpot::Tick(float DeltaTime)
 
 	if (HasAuthority())
 		GrowPlantOnTick(DeltaTime);
+
+	// VFX
+	if (GrowSpotState == EGrowSpotState::Grown)
+	{
+		Multi_SetPlantReadySparkle_Implementation(true);
+	}
+	else
+	{
+		Multi_SetPlantReadySparkle_Implementation(false);
+	}
 }
 
 void AGrowSpot::Multi_GrowOnTick_Implementation(float _deltaTime)
@@ -383,6 +403,25 @@ void AGrowSpot::SetWeapon(AGrowableWeapon* _weapon, float _growTime)
 	if (growTimer <= 0)
 	{
 		growTimer = 1.0f;
+	}
+}
+
+
+void AGrowSpot::Multi_SetPlantReadySparkle_Implementation(bool _bIsActive)
+{
+	if (PlantReadySparkle_NiagaraComponent)
+	{
+		if (_bIsActive)
+		{
+			if (!PlantReadySparkle_NiagaraComponent->IsActive())
+			{
+				PlantReadySparkle_NiagaraComponent->Activate();
+			}
+		}
+		else
+		{
+			PlantReadySparkle_NiagaraComponent->Deactivate();
+		}
 	}
 }
 

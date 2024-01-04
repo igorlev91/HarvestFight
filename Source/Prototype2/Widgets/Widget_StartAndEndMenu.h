@@ -21,8 +21,13 @@ public:
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
+	int countdownTimer{};
+
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeOnInitialized() override;
 	void UpdateTimerText();
 	void CheckForGameFinished();
+
+
 };

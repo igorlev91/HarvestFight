@@ -26,21 +26,35 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere)
-	class UArrowComponent* P1Position;
+	class UArrowComponent* P1LosePosition;
 	UPROPERTY(EditAnywhere)
-	class UArrowComponent* P2Position;
+	class UArrowComponent* P2LosePosition;
 	UPROPERTY(EditAnywhere)
-	class UArrowComponent* P3Position;
+	class UArrowComponent* P3LosePosition;
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* P4LosePosition;
+
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* P1WinPosition;
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* P2WinPosition;
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* P3WinPosition;
+	UPROPERTY(EditAnywhere)
+	class UArrowComponent* P4WinPosition;
 
 	UPROPERTY(Transient, Replicated, EditAnywhere)
 	class AEndGameCamera* EndGameCamera;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;
 	
+	//UPROPERTY(EditAnywhere)
+	//TArray<class UStaticMeshComponent*> FirstPlaceMeshes;
+	//UPROPERTY(EditAnywhere)
+	//TArray<class UStaticMeshComponent*> SecondPlaceMeshes;
+	//UPROPERTY(EditAnywhere)
+	//TArray<class UStaticMeshComponent*> ThirdPlaceMeshes;
+
 	UPROPERTY(EditAnywhere)
-	TArray<class UStaticMeshComponent*> FirstPlaceMeshes;
-	UPROPERTY(EditAnywhere)
-	TArray<class UStaticMeshComponent*> SecondPlaceMeshes;
-	UPROPERTY(EditAnywhere)
-	TArray<class UStaticMeshComponent*> ThirdPlaceMeshes;
+	TArray<class UStaticMeshComponent*> PodiumMeshes;
 };

@@ -407,6 +407,11 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 			PickupImage->SetBrushFromTexture(RadishSeedTexture);
 			break;
 		}
+	case WeaponSeed:
+		{
+			PickupImage->SetBrushFromTexture(WeaponSeedTexture);
+			break;
+		}
 	//case Weapon:
 	//	{
 	//		WeaponImage->SetVisibility(ESlateVisibility::Visible);

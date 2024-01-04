@@ -136,6 +136,21 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
+void ALobbyGamemode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	if (auto gamestate = GetGameState<ALobbyGamestate>())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
+		if (auto playerState = Exiting->GetPlayerState<ALobbyPlayerState>())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s froom Server_Players"), *FString::FromInt(playerState->Player_ID));
+			gamestate->Server_Players.Remove(playerState);
+		}
+	}
+}
+
 void ALobbyGamemode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

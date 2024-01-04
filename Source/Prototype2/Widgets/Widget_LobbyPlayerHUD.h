@@ -29,16 +29,16 @@ public:
 
 	// Player ready button (above character head)
 	// Player 1
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player1ReadyImage;
 	// Player 2
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player2ReadyImage;
 	// Player 3
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player3ReadyImage;
 	// Player 4
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player4ReadyImage;
 
 	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -47,6 +47,9 @@ public:
 	// Player number
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	int playerNumber{};
+	
+	FIntVector2 resolution;
+	
 public:
 
 	virtual void NativeOnInitialized() override;

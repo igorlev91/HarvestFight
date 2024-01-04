@@ -24,7 +24,7 @@ public:
 	bool changePlayerCount = true;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ARadialPlot> PlotPrefab;
+	TSubclassOf<class AGrowSpot> PlotPrefab;
 
 	UPROPERTY(EditAnywhere)
 	class USceneComponent* InitialSpawn;

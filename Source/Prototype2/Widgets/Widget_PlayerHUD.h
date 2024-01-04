@@ -24,6 +24,7 @@ enum EPickup
 	Radish,
 	RadishSeed,
 	Weapon,
+	WeaponSeed,
 	NoWeapon
 };
 
@@ -110,6 +111,9 @@ public:
 	UTexture2D* LeekWeaponTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* AsparagusWeaponTexture;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* WeaponSeedTexture;
 
 	// Object Textures
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -14,6 +14,7 @@
 #include "Prototype2/LobbyPlayerState.h"
 #include "Prototype2/Prototype2PlayerController.h"
 #include "Prototype2/Prototype2PlayerState.h"
+#include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
 void UWidget_LobbyPlayerHUD::NativeOnInitialized()
@@ -27,12 +28,23 @@ void UWidget_LobbyPlayerHUD::NativeOnInitialized()
 
 	// Make cancel hidden
 	CancelButton->SetVisibility(ESlateVisibility::Hidden);
+
+	UGameViewportClient* ViewportClient = GEngine->GameViewport;
+	if (ViewportClient)
+	{
+		FViewport* Viewport = ViewportClient->Viewport;
+		if (Viewport)
+		{
+			FIntPoint Resolution = Viewport->GetSizeXY();
+			resolution = FIntVector2(Resolution.X,Resolution.Y);
+		}
+	}
 }
 
 void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
+	
 	if (GameStateRef)
 	{
 		Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
@@ -49,6 +61,8 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 		//{
 		//	StartCountDown->SetVisibility(ESlateVisibility::Hidden);
 		//}
+
+		
 		
 		for(int i = 0; i < GameStateRef->Server_Players.Num(); i++)
 		{

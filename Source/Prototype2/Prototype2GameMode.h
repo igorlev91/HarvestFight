@@ -20,6 +20,7 @@ public:
 	virtual void BeginPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	void DisableControllerInput(APlayerController* PlayerController);
@@ -34,15 +35,25 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_TeleportEveryoneToPodium();
 	void Multi_TeleportEveryoneToPodium_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DetachShippingBinComponents();
+	void Multi_DetachShippingBinComponents_Implementation();
 	
 	bool HasGameFinishedLocal{};
 	bool TpHasHappened{};
+	
+	UPROPERTY(Replicated, VisibleAnywhere)
+	class ASellBin* SellBinRef;
 
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AEndGamePodium> EndGamePodiumPrefab;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ASellBin> SellBinPrefab;
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	class AEndGamePodium* EndGamePodium{};

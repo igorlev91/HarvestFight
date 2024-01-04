@@ -11,7 +11,10 @@
 void UWidget_StartAndEndMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+	
 	UpdateTimerText();
+
+	
 }
 
 void UWidget_StartAndEndMenu::NativeOnInitialized()
@@ -36,6 +39,11 @@ void UWidget_StartAndEndMenu::UpdateTimerText()
 	if (TimerText && GameStateRef->Server_Players.Num() >=  GameStateRef->FinalConnectionCount && ! GameStateRef->GameHasStarted)
 	{
 		TimerText->SetText(FText::FromString(FString::FromInt((int)GameStateRef->CountdownLengthSeconds)));
+		if (GameStateRef->CountdownLengthSeconds < 1)
+		{
+			TimerText->SetText(FText::FromString("Go!"));
+		}
+		countdownTimer = (int)GameStateRef->CountdownLengthSeconds;
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 	else if (TimerText && GameStateRef->GameHasStarted)
