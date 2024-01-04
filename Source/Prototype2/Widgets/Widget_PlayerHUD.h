@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
 UENUM(BlueprintType)
@@ -11,11 +12,23 @@ enum EPickup
 {
 	None,
 	Carrot,
+	CarrotGold,
 	CarrotSeed,
 	Cabbage,
+	CabbageGold,
 	CabbageSeed,
 	Mandrake,
+	MandrakeGold,
 	MandrakeSeed,
+	Broccoli,
+	BroccoliGold,
+	BroccoliSeed,
+	Daikon,
+	DaikonGold,
+	DaikonSeed,
+	Radish,
+	RadishGold,
+	RadishSeed,
 	Weapon,
 	NoWeapon
 };
@@ -92,7 +105,8 @@ public:
 	class UImage* PickupImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UOverlay* OverlayPickup;
-	
+
+	IInteractInterface* lastInteract{};
 
 	// Weapon UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -102,23 +116,39 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CarrotTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CarrotGoldTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CarrotSeedTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CabbageTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CabbageGoldTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CabbageSeedTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* MandrakeTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* MandrakeGoldTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* MandrakeSeedTexture;
-
-	//// Sprint
-	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	//class UImage* SprintImage;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CanSprintIconTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CanNotSprintIconTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* BroccoliTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* BroccoliGoldTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* BroccoliSeedTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* DaikonTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* DaikonGoldTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* DaikonSeedTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* RadishTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* RadishGoldTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* RadishSeedTexture;
 	
 	// Interaction image and text
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 

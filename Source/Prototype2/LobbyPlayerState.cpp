@@ -5,6 +5,17 @@
 #include "Net/UnrealNetwork.h"
 
 
+ALobbyPlayerState::ALobbyPlayerState()
+{
+	CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+}
+
+void ALobbyPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+}
+
 void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -24,11 +35,11 @@ void ALobbyPlayerState::UpdateCharacterMaterial(ECharacters _character, ECharact
 	Character = _character;
 	CharacterColour = _characterColour;
 
-	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		gameInstance->Character = Character;
-		gameInstance->CharacterColour = CharacterColour;
-	}
+	//if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
+	//{
+	//	gameInstance->Character = Character;
+	//	gameInstance->CharacterColour = CharacterColour;
+	//}
 	
 	// Print
 	//UE_LOG(LogTemp, Warning, TEXT("Player %s Colour Changed: %s"), *FString::FromInt(Player_ID), *FString::FromInt((int)CharacterColour));

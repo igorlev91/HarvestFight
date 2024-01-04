@@ -35,7 +35,7 @@ void APrototype2GameMode::BeginPlay()
 	{
 		GameStateRef = gamestate;
 		gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
-		UE_LOG(LogTemp, Warning, TEXT("Final Connection Count : %s"), *FString::FromInt(gamestate->FinalConnectionCount));
+		//UE_LOG(LogTemp, Warning, TEXT("Final Connection Count : %s"), *FString::FromInt(gamestate->FinalConnectionCount));
 	}
 
 	if (EndGamePodiumPrefab)
@@ -63,7 +63,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 					character->PlayerID = playerState->Player_ID;
 					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
 					gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
-					UE_LOG(LogTemp, Warning, TEXT("Final Connection Count: %s"), *FString::FromInt(gamestate->FinalConnectionCount));
+					//UE_LOG(LogTemp, Warning, TEXT("Final Connection Count: %s"), *FString::FromInt(gamestate->FinalConnectionCount));
 					//character->Client_AddHUD();
 					switch(playerState->Player_ID)
 					{

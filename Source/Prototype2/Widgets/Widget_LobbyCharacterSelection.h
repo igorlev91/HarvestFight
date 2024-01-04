@@ -62,6 +62,7 @@ public:
 	
 
 	virtual void NativeOnInitialized() override;
+	
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
@@ -83,5 +84,5 @@ public:
 	void ChangeCharacterColour(bool _right);
 
 	UFUNCTION(BlueprintCallable)
-	void CheckForTakenSkin();
+	void CheckForTakenSkin(bool _right);
 };

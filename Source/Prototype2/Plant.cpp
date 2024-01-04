@@ -31,11 +31,23 @@ void APlant::Interact(APrototype2Character* player)
 	}
 }
 
+void APlant::ClientInteract(APrototype2Character* player)
+{
+	IInteractInterface::ClientInteract(player);
+
+	if (isGrown)
+	{
+		player->UpdateDecalDirection(true, true);
+	}
+}
+
 void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
 {
 	if (!owner->HeldItem)
 	{
 		_invokingWiget->SetHUDInteractText("Pick Up");
+
+		owner->EnableStencil(true);
 	}
 }
 

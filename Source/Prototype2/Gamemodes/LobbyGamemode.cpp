@@ -31,6 +31,34 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 		{
 			if (auto* gamestate = GetGameState<ALobbyGamestate>())
 			{
+				playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+				int numOfPlayersWithSameColour{2};
+				while(numOfPlayersWithSameColour >= 1)
+				{
+					numOfPlayersWithSameColour = 0;
+					for(auto otherPlayerState : gamestate->Server_Players)
+					{
+						if (otherPlayerState->CharacterColour == playerState->CharacterColour)
+						{
+							numOfPlayersWithSameColour++;
+						}
+					}
+					if (numOfPlayersWithSameColour >= 1)
+					{
+						int newColour = (int)playerState->CharacterColour;
+						newColour ++;
+						if (newColour > 3)
+						{
+							newColour = 0;
+						}
+						else if (newColour < 0)
+						{
+							newColour = 3;
+						}
+						playerState->CharacterColour = (ECharacterColours)newColour;
+					}
+				}
+				
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
@@ -40,8 +68,8 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 					NewPlayer->Possess(character);
 					character->SetOwner(NewPlayer);
 					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
-
-					UE_LOG(LogTemp, Warning, TEXT("Public Connection Count (Lobby): %s"), *FString::FromInt(gamestate->MaxPlayersOnServer));
+					
+					//UE_LOG(LogTemp, Warning, TEXT("Public Connection Count (Lobby): %s"), *FString::FromInt(gamestate->MaxPlayersOnServer));
 					switch(playerState->Player_ID)
 					{
 					case 0:

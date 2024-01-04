@@ -289,6 +289,11 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 			PickupImage->SetBrushFromTexture(CarrotTexture);
 			break;
 		}
+	case CarrotGold:
+		{
+			PickupImage->SetBrushFromTexture(CarrotGoldTexture);
+			break;
+		}
 	case CarrotSeed:
 		{
 			PickupImage->SetBrushFromTexture(CarrotSeedTexture);
@@ -297,6 +302,11 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 	case Cabbage:
 		{
 			PickupImage->SetBrushFromTexture(CabbageTexture);
+			break;
+		}
+	case CabbageGold:
+		{
+			PickupImage->SetBrushFromTexture(CabbageGoldTexture);
 			break;
 		}
 	case CabbageSeed:
@@ -309,9 +319,59 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup)
 			PickupImage->SetBrushFromTexture(MandrakeTexture);
 			break;
 		}
+	case MandrakeGold:
+		{
+			PickupImage->SetBrushFromTexture(MandrakeGoldTexture);
+			break;
+		}
 	case MandrakeSeed:
 		{
 			PickupImage->SetBrushFromTexture(MandrakeSeedTexture);
+			break;
+		}
+	case Broccoli:
+		{
+			PickupImage->SetBrushFromTexture(BroccoliTexture);
+			break;
+		}
+	case BroccoliGold:
+		{
+			PickupImage->SetBrushFromTexture(BroccoliGoldTexture);
+			break;
+		}
+	case BroccoliSeed:
+		{
+			PickupImage->SetBrushFromTexture(BroccoliSeedTexture);
+			break;
+		}
+	case Daikon:
+		{
+			PickupImage->SetBrushFromTexture(DaikonTexture);
+			break;
+		}
+	case DaikonGold:
+		{
+			PickupImage->SetBrushFromTexture(DaikonGoldTexture);
+			break;
+		}
+	case DaikonSeed:
+		{
+			PickupImage->SetBrushFromTexture(DaikonSeedTexture);
+			break;
+		}
+	case Radish:
+		{
+			PickupImage->SetBrushFromTexture(RadishTexture);
+			break;
+		}
+	case RadishGold:
+		{
+			PickupImage->SetBrushFromTexture(RadishGoldTexture);
+			break;
+		}
+	case RadishSeed:
+		{
+			PickupImage->SetBrushFromTexture(RadishSeedTexture);
 			break;
 		}
 	//case Weapon:

@@ -181,6 +181,8 @@ void ASellBin::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, cl
 			heldItem->ItemComponent->PickupType == EPickup::Mandrake)
 		{
 			_invokingWiget->SetHUDInteractText("Sell");
+
+			owner->EnableStencil(true);
 		}
 	}
 }
