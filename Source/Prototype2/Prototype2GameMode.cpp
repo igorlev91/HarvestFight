@@ -55,17 +55,35 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
-				if (auto* character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
+				if (auto character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
 				{
-					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
+					character->SetPlayerState(playerState);
+					
+					character->PlayerID = playerState->Player_ID;
+					character->PlayerStateRef = playerState;
+					if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 					{
-						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 3 + (int)playerState->CharacterColour];
+						gamestate->MaxPlayersOnServer = gameInstance->MaxPlayersOnServer;
+						gamestate->FinalConnectionCount = gameInstance->FinalConnectionCount;
+						
+						if (gameInstance->FinalCharacters.Num() > 0)
+							playerState->Character = gameInstance->FinalCharacters[playerState->Player_ID];
+						if (gameInstance->FinalColours.Num() > 0)
+							playerState->CharacterColour = gameInstance->FinalColours[playerState->Player_ID];
 					}
 
-					character->PlayerID = playerState->Player_ID;
-					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
-					gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
-					character->PlayerStateRef = playerState;
+					if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour
+						&& PlayerMeshes.Num() > (int)playerState->Character)
+					{
+						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
+						character->PlayerMesh = PlayerMeshes[(int)playerState->Character];
+					}
+
+					UE_LOG(LogTemp, Warning, TEXT("Player %s Character: %s Colour: %s"), *FString::FromInt(playerState->Player_ID),
+						*FString::FromInt((int)playerState->Character),
+						*FString::FromInt((int)playerState->CharacterColour));
+					UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
+					//character->Server_SetCharacterMesh();
 					
 					switch(playerState->Player_ID)
 					{
@@ -104,33 +122,38 @@ void APrototype2GameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	
 	LookOutForGameEnd();
-	
-	if (auto gamestate = GetGameState<APrototype2Gamestate>())
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
-		{
-			if (auto playerState = gamestate->Server_Players[i])
-			{
-				if (auto controller = playerState->GetPlayerController())
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Controller"));
-					if (auto character = Cast<APrototype2Character>(controller->GetCharacter()))
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Character"));
-						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
-						{
-							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
-							if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour)
-								character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
-							else
-								character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
-						}
-					}
-				}
-			}
-		}
-	}
+
+	//if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
+	//{
+	//	if (auto gamestate = GetGameState<APrototype2Gamestate>())
+	//	{
+	//		//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
+	//		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
+	//		{
+	//			if (auto playerState = gamestate->Server_Players[i])
+	//			{
+	//				if (auto controller = playerState->GetPlayerController())
+	//				{
+	//					//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Controller"));
+	//					if (auto character = Cast<APrototype2Character>(controller->GetCharacter()))
+	//					{
+	//						//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Character"));
+	//						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
+	//						{
+	//							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
+	//							if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour
+	//								&& PlayerMeshes.Num() > (int)playerState->Character)
+	//							{
+	//								character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
+	//								character->PlayerMesh = PlayerMeshes[(int)playerState->Character];
+	//							}
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* PlayerController)

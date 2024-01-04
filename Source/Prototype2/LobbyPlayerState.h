@@ -14,6 +14,8 @@ class PROTOTYPE2_API ALobbyPlayerState : public APlayerState
 	virtual void BeginPlay() override;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere)

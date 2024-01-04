@@ -90,6 +90,12 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 								if (auto gameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 								{
 									gameInstance->FinalConnectionCount = gamestate->Server_Players.Num();
+
+									for(auto player : Server_Players)
+									{
+										gameInstance->FinalCharacters.Add(player->Character);
+										gameInstance->FinalColours.Add(player->CharacterColour);
+									}
 								}
 							}
 							GetWorld()->ServerTravel(MapChoice, false, false); // Start level

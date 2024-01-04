@@ -27,11 +27,11 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 	
 	if (HasAuthority())
 	{
-		if (auto* playerState = NewPlayer->GetPlayerState<ALobbyPlayerState>())
+		if (auto playerState = NewPlayer->GetPlayerState<ALobbyPlayerState>())
 		{
-			if (auto* gamestate = GetGameState<ALobbyGamestate>())
+			if (auto gamestate = GetGameState<ALobbyGamestate>())
 			{
-				/*playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+				playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
 				int numOfPlayersWithSameColour{2};
 				while(numOfPlayersWithSameColour >= 1)
 				{
@@ -57,21 +57,23 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 						}
 						playerState->CharacterColour = (ECharacterColours)newColour;
 					}
-				}*/
+				}
 				
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
-				if (auto* character = Cast<ALobbyCharacter>(NewPlayer->GetCharacter()))
+				if (auto character = Cast<ALobbyCharacter>(NewPlayer->GetCharacter()))
 				{
-					
+					character->SetPlayerState(playerState);
 					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
 					{
 						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 3 + (int)playerState->CharacterColour];
 					}
 					
 					character->PlayerStateRef = playerState;
-
+					
+					NewPlayer->Possess(character);
+					character->SetOwner(NewPlayer);
 					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
 					switch(playerState->Player_ID)
 					{

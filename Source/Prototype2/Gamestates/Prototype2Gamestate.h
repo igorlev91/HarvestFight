@@ -18,8 +18,6 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour);
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldServerTravel{true};
 	

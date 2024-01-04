@@ -180,6 +180,9 @@ void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _right)
 	{
 		gameInstance->Character = IdealCharacter;
 		gameInstance->CharacterColour = IdealCharacterColour;
+					
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int)gameInstance->Character));
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int)gameInstance->CharacterColour));
 	}
 }
 
@@ -215,14 +218,17 @@ void UWidget_LobbyCharacterSelection::ChangeCharacter(bool _right)
 
 	// check for taken sskin
 	CheckForTakenCharacter(_right);
-
+	
+	UpdateCharacterImage();
+	
 	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 	{
 		gameInstance->Character = IdealCharacter;
 		gameInstance->CharacterColour = IdealCharacterColour;
+					
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int)gameInstance->Character));
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int)gameInstance->CharacterColour));
 	}
-	
-	UpdateCharacterImage();
 }
 
 void UWidget_LobbyCharacterSelection::CheckForTakenSkin(bool _right)
@@ -319,14 +325,14 @@ void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, fl
 			if (playerState->Character != IdealCharacter || playerState->CharacterColour != IdealCharacterColour)
 			{
 				CheckForTakenSkin(true);
-				
-				UpdateCharacterImage();
 
 				if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 				{
 					gameInstance->Character = IdealCharacter;
 					gameInstance->CharacterColour = IdealCharacterColour;
 				}
+				
+				UpdateCharacterImage();
 			}
 		}
 	}

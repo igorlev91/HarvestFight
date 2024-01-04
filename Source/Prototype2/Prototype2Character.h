@@ -67,7 +67,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ReleaseAttack();
 	void Multi_ReleaseAttack_Implementation();
-
+	
 	// VFX events
 	UFUNCTION(BlueprintImplementableEvent)
 	void TriggerAttackVFX(FVector Position, float Radius, float Charge);
@@ -175,12 +175,12 @@ protected: /* Protected Networking functions */
 	ENetRole IdealNetRole{ROLE_AutonomousProxy};
 
 	UFUNCTION(Server, Reliable)
-	void Server_FireDizzySystem();
-	void Server_FireDizzySystem_Implementation();
+	void Server_FireParticleSystem(UNiagaraSystem* _NiagaraSystem, FVector _Position);
+	void Server_FireParticleSystem_Implementation(UNiagaraSystem* _NiagaraSystem, FVector _Position);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_FireParticleSystem();
-	void Multi_FireParticleSystem_Implementation();
+	void Multi_FireParticleSystem(UNiagaraSystem* _NiagaraSystem, FVector _Position);
+	void Multi_FireParticleSystem_Implementation(UNiagaraSystem* _NiagaraSystem, FVector _Position);
 
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleChargeSound(bool _soundEnabled);
@@ -238,12 +238,13 @@ protected: /* Protected non-network Functions */
 	/* Update decal direction */
 	void UpdateDecalAngle();
 
+	void UpdateAOEIndicator();
+
 public: /* Public variables */
 	UPROPERTY(VisibleAnywhere)
 	UWidget_PlayerHUD* PlayerHUDRef;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<USkeletalMesh*> PlayerMeshes;
+
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
     class APrototype2PlayerState* PlayerStateRef;
@@ -282,6 +283,9 @@ public: /* Public variables */
 	/* Material */
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UMaterialInstance* PlayerMat;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	class USkeletalMesh* PlayerMesh;
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWeapon* Weapon;
@@ -321,18 +325,6 @@ public: /* Public variables */
 	UPROPERTY(VisibleAnywhere)
 	AActor* ClosestInteractableActor;
 
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ParticleSystem;
-
-	UPROPERTY(EditAnywhere)
-	class UNiagaraComponent* InteractSystem;
-	
-	UPROPERTY(Replicated, EditAnywhere)
-	class UNiagaraComponent* DizzyComponent;
-	
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* DizzySystem;
-
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsHoldingGold;
 
@@ -354,6 +346,48 @@ public: /* Public variables */
 
 	UPROPERTY(EditAnywhere)
 	ASellBin* SellBin;
+
+	/* VFX */
+	UPROPERTY(EditAnywhere, Category = VFX)
+	UStaticMeshComponent* AttackAreaIndicatorMesh;
+
+	// Walk VFX
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* WalkPoof_NiagaraSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* WalkPoof_NiagaraComponent;
+	
+	// Sprint VFX
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* SprintPoof_NiagaraSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* SprintPoof_NiagaraComponent;
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* Sweat_NiagaraSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* Sweat_NiagaraComponent;
+
+	// Attack
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* AttackTrail_NiagaraSystem;
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* AttackTrail_NiagaraComponent;
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* Attack_NiagaraSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* Attack_NiagaraComponent;
+
+	// Dizzy
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* Dizzy_NiagaraSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* Dizzy_NiagaraComponent;
+
+	// Todo: Rename?
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* ParticleSystem;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* InteractSystem;
 	
 protected:
 	/** Camera boom positioning the camera behind the character */
@@ -483,6 +517,11 @@ private: /* Private variables */
 		
 	UPROPERTY(EditAnywhere, Category=Attack)
 	FVector KnockUp = {1.0f, 1.0f, 100000000.0f};
+
+	float BaseAttackRadius = 75.0f;
+	float WeaponAttackRadiusScalar = 30.0f;
+	float WeaponReach = 100.0f;
+	float MeleeReach = 30.0f;
 	
 	/* Other */
 	bool DoOnce{};
@@ -492,4 +531,7 @@ private: /* Private variables */
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FTransform MeshLocationWhenStunned{};
+
+	
+
 };

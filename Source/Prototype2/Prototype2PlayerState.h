@@ -19,6 +19,19 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 	APrototype2PlayerState();
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+
+	public:
+	void GrabSkinFromGameInstance();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_GrabSkinFromGameInstance(ECharacters _character, ECharacterColours _colour);
+	void Server_GrabSkinFromGameInstance_Implementation(ECharacters _character, ECharacterColours _colour);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_GrabSkinFromGameInstance(ECharacters _character, ECharacterColours _colour);
+	void Multi_GrabSkinFromGameInstance_Implementation(ECharacters _character, ECharacterColours _colour);
+
+	
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere)

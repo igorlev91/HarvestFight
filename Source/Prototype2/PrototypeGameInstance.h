@@ -90,6 +90,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int FinalConnectionCount{0};
 
+	TArray<ECharacters> FinalCharacters;
+	TArray<ECharacterColours> FinalColours;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECharacters Character{ECharacters::COW};
 

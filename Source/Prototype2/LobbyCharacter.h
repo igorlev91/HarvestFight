@@ -28,6 +28,15 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetCharacterMesh();
+	void Server_SetCharacterMesh_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetCharacterMesh();
+	void Multi_SetCharacterMesh_Implementation();
+	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UMaterialInstance* PlayerMat;
 

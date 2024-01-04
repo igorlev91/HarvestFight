@@ -241,6 +241,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		
 		if (auto owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
 		{
+			//owner->GetPlayerState<APrototype2PlayerState>()->GrabSkinFromGameInstance();
+			
 			if (auto closestInteractable = owner->ClosestInteractableItem)
 			{
 				
@@ -428,12 +430,12 @@ void UWidget_PlayerHUD::UpdateWeaponUI(EPickup _weapon)
 	{
 	case Weapon:
 		{
-			WeaponImage->SetVisibility(ESlateVisibility::Visible);
+			//WeaponImage->SetVisibility(ESlateVisibility::Visible);
 			break;
 		}
 	case NoWeapon:
 		{
-			WeaponImage->SetVisibility(ESlateVisibility::Hidden);
+			//WeaponImage->SetVisibility(ESlateVisibility::Hidden);
 			break;
 		}
 	default:

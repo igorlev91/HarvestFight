@@ -160,14 +160,3 @@ void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 	}
 }
 
-void APrototype2Gamestate::UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour)
-{
-	if (Server_Players.Num() > _player)
-	{
-		if (auto playerState = Server_Players[_player])
-		{
-			playerState->UpdateCharacterMaterial(_character, _characterColour);
-		}
-	}
-}
-

@@ -25,6 +25,11 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ALobbyPlayerState, CharacterColour);
 }
 
+void ALobbyPlayerState::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}
+
 void ALobbyPlayerState::SetIsReady(bool _isReady)
 {
 	IsReady = _isReady;

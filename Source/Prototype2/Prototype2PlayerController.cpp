@@ -37,54 +37,38 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 		return;
 
 	//UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
-	
-	if (GameStateRef->HasGameFinished)
+
+	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
 	{
-		if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		if (GameStateRef->HasGameFinished)
 		{
-			if (auto endGamePodium = gamemode->EndGamePodium)
+			if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 			{
-				if (auto endGameCamera = endGamePodium->EndGameCamera)
+				if (auto endGamePodium = gamemode->EndGamePodium)
 				{
-					SetViewTarget(endGameCamera);
-					UnPossess();
-					SetViewTarget(endGameCamera);
+					if (auto endGameCamera = endGamePodium->EndGameCamera)
+					{
+						SetViewTarget(endGameCamera);
+						UnPossess();
+					}
 				}
 			}
 		}
-	}
-
-	if (!GameStateRef->GameHasStarted || GameStateRef->HasGameFinished)
-	{
-		//DisableInput(this);
-		//SetIgnoreLookInput(true);
-		//SetIgnoreMoveInput(true);
-	}
-	else
-	{
-		//EnableInput(this);
-		//SetIgnoreLookInput(false);
-		//SetIgnoreMoveInput(false);
-
-		if (bEnableMovement == false)
+		else if (!GameStateRef->HasGameFinished && GameStateRef->GameHasStarted)
 		{
-			SetInputMode(FInputModeGameOnly());
-			bEnableMovement = true;
+			if (bEnableMovement == false)
+			{
+				SetInputMode(FInputModeGameOnly());
+				bEnableMovement = true;
+			}
 		}
-	}
-
-	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		if (auto playerState = GetPlayerState<APrototype2PlayerState>())
+	
+		if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 		{
-			UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
-		}
-	}
-	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		if (auto playerState = GetPlayerState<ALobbyPlayerState>())
-		{
-			UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
+			if (auto playerState = GetPlayerState<ALobbyPlayerState>())
+			{
+				UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
+			}
 		}
 	}
 }
@@ -127,10 +111,6 @@ void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(
 	if (auto gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		gameState->UpdateCharacterMaterial(_player, _character, _characterColour);
-	}
-	else if (auto protoGameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
-	{
-		protoGameState->UpdateCharacterMaterial(_player, _character, _characterColour);
 	}
 }
 

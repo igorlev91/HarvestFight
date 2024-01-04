@@ -36,6 +36,30 @@ void ALobbyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!PlayerStateRef)
+	{
+		PlayerStateRef = GetPlayerState<ALobbyPlayerState>();
+	}
+
+	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+		Server_SetCharacterMesh();
+	
+	GetMesh()->SetMaterial(0, PlayerMat);
+}
+
+void ALobbyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+}
+
+void ALobbyCharacter::Server_SetCharacterMesh_Implementation()
+{
+	Multi_SetCharacterMesh();
+}
+
+void ALobbyCharacter::Multi_SetCharacterMesh_Implementation()
+{
 	if (PlayerStateRef)
 	{
 		if (PlayerMeshes.Num() > (int)PlayerStateRef->Character)
@@ -43,17 +67,6 @@ void ALobbyCharacter::Tick(float DeltaTime)
 			GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int)PlayerStateRef->Character]);
 		}
 	}
-	
-	
-	GetMesh()->SetMaterial(0, PlayerMat);
-
-}
-
-// Called to bind functionality to input
-void ALobbyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 

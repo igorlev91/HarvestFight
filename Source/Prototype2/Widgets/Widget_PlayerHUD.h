@@ -103,8 +103,13 @@ public:
 	IInteractInterface* lastInteract{};
 
 	// Weapon UI
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* WeaponImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* LeekWeaponTexture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* AsparagusWeaponTexture;
 
 	// Object Textures
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

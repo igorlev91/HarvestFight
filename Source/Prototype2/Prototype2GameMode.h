@@ -49,6 +49,9 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<USkeletalMesh*> PlayerMeshes;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<APrototype2Character>> Server_Characters;
