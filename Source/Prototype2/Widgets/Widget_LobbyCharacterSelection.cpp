@@ -16,6 +16,7 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 	
 	PlayerImage->SetBrushFromTexture(Texture_CowRed);
 	PlayerColourImage->SetColorAndOpacity(FLinearColor(0.427083f, 0.100098f, 0.100098f, 1.0f));
+	CheckForTakenSkin();
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacterLeft()
@@ -148,6 +149,61 @@ void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _right)
 			IdealCharacterColour = (ECharacterColours)newColour;
 		}
 	}
+	
+	CheckForTakenSkin();
+}
+
+void UWidget_LobbyCharacterSelection::CheckForTakenSkin()
+{
+	if (auto gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		int numOfDesiredCharacter{4};
+		while(numOfDesiredCharacter >= 4)
+		{
+			numOfDesiredCharacter = gameState->GetNumberOfCharactersTaken(IdealCharacter);
+			if (numOfDesiredCharacter >= 4)
+			{
+				int newCharacter = (int)IdealCharacter;
+				newCharacter ++;
+				if (newCharacter > 3)
+				{
+					newCharacter = 0;
+				}
+				else
+				{
+					if (newCharacter < 0)
+					{
+						newCharacter = 3;
+					}
+				}
+				IdealCharacter = (ECharacters)newCharacter;
+			}
+		}
+
+		int numOfDesiredCharacterColours{4};
+		while(numOfDesiredCharacterColours >= 4)
+		{
+			numOfDesiredCharacterColours = gameState->GetNumberOfCharacterColoursTaken(IdealCharacter, IdealCharacterColour);
+			if (numOfDesiredCharacterColours >= 4)
+			{
+				int newColour = (int)IdealCharacterColour;
+				newColour ++;
+				if (newColour > 3)
+				{
+					newColour = 0;
+				}
+				else
+				{
+					if (newColour < 0)
+					{
+						newColour = 3;
+					}
+				}
+				IdealCharacterColour = (ECharacterColours)newColour;
+			}
+		}
+	}
+	
 	UpdateCharacterImage();
 }
 

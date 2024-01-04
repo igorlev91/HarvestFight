@@ -74,10 +74,11 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 			}
 			else
 			{
-				if (MatchLengthMinutes <= 0)
+				if (MatchLengthMinutes <= 0 && MatchLengthSeconds <= 0)
 				{
 					// End of timer
 					//GetWorld()->ServerTravel("Level_MainMenu");
+					HasGameFinished = true;
 				}
 				else
 				{
@@ -97,6 +98,7 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, GameHasStarted);
+	DOREPLIFETIME(APrototype2Gamestate, HasGameFinished);
 	DOREPLIFETIME(APrototype2Gamestate, IsCountingDown);
 	DOREPLIFETIME(APrototype2Gamestate, PreviousServerTravel);
 	

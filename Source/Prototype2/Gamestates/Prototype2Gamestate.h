@@ -33,6 +33,9 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	bool GameHasStarted{};
 
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	bool HasGameFinished{};
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	int MaxPlayersOnServer{0};
 

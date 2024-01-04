@@ -24,8 +24,18 @@ public:
 	void DisableControllerInputForAll();
 	void EnableControllerInputForAll();
 
+	void LookOutForGameEnd();
+
+	bool HasGameFinishedLocal{};
+
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AEndGamePodium> EndGamePodiumPrefab;
+	
+	UPROPERTY(EditAnywhere)
+	class AEndGamePodium* EndGamePodium{};
 	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};

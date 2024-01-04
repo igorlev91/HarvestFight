@@ -82,5 +82,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ChangeCharacterColour(bool _right);
 
-
+	UFUNCTION(BlueprintCallable)
+	void CheckForTakenSkin();
 };

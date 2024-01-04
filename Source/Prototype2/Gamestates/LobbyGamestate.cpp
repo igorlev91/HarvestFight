@@ -181,3 +181,39 @@ void ALobbyGamestate::UpdateCharacterMaterial(int _player, ECharacters _characte
 	}
 }
 
+int ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _desiredCharacter)
+{
+	int characterCount{};
+	if (Server_Players.Num() > 0)
+	{
+		for(auto playerState : Server_Players)
+		{
+			if (playerState.Get())
+			{
+				if (playerState->Character == _desiredCharacter)
+					characterCount++;
+			}
+		}
+	}
+	return characterCount;
+}
+
+int ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _desiredCharacter, ECharacterColours _desiredColour)
+{
+	int characterColourCount{};
+	if (Server_Players.Num() > 0)
+	{
+		for(auto playerState : Server_Players)
+		{
+			if (playerState.Get())
+			{
+				if (playerState->Character == _desiredCharacter && playerState->CharacterColour == _desiredColour)
+					characterColourCount++;
+			}
+		}
+	}
+	
+	return characterColourCount;
+}
+
+

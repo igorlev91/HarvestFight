@@ -358,13 +358,13 @@ private: /* Private variables */
 	class UInputAction* SprintAction;
 
 	/* Animation */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Animation)
 	class UAnimMontage* PickupMontage;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Animation)
 	class UAnimMontage* ExecuteAttackMontage;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Animation)
 	class UAnimMontage* ExecuteAttackMontage_LongerWindUp;
 	
 	/* Interact radius for checking closest item */
@@ -397,8 +397,8 @@ private: /* Private variables */
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	UWidget_PlayerHUD* PlayerHUDRef;
 	
-	/* Sprint/Walk/Slow Walk */
-	UPROPERTY(EditAnywhere)
+	/* Reference to change speed: Sprint/Walk/Slow Walk */
+	UPROPERTY(EditAnywhere, Category = Animation)
 	UAnimSequence* RunAnimation;
 
 	UPROPERTY(EditAnywhere)

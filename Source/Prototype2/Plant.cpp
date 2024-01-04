@@ -16,9 +16,10 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-	Server_ToggleGold();
+	//Server_ToggleGold();
 
 	LeavesMesh->SetupAttachment(RootComponent);
+	LeavesMesh->SetCollisionProfileName(FName("NoCollision"));
 }
 
 

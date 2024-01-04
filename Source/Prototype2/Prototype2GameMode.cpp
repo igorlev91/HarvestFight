@@ -2,6 +2,7 @@
 
 #include "Prototype2GameMode.h"
 
+#include "EndGamePodium.h"
 #include "Prototype2Character.h"
 #include "Prototype2PlayerController.h"
 #include "Blueprint/UserWidget.h"
@@ -22,6 +23,7 @@ APrototype2GameMode::APrototype2GameMode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 	
+
 }
 
 void APrototype2GameMode::BeginPlay()
@@ -34,6 +36,9 @@ void APrototype2GameMode::BeginPlay()
 		gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
 		UE_LOG(LogTemp, Warning, TEXT("Final Connection Count : %s"), *FString::FromInt(gamestate->FinalConnectionCount));
 	}
+
+	if (EndGamePodiumPrefab)
+		EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(EndGamePodiumPrefab, FVector{3031.58f,-1426.65f,-17.30},FRotator{0.0f,140.59f,0.0f});
 }
 
 void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
@@ -94,6 +99,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 void APrototype2GameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	LookOutForGameEnd();
 	
 }
 
@@ -137,6 +143,17 @@ void APrototype2GameMode::EnableControllerInputForAll()
 		if (PlayerController != nullptr)
 		{
 			EnableControllerInput(PlayerController);
+		}
+	}
+}
+
+void APrototype2GameMode::LookOutForGameEnd()
+{
+	if (GameStateRef)
+	{
+		if (HasGameFinishedLocal != GameStateRef->HasGameFinished)
+		{
+			// TP everyone to the podium
 		}
 	}
 }

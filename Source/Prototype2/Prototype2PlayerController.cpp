@@ -33,7 +33,7 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 
 	UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
 	
-	if (!GameStateRef->GameHasStarted)
+	if (!GameStateRef->GameHasStarted || GameStateRef->HasGameFinished)
 	{
 		DisableInput(this);
 		SetIgnoreLookInput(true);
