@@ -18,9 +18,6 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget)) 
 	class UTextBlock* TimerText;
 
-	UPROPERTY(EditAnywhere, meta=(BindWidget)) 
-	class UBorder* BackgroundBorder;
-
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
 

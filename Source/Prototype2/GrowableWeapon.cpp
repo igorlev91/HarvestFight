@@ -5,7 +5,7 @@
 #include "Weapon.h"
 #include "Components/StaticMeshComponent.h"
 #include "Prototype2Character.h"
-/*
+
 AGrowableWeapon::AGrowableWeapon()
 {
 	bReplicates = true;
@@ -13,8 +13,11 @@ AGrowableWeapon::AGrowableWeapon()
 	//Weapon->Mesh->SetSimulatePhysics(false);
 	//Weapon->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//Weapon->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+
+	InterfaceType = EInterfaceType::Default;
 }
 
+/*
 void AGrowableWeapon::BeginPlay()
 {
 	Super::BeginPlay();

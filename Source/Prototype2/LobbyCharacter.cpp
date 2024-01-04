@@ -6,6 +6,7 @@
 #include "LobbyPlayerState.h"
 #include "Gamemodes/LobbyGamemode.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/LobbyPlayerState.h"
 
 // Sets default values
 ALobbyCharacter::ALobbyCharacter()
@@ -27,7 +28,7 @@ void ALobbyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void ALobbyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	PlayerStateRef = GetPlayerState<ALobbyPlayerState>();
 }
 
 // Called every frame
@@ -35,6 +36,15 @@ void ALobbyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (PlayerStateRef)
+	{
+		if (PlayerMeshes.Num() > (int)PlayerStateRef->Character)
+		{
+			GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int)PlayerStateRef->Character]);
+		}
+	}
+	
+	
 	GetMesh()->SetMaterial(0, PlayerMat);
 
 }
@@ -44,20 +54,6 @@ void ALobbyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-}
-
-void ALobbyCharacter::Server_UpdatePlayerMaterial_Implementation()
-{
-	Multi_UpdatePlayerMaterial();
-}
-
-void ALobbyCharacter::Multi_UpdatePlayerMaterial_Implementation()
-{
-	if (auto gameMode = Cast<ALobbyGamemode>(UGameplayStatics::GetGameMode(GetWorld())))
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Player %s material set: %s"), *FString::FromInt(GetPlayerState<ALobbyPlayerState>()->Player_ID), *FString::FromInt((int)GetPlayerState<ALobbyPlayerState>()->CharacterColour));
-		GetMesh()->SetMaterial(0, gameMode->PlayerMaterials[(int)GetPlayerState<ALobbyPlayerState>()->CharacterColour]);
-	}
 }
 
 

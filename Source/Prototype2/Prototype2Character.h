@@ -190,6 +190,10 @@ protected: /* Protected Networking functions */
 	void Multi_ToggleChargeSound(bool _soundEnabled);
 	void Multi_ToggleChargeSound_Implementation(bool _soundEnabled);
 
+	UFUNCTION(Server, Reliable)
+	void Server_CountdownTimers(float DeltaSeconds);
+	void Server_CountdownTimers_Implementation(float DeltaSeconds);
+
 protected: /* Protected non-network Functions */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -219,7 +223,7 @@ protected: /* Protected non-network Functions */
 	void Sprint();
 
 	/* Handle character speed */
-	void UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float MaxAnimationRateScale);
+	void UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
 	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
@@ -231,12 +235,18 @@ protected: /* Protected non-network Functions */
 	/* UI */
 	void OpenIngameMenu();
 	
-	void UpdateAllPlayerIDs();
-
 	/* Update decal direction */
 	void UpdateDecalAngle();
 
 public: /* Public variables */
+	UPROPERTY(VisibleAnywhere)
+	UWidget_PlayerHUD* PlayerHUDRef;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<USkeletalMesh*> PlayerMeshes;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+    class APrototype2PlayerState* PlayerStateRef;
 
 	/* Audio */
 	UPROPERTY(EditAnywhere, Replicated)
@@ -277,7 +287,7 @@ public: /* Public variables */
 	class UWeapon* Weapon;
 	
 	/* Currently held item */
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
 
 	/* Is player holding down attack */
@@ -285,17 +295,17 @@ public: /* Public variables */
 	bool bIsChargingAttack;
 
 	/* Maximum amount of Attack Charge */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxAttackCharge = 3.0f;
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadWrite)
 	float AttackChargeAmount;
 
 	/* Sprint */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CanSprintTime = 5.0f;
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
 	float CanSprintTimer;
 
 	/* Weapon degrading */
@@ -303,8 +313,9 @@ public: /* Public variables */
 	int WeaponCurrentDurability;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int WeaponMaxDurability;
+	int WeaponMaxDurability = 5;
 
+	
 	class IInteractInterface* ClosestInteractableItem;
 
 	UPROPERTY(VisibleAnywhere)
@@ -400,7 +411,7 @@ private: /* Private variables */
 	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere)
-	float InteractRadius = 200.0f;
+	float InteractRadius = 225.0f;
 	
 	/* Amount of knockback applied which is multiplied by charge */
 	UPROPERTY(EditAnywhere, Category = KnockBack)
@@ -409,27 +420,32 @@ private: /* Private variables */
 	float MaxKnockBackVelocity = 10000.0f;
 	
 	/* Interact timer */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimerTime = 1.0f;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimer{};
 	
 	/* Attack timer */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float AttackTimerTime = 1.0f;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float AttackTimer{};
-	UPROPERTY(EditAnywhere)
-	float InstantAttackDelay = 0.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	float InstantAttackDelay = 0.2f;
 	UPROPERTY(EditAnywhere)
 	float ItemLaunchStrength = 500000.0f;
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
-	UWidget_PlayerHUD* PlayerHUDRef;
+
 	
 	/* Reference to change speed: Sprint/Walk/Slow Walk */
 	UPROPERTY(EditAnywhere, Category = Animation)
 	UAnimSequence* RunAnimation;
-
+	
+	UPROPERTY(EditAnywhere, Category = Animation)
+	TArray<UAnimSequence*> RunAnimations;
+	
 	UPROPERTY(EditAnywhere)
 	float IceFriction{0.1f};
 	
@@ -437,14 +453,21 @@ private: /* Private variables */
 
 	float GoldPlantSpeed = 300.0f;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintSpeed = 750.0f;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTime = 2.0f;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated , VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTimer;
+
+	UPROPERTY(EditAnywhere, Category = RateScale)
+	float WalkRateScale = 1.5f;
+	UPROPERTY(EditAnywhere, Category = RateScale)
+	float GoldSlowRateScale = 0.7f;
+	UPROPERTY(EditAnywhere, Category = RateScale)
+	float SprintRateScaleScalar = 1.5f;
 
 	/* Attack */
 	UPROPERTY(EditAnywhere)
@@ -452,10 +475,10 @@ private: /* Private variables */
 	
 	bool bCanAttack = true;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bIsStunned;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated , VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float StunTimer;
 		
 	UPROPERTY(EditAnywhere, Category=Attack)

@@ -14,34 +14,41 @@ ARaidialSpawner::ARaidialSpawner()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	InitialSpawn = CreateDefaultSubobject<USceneComponent>(TEXT("Initial Spawn"));
+	InitialSpawn->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
 void ARaidialSpawner::BeginPlay()
 {
 	Super::BeginPlay();
-	SetUp();
-	
-}
 
-// Called every frame
-void ARaidialSpawner::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
+	if (PlotPrefab)
+		SetUp();
 }
 
 void ARaidialSpawner::SetUp()
 {
-	if (auto* gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		playercount = gamestate->FinalConnectionCount;
+		if (changePlayerCount)
+		{
+			playercount = gamestate->FinalConnectionCount;
+		}
+	}
+	if (playercount <= 0)
+	{
+		playercount = UGameplayStatics::GetGameMode(GetWorld())->GetNumPlayers();
+	}
+	if (playercount <= 0)
+	{
+		return;
 	}
 	
 	FVector ReferenceLocation = FVector();
-	if (initialSpawn)
+	if (InitialSpawn)
 	{
-		ReferenceLocation = initialSpawn->GetActorLocation();
+		ReferenceLocation = InitialSpawn->GetComponentLocation();
 	}
 	FVector OwningLocation = GetActorLocation();
 	//FVector OwningLocation = FVector();
@@ -60,22 +67,18 @@ void ARaidialSpawner::SetUp()
 		// Calculate the spawn position offset based on angle and radius
 		float OffsetX = SpawnRadius * FMath::Cos(Radians);
 		float OffsetY = SpawnRadius * FMath::Sin(Radians);
-
+		
 		// Calculate the final spawn position
 		FVector SpawnLocation = OwningLocation;
 		FVector ObjectSpawnPosition = SpawnLocation + FVector(OffsetX, OffsetY, 0.0f);
 
 		// Spawn the object at the calculated position
-		AActor* SpawnedObject = GetWorld()->SpawnActor<AActor>(plot, ObjectSpawnPosition, FRotator(0, Angle + 90, 0));
-		
-		if (SpawnedObject)
+		auto spawnedRadialPlot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab, ObjectSpawnPosition, FRotator(0, Angle + 90, 0));
+		if (spawnedRadialPlot)
 		{
-			if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(SpawnedObject))
-			{
-				RadialPlot->SetPlayerID(Index);
-			}
+			spawnedRadialPlot->SetActorLocation(ObjectSpawnPosition);
+			spawnedRadialPlot->SetPlayerID(Index);
 		}
 	}
-	
 }
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Gamestates/LobbyGamestate.h"
 #include "Prototype2/PrototypeGameInstance.h"
 #include "Prototype2PlayerController.generated.h"
 
@@ -45,4 +46,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
+
+protected:
+	bool bEnableMovement{false};
 };

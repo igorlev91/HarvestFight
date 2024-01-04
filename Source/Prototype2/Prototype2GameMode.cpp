@@ -45,26 +45,28 @@ void APrototype2GameMode::BeginPlay()
 void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	//if (GetLocalRole() == ROLE_Authority && GetRemoteRole() >= ROLE_AutonomousProxy)
 	
-	if (HasAuthority())
+	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
 	{
-		if (auto* playerState = NewPlayer->GetPlayerState<APrototype2PlayerState>())
+		if (auto playerState = NewPlayer->GetPlayerState<APrototype2PlayerState>())
 		{
-			if (auto* gamestate = GetGameState<APrototype2Gamestate>())
+			if (auto gamestate = GetGameState<APrototype2Gamestate>())
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
 				if (auto* character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
 				{
-					//character->GetMesh()->SetMaterial(0, PlayerMaterials[playerState->Player_ID]);
-					//character->PlayerMat = PlayerMaterials[playerState->Player_ID];
+					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
+					{
+						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 3 + (int)playerState->CharacterColour];
+					}
+
 					character->PlayerID = playerState->Player_ID;
 					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
 					gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
-					//UE_LOG(LogTemp, Warning, TEXT("Final Connection Count: %s"), *FString::FromInt(gamestate->FinalConnectionCount));
-					//character->Client_AddHUD();
+					character->PlayerStateRef = playerState;
+					
 					switch(playerState->Player_ID)
 					{
 					case 0:
@@ -100,6 +102,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 void APrototype2GameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	
 	LookOutForGameEnd();
 	
 	if (auto gamestate = GetGameState<APrototype2Gamestate>())
@@ -118,7 +121,10 @@ void APrototype2GameMode::Tick(float DeltaSeconds)
 						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
 						{
 							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
-							character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+							if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour)
+								character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
+							else
+								character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
 						}
 					}
 				}

@@ -10,6 +10,7 @@
 UWeapon::UWeapon()
 {
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	InterfaceType = EInterfaceType::Weapon;
 }
 
 void UWeapon::Interact(APrototype2Character* player)

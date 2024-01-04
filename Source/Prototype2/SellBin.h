@@ -63,7 +63,7 @@ public:
 	float movingTimer{};
 	void MoveUIComponent(float _dt);
 
-	UPROPERTY(Replicated)
+	UPROPERTY(VisibleAnywhere)
 	bool bWidgetVisible{};
 	
 	virtual void Interact(APrototype2Character* player) override;

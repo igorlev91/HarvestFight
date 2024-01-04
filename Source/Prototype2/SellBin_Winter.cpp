@@ -19,11 +19,15 @@ ASellBin_Winter::ASellBin_Winter()
 	
 	IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
 	IceBoundary->SetupAttachment(RootComponent);
+
+	InterfaceType = EInterfaceType::SellBin;
 }
 
 void ASellBin_Winter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	InterfaceType = EInterfaceType::SellBin;
 
 	IcePlane->SetupAttachment(RootComponent);
 	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);

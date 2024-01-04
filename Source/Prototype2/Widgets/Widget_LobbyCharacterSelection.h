@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Prototype2/PrototypeGameInstance.h"
+#include "Math/Vector.h"
 #include "Widget_LobbyCharacterSelection.generated.h"
 
 /**
@@ -53,6 +54,15 @@ public:
 	UTexture2D* Texture_CowGreen;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Texture_CowYellow;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> CowTextures;
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> ChickenTextures;
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> PigTextures;
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> DuckTextures;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECharacters IdealCharacter{ECharacters::COW};
@@ -84,5 +94,13 @@ public:
 	void ChangeCharacterColour(bool _right);
 
 	UFUNCTION(BlueprintCallable)
+	void ChangeCharacter(bool _right);
+
+	UFUNCTION(BlueprintCallable)
 	void CheckForTakenSkin(bool _right);
+
+	UFUNCTION(BlueprintCallable)
+	void CheckForTakenCharacter(bool _right);
+
+	void UpdateCharacterColourImage(ECharacters _desiredCharacter);
 };

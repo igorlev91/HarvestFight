@@ -61,7 +61,7 @@ void UItemComponent::Interact(APrototype2Character* player, APickUpItem* itemPic
 {
 	// Setup Mesh
 	player->Server_PickupItem(this, itemPickedUp);
-
+	player->HeldItem = itemPickedUp;
 	// Debug
 	//UE_LOG(LogTemp, Warning, TEXT("HeldItem attached to hand"));	
 }
@@ -72,5 +72,6 @@ void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME(UItemComponent, gold);
 	DOREPLIFETIME(UItemComponent, bIsGold);
+	DOREPLIFETIME(UItemComponent, PickupType);
 }
 

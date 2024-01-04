@@ -56,20 +56,33 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 
 	if (!GameStateRef->GameHasStarted || GameStateRef->HasGameFinished)
 	{
-		DisableInput(this);
-		SetIgnoreLookInput(true);
-		SetIgnoreMoveInput(true);
+		//DisableInput(this);
+		//SetIgnoreLookInput(true);
+		//SetIgnoreMoveInput(true);
 	}
 	else
 	{
-		EnableInput(this);
-		SetIgnoreLookInput(false);
-		SetIgnoreMoveInput(false);
+		//EnableInput(this);
+		//SetIgnoreLookInput(false);
+		//SetIgnoreMoveInput(false);
+
+		if (bEnableMovement == false)
+		{
+			SetInputMode(FInputModeGameOnly());
+			bEnableMovement = true;
+		}
 	}
 
 	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 	{
 		if (auto playerState = GetPlayerState<APrototype2PlayerState>())
+		{
+			UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
+		}
+	}
+	if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		if (auto playerState = GetPlayerState<ALobbyPlayerState>())
 		{
 			UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
 		}

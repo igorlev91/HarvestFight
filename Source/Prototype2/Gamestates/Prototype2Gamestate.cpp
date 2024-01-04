@@ -68,13 +68,17 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 			if (CountdownLengthSeconds <= 0)
 			{
 				GameHasStarted = true;
+				UE_LOG(LogTemp, Warning, TEXT("Countdown completed"));
 			}
 		}
+
+		//UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), ( GameHasStarted ? TEXT("true") : TEXT("false") ));
 	}
 }
 
 void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), ( GameHasStarted ? TEXT("true") : TEXT("false") ));
 	if (HasAuthority() && GameHasStarted)
 	{
 		if (CountdownLengthSeconds > 0)
@@ -158,7 +162,7 @@ void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 
 void APrototype2Gamestate::UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour)
 {
-	if (Server_Players.Num() >= _player)
+	if (Server_Players.Num() > _player)
 	{
 		if (auto playerState = Server_Players[_player])
 		{

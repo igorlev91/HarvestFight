@@ -24,14 +24,14 @@ ALobbyGamemode::ALobbyGamemode()
 void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
+	
 	if (HasAuthority())
 	{
 		if (auto* playerState = NewPlayer->GetPlayerState<ALobbyPlayerState>())
 		{
 			if (auto* gamestate = GetGameState<ALobbyGamestate>())
 			{
-				playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+				/*playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
 				int numOfPlayersWithSameColour{2};
 				while(numOfPlayersWithSameColour >= 1)
 				{
@@ -57,19 +57,22 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 						}
 						playerState->CharacterColour = (ECharacterColours)newColour;
 					}
-				}
+				}*/
 				
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
 				if (auto* character = Cast<ALobbyCharacter>(NewPlayer->GetCharacter()))
 				{
-					character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
-					NewPlayer->Possess(character);
-					character->SetOwner(NewPlayer);
-					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
 					
-					//UE_LOG(LogTemp, Warning, TEXT("Public Connection Count (Lobby): %s"), *FString::FromInt(gamestate->MaxPlayersOnServer));
+					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
+					{
+						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 3 + (int)playerState->CharacterColour];
+					}
+					
+					character->PlayerStateRef = playerState;
+
+					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
 					switch(playerState->Player_ID)
 					{
 					case 0:
@@ -137,16 +140,25 @@ void ALobbyGamemode::Tick(float DeltaSeconds)
 
 	if (auto gamestate = GetGameState<ALobbyGamestate>())
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
 		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
 		{
 			if (auto playerState = gamestate->Server_Players[i])
 			{
 				if (auto controller = playerState->GetPlayerController())
 				{
+					//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Controller"));
 					if (auto character = Cast<ALobbyCharacter>(controller->GetCharacter()))
 					{
+						//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Character"));
 						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
-							character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+						{
+							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
+							if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour)
+								character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
+							else
+								character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
+						}
 					}
 				}
 			}

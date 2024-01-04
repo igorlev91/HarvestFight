@@ -14,7 +14,7 @@ class PROTOTYPE2_API AGrowableWeapon : public APlant
 public:
 	//UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	//UWeapon* Weapon;
-	//AGrowableWeapon();
+	AGrowableWeapon();
 	//virtual  void BeginPlay() override;
 	virtual void Interact(APrototype2Character* player) override;
 	//virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;

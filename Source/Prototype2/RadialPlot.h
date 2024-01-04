@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GrowSpot.h"
 #include "GameFramework/Actor.h"
 #include "RadialPlot.generated.h"
 
@@ -16,17 +15,25 @@ public:
 	// Sets default values for this actor's properties
 	ARadialPlot();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<AGrowSpot*> growSpots;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TArray<class AGrowSpot*> growSpots;
+	UPROPERTY(EditAnywhere)
+	int Player_ID;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AGrowSpot> GrowSpotPrefab;
+
+	UPROPERTY(EditAnywhere)
+	float PlotSpread {180.0f};
+
+	UPROPERTY(EditAnywhere)
+	float PlotZHeight {-20.0f};
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	void SetPlayerID(int ID);
+	void SetPlayerID(int _id);
 
 };

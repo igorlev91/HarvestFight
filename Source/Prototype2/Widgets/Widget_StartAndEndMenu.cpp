@@ -21,6 +21,14 @@ void UWidget_StartAndEndMenu::NativeOnInitialized()
 	{
 		GameStateRef = gameState;
 	}
+
+	TimerText->SetVisibility(ESlateVisibility::Visible);
+	TimerText->SetText(FText::FromString(FString("Waiting for other players")));
+
+	if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		controller->SetInputMode(FInputModeUIOnly());
+	}
 }
 
 void UWidget_StartAndEndMenu::UpdateTimerText()
@@ -29,13 +37,12 @@ void UWidget_StartAndEndMenu::UpdateTimerText()
 	{
 		TimerText->SetText(FText::FromString(FString::FromInt((int)GameStateRef->CountdownLengthSeconds)));
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
-		BackgroundBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
-	else if (TimerText)
+	else if (TimerText && GameStateRef->GameHasStarted)
 	{
 		TimerText->SetVisibility(ESlateVisibility::Hidden);
-		BackgroundBorder->SetVisibility(ESlateVisibility::Hidden);
 	}
+
 
 	CheckForGameFinished();
 }
@@ -46,11 +53,9 @@ void UWidget_StartAndEndMenu::CheckForGameFinished()
 	{
 		TimerText->SetText(FText::FromString("Times Up!"));
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
-		BackgroundBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 	else if (GameStateRef->HasGameFinished && GameStateRef->GameReadyForVote && GameStateRef->BriefTimesUpEndGameLengthSeconds <= 0)
 	{
 		TimerText->SetVisibility(ESlateVisibility::Hidden);
-		BackgroundBorder->SetVisibility(ESlateVisibility::Hidden);
 	}
 }

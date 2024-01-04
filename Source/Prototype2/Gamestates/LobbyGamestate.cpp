@@ -21,8 +21,6 @@ void ALobbyGamestate::BeginPlay()
 void ALobbyGamestate::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	
 	
 	if (HasAuthority())
 	{
@@ -172,7 +170,7 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 void ALobbyGamestate::UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour)
 {
-	if (Server_Players.Num() >= _player)
+	if (Server_Players.Num() > _player)
 	{
 		if (auto playerState = Server_Players[_player])
 		{

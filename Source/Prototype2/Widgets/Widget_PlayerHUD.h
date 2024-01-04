@@ -12,22 +12,16 @@ enum EPickup
 {
 	None,
 	Carrot,
-	CarrotGold,
 	CarrotSeed,
 	Cabbage,
-	CabbageGold,
 	CabbageSeed,
 	Mandrake,
-	MandrakeGold,
 	MandrakeSeed,
 	Broccoli,
-	BroccoliGold,
 	BroccoliSeed,
 	Daikon,
-	DaikonGold,
 	DaikonSeed,
 	Radish,
-	RadishGold,
 	RadishSeed,
 	Weapon,
 	NoWeapon
@@ -112,7 +106,7 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* WeaponImage;
 
-	// Textures
+	// Object Textures
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CarrotTexture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -171,6 +165,53 @@ public:
 	float interactionButtonTimer{};
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UWidget_StartAndEndMenu* StartAndEndMenu;
+
+	// Player Icon Textures
+	// Cow
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Cow_White_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Cow_Red_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Cow_Blue_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Cow_Green_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Cow_Yellow_Texture;
+	// Pig
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Pig_White_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Pig_Red_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Pig_Blue_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Pig_Green_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Pig_Yellow_Texture;
+	// Chicken
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Chicken_White_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Chicken_Red_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Chicken_Blue_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Chicken_Green_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Chicken_Yellow_Texture;
+	// Duck
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Duck_White_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Duck_Red_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Duck_Blue_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Duck_Green_Texture;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Duck_Yellow_Texture;
+	
 public:
 	// Functions
 	virtual void NativeOnInitialized() override;
@@ -188,7 +229,7 @@ public:
 	//void UpdateWeaponUI();
 
 	UFUNCTION(BlueprintCallable)
-	void UpdatePickupUI(EPickup _pickup);
+	void UpdatePickupUI(EPickup _pickup, bool _isGold);
 	
 	UFUNCTION(BlueprintCallable)
 	void UpdateWeaponUI(EPickup _weapon);
@@ -204,4 +245,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponDurability(int _durability);
+
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerIcons(int _iconNum, APrototype2PlayerState* _player);
+
+	UFUNCTION(BlueprintCallable)
+	UTexture2D* SetIcon(APrototype2PlayerState* _player);
 };
+
+
+
+
+

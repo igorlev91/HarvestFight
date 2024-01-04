@@ -7,40 +7,37 @@
 // Sets default values
 ARadialPlot::ARadialPlot()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
 void ARadialPlot::BeginPlay()
 {
 	Super::BeginPlay();
-	TArray<AActor*> AttachedActors;
-	GetAttachedActors(AttachedActors);
 
-	for (int i = 0; i < AttachedActors.Num(); i++)
+	if (GrowSpotPrefab)
 	{
-		if (auto* plot = Cast<AGrowSpot>(AttachedActors[i]))
+		for(int i = 0; i < 3; i++)
 		{
-			growSpots[i] = plot;
+			for(int j = 0; j < 3; j++)
+			{
+				if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, {((float)i - 1.5f) * PlotSpread, ((float)j - 1.5f) * PlotSpread, PlotZHeight}, FRotator::ZeroRotator))
+				{
+					newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+					newPlot->Player_ID = Player_ID;
+					growSpots.Add(newPlot);
+				}
+			}
 		}
 	}
-	
 }
 
-// Called every frame
-void ARadialPlot::Tick(float DeltaTime)
+void ARadialPlot::SetPlayerID(int _id)
 {
-	Super::Tick(DeltaTime);
-
-}
-
-void ARadialPlot::SetPlayerID(int ID)
-{
-	for (int i = 0; i < growSpots.Num(); i++)
+	Player_ID = _id;
+	for(auto growSpot : growSpots)
 	{
-		growSpots[i]->Player_ID = ID;
+		growSpot->Player_ID = _id;
 	}
 }
 

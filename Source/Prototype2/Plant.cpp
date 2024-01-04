@@ -11,6 +11,8 @@ APlant::APlant()
 	bReplicates = true;
 	LeavesMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Leaves Mesh"));
 	LeavesMesh->SetupAttachment(RootComponent);
+
+	InterfaceType = EInterfaceType::Default;
 }
 
 void APlant::BeginPlay()
@@ -28,6 +30,13 @@ void APlant::Interact(APrototype2Character* player)
 	if (isGrown)
 	{
 		ItemComponent->Interact(player, this);
+
+		player->EnableStencil(false);
+		if (player->PlayerHUDRef)
+		{
+			player->PlayerHUDRef->SetHUDInteractText("");
+		}
+		ItemComponent->Mesh->SetRenderCustomDepth(false);
 	}
 }
 
@@ -43,7 +52,7 @@ void APlant::ClientInteract(APrototype2Character* player)
 
 void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
 {
-	if (!owner->HeldItem)
+	if (!owner->HeldItem || owner->HeldItem != this)
 	{
 		_invokingWiget->SetHUDInteractText("Pick Up");
 
@@ -58,14 +67,11 @@ void APlant::Server_ToggleGold_Implementation()
 
 void APlant::Multi_ToggleGold_Implementation()
 {
-	/*int x = rand() % 100;
+	int x = rand() % 100;
 	if (x < chanceOfGold)
 	{
-		
-	}*/
-
-	ItemComponent->gold = true;
-	
+		ItemComponent->gold = true;
+	}
 
 	if (ItemComponent->gold)
 	{
