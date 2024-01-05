@@ -15,6 +15,8 @@ public:
 	// Sets default values for this actor's properties
 	ARadialPlot();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<class AGrowSpot*> growSpots;
 	UPROPERTY(EditAnywhere)
@@ -27,7 +29,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlotSignMaterials;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	class UStaticMeshComponent* PlotSignMesh;
 
 	UPROPERTY(EditAnywhere)
@@ -45,5 +47,4 @@ protected:
 
 public:	
 	void SetPlayerID(int _id);
-
 };

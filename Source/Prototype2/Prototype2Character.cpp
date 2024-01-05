@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #include "Prototype2Character.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -107,14 +105,11 @@ APrototype2Character::APrototype2Character()
 	AttackTrail_NiagaraComponent->SetupAttachment(Weapon->Mesh);
 	Attack_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Attack Component"));
 	Attack_NiagaraComponent->SetupAttachment(RootComponent);
-	//Test_NiagraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Test Niagra Component"));
-	//Test_NiagraComponent->SetupAttachment(RootComponent);
 	
 	// Decal component
 	DecalArmSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DecalArrowArm"));
 	DecalArmSceneComponent->SetupAttachment(RootComponent);
 	DecalArmSceneComponent->SetIsReplicated(false);
-	
 	DecalComponent = CreateDefaultSubobject<UDecalComponent>(TEXT("DecalArrow"));
 	DecalComponent->AttachToComponent(DecalArmSceneComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	DecalComponent->SetIsReplicated(false);
@@ -150,7 +145,6 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, Sweat_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, AttackTrail_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, Attack_NiagaraComponent);
-	//DOREPLIFETIME(APrototype2Character, Test_NiagraComponent);
 }
 
 void APrototype2Character::BeginPlay()
@@ -189,7 +183,7 @@ void APrototype2Character::BeginPlay()
 	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 0.0f;
 
 	// Set start position - for decal arrow
-	
+	StartPosition = GetActorLocation();
 
 	UpdateDecalDirection(false);
 
@@ -213,54 +207,54 @@ void APrototype2Character::BeginPlay()
 	DecalComponent->SetIsReplicated(false);
 	DecalComponent->SetVisibility(false);
 	DecalArmSceneComponent->SetVisibility(false);
+
+	
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-
-
+	// Clear interact text
 	if (PlayerHUDRef)
 	{
-		//PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
 		PlayerHUDRef->SetHUDInteractText("");
 	}
 	
-	if (!EndGameCam)
+	if (!EndGameCamera)
 	{
-		if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		if (auto GamemodeCast = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
-			if (auto endGamePodium = gamemode->EndGamePodium)
+			if (auto EndGamePodiumCast = GamemodeCast->EndGamePodium)
 			{
-				EndGameCam = endGamePodium->EndGameCamera;
+				EndGameCamera = EndGamePodiumCast->EndGameCamera;
 			}
 		}
+	}
+
+	auto GamestateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GamestateCast->HasGameStarted() && IsLocallyControlled())
+	{
+		StartPosition = GetActorLocation();
 	}
 	
 	if (PlayerStateRef)
 	{
-		auto gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
-		if (!gamestate->GameHasStarted)
-		{
-			StartPosition = GetActorLocation();
-		}
 		if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 		{
-			if (EndGameCam)
+			if (EndGameCamera)
 			{
-				
-				if (gamestate->HasGameFinished)
+				if (GamestateCast->HasGameFinished())
 				{
-					if (auto castedController = Cast<APrototype2PlayerController>(PlayerStateRef->GetPlayerController()))
+					if (auto ControllerCast = Cast<APrototype2PlayerController>(PlayerStateRef->GetPlayerController()))
 					{
-						castedController->SetViewTarget(EndGameCam);
+						ControllerCast->SetViewTarget(EndGameCamera);
 						GetCharacterMovement()->StopActiveMovement();
 						GetCharacterMovement()->StopMovementImmediately();
 						GetCharacterMovement()->Velocity = {};
 						GetCharacterMovement()->Deactivate();
-						castedController->bEnableMovement = false;
-						castedController->UnPossess();
+						ControllerCast->bEnableMovement = false;
+						ControllerCast->UnPossess();
 						UE_LOG(LogTemp, Warning, TEXT("Game is over, Change the camera now please."));
 					}
 				}
@@ -276,6 +270,7 @@ void APrototype2Character::Tick(float DeltaSeconds)
 
 	if (PlayerMesh)
 		GetMesh()->SetSkeletalMeshAsset(PlayerMesh);
+	
 	if (PlayerMat)
 		GetMesh()->SetMaterial(0, PlayerMat);
 
@@ -322,54 +317,39 @@ void APrototype2Character::Tick(float DeltaSeconds)
 		// Update sprint UI
 		PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
 	}
-
-	//if (auto gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
-	//{
-	//	if (gameState->HasGameFinished)
-	//	{
-	//		GetMovementComponent()->SetActive(false);
-	//		GetController()->SetIgnoreLookInput(true);
-	//		GetController()->SetIgnoreMoveInput(true);
-	//	}
-	//}
-	//if (IsLocallyControlled())
-	//{
-	//	if (HeldItem != nullptr)
-	//	{
-	//		UpdateDecalDirection(false);
-	//	}
-	//		
-	//}
+	
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		UpdateDecalAngle();
-		
-		
+
+		// Walk poof particle activation/deactivation
 		if (GetCharacterMovement()->Velocity.Size() < 50.0f)
 		{
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::WALKPOOF);
+			DeActivateParticleSystemFromEnum(EParticleSystem::WalkPoof);
 		}
 		else
 		{
-			ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::WALKPOOF);
+			ActivateParticleSystemFromEnum(EParticleSystem::WalkPoof);
 		}
-		
+
+		// Todo: Convert to flag system as to not resize arrays constantly
+		// Turn particles on and off at the end of each frame
 		Server_ToggleParticleSystems(ParticleSystemsToActivate, ParticleSystemsToDeActivate);
 		ParticleSystemsToActivate.Empty();
 		ParticleSystemsToDeActivate.Empty();
 	}
 }
 
-void APrototype2Character::Server_CountdownTimers_Implementation(float DeltaSeconds)
+void APrototype2Character::Server_CountdownTimers_Implementation(float _DeltaSeconds)
 {
 	if (InteractTimer >= 0)
-		InteractTimer -= DeltaSeconds;
+		InteractTimer -= _DeltaSeconds;
 	if (AttackTimer >= 0)
-		AttackTimer -= DeltaSeconds;
+		AttackTimer -= _DeltaSeconds;
 	if (SprintTimer >= 0)
-		SprintTimer -= DeltaSeconds;
+		SprintTimer -= _DeltaSeconds;
 	if (CanSprintTimer >= 0)
-		CanSprintTimer -= DeltaSeconds;
+		CanSprintTimer -= _DeltaSeconds;
 }
 
 void APrototype2Character::ChargeAttack()
@@ -383,62 +363,60 @@ void APrototype2Character::ReleaseAttack()
 	Server_ReleaseAttack();
 }
 
-void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
+void APrototype2Character::ExecuteAttack(float _AttackSphereRadius)
 {
-	// create tarray for hit results
-	TArray<FHitResult> outHits;
-
-	FVector inFrontOfPlayer;
-	
+	FVector InFrontOfPlayer;
 	// start and end locations
 	if (!Weapon->Mesh->bHiddenInGame)
 	{
-		inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * WeaponReach);
+		InFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * _AttackSphereRadius) + (GetActorForwardVector() * WeaponReach);
 	}
 	else
 	{
-		inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * MeleeReach);
+		InFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * _AttackSphereRadius) + (GetActorForwardVector() * MeleeReach);
 	}
-	
-	FVector sweepStart = inFrontOfPlayer;
-	FVector sweepEnd = inFrontOfPlayer;
 
 	// create a collision sphere
-	FCollisionShape colSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
-	
-	FVector downVector = {inFrontOfPlayer.X, inFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
-	TriggerAttackVFX(downVector, AttackSphereRadius, AttackChargeAmount);	
+	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
 
+	// Trigger the VFX in blueprint
+	const FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
+	TriggerAttackVFX(DownVector, _AttackSphereRadius, AttackChargeAmount);	
+
+	// create tarray for hit results
+	TArray<FHitResult> OutHits;
+	
+	const FVector SweepStart = InFrontOfPlayer;
+	const FVector SweepEnd = InFrontOfPlayer;
+	
 	// check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Pawn, colSphere);
+	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
 
-	bool isPlayerHit = false;
+	bool bIsOtherPlayerHit = false;
 	
-	if (isHit)
+	if (bHasHitResult)
 	{
 		// loop through TArray
-		for (auto& hit : outHits)
+		for (auto& HitResult : OutHits)
 		{
-			if (auto* hitPlayer = Cast<APrototype2Character>(hit.GetActor()))
+			if (auto* HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
 			{
-				if (hitPlayer != this)
+				if (HitPlayerCast != this)
 				{
-					FVector attackerLocation = GetActorLocation();
-					hitPlayer->GetHit(AttackChargeAmount, attackerLocation);
+					HitPlayerCast->GetHit(AttackChargeAmount, GetActorLocation());
 
-					isPlayerHit = true;
+					bIsOtherPlayerHit = true;
 				}
 			}
-			else if (auto* hitSellBin = Cast<ASellBin_Winter>(hit.GetActor()))
+			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				FVector attackerLocation = GetActorLocation();
-				hitSellBin->GetHit(AttackChargeAmount, MaxAttackCharge ,attackerLocation);
+				HitSellBinCast->GetHit(AttackChargeAmount, MaxAttackCharge, GetActorLocation());
 			}
 		}
 	}
 
 	// Lower weapon durability
-	if (isPlayerHit)
+	if (bIsOtherPlayerHit)
 	{
 		WeaponCurrentDurability--;
 		PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
@@ -448,7 +426,7 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 			Multi_DropWeapon();
 
 			//AttackTrail_NiagaraComponent->Deactivate();
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::ATTACKTRAIL);
+			DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
 		}
 	}
 	
@@ -459,19 +437,12 @@ void APrototype2Character::ExecuteAttack(float AttackSphereRadius)
 	bIsChargingAttack = false;
 	AttackChargeAmount = 0.0f;
 
-	// audio
-	//ChargeAttackAudioComponent->Stop();
-
-	//Server_ToggleChargeSound(false);
-
 	PlaySoundAtLocation(GetActorLocation(), ExecuteCue);
 
 	// Stop the player Interacting while "executing attack"
 	InteractTimer = InteractTimerTime;
 
 	bCanAttack = true;
-
-	//UpdateDecalDirection(false); // Turn off decal as dropped any item
 
 	Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
 }
@@ -481,7 +452,6 @@ void APrototype2Character::Interact()
 	if(!HeldItem)
 	{
 		PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-		//UpdateDecalDirection(false);
 	}
 	if (!Weapon)
 	{
@@ -520,7 +490,7 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 				RunAnimation->RateScale = _BaseAnimationRateScale;
 			}
 			
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::SPRINTPOOF);
+			DeActivateParticleSystemFromEnum(EParticleSystem::SprintPoof);
 		}
 		else // If Sprinting
 		{
@@ -530,14 +500,14 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 				RunAnimation->RateScale = _BaseAnimationRateScale * SprintRateScaleScalar;
 			}
 			
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::WALKPOOF);
-			ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::SWEAT);
-			ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::SPRINTPOOF);
+			DeActivateParticleSystemFromEnum(EParticleSystem::WalkPoof);
+			ActivateParticleSystemFromEnum(EParticleSystem::Sweat);
+			ActivateParticleSystemFromEnum(EParticleSystem::SprintPoof);
 		}
 	
 		if (CanSprintTimer < 0.0f)
 		{
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::SWEAT);
+			DeActivateParticleSystemFromEnum(EParticleSystem::Sweat);
 		}
 	}
 }
@@ -545,59 +515,57 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 void APrototype2Character::CheckForInteractables()
 {
 	
-	TArray<FHitResult> outHits;
-	FVector sweepStart = GetActorLocation();
-	FVector sweepEnd = GetActorLocation();
-	FCollisionShape colSphere = FCollisionShape::MakeSphere(InteractRadius * 1.5f);
-	// draw collision sphere
-	//DrawDebugSphere(GetWorld(), GetActorLocation(), colSphere.GetSphereRadius(), 50, FColor::Purple, false, 0.1f);
-	
-	if (GetWorld()->SweepMultiByChannel(outHits, sweepStart, sweepEnd, FQuat::Identity, ECC_Visibility, colSphere))
+	TArray<FHitResult> OutHits;
+	const FVector SweepStart = GetActorLocation();
+	const FVector SweepEnd = GetActorLocation();
+	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(InteractRadius * 1.5f);
+
+	if (GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere))
 	{
-		TArray<AActor*> interactableActors;
-		for (auto& hit : outHits)
+		TArray<AActor*> InteractableActors;
+		for (auto& HitActor : OutHits)
 		{
-			if (auto interface = Cast<IInteractInterface>(hit.GetActor()))
+			if (const auto InteractInterface = Cast<IInteractInterface>(HitActor.GetActor()))
 			{
 				if (GetPlayerState<APrototype2PlayerState>())
 				{
-					if (interface->IsInteractable(GetPlayerState<APrototype2PlayerState>()))
-						interactableActors.Add(hit.GetActor());
+					if (InteractInterface->IsInteractable(GetPlayerState<APrototype2PlayerState>()))
+						InteractableActors.Add(HitActor.GetActor());
 				}
 			}
 		}
 
-		bool emptyArray{};
-		AActor* sellBin;
-		for(auto actors : interactableActors)
+		bool bIsEmptyArray{};
+		AActor* FoundSellBin;
+		for(auto InteractableActor : InteractableActors)
 		{
-			float dist = FVector::Distance(actors->GetActorLocation(), GetActorLocation());
-			if (dist <= InteractRadius)
+			float DistanceToOther = FVector::Distance(InteractableActor->GetActorLocation(), GetActorLocation());
+			if (DistanceToOther <= InteractRadius)
 			{
-				if (Cast<ASellBin>(actors))
+				if (Cast<ASellBin>(InteractableActor))
 				{
-					emptyArray = true;
-					sellBin = actors;
+					bIsEmptyArray = true;
+					FoundSellBin = InteractableActor;
 					break;
 				}
 			}
 		}
-		if (emptyArray)
+		if (bIsEmptyArray)
 		{
-			interactableActors.Empty();
-			interactableActors.Add(sellBin);
+			InteractableActors.Empty();
+			InteractableActors.Add(FoundSellBin);
 		}
 
-		float distanceToClosest;
-		auto nearestActor = UGameplayStatics::FindNearestActor(GetActorLocation(), interactableActors, distanceToClosest);
-		if (distanceToClosest <= InteractRadius && nearestActor)
+		float DistanceToClosest;
+		const auto NearestActor = UGameplayStatics::FindNearestActor(GetActorLocation(), InteractableActors, DistanceToClosest);
+		if (DistanceToClosest <= InteractRadius && NearestActor)
 		{
-			if (ClosestInteractableActor && ClosestInteractableActor != nearestActor)
+			if (ClosestInteractableActor && ClosestInteractableActor != NearestActor)
 			{
 				EnableStencil(false);
 			}
-			ClosestInteractableActor = nearestActor;
-			ClosestInteractableItem = Cast<IInteractInterface>(nearestActor);
+			ClosestInteractableActor = NearestActor;
+			ClosestInteractableItem = Cast<IInteractInterface>(NearestActor);
 			return;
 		}
 
@@ -615,56 +583,42 @@ void APrototype2Character::CheckForInteractables()
 	}
 }
 
-void APrototype2Character::EnableStencil(bool _on)
+void APrototype2Character::EnableStencil(bool _bIsOn)
 {
-	if (ClosestInteractableActor)
+	if (!ClosestInteractableActor)
 	{
-		if (auto component = ClosestInteractableActor->GetComponentByClass(UItemComponent::StaticClass()))
+		return;
+	}
+	
+	if (auto CastedComponent = ClosestInteractableActor->GetComponentByClass(UItemComponent::StaticClass()))
+	{
+		if (auto CastedItemComponent = Cast<UItemComponent>(CastedComponent))
 		{
-			if (auto itemComponent = Cast<UItemComponent>(component))
-			{
-				itemComponent->Mesh->SetRenderCustomDepth(_on);
-
-				if (auto plant = Cast<APlant>(ClosestInteractableActor))
-				{
-					plant->LeavesMesh->SetRenderCustomDepth(_on);
-				}
-			}
+			CastedItemComponent->Mesh->SetRenderCustomDepth(_bIsOn);
 		}
 	}
+	
 }
 
-
-
-void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
+void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation)
 {
-	// Disable input
-	//DisableInput(this->GetLocalViewingPlayerController());
-
-	// Fire dizzy particle
-	//Server_FireParticleSystem(Dizzy_NiagaraSystem, Dizzy_NiagaraComponent->GetComponentLocation());
-	
-	//Server_Ragdoll(true);
-
 	UpdateDecalDirection(false);
 	
 	// Knockback
-	FVector KnockAway = GetActorUpVector()/2 + (GetActorLocation() - AttackerLocation).GetSafeNormal();
+	FVector KnockAway = GetActorUpVector()/3 + (GetActorLocation() - _AttackerLocation).GetSafeNormal();
 
 	// Set minimum attack charge for scaling knockback
-	if (AttackCharge < 1.0f)
+	if (_AttackCharge < 1.0f)
 	{
-		AttackCharge = 1.0f;
+		_AttackCharge = 1.0f;
 	}
 	
-	KnockAway *= AttackCharge * KnockBackAmount;
+	KnockAway *= _AttackCharge * KnockBackAmount;
 	
-	UKismetSystemLibrary::PrintString(GetWorld(), "Pre limit: " + FString::SanitizeFloat(KnockAway.Size()));
 	// Limit the knockback to MaxKnockBackVelocity
 	if (KnockAway.Size() > MaxKnockBackVelocity)
 	{
 		KnockAway = KnockAway.GetSafeNormal() * MaxKnockBackVelocity;
-		UKismetSystemLibrary::PrintString(GetWorld(), "Post limit: " + FString::SanitizeFloat(KnockAway.Size()));
 	}
 
 	// Knock this player away
@@ -676,39 +630,27 @@ void APrototype2Character::GetHit(float AttackCharge, FVector AttackerLocation)
 		Server_DropItem();
 	}
 
-	// debug attack
-	//UE_LOG(LogTemp, Warning, TEXT("AttackCharge: %s"), *FString::SanitizeFloat(AttackCharge));
-	
-	//bIsStunned = true;
-	//StunTimer = 2.0f;
-
 	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
 
 	// VFX
-	FVector AttackVFXLocation = AttackerLocation - GetActorLocation();
+	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
 	AttackVFXLocation = AttackVFXLocation.GetSafeNormal();
-	AttackVFXLocation*=50.0f;
-	AttackVFXLocation+=GetActorLocation();
+	AttackVFXLocation *= 50.0f;
+	AttackVFXLocation += GetActorLocation();
 	Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		// stop it if its already playing and start it again
-		if (Attack_NiagaraComponent->IsActive())
-		{
-			DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM::ATTACK);
-		}
-		ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::ATTACK);
+		ActivateParticleSystemFromEnum(EParticleSystem::Attack);
 	}
-	//Attack_NiagaraComponent->Activate();
 }
 
-void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket)
+void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
 {
-	_object->SetSimulatePhysics(false);
-	_object->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	_object->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	_Object->SetSimulatePhysics(false);
+	_Object->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	_Object->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	
-	_object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_socket));
+	_Object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_Socket));
 }
 
 void APrototype2Character::Multi_ToggleChargeSound_Implementation(bool _soundEnabled)
@@ -750,10 +692,10 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 	}
 }
 
-void APrototype2Character::Move(const FInputActionValue& Value)
+void APrototype2Character::Move(const FInputActionValue& _Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	FVector2D MovementVector = _Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -775,10 +717,10 @@ void APrototype2Character::Move(const FInputActionValue& Value)
 
 }
 
-void APrototype2Character::Look(const FInputActionValue& Value)
+void APrototype2Character::Look(const FInputActionValue& _Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	FVector2D LookAxisVector = _Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -799,23 +741,26 @@ void APrototype2Character::OpenIngameMenu()
 
 void APrototype2Character::UpdateDecalAngle()
 {
-	FVector playerPos = FVector(GetActorLocation().X, GetActorLocation().Y, 0);
-	FRotator newRotation{};
+	if (SellBin && IsLocallyControlled())
+	{
+		const FVector CurrentPlayerPosition = FVector(GetActorLocation().X, GetActorLocation().Y, 0);
+		FRotator NewRotation{};
 	
-	if (bDecalTargetShippingBin)
-	{
-		FVector sellPos = FVector(SellBin->GetActorLocation().X, SellBin->GetActorLocation().Y, 0);
+		if (bDecalTargetShippingBin)
+		{
+			const FVector SellPosition = FVector(SellBin->GetActorLocation().X, SellBin->GetActorLocation().Y, 0);
 		
-		newRotation = UKismetMathLibrary::FindLookAtRotation(playerPos, sellPos);
-	}
-	else
-	{
-		FVector plotPos = FVector(StartPosition.X, StartPosition.Y, 0);
+			NewRotation = UKismetMathLibrary::FindLookAtRotation(CurrentPlayerPosition, SellPosition);
+		}
+		else
+		{
+			const FVector PlotPosition = FVector(StartPosition.X, StartPosition.Y, 0);
 		
-		newRotation = UKismetMathLibrary::FindLookAtRotation(playerPos, plotPos);
-	}
+			NewRotation = UKismetMathLibrary::FindLookAtRotation(CurrentPlayerPosition, PlotPosition);
+		}
 
-	DecalArmSceneComponent->SetWorldRotation(newRotation);
+		DecalArmSceneComponent->SetWorldRotation(NewRotation);
+	}
 }
 
 void APrototype2Character::UpdateAOEIndicator()
@@ -823,79 +768,79 @@ void APrototype2Character::UpdateAOEIndicator()
 	AttackAreaIndicatorMesh->SetHiddenInGame(false);
 
 	float AttackSphereRadius;	
-	FVector inFrontOfPlayer;
+	FVector InFrontOfPlayer;
 	
 	// start and end locations
 	if (!Weapon->Mesh->bHiddenInGame)
 	{
 		// Create a larger sphere of effect
 		AttackSphereRadius = BaseAttackRadius + AttackChargeAmount * WeaponAttackRadiusScalar;
-		inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * WeaponReach);
+		InFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * WeaponReach);
 	}
 	else
 	{
 		// Create a smaller sphere of effect
 		AttackSphereRadius = BaseAttackRadius;
-		inFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * MeleeReach);
+		InFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * AttackSphereRadius) + (GetActorForwardVector() * MeleeReach);
 	}
 	
-	FVector downVector = {inFrontOfPlayer.X, inFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
+	FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
 
-	AttackAreaIndicatorMesh->SetWorldLocation(downVector);
+	AttackAreaIndicatorMesh->SetWorldLocation(DownVector);
 	AttackAreaIndicatorMesh->SetRelativeScale3D({AttackSphereRadius,AttackSphereRadius,AttackChargeAmount * WeaponAttackRadiusScalar});
-	TriggerAttackVFX(downVector, AttackSphereRadius, AttackChargeAmount);	
+	TriggerAttackVFX(DownVector, AttackSphereRadius, AttackChargeAmount);	
 	
 }
 
-void APrototype2Character::ActivateParticleSystemFromEnum(PARTICLE_SYSTEM _newSystem)
+void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystem _NewSystem)
 {
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-		ParticleSystemsToActivate.Add(_newSystem);
+		ParticleSystemsToActivate.Add(_NewSystem);
 }
 
-void APrototype2Character::DeActivateParticleSystemFromEnum(PARTICLE_SYSTEM _newSystem)
+void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystem _NewSystem)
 {
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-		ParticleSystemsToDeActivate.Add(_newSystem);
+		ParticleSystemsToDeActivate.Add(_NewSystem);
 }
 
-void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<PARTICLE_SYSTEM>& _in, const TArray<PARTICLE_SYSTEM>& _in2)
+void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off)
 {
-	Multi_ToggleParticleSystems(_in, _in2);
+	Multi_ToggleParticleSystems(_On, _Off);
 }
 
-void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArray<PARTICLE_SYSTEM>& _in, const TArray<PARTICLE_SYSTEM>& _in2)
+void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off)
 {
-	for(auto system : _in)
+	for(auto ParticleSystemCast : _On)
 	{
-		switch (system)
+		switch (ParticleSystemCast)
 		{
-		case PARTICLE_SYSTEM::WALKPOOF:
+		case EParticleSystem::WalkPoof:
 			{
 				WalkPoof_NiagaraComponent->Activate();
 				break;
 			}
-		case PARTICLE_SYSTEM::SPRINTPOOF:
+		case EParticleSystem::SprintPoof:
 			{
 				SprintPoof_NiagaraComponent->Activate();
 				break;
 			}
-		case PARTICLE_SYSTEM::SWEAT:
+		case EParticleSystem::Sweat:
 			{
 				Sweat_NiagaraComponent->Activate();
 				break;
 			}
-		case PARTICLE_SYSTEM::ATTACKTRAIL:
+		case EParticleSystem::AttackTrail:
 			{
 				AttackTrail_NiagaraComponent->Activate();
 				break;
 			}
-		case PARTICLE_SYSTEM::ATTACK:
+		case EParticleSystem::Attack:
 			{
-				Attack_NiagaraComponent->Activate();
+				Attack_NiagaraComponent->Activate(true);
 				break;
 			}
-		case PARTICLE_SYSTEM::TEST:
+		case EParticleSystem::Test:
 			{
 				//Test_NiagraComponent->Activate();
 				break;
@@ -905,36 +850,36 @@ void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArr
 		}
 	}
 
-	for(auto system : _in2)
+	for(auto ParticleSystemCast : _Off)
 	{
-		switch (system)
+		switch (ParticleSystemCast)
 		{
-		case PARTICLE_SYSTEM::WALKPOOF:
+		case EParticleSystem::WalkPoof:
 			{
 				WalkPoof_NiagaraComponent->Deactivate();
 				break;
 			}
-		case PARTICLE_SYSTEM::SPRINTPOOF:
+		case EParticleSystem::SprintPoof:
 			{
 				SprintPoof_NiagaraComponent->Deactivate();
 				break;
 			}
-		case PARTICLE_SYSTEM::SWEAT:
+		case EParticleSystem::Sweat:
 			{
 				Sweat_NiagaraComponent->Deactivate();
 				break;
 			}
-		case PARTICLE_SYSTEM::ATTACKTRAIL:
+		case EParticleSystem::AttackTrail:
 			{
 				AttackTrail_NiagaraComponent->Deactivate();
 				break;
 			}
-		case PARTICLE_SYSTEM::ATTACK:
+		case EParticleSystem::Attack:
 			{
 				Attack_NiagaraComponent->Deactivate();
 				break;
 			}
-		case PARTICLE_SYSTEM::TEST:
+		case EParticleSystem::Test:
 			{
 				//Test_NiagraComponent->Deactivate();
 				break;
@@ -945,45 +890,37 @@ void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArr
 	}
 }
 
-void APrototype2Character::UpdateDecalDirection(bool _on)
+void APrototype2Character::UpdateDecalDirection(bool _bIsOn)
 {
 	if (IsLocallyControlled())
 	{
-		DecalComponent->SetVisibility(_on);
+		DecalComponent->SetVisibility(_bIsOn);
 	}
 }
 
-void APrototype2Character::UpdateDecalDirection(bool _on, bool _targetShippingBin)
+void APrototype2Character::UpdateDecalDirection(bool _bIsOn, bool _bIsTargetingShippingBin)
 {
 	if (IsLocallyControlled())
 	{
-		DecalComponent->SetVisibility(_on);
+		DecalComponent->SetVisibility(_bIsOn);
 
-		if (_on)
-		{
-			bDecalOn = true;
-			bDecalTargetShippingBin = _targetShippingBin;
-		}
-		else
-		{
-			bDecalOn = false;
-		}
+		bDecalTargetShippingBin = _bIsTargetingShippingBin;
 	}
 }
 
-void APrototype2Character::TeleportToLocation(FVector DestinationLocation, FRotator DestinationRotation)
+void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRotator _DestinationRotation)
 {
 	if (GetLocalRole() == ROLE_Authority || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		Server_TeleportToLocation(DestinationLocation, DestinationRotation);
+		Server_TeleportToLocation(_DestinationLocation, _DestinationRotation);
 	}
 }
 
-void APrototype2Character::Server_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation)
+void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
 {
-	SetActorLocation(DestinationLocation);
-	SetActorRotation(DestinationRotation);
-	Multi_TeleportToLocation(DestinationLocation, DestinationRotation);
+	SetActorLocation(_DestinationLocation);
+	SetActorRotation(_DestinationRotation);
+	Multi_TeleportToLocation(_DestinationLocation, _DestinationRotation);
 }
 
 bool APrototype2Character::IsSprinting()
@@ -998,7 +935,7 @@ void APrototype2Character::CheckForFloorSurface()
 	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
 	FVector EndLocation = GetActorLocation() + FVector{0,0,-100}; // The end location of the line trace
 
-	TArray<FHitResult> HitResult;
+	TArray<FHitResult> HitResults;
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = true; // Enable complex tracing for accurate physics material retrieval
 	QueryParams.bReturnPhysicalMaterial = true;
@@ -1007,47 +944,44 @@ void APrototype2Character::CheckForFloorSurface()
 	GetCharacterMovement()->BrakingFriction = 2.0f;
 	GetCharacterMovement()->MaxAcceleration = 2048.0f;
 	GetCharacterMovement()->GroundFriction = 8.0f;
-
 	
 	// Perform the line trace
-	if (GetWorld()->LineTraceMultiByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	if (!GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_Visibility, QueryParams))
 	{
-		for(auto& result : HitResult)
+		return;
+	}
+	
+	for(auto& Hit : HitResults)
+	{
+		if (const UPhysicalMaterial* PhysicalMaterial = Hit.PhysMaterial.Get())
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit %s"), *FString(HitResult.Component->GetName()));
-			UPhysicalMaterial* PhysMaterial = result.PhysMaterial.Get();
-			if (PhysMaterial)
+			const float Friction = PhysicalMaterial->Friction;
+			
+			if (Friction <= 0.5f)
 			{
-				//UE_LOG(LogTemp, Warning, TEXT("Ground Check Hit Physcs Material"));
-				//UKismetSystemLibrary::DrawDebugLine(GetWorld(), StartLocation, result.Location, FColor::Red, 0.1f, 5.0f);
-				float Friction = PhysMaterial->Friction;
-				if (Friction <= 0.5f)
-				{
-					GetCharacterMovement()->BrakingFriction = 0.0f;
-					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
-					GetCharacterMovement()->GroundFriction = 0.0f;
-					//UE_LOG(LogTemp, Error, TEXT("Ground Check Hit Slippery"));
-					break;
-				}
+				GetCharacterMovement()->BrakingFriction = 0.0f;
+				GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
+				GetCharacterMovement()->GroundFriction = 0.0f;
+				break;
 			}
 		}
 	}
 }
 
-void APrototype2Character::PlaySoundAtLocation(FVector Location, USoundCue* SoundToPlay, USoundAttenuation* _attenation)
+void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation)
 {
-	Server_PlaySoundAtLocation(Location,SoundToPlay, _attenation );
+	Server_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
 }
 
-void APrototype2Character::Ragdoll(bool _ragdoll)
+void APrototype2Character::Ragdoll(bool _bShouldRagdoll)
 {
-	if (_ragdoll)
+	if (_bShouldRagdoll)
 	{
 		SetReplicateMovement(false);
 		
 		/* Disable all collision on capsule */
-		UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
-		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UCapsuleComponent* CapsuleComponentReference = GetCapsuleComponent();
+		CapsuleComponentReference->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		SetActorEnableCollision(true);
 
@@ -1058,12 +992,12 @@ void APrototype2Character::Ragdoll(bool _ragdoll)
 		GetMesh()->bBlendPhysics = true;
 		
 
-		UCharacterMovementComponent* CharacterComp = Cast<UCharacterMovementComponent>(GetMovementComponent());
-		if (CharacterComp)
+		UCharacterMovementComponent* CharacterComponentCast = Cast<UCharacterMovementComponent>(GetMovementComponent());
+		if (CharacterComponentCast)
 		{
-			CharacterComp->StopMovementImmediately();
-			CharacterComp->DisableMovement();
-			CharacterComp->SetComponentTickEnabled(false);
+			CharacterComponentCast->StopMovementImmediately();
+			CharacterComponentCast->DisableMovement();
+			CharacterComponentCast->SetComponentTickEnabled(false);
 		}
 	}
 	else
@@ -1079,32 +1013,32 @@ void APrototype2Character::Ragdoll(bool _ragdoll)
 		
 		
 		/* Disable all collision on capsule */
-		UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
-		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		UCapsuleComponent* CapsuleComponentReference = GetCapsuleComponent();
+		CapsuleComponentReference->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-		UCharacterMovementComponent* CharacterComp = Cast<UCharacterMovementComponent>(GetMovementComponent());
-		if (CharacterComp)
+		UCharacterMovementComponent* CharacterComponentCast = Cast<UCharacterMovementComponent>(GetMovementComponent());
+		if (CharacterComponentCast)
 		{
-			CharacterComp->SetMovementMode(EMovementMode::MOVE_Walking);
-			CharacterComp->SetComponentTickEnabled(true);
+			CharacterComponentCast->SetMovementMode(EMovementMode::MOVE_Walking);
+			CharacterComponentCast->SetComponentTickEnabled(true);
 		}
 	}	
 }
 
-void APrototype2Character::Server_Ragdoll_Implementation(bool _ragdoll)
+void APrototype2Character::Server_Ragdoll_Implementation(bool _Ragdoll)
 {
-	if (_ragdoll)
+	if (_Ragdoll)
 	{
 		LocationWhenStunned = GetActorTransform();
 		MeshLocationWhenStunned = GetMesh()->GetRelativeTransform();
 	}
 
-	Multi_Ragdoll(_ragdoll);
+	Multi_Ragdoll(_Ragdoll);
 }
 
-void APrototype2Character::Multi_Ragdoll_Implementation(bool _ragdoll)
+void APrototype2Character::Multi_Ragdoll_Implementation(bool _Ragdoll)
 {
-	Ragdoll(_ragdoll);
+	Ragdoll(_Ragdoll);
 }
 
 UWidget_PlayerHUD* APrototype2Character::GetPlayerHUD()
@@ -1113,27 +1047,27 @@ UWidget_PlayerHUD* APrototype2Character::GetPlayerHUD()
 	return PlayerHUDRef;
 }
 
-void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector DestinationLocation, FRotator DestinationRotation)
+void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
 {
-	SetActorLocation(DestinationLocation);
-	SetActorRotation(DestinationRotation);
+	SetActorLocation(_DestinationLocation);
+	SetActorRotation(_DestinationRotation);
 }
 
-void APrototype2Character::PlayNetworkMontage(UAnimMontage* _montage)
+void APrototype2Character::PlayNetworkMontage(UAnimMontage* _Montage)
 {
-	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
-	Server_PlayNetworkMontage(_montage);
+	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
+	Server_PlayNetworkMontage(_Montage);
 }
 
-void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage* _montage)
+void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage* _Montage)
 {
-	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
-	Multi_PlayNetworkMontage(_montage);
+	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
+	Multi_PlayNetworkMontage(_Montage);
 }
 
-void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage* _montage)
+void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage* _Montage)
 {
-	GetMesh()->GetAnimInstance()->Montage_Play(_montage);
+	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
 }
 
 void APrototype2Character::Server_SetPlayerColour_Implementation()
@@ -1148,15 +1082,11 @@ void APrototype2Character::Server_Sprint_Implementation()
 		SprintTimer = SprintTime;
 		CanSprintTimer = CanSprintTime;
 	}
-	else
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Time until you can sprint again: %f"), CanSprintTimer);
-	}
 }
 
-void APrototype2Character::SocketWeapon(FName Socket)
+void APrototype2Character::SocketWeapon(FName _Socket)
 {
-	Server_SocketItem(Weapon->Mesh, Socket);
+	Server_SocketItem(Weapon->Mesh, _Socket);
 }
 
 void APrototype2Character::Server_AddHUD_Implementation()
@@ -1167,14 +1097,12 @@ void APrototype2Character::Server_AddHUD_Implementation()
 void APrototype2Character::Multi_Client_AddHUD_Implementation()
 {
 	if (PlayerHudPrefab && !PlayerHUDRef)
-    	{
-    		//UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
-    
-    		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(UGameplayStatics::GetPlayerController(GetWorld(), PlayerID), PlayerHudPrefab);
-    
-    		if (PlayerHUDRef)
-    			PlayerHUDRef->AddToViewport();
-    	}
+    {
+    	PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(UGameplayStatics::GetPlayerController(GetWorld(), PlayerID), PlayerHudPrefab);
+   
+    	if (PlayerHUDRef)
+    		PlayerHUDRef->AddToViewport();
+    }
 }
 
 void APrototype2Character::Server_StartAttack_Implementation()
@@ -1190,99 +1118,84 @@ void APrototype2Character::Server_StartAttack_Implementation()
 
 		if (Weapon)
 		{
-			//Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
-					
 			Server_SocketItem(Weapon->Mesh, FName("WeaponAttackingSocket"));
 		}
-
-		//Server_ToggleChargeSound(true);
 	}
-}
-
-void APrototype2Character::Multi_StartAttack_Implementation()
-{
-	
 }
 
 void APrototype2Character::Server_ReleaseAttack_Implementation()
 {
-	// Create a sphere collider, check if player hit, call player hit
-	
-	if (bIsChargingAttack && bCanAttack)
+	// Create a sphere collider, check if player hit, call player hit	
+	if (!bIsChargingAttack || !bCanAttack)
 	{
-		bCanAttack = false;
-
-		// Socket Weapon back to held
-		Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
-		
-		// Set the radius of the sphere for attack
-		int32 attackSphereRadius;
-		if (!Weapon->Mesh->bHiddenInGame)
-		{
-			// Create a larger sphere of effect
-			attackSphereRadius = BaseAttackRadius + AttackChargeAmount * WeaponAttackRadiusScalar;
-			
-			// VFX
-			//AttackTrail_NiagaraComponent->Activate();
-			ActivateParticleSystemFromEnum(PARTICLE_SYSTEM::ATTACKTRAIL);
-		}
-		else
-		{
-			// Create a smaller sphere of effect
-			attackSphereRadius = BaseAttackRadius;
-		}
-
-		// If attack button is clicked without being held
-		if (AttackChargeAmount < MaxAttackCharge)//InstantAttackThreshold)
-		{
-			// Animation
-			if(ExecuteAttackMontage_LongerWindUp)
-			{
-				PlayNetworkMontage(ExecuteAttackMontage_LongerWindUp);
-			}
-			// Delayed attack
-			FTimerHandle Handle;
-			GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, attackSphereRadius] { ExecuteAttack(attackSphereRadius); }), InstantAttackDelay, false);	
-		}
-		else
-		{
-			// Animation
-			if(ExecuteAttackMontage)
-			{
-				PlayNetworkMontage(ExecuteAttackMontage);
-			}
-			
-			ExecuteAttack(attackSphereRadius);
-
-		}
+		return;
 	}
-
-	// empty
-	//Multi_ReleaseAttack();
+	
+	bCanAttack = false;
+	
+	// Socket Weapon back to held
+	Server_SocketItem(Weapon->Mesh, FName("WeaponHeldSocket"));
+	
+	// Set the radius of the sphere for attack
+	int32 AttackSphereRadius;
+	if (!Weapon->Mesh->bHiddenInGame)
+	{
+		// Create a larger sphere of effect
+		AttackSphereRadius = BaseAttackRadius + AttackChargeAmount * WeaponAttackRadiusScalar;
+		
+		// VFX
+		ActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
+	}
+	else
+	{
+		// Create a smaller sphere of effect
+		AttackSphereRadius = BaseAttackRadius;
+	}
+	// If attack button is clicked without being held
+	if (AttackChargeAmount < MaxAttackCharge)//InstantAttackThreshold)
+	{
+		// Animation
+		if(ExecuteAttackMontage_LongerWindUp)
+		{
+			PlayNetworkMontage(ExecuteAttackMontage_LongerWindUp);
+		}
+		// Delayed attack
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, AttackSphereRadius] { ExecuteAttack(AttackSphereRadius); }), InstantAttackDelay, false);	
+	}
+	else
+	{
+		// Animation
+		if(ExecuteAttackMontage)
+		{
+			PlayNetworkMontage(ExecuteAttackMontage);
+		}
+		
+		ExecuteAttack(AttackSphereRadius);
+	}
 }
 
 void APrototype2Character::Multi_ReleaseAttack_Implementation()
 {
 }
 
-void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue, USoundAttenuation* _attenation)
+void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
 {
-	Multi_PlaySoundAtLocation(_location, _soundQueue, _attenation);
+	Multi_PlaySoundAtLocation(_Location, _SoundQueue, _Attenuation);
 }
 
-void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _location, USoundCue* _soundQueue, USoundAttenuation* _attenation)
+void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
 {
-	if (_attenation)
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, _attenation);
+	if (_Attenuation)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundQueue, _Location, 1, 1, 0, _Attenuation);
 	else
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _soundQueue, _location, 1, 1, 0, SoundAttenuationSettings);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundQueue, _Location, 1, 1, 0, SoundAttenuationSettings);
 }
 
 void APrototype2Character::Client_AddHUD_Implementation()
 {
 	if (PlayerHudPrefab && !PlayerHUDRef)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Player HUD Created"));
 		PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(Cast<APrototype2PlayerController>(Controller), PlayerHudPrefab);
 
 		PlayerHUDRef->AddToViewport();
@@ -1291,20 +1204,20 @@ void APrototype2Character::Client_AddHUD_Implementation()
 
 void APrototype2Character::Multi_SetPlayerColour_Implementation()
 {
-	if (auto* gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	// No longer used?
+	/*if (auto* GamemodeCast = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 	{
-		if (auto* gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		if (auto* GamestateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			for(auto player : gamestate->PlayerArray)
+			for(auto PlayerStateCast : GamestateCast->PlayerArray)
 			{
-				//UE_LOG(LogTemp, Warning, TEXT("Player Colour Assigned Locally"));
-				if (auto* character = Cast<APrototype2Character>(player->GetPlayerController()->GetCharacter()))
+				if (auto* CharacterCast = Cast<APrototype2Character>(PlayerStateCast->GetPlayerController()->GetCharacter()))
 				{
 					//character->GetMesh()->SetMaterial(0, gamemode->PlayerMaterials[Cast<APrototype2PlayerState>(player)->Player_ID]);
 				}
 			}
 		}
-	}
+	}*/
 }
 
 void APrototype2Character::TryInteract()
@@ -1350,12 +1263,14 @@ void APrototype2Character::Server_TryInteract_Implementation()
 	{
 		//UpdateDecalDirection(false); // Turn off decal as dropped any item
 		InteractTimer = InteractTimerTime;
-		Multi_DropItem();
+		Server_DropItem();
 	}
 }
 
 void APrototype2Character::Server_DropItem_Implementation()
 {
+	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+	
 	Multi_DropItem();
 }
 
@@ -1372,7 +1287,7 @@ void APrototype2Character::Multi_DropItem_Implementation()
 		
 		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		//HeldItem->SetActorLocation({HeldItem->GetActorLocation().X,HeldItem->GetActorLocation().Y,0 });
-		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+
 		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	
 		// So that CheckForInteractables() can see it again
@@ -1395,19 +1310,19 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
 }
 
-void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
+void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item)
 {
 	if (HeldItem)
 	{
-		Multi_DropItem();
+		Server_DropItem();
 	}
 
-	Multi_PickupItem(itemComponent, _item);
+	Multi_PickupItem(_ItemComponent, _Item);
 }
 
-void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _object, FName _socket)
+void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
 {
-	Multi_SocketItem(_object, _socket);
+	Multi_SocketItem(_Object, _Socket);
 }
 
 void APrototype2Character::Server_DropWeapon_Implementation()
@@ -1415,32 +1330,32 @@ void APrototype2Character::Server_DropWeapon_Implementation()
 	Multi_DropWeapon();
 }
 
-void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* itemComponent, APickUpItem* _item)
+void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item)
 {
 	// Audio
 	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
 
-	if (itemComponent->Mesh)
+	if (_ItemComponent->Mesh)
 	{
-		itemComponent->Mesh->SetSimulatePhysics(false);
-		itemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		_ItemComponent->Mesh->SetSimulatePhysics(false);
+		_ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		
 		// So that CheckForInteractables() cant see it while player is holding it
-		itemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		_ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	}
 	
-	if (itemComponent->PickupType == EPickup::Weapon)
+	if (_ItemComponent->PickupType == EPickup::Weapon)
 	{
-		Weapon->Mesh->SetStaticMesh(itemComponent->Mesh->GetStaticMesh());
+		Weapon->Mesh->SetStaticMesh(_ItemComponent->Mesh->GetStaticMesh());
 		Weapon->Mesh->SetHiddenInGame(false);
 		Weapon->Mesh->SetVisibility(true);
 		HeldItem = nullptr;
 		return;
 	}
 		
-	_item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+	_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
 
-	HeldItem = _item;
+	HeldItem = _Item;
 	
 	if (HeldItem->ItemComponent->gold)
 	{
@@ -1458,20 +1373,20 @@ void APrototype2Character::Multi_DropWeapon_Implementation()
 }
 
 void APrototype2Character::Server_ReceiveMaterialsArray_Implementation(
-	const TArray<UMaterialInstance*>& InMaterialsArray)
+	const TArray<UMaterialInstance*>& _InMaterialsArray)
 {
-	Multi_ReceiveMaterialsArray(InMaterialsArray);
+	Multi_ReceiveMaterialsArray(_InMaterialsArray);
 }
 
 void APrototype2Character::Multi_ReceiveMaterialsArray_Implementation(
-	const TArray<UMaterialInstance*>& _inMaterialsArray)
+	const TArray<UMaterialInstance*>& _InMaterialsArray)
 {
-	USkeletalMeshComponent* meshComponent = GetMesh();
-	if (meshComponent && _inMaterialsArray.Num() > 0)
+	USkeletalMeshComponent* SkellyMeshComponent = GetMesh();
+	if (SkellyMeshComponent && _InMaterialsArray.Num() > 0)
 	{
-		for (int32 i = 0; i < _inMaterialsArray.Num(); i++)
+		for (int32 i = 0; i < _InMaterialsArray.Num(); i++)
 		{
-			meshComponent->SetMaterial(i, _inMaterialsArray[i]);
+			SkellyMeshComponent->SetMaterial(i, _InMaterialsArray[i]);
 		}
 	}
 }
@@ -1515,7 +1430,7 @@ void APrototype2Character::Multi_SetParticleActive_Implementation(UNiagaraCompon
 	}
 }
 
-void APrototype2Character::Server_ToggleChargeSound_Implementation(bool _soundEnabled)
+void APrototype2Character::Server_ToggleChargeSound_Implementation(bool _bIsSoundEnabled)
 {
-	Multi_ToggleChargeSound(_soundEnabled);
+	Multi_ToggleChargeSound(_bIsSoundEnabled);
 }

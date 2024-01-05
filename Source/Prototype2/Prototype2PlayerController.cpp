@@ -40,7 +40,7 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 
 	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
 	{
-		if (!GameStateRef->HasGameFinished && GameStateRef->GameHasStarted)
+		if (!GameStateRef->HasGameFinished() && GameStateRef->HasGameStarted())
 		{
 			if (bEnableMovement == false)
 			{
@@ -83,7 +83,7 @@ void APrototype2PlayerController::Server_VoteMap_Implementation(int _player, EFa
 {
 	if (auto* gameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		gameState->VoteMap(_player, _level);
+		gameState->VoteMap(_level);
 	}
 }
 

@@ -1,5 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+.
+* File Name : GrowSpot.h
+* Description : class used for the plots in which the player can plant seeds to grow them
+.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -22,11 +24,11 @@ public:
 	// Sets default values for this actor's properties
 	AGrowSpot();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual bool IsInteractable(APrototype2PlayerState* player) override;
-	virtual void ClientInteract(APrototype2Character* player) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual void ClientInteract(APrototype2Character* _Player) override;
 	UPROPERTY(Replicated, EditAnywhere)
-	int Player_ID = 0;
+	int32 Player_ID = 0;
 
 protected:
 	// Called when the game starts or when spawned
@@ -39,18 +41,30 @@ protected:
 	void Multi_FireParticleSystem();
 	void Multi_FireParticleSystem_Implementation();
 
-	void GrowPlantOnTick(float DeltaTime);
+	void GrowPlantOnTick(float _DeltaTime);
+	/**
+	 * @brief play the mandrake noise if the player is holding a mandrake
+	 * @param Player 
+	 */
+	void MandrakePickupNoise(APrototype2Character* _Player);
+	/**
+	 * @brief scale and position the Plant in the grow spot, called each frame to make it grow overtime
+	 * @param Plant 
+	 * @param TargetScale 
+	 * @param PosOffset 
+	 */
+	void ScalePlant(APlant* _Plant, FVector _TargetScale, float _PosOffset) const;
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float _DeltaTime) override;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_GrowOnTick(float _deltaTime);
-	void Multi_GrowOnTick_Implementation(float _deltaTime);
+	void Multi_GrowOnTick(float _DeltaTime);
+	void Multi_GrowOnTick_Implementation(float _DeltaTime);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_UpdateState(EGrowSpotState _newState);
-	void Multi_UpdateState_Implementation(EGrowSpotState _newState);
+	void Multi_UpdateState(EGrowSpotState _NewState);
+	void Multi_UpdateState_Implementation(EGrowSpotState _NewState);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetPlantReadySparkle(bool _bIsActive);
@@ -59,25 +73,35 @@ public:
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
 
-	virtual void Interact(APrototype2Character* player) override;
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
+	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
-	void SetPlant(APlant* _plant, float _growTime);
-	void SetWeapon(AGrowableWeapon* _weapon, float _growTime);
+	/**
+	 * @brief sets the plant and the variables for the plant to use for growing
+	 * @param _Plant 
+	 * @param _GrowTime 
+	 */
+	void SetPlant(APlant* _Plant, float _GrowTime);
+	/**
+	 * @brief sets the weapon and the variables from the weapon to be used for growing
+	 * @param _Weapon 
+	 * @param _GrowTime 
+	 */
+	void SetWeapon(AGrowableWeapon* _Weapon, float _GrowTime);
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
-	APlant* plant = nullptr;
+	APlant* Plant = nullptr;
 	UPROPERTY(Replicated, VisibleAnywhere)
-	AGrowableWeapon* weapon = nullptr;
+	AGrowableWeapon* Weapon = nullptr;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
-	float growTimer{};
+	float GrowTimer{};
 	
 	UPROPERTY(Replicated, EditAnywhere)
-	float growTime{10};
+	float GrowTime{10};
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* ParticleSystem;

@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #include "Prototype2GameMode.h"
 
 #include "EndGamePodium.h"
@@ -36,8 +34,7 @@ void APrototype2GameMode::BeginPlay()
 	if (auto gamestate = GetGameState<APrototype2Gamestate>())
 	{
 		GameStateRef = gamestate;
-		gamestate->FinalConnectionCount = GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount;
-		//UE_LOG(LogTemp, Warning, TEXT("Final Connection Count : %s"), *FString::FromInt(gamestate->FinalConnectionCount));
+		gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
 	}
 
 	if (EndGamePodiumPrefab)
@@ -72,8 +69,7 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 			if (auto gamestate = GetGameState<APrototype2Gamestate>())
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
-				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
-
+				playerState->Player_ID = gamestate->RegisterPlayer(playerState);
 				if (auto character = Cast<APrototype2Character>(NewPlayer->GetCharacter()))
 				{
 					character->SetPlayerState(playerState);
@@ -82,8 +78,8 @@ void APrototype2GameMode::PostLogin(APlayerController* NewPlayer)
 					character->PlayerStateRef = playerState;
 					if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 					{
-						gamestate->MaxPlayersOnServer = gameInstance->MaxPlayersOnServer;
-						gamestate->FinalConnectionCount = gameInstance->FinalConnectionCount;
+						gamestate->SetMaxPlayersOnServer(gameInstance->MaxPlayersOnServer);
+						gamestate->SetFinalConnectionCount(gameInstance->FinalConnectionCount);
 
 						if (gameInstance->FinalPlayerNames.Num() > 0)
 						{
@@ -160,7 +156,7 @@ void APrototype2GameMode::Logout(AController* Exiting)
 		if (auto playerState = Exiting->GetPlayerState<APrototype2PlayerState>())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s from Server_Players"), *FString::FromInt(playerState->Player_ID));
-			gamestate->Server_Players.Remove(playerState);
+			gamestate->UnRegisterPlayer(playerState);
 		}
 	}
 }
@@ -222,7 +218,7 @@ void APrototype2GameMode::LookOutForGameEnd()
 {
 	if (GameStateRef)
 	{
-		if (Server_Characters.Num() < GameStateRef->Server_Players.Num())
+		if (Server_Characters.Num() < GameStateRef->GetCurrentConnectionCount())
 		{
 			Server_Characters.Empty();
 			Server_Characters = {};
@@ -235,10 +231,9 @@ void APrototype2GameMode::LookOutForGameEnd()
 			}
 		}
 
-		if (Server_PlayerStates.Num() < GameStateRef->Server_Players.Num())
-			Server_PlayerStates = GameStateRef->Server_Players;
+		Server_PlayerStates = GameStateRef->Server_Players;
 		
-		if (GameStateRef->HasGameFinished && !TpHasHappened)
+		if (GameStateRef->HasGameFinished() && !TpHasHappened)
 		{
 			TeleportEveryoneToPodium();
 			TpHasHappened = true;
@@ -408,7 +403,7 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 {
 	if (GameStateRef)
 	{
-		if (!GameStateRef->GameHasStarted)
+		if (!GameStateRef->HasGameStarted())
 		{
 			for(auto player : GameStateRef->Server_Players)
 			{
@@ -433,7 +428,6 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 											character->SetActorLocation(spawnPoint);
 											character->SetActorRotation({character->GetActorRotation().Pitch, radialPlot->GetActorRotation().Yaw, character->GetActorRotation().Roll});
 										}
-										
 										break;
 									}
 								}

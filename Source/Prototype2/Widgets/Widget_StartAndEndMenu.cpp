@@ -36,17 +36,17 @@ void UWidget_StartAndEndMenu::NativeOnInitialized()
 
 void UWidget_StartAndEndMenu::UpdateTimerText()
 {
-	if (TimerText && GameStateRef->Server_Players.Num() >=  GameStateRef->FinalConnectionCount && ! GameStateRef->GameHasStarted)
+	if (TimerText && GameStateRef->Server_Players.Num() >=  GameStateRef->GetFinalConnectionCount() && ! GameStateRef->HasGameStarted())
 	{
-		TimerText->SetText(FText::FromString(FString::FromInt((int)GameStateRef->CountdownLengthSeconds)));
-		if (GameStateRef->CountdownLengthSeconds < 1)
+		TimerText->SetText(FText::FromString(FString::FromInt((int)GameStateRef->GetCountdownLengthSeconds())));
+		if (GameStateRef->GetCountdownLengthSeconds() < 1)
 		{
 			TimerText->SetText(FText::FromString("Go!"));
 		}
-		countdownTimer = (int)GameStateRef->CountdownLengthSeconds;
+		countdownTimer = (int)GameStateRef->GetCountdownLengthSeconds();
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
-	else if (TimerText && GameStateRef->GameHasStarted)
+	else if (TimerText && GameStateRef->HasGameStarted())
 	{
 		TimerText->SetVisibility(ESlateVisibility::Hidden);
 	}
@@ -57,12 +57,12 @@ void UWidget_StartAndEndMenu::UpdateTimerText()
 
 void UWidget_StartAndEndMenu::CheckForGameFinished()
 {
-	if (GameStateRef->HasGameFinished && !GameStateRef->GameReadyForVote && GameStateRef->BriefTimesUpEndGameLengthSeconds > 0)
+	if (GameStateRef->HasGameFinished() && !GameStateRef->IsGameReadyForVote() && GameStateRef->GetBriefTimesUpLengthSeconds() > 0)
 	{
 		TimerText->SetText(FText::FromString("Times Up!"));
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
-	else if (GameStateRef->HasGameFinished && GameStateRef->GameReadyForVote && GameStateRef->BriefTimesUpEndGameLengthSeconds <= 0)
+	else if (GameStateRef->HasGameFinished() && GameStateRef->IsGameReadyForVote() && GameStateRef->GetBriefTimesUpLengthSeconds() <= 0)
 	{
 		TimerText->SetVisibility(ESlateVisibility::Hidden);
 	}

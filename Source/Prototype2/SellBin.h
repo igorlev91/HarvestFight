@@ -31,7 +31,7 @@ public:
 	UFUNCTION(Server, Reliable)
     void Server_FireParticleSystem();
     void Server_FireParticleSystem_Implementation();
-	void FireSellFX(APlant* _plant, APrototype2Character* player);
+	void FireSellFX(APlant* InPlant, APrototype2Character* player);
 	UFUNCTION(Client, Reliable)
 	void Client_MoveUI(float DeltaTime);
 	void Client_MoveUI_Implementation(float DeltaTime);
@@ -67,7 +67,7 @@ public:
 	bool bWidgetVisible{};
 	
 	virtual void Interact(APrototype2Character* player) override;
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* Owner, int _PlayerID) override;
 private:
 
 	UPROPERTY(EditAnywhere)

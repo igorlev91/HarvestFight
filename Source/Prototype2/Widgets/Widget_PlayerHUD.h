@@ -241,7 +241,7 @@ public:
 	void UpdatePickupUI(EPickup _pickup, bool _isGold);
 	
 	UFUNCTION(BlueprintCallable)
-	void UpdateWeaponUI(EPickup _weapon);
+	void UpdateWeaponUI(EPickup _Weapon);
 
 	UFUNCTION(BlueprintCallable)
 	void SetHUDInteractText(FString _interactionText);

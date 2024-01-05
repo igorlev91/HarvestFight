@@ -3,6 +3,7 @@
 
 #include "RadialPlot.h"
 #include "GrowSpot.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ARadialPlot::ARadialPlot()
@@ -15,6 +16,12 @@ ARadialPlot::ARadialPlot()
 	PlotSignMesh->SetRelativeLocation({-400, -100, 0});
 	PlotSignMesh->SetRelativeRotation({0, 180, 0});
 	PlotSignMesh->SetIsReplicated(true);
+}
+
+void ARadialPlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ARadialPlot, PlotSignMesh);
 }
 
 void ARadialPlot::Multi_SetPlotMaterial_Implementation(int _id)
@@ -31,20 +38,20 @@ void ARadialPlot::BeginPlay()
 	
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		if (GrowSpotPrefab)
+		if (!GrowSpotPrefab)
 		{
-			for(int i = 0; i < 3; i++)
+			return;
+		}
+		
+		for(int i = 0; i < 3; i++)
+		{
+			for(int j = 0; j < 3; j++)
 			{
-				for(int j = 0; j < 3; j++)
-				{
-					if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, RootComponent->GetComponentTransform()))
-					{
-						newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-						newPlot->SetActorRelativeLocation({((float)i - 1.5f) * PlotSpread, ((float)j - 1.5f) * PlotSpread, PlotZHeight});
-						newPlot->Player_ID = Player_ID;
-						growSpots.Add(newPlot);
-					}
-				}
+				auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, RootComponent->GetComponentTransform());
+				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
+				newPlot->Player_ID = Player_ID;
+				growSpots.Add(newPlot);
 			}
 		}
 	}

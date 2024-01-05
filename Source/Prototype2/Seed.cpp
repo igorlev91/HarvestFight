@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "Seed.h"
 
@@ -10,7 +8,6 @@ ASeed::ASeed()
 {
 	// make sure to rep
 	bReplicates = true;
-	
 
 	InterfaceType = EInterfaceType::Default;
 
@@ -31,6 +28,7 @@ void ASeed::BeginPlay()
 	ParachuteMesh->SetRelativeLocation(ParachuteMesh->GetRelativeLocation() + (FVector::UpVector * 100));
 	ParachuteMesh->SetRelativeScale3D({2,2,2});
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ParachuteMesh->SetSimulatePhysics(false);
 	//ParachuteMesh->SetIsReplicated(true);
 
 	UE_LOG(LogTemp, Warning, TEXT("Map name: %s"), *levelName);
@@ -49,7 +47,7 @@ void ASeed::BeginPlay()
 		}
 	}
 
-	if (!isWeapon)
+	if (!bIsWeapon)
 	{
 		SpawnPos = GetActorLocation();
 		SpawnRotation = GetActorRotation();
@@ -60,77 +58,77 @@ void ASeed::BeginPlay()
 
 }
 
-void ASeed::Tick(float DeltaSeconds)
+void ASeed::Tick(float _DeltaSeconds)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(_DeltaSeconds);
 	
 	HandleParachuteMovement();
 }
 
-void ASeed::Interact(APrototype2Character* player)
+void ASeed::Interact(APrototype2Character* _Player)
 {
-	ItemComponent->Interact(player, this);
+	ItemComponent->Interact(_Player, this);
 	
-	player->EnableStencil(false);
-	if (player->PlayerHUDRef)
+	_Player->EnableStencil(false);
+	if (_Player->PlayerHUDRef)
 	{
-		player->PlayerHUDRef->SetHUDInteractText("");
+		_Player->PlayerHUDRef->SetHUDInteractText("");
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 }
 
-void ASeed::ClientInteract(APrototype2Character* player)
+void ASeed::ClientInteract(APrototype2Character* _Player)
 {
-	IInteractInterface::ClientInteract(player);
+	IInteractInterface::ClientInteract(_Player);
 
-	player->UpdateDecalDirection(true, false);
+	_Player->UpdateDecalDirection(true, false);
 }
 
-void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
+void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
 {
-	if (!owner->HeldItem || owner->HeldItem != this)
+	if (!_Owner->HeldItem || _Owner->HeldItem != this)
 	{
-		_invokingWiget->SetHUDInteractText("Pick Up");
+		InvokingWidget->SetHUDInteractText("Pick Up");
 
-		owner->EnableStencil(true);
+		_Owner->EnableStencil(true);
 	}
 }
 
-bool ASeed::IsInteractable(APrototype2PlayerState* player)
+bool ASeed::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return true;
 }
 
-void ASeed::Multi_ToggleParachuteVisibility_Implementation(bool _visible)
+void ASeed::Multi_ToggleParachuteVisibility_Implementation(bool _Visible)
 {
 
-	ItemComponent->Mesh->SetSimulatePhysics(!_visible);
+	if (HasAuthority())
+		ItemComponent->Mesh->SetSimulatePhysics(!_Visible);
+	
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ParachuteMesh->SetVisibility(_visible);
+	ParachuteMesh->SetVisibility(_Visible);
 }
 
 void ASeed::HandleParachuteMovement()
 {
-	if (!isWeapon)
+	if (bIsWeapon)
 	{
-		if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+		return;
+	}
+
+	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
 		{
-			if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
-			{
-				float xVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
-				float zVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
-				SetActorRotation({SpawnRotation.Pitch + xVariation, GetActorRotation().Yaw, SpawnRotation.Roll + zVariation});
-				float lifetime = GetWorld()->GetTimeSeconds() - SpawnTime;
-				SetActorLocation(FMath::Lerp(SpawnPos, SpawnPos + (FVector::DownVector * DropDistance), lifetime / FallTime), false, nullptr, ETeleportType::ResetPhysics);
-			}
-			else
-			{
-				Multi_ToggleParachuteVisibility(false);
-			}
+			float xVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
+			float zVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
+			SetActorRotation({SpawnRotation.Pitch + xVariation, GetActorRotation().Yaw, SpawnRotation.Roll + zVariation});
+			float Lifetime = GetWorld()->GetTimeSeconds() - SpawnTime;
+			SetActorLocation(FMath::Lerp(SpawnPos, SpawnPos + (FVector::DownVector * DropDistance), Lifetime / FallTime), false, nullptr, ETeleportType::ResetPhysics);
+		}
+		else
+		{
+			Multi_ToggleParachuteVisibility(false);
 		}
 	}
-}
-
-void ASeed::Grow()
-{
 }

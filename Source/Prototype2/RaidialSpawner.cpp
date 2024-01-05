@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "RaidialSpawner.h"
 
 #include "GrowSpot.h"
@@ -27,6 +24,7 @@ void ARaidialSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
+	
 	if (HasAuthority())
 	{
 		if (PlotPrefab)
@@ -36,15 +34,15 @@ void ARaidialSpawner::BeginPlay()
 
 void ARaidialSpawner::SetUp()
 {
-	if (changePlayerCount)
+	if (bShouldChangePlayerCount)
 	{
-		if (auto gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		if (auto GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			playercount = gamestate->FinalConnectionCount;
+			PlayerCount = GameState->GetFinalConnectionCount();
 		}
-		if (playercount <= 0)
+		if (PlayerCount <= 0)
 		{
-			playercount = 1;
+			PlayerCount = 1;
 		}
 	}
 	
@@ -57,9 +55,9 @@ void ARaidialSpawner::SetUp()
 	//FVector OwningLocation = FVector();
 	float SpawnRadius = FVector::Dist(ReferenceLocation, OwningLocation);
 
-	float AngleStep = 360.0f / playercount; // Calculate the angle between each object
+	float AngleStep = 360.0f / PlayerCount; // Calculate the angle between each object
 
-	for (int32 Index = 0; Index < playercount; Index++)
+	for (int32 Index = 0; Index < PlayerCount; Index++)
 	{
 		// Calculate the angle for the current object
 		float Angle = Index * AngleStep;
@@ -72,59 +70,31 @@ void ARaidialSpawner::SetUp()
 		float OffsetY = SpawnRadius * FMath::Sin(Radians);
 		
 		// Calculate the final spawn position
-		FVector SpawnLocation = OwningLocation;
-		FVector ObjectSpawnPosition = SpawnLocation + FVector(OffsetX, OffsetY, 0.0f);
+		FVector ObjectSpawnPosition = OwningLocation + FVector(150, 150, 0) + FVector(OffsetX, OffsetY, 0.0f);
 
 		// Spawn and align center plot
 
-		auto plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
-		plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-		plot->SetActorRelativeLocation(ObjectSpawnPosition);
-		plot->Player_ID = Index;
+		ARadialPlot* Plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
+		Plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+		Plot->SetActorRelativeLocation(ObjectSpawnPosition);
+		Plot->Player_ID = Index;
 
-		FVector sourceLocation = plot->GetActorLocation();
-		FVector targetLocation = RootComponent->GetComponentLocation();
-		FVector direction = targetLocation - sourceLocation;
-		direction.Z = 0.0f;
-		FRotator desiredRotation = FRotationMatrix::MakeFromX(direction).Rotator();
-		float rotationAngle = desiredRotation.Yaw;
-		plot->SetActorRelativeRotation({plot->GetActorRotation().Pitch, rotationAngle, plot->GetActorRotation().Roll});
-		plot->SetPlayerID(Index);
-		
-		/*auto centerPlot = GetWorld()->SpawnActor<AGrowSpot>(PlotPrefab);
-		int distance = 400;
-		{
-			centerPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-			centerPlot->SetActorRelativeLocation(ObjectSpawnPosition);
-			centerPlot->Player_ID = Index;
+		FVector SourceLocation = Plot->GetActorLocation();
+		FVector Direction = OwningLocation - SourceLocation;
+		Direction.Z = 0.0f;
+		FRotator DesiredRotation = FRotationMatrix::MakeFromX(Direction).Rotator();
+		float RotationAngle = DesiredRotation.Yaw;
+		Plot->SetActorRotation({Plot->GetActorRotation().Pitch, RotationAngle, Plot->GetActorRotation().Roll});
 
-			FVector sourceLocation = centerPlot->GetActorLocation();
-			FVector targetLocation = RootComponent->GetComponentLocation();
-			FVector direction = targetLocation - sourceLocation;
-			direction.Z = 0.0f;
-			FRotator desiredRotation = FRotationMatrix::MakeFromX(direction).Rotator();
-			float rotationAngle = desiredRotation.Yaw;
-			centerPlot->SetActorRelativeRotation({centerPlot->GetActorRotation().Pitch, rotationAngle, centerPlot->GetActorRotation().Roll});
-		}
-		
-		for(int i = 0; i < 3; i++)
-		{
-			for(int j = 0; j < 3; j++)
-			{
-				if (j == 1 && i == 1)
-				{
-				}
-				else
-				{
-					if (auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(PlotPrefab))
-					{ 
-						newPlot->AttachToActor(centerPlot, FAttachmentTransformRules::SnapToTargetIncludingScale);
-						newPlot->SetActorRelativeLocation(FVector{(((float)i - 1.5f) * distance) + (distance / (2)), (((float)j - 1.5f) * distance)  + (distance / (2)), 0});
-						newPlot->Player_ID = Index;
-					}
-				}
-			}
-		}*/
+		Plots.Add(Index, Plot);
+	}
+}
+
+void ARaidialSpawner::SetupDelayed()
+{
+	for (const TPair<int32, ARadialPlot*>& Pair : Plots)
+	{
+		Pair.Value->SetPlayerID(Pair.Key);		
 	}
 }
 

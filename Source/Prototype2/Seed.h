@@ -1,14 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "PickUpItem.h"
 #include "Seed.generated.h"
 
-/**
- * 
- */
 class APlant;
 UCLASS()
 class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
@@ -19,16 +14,16 @@ class PROTOTYPE2_API ASeed : public APickUpItem, public IInteractInterface
 public:
 	ASeed();
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
-	virtual void Interact(APrototype2Character* player) override;
-	virtual void ClientInteract(APrototype2Character* player) override;
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
-	virtual bool IsInteractable(APrototype2PlayerState* player) override;
+	virtual void Tick(float _DeltaSeconds) override;
+	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void ClientInteract(APrototype2Character* _Player) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
+	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 public:
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ToggleParachuteVisibility(bool _visible);
-	void Multi_ToggleParachuteVisibility_Implementation(bool _visible);
+	void Multi_ToggleParachuteVisibility(bool _Visible);
+	void Multi_ToggleParachuteVisibility_Implementation(bool _Visible);
 
 	UPROPERTY(EditAnywhere)
 	class UStaticMesh* WinterParachute;
@@ -63,16 +58,14 @@ public:
 	class UStaticMeshComponent* ParachuteMesh;
 	
 	UPROPERTY(EditAnywhere)
-	float growtime;
+	float GrowTime;
 
 	UPROPERTY(EditAnywhere)
-	bool isPlanted;
+	bool bIsPlanted;
 
 	UPROPERTY(EditAnywhere)
-	bool isWeapon;
-
-	virtual void Grow();
+	bool bIsWeapon;
 	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> plantToGrow;
+	TSubclassOf<AActor> PlantToGrow;
 };

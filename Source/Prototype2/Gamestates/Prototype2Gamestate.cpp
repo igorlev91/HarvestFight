@@ -19,29 +19,28 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	TickCountdownTimer(DeltaSeconds);
-
 	TickMatchTimer(DeltaSeconds);
-	
 	TickEndGameTimer(DeltaSeconds);
 }
 
 void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
 	DOREPLIFETIME(APrototype2Gamestate, MatchLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, MatchLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthSeconds);
-	DOREPLIFETIME(APrototype2Gamestate, GameHasStarted);
-	DOREPLIFETIME(APrototype2Gamestate, HasGameFinished);
-	DOREPLIFETIME(APrototype2Gamestate, GameReadyForVote);
+	DOREPLIFETIME(APrototype2Gamestate, bGameHasStarted);
+	DOREPLIFETIME(APrototype2Gamestate, bHasGameFinished);
+	DOREPLIFETIME(APrototype2Gamestate, bGameReadyForVote);
 
 	DOREPLIFETIME(APrototype2Gamestate, EndGameLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, EndGameLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, BriefTimesUpEndGameLengthSeconds);
 	
-	DOREPLIFETIME(APrototype2Gamestate, IsCountingDown);
-	DOREPLIFETIME(APrototype2Gamestate, PreviousServerTravel);
+	DOREPLIFETIME(APrototype2Gamestate, bIsCountingDown);
+	DOREPLIFETIME(APrototype2Gamestate, bPreviousServerTravel);
 	
 	DOREPLIFETIME(APrototype2Gamestate, Server_Players);
 	
@@ -51,9 +50,9 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 {
-	if (HasAuthority() && !GameHasStarted)
+	if (HasAuthority() && !bGameHasStarted)
 	{
-		if (Server_Players.Num() >= FinalConnectionCount && !GameHasStarted)
+		if (Server_Players.Num() >= FinalConnectionCount && !bGameHasStarted)
 		{
 			if (CountdownLengthSeconds > 0)
 			{
@@ -67,7 +66,7 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 			}
 			if (CountdownLengthSeconds <= 0)
 			{
-				GameHasStarted = true;
+				bGameHasStarted = true;
 				UE_LOG(LogTemp, Warning, TEXT("Countdown completed"));
 			}
 		}
@@ -79,28 +78,28 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), ( GameHasStarted ? TEXT("true") : TEXT("false") ));
-	if (HasAuthority() && GameHasStarted)
+	if (HasAuthority() && bGameHasStarted)
 	{
 		if (CountdownLengthSeconds > 0)
 		{
 			CountdownLengthSeconds -= DeltaSeconds;
 		}
-		if (PreviousServerTravel != ShouldServerTravel)
+		if (bPreviousServerTravel != bShouldServerTravel)
 		{
-			PreviousServerTravel = ShouldServerTravel;
+			bPreviousServerTravel = bShouldServerTravel;
 
-			if (ShouldServerTravel)
+			if (bShouldServerTravel)
 			{
 				if (MatchLengthSeconds > 0 || MatchLengthMinutes > 0)
 				{
-					IsCountingDown = true;
+					bIsCountingDown = true;
 				}
-				PreviousServerTravel = false;
-				ShouldServerTravel = false;
+				bPreviousServerTravel = false;
+				bShouldServerTravel = false;
 			}
 		}
 
-		if (IsCountingDown)
+		if (bIsCountingDown)
 		{
 			if (MatchLengthSeconds > 0)
 			{
@@ -110,8 +109,8 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 			{
 				if (MatchLengthMinutes <= 0 && MatchLengthSeconds <= BriefTimesUpEndGameLengthSeconds)
 				{
-					HasGameFinished = true;
-					IsCountingDown = false;
+					bHasGameFinished = true;
+					bIsCountingDown = false;
 				}
 				else
 				{
@@ -126,9 +125,9 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 {
 	// check if game has "finished"
-	if (HasGameFinished)
+	if (bHasGameFinished)
 	{
-		IsCountingDown = false;
+		bIsCountingDown = false;
 		MatchLengthMinutes = 0;
 		MatchLengthSeconds = 0.0f;
 		CountdownLengthSeconds = 0.0f;
@@ -148,7 +147,7 @@ void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 			{
 				if (EndGameLengthSeconds <= 0.0f)
 				{
-					GameReadyForVote = true;
+					bGameReadyForVote = true;
 				}
 				else
 				{
@@ -158,5 +157,75 @@ void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 			}
 		}
 	}
+}
+
+int32 APrototype2Gamestate::GetFinalConnectionCount() const
+{
+	return FinalConnectionCount;
+}
+
+void APrototype2Gamestate::SetFinalConnectionCount(int32 _FinalConnectionCount)
+{
+	FinalConnectionCount = _FinalConnectionCount;
+}
+
+void APrototype2Gamestate::SetMaxPlayersOnServer(int32 _FinalConnectionCount)
+{
+	MaxPlayersOnServer = _FinalConnectionCount;
+}
+
+int32 APrototype2Gamestate::RegisterPlayer(APrototype2PlayerState* _Player)
+{
+	return Server_Players.Add(_Player);
+}
+
+void APrototype2Gamestate::UnRegisterPlayer(APrototype2PlayerState* _Player)
+{
+	Server_Players.Remove(_Player);
+}
+
+int32 APrototype2Gamestate::GetCurrentConnectionCount()
+{
+	return Server_Players.Num();
+}
+
+bool APrototype2Gamestate::HasGameFinished()
+{
+	return bHasGameFinished;
+}
+
+bool APrototype2Gamestate::HasGameStarted()
+{
+	return bGameHasStarted;
+}
+
+bool APrototype2Gamestate::IsGameReadyForVote()
+{
+	return bGameReadyForVote;
+}
+
+int32 APrototype2Gamestate::GetMatchLengthMinutes()
+{
+	return MatchLengthMinutes;
+}
+
+int32 APrototype2Gamestate::GetMatchLengthSeconds()
+{
+	return MatchLengthSeconds;
+}
+
+int32 APrototype2Gamestate::GetCountdownLengthMinutes()
+{
+	return CountdownLengthMinutes;
+}
+
+int32 APrototype2Gamestate::GetCountdownLengthSeconds()
+{
+	return CountdownLengthSeconds;
+}
+
+int32 APrototype2Gamestate::GetBriefTimesUpLengthSeconds()
+{
+	return BriefTimesUpEndGameLengthSeconds;
 }
 

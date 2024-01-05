@@ -1,5 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+.
+* File Name : Plant.h
+* Description : Class for plant objects, used for all blueprint plant objects
+.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,25 +15,29 @@ class PROTOTYPE2_API APlant : public APickUpItem, public IInteractInterface
 public:
 	APlant();
 	virtual void BeginPlay() override;
-	virtual void Interact(APrototype2Character* player) override;
-	virtual void ClientInteract(APrototype2Character* player) override;
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
-	virtual bool IsInteractable(APrototype2PlayerState* player) override;
+	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void ClientInteract(APrototype2Character* _Player) override;
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* Owner, int _PlayerID) override;
+	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 
-	bool isGrown = false;
+	/* makes the plant gold */
+	void MakeGold();
+
+	bool bGrown = false;
 	UPROPERTY(EditAnywhere)
 	// ReSharper disable once CppUE4ProbableMemoryIssuesWithUObject
-	UMaterialInterface* goldMaterial;
+	UMaterialInterface* GoldMaterial;
 	UPROPERTY(EditAnywhere)
 	// ReSharper disable once CppUE4ProbableMemoryIssuesWithUObject
-	UMaterialInterface* goldMaterial2;
-	int chanceOfGold = 5; // x/100
-	int goldMultiplier = 3;
+	UMaterialInterface* GoldMaterial2;
+
+	UPROPERTY(EditAnywhere)
+	// ReSharper disable once CppUE4ProbableMemoryIssuesWithUObject
+	UMaterialInterface* GoldMaterial3;
+	int ChanceOfGold = 5; // x/100
+	int GoldMultiplier = 3;
 	//UPROPERTY(EditAnywhere)
 	//float value; // Moved to ItemComponent
-
-	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* LeavesMesh;
 
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleGold();

@@ -1,3 +1,8 @@
+//
+* File Name : SeedSpawner.h
+* Description : manages the seed spawning, making sure that there are not too many seeds in the map
+//
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -14,12 +19,32 @@ public:
 	ASeedSpawner();
 
 protected:
+	/* sets up the seed spawner */
 	virtual void BeginPlay() override;
 
-	void SpawnSeedsOnTick(float DeltaTime);
+	/**
+	 * @brief calls the spawn seeds functions
+	 * @param _DeltaTime 
+	 */
+	void SpawnSeedsOnTick(float _DeltaTime);
+
+	/**
+	 * @brief manages the spawning of the plant seeds
+	 * @param _SpawnedSeeds 
+	 * @param _DeltaTime 
+	 * @param _MaxSeeds 
+	 */
+	void SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
+	/**
+	 * @brief Manages the spawning of the weapon seeds
+	 * @param _SpawnedSeeds 
+	 * @param _DeltaTime 
+	 * @param _MaxSeeds 
+	 */
+	void SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
 
 public:	
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float _DeltaTime) override;
 	
 	UPROPERTY(EditAnywhere, Category = "Spawn Amount Curve")
 	class UCurveFloat* FloatCurve;
@@ -31,10 +56,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = WeaponSeeds, meta = (AllowPrivateAccess))
 	TArray<TSubclassOf<ASeed>> WeaponSeeds;
 
-	FVector previousSpawnPos = FVector(0, 0, 0);
-	std::vector<FVector> currentSpawnPos;
-	std::vector<float> distances;
-	int size = 3;
+	FVector PreviousSpawnPos = FVector(0, 0, 0);
+	std::vector<FVector> CurrentSpawnPos;
+	std::vector<float> Distances;
+	int Size = 3;
 
 	int MatchLengthSeconds{};
 	int CurrentMatchLengthSeconds{};

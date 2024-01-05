@@ -24,10 +24,10 @@ ASellBin::ASellBin()
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 
 	// Sell UI
-	SellAmountWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("SellAmountWidgetComponent"));
-	SellAmountWidgetComponent->SetupAttachment(RootComponent);
-	SellAmountWidgetComponent->SetIsReplicated(false);
-	SellAmountWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//SellAmountWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("SellAmountWidgetComponent"));
+	//SellAmountWidgetComponent->SetupAttachment(RootComponent);
+	//SellAmountWidgetComponent->SetIsReplicated(false);
+	//SellAmountWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	
 	InterfaceType = EInterfaceType::SellBin;
@@ -94,20 +94,26 @@ void ASellBin::Server_FireParticleSystem_Implementation()
 	//Multi_FireParticleSystem();
 }
 
-void ASellBin::FireSellFX(APlant* _plant, APrototype2Character* player)
+void ASellBin::FireSellFX(APlant* _Plant, APrototype2Character* player)
 {
-	if (player->IsLocallyControlled())
+	if (SellAmountWidgetComponent)
 	{
-		// Selling UI - Show in-game UI when selling
-		if (SellAmountWidgetComponent->GetWidget())
+		if (player->IsLocallyControlled() && _Plant)
 		{
-			SellAmountWidgetComponent->SetRelativeLocation(FVector(startPosition)); // Reset text to start position
-				
-			if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+			// Selling UI - Show in-game UI when selling
+			if (SellAmountWidgetComponent->GetWidget())
 			{
-				SellCropUI->SetCropValue(_plant->ItemComponent->CropValue);
-				SellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
-				isMoving = true;
+				SellAmountWidgetComponent->SetRelativeLocation(FVector(startPosition)); // Reset text to start position
+				
+				if (auto sellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+				{
+					sellCropUI->SetCropValue(_Plant->ItemComponent->CropValue);
+					if (sellCropUI->SellText)
+					{
+						sellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
+					}
+					isMoving = true;
+				}
 			}
 		}
 	}
@@ -133,12 +139,18 @@ void ASellBin::Multi_FireParticleSystem_Implementation()
 
 void ASellBin::HideParticleSystem()
 {
-	bWidgetVisible = false;
-	if (SellAmountWidgetComponent->GetWidget())
+	if (SellAmountWidgetComponent)
 	{
-		if (auto* SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+		bWidgetVisible = false;
+		if (SellAmountWidgetComponent->GetWidget())
 		{
-			SellCropUI->SellText->SetVisibility(ESlateVisibility::Hidden);
+			if (auto sellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+			{
+				if (sellCropUI->SellText)
+				{
+					sellCropUI->SellText->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
 		}
 	}
 }
@@ -147,11 +159,13 @@ void ASellBin::ClientInteract(APrototype2Character* player)
 {
 	if (player->HeldItem)
 	{
-		if (auto plant = Cast<APlant>(player->HeldItem))
+		if (auto Plant = Cast<APlant>(player->HeldItem))
 		{
 			bWidgetVisible = true;
-			FireSellFX(plant, player);
+			FireSellFX(Plant, player);
 			player->UpdateDecalDirection(false);
+			if (player->PlayerHUDRef)
+				player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
 		}
 	}
 }
@@ -163,16 +177,19 @@ void ASellBin::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
 void ASellBin::MoveUIComponent(float _dt)
 {
-	if (movingTimer > 0)
+	if (SellAmountWidgetComponent)
 	{
-		movingTimer -= _dt; // Decrease timer
-		SellAmountWidgetComponent->AddLocalOffset(FVector(0, 0, moveSpeed * _dt)); // Move component
-	}
-	else
-	{
-		movingTimer = movingTime;
-		isMoving = false;
-		HideParticleSystem();
+		if (movingTimer > 0)
+		{
+			movingTimer -= _dt; // Decrease timer
+			SellAmountWidgetComponent->AddLocalOffset(FVector(0, 0, moveSpeed * _dt)); // Move component
+		}
+		else
+		{
+			movingTimer = movingTime;
+			isMoving = false;
+			HideParticleSystem();
+		}
 	}
 }
 
@@ -181,7 +198,7 @@ void ASellBin::Interact(APrototype2Character* player)
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
 	if (player->HeldItem)
 	{
-		if (auto plant = Cast<APlant>(player->HeldItem))
+		if (auto Plant = Cast<APlant>(player->HeldItem))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Tis A Plant!"));
 			
@@ -191,9 +208,9 @@ void ASellBin::Interact(APrototype2Character* player)
 				player->PlaySoundAtLocation(GetActorLocation(), player->SellCue);
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(plant->ItemComponent->CropValue));
+			UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(Plant->ItemComponent->CropValue));
 			//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
-			Cast<APrototype2PlayerState>(player->GetPlayerState())->ExtraCoins = plant->ItemComponent->CropValue;
+			Cast<APrototype2PlayerState>(player->GetPlayerState())->ExtraCoins = Plant->ItemComponent->CropValue;
 			Cast<APrototype2PlayerState>(player->GetPlayerState())->IsShowingExtraCoins = true; 
 
 			// Reset player speed incase of gold plant
@@ -216,10 +233,9 @@ void ASellBin::Interact(APrototype2Character* player)
 	}
 }
 
-void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _invokingWiget,APrototype2Character* owner, int _playerID)
+void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* InvokingWidget,APrototype2Character* _Owner, int _PlayerID)
 {
-	
-	if(auto heldItem = owner->HeldItem)
+	if(auto heldItem = _Owner->HeldItem)
 	{
 		if (heldItem->ItemComponent->PickupType == EPickup::Cabbage ||
 			heldItem->ItemComponent->PickupType == EPickup::Carrot ||
@@ -229,9 +245,9 @@ void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _invokingWiget,APrototyp
 			heldItem->ItemComponent->PickupType == EPickup::Radish)
 		{
 			
-			_invokingWiget->SetHUDInteractText("Sell");
+			InvokingWidget->SetHUDInteractText("Sell");
 
-			owner->EnableStencil(true);
+			_Owner->EnableStencil(true);
 		}
 	}
 }

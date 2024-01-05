@@ -44,27 +44,27 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 
 	
 	// Set number of UI shown on screen
-	if (GameStateRef->FinalConnectionCount <= 4)
+	if (GameStateRef->GetFinalConnectionCount() <= 4)
 	{
 		Overlay_P1->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P2->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P3->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P4->SetVisibility(ESlateVisibility::Visible);
 			
-		if (GameStateRef->FinalConnectionCount <= 3)
+		if (GameStateRef->GetFinalConnectionCount() <= 3)
 		{
 			Overlay_P4->SetVisibility(ESlateVisibility::Hidden);
 
-			if (GameStateRef->FinalConnectionCount <= 2)
+			if (GameStateRef->GetFinalConnectionCount() <= 2)
 			{
 				Overlay_P3->SetVisibility(ESlateVisibility::Hidden);
 					
-				if (GameStateRef->FinalConnectionCount == 2)
+				if (GameStateRef->GetFinalConnectionCount() == 2)
 				{
 					Overlay_P2->SetVisibility(ESlateVisibility::Visible);
 
 				}
-				else if (GameStateRef->FinalConnectionCount == 1)
+				else if (GameStateRef->GetFinalConnectionCount() == 1)
 				{
 					Overlay_P2->SetVisibility(ESlateVisibility::Hidden);
 				}
@@ -77,7 +77,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	}
 
 	// Set positions of slots
-	if (GameStateRef->FinalConnectionCount == 4 || GameStateRef->FinalConnectionCount == 3)
+	if (GameStateRef->GetFinalConnectionCount() == 4 || GameStateRef->GetFinalConnectionCount() == 3)
 	{
 		UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
 		overlaySlot->SetPadding(FMargin(0,0,650,0));
@@ -100,21 +100,21 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	
 	if (GameStateRef)
 	{
-		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthMinutes)));
+		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->GetMatchLengthMinutes())));
 		//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
 		
-		int seconds = (int)GameStateRef->MatchLengthSeconds;
+		int seconds = (int)GameStateRef->GetMatchLengthSeconds();
 
 		if (seconds < 10)
 			Seconds->SetText(FText::FromString("0" + FString::FromInt(seconds)));
 		else
 			Seconds->SetText(FText::FromString(FString::FromInt(seconds)));
 
-		if (GameStateRef->HasGameFinished)
+		if (GameStateRef->HasGameFinished())
 		{
 			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
-		else if (GameStateRef->GameHasStarted)
+		else if (GameStateRef->HasGameStarted())
 		{
 			StartAndEndMenu->SetVisibility(ESlateVisibility::Hidden);
 		}
@@ -233,20 +233,20 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 				}
 			}
 		}
-		if (GameStateRef->GameReadyForVote)
+		if (GameStateRef->IsGameReadyForVote())
 		{
 			EnableEndgameMenu();
 			SetHUDInteractText("");
 		}
 		
-		if (auto owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+		if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
 		{
-			//owner->GetPlayerState<APrototype2PlayerState>()->GrabSkinFromGameInstance();
+			//Owner->GetPlayerState<APrototype2PlayerState>()->GrabSkinFromGameInstance();
 			
-			if (auto closestInteractable = owner->ClosestInteractableItem)
+			if (auto closestInteractable = Owner->ClosestInteractableItem)
 			{
 				
-				closestInteractable->OnDisplayInteractText(this, owner, owner->PlayerID);
+				closestInteractable->OnDisplayInteractText(this, Owner, Owner->PlayerID);
 			}
 			else
 			{
@@ -429,9 +429,9 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 	}
 }
 
-void UWidget_PlayerHUD::UpdateWeaponUI(EPickup _weapon)
+void UWidget_PlayerHUD::UpdateWeaponUI(EPickup _Weapon)
 {
-	switch(_weapon)
+	switch(_Weapon)
 	{
 	case Weapon:
 		{

@@ -19,116 +19,159 @@ ASeedSpawner::ASeedSpawner()
 void ASeedSpawner::BeginPlay()
 {
 	Super::BeginPlay();
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < Size; i++)
 	{
-		currentSpawnPos.emplace(currentSpawnPos.end(), FVector(0, 0, 0));
-		distances.emplace(distances.end(), 0);
+		CurrentSpawnPos.emplace(CurrentSpawnPos.end(), FVector(0, 0, 0));
+		Distances.emplace(Distances.end(), 0);
 	}
 
-	if (auto gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		MatchLengthSeconds = (gameState->MatchLengthMinutes * 60) + gameState->MatchLengthSeconds;
+		MatchLengthSeconds = (GameState->GetMatchLengthMinutes() * 60) + GameState->GetMatchLengthSeconds();
 		
 	}
 }
 
-void ASeedSpawner::SpawnSeedsOnTick(float DeltaTime)
+void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
 {
-	float ratioFromCurve{};
-	float maxSeedsToSpawn = (float)MaxSeedPackets;
+	float RatioFromCurve{};
+	float MaxSeedsToSpawn = static_cast<float>(MaxSeedPackets);
 	
-	if (auto gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		if (FloatCurve)
 		{
-			if (gameState->MatchLengthSeconds > 0)
+			if (GameState->GetMatchLengthMinutes() > 0)
 			{
-				int currentMatchLengthSeconds = (gameState->MatchLengthMinutes * 60) + gameState->MatchLengthSeconds;
-				ratioFromCurve =  FloatCurve->GetFloatValue(FMath::Lerp(1, 0, (float)currentMatchLengthSeconds / (float)MatchLengthSeconds));
-				maxSeedsToSpawn *= ratioFromCurve;
+				int _CurrentMatchLengthSeconds = (GameState->GetMatchLengthMinutes() * 60) + GameState->GetMatchLengthSeconds();
+				RatioFromCurve =  FloatCurve->GetFloatValue(FMath::Lerp(1, 0, (float)_CurrentMatchLengthSeconds / (float)MatchLengthSeconds));
+				MaxSeedsToSpawn *= RatioFromCurve;
 			}
 		}
-		if (gameState->GameHasStarted && !gameState->HasGameFinished)
+		if (GameState->HasGameStarted() && !GameState->HasGameFinished())
 		{
 			TArray<AActor*> SpawnedSeeds;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlantSeed::StaticClass(), SpawnedSeeds);
-			if (SeedPrefabs.Num() > 0 && SpawnedSeeds.Num() < FMath::RoundToInt(maxSeedsToSpawn))
-			{
-				if (SpawnTimer > 0)
-					SpawnTimer -= DeltaTime;
-				else 
-				{
-					// Spawn Seed
-					if (UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
-					{
-						for (int i = 0; i < size; i++)
-						{
-							FNavLocation Result;
-							navSys->GetRandomPointInNavigableRadius(GetActorLocation(), MaxSpawnRadius, Result);
-							currentSpawnPos.at(i) = Result.Location;
-						}
-						FVector finalLocation = FVector(0, 0, 0);
-						int pos = 0;
-						if (previousSpawnPos == FVector(0, 0, 0))
-						{
-							finalLocation = currentSpawnPos.at(0);
-						}
-						else
-						{
-							int furthestDistance = 0;
-							for (int i = 0; i < size; i++)
-							{
-								distances.at(i) = FVector::Dist(previousSpawnPos, currentSpawnPos.at(i));
-								if (i == 0)
-								{
-									furthestDistance = i;
-								}
-								else if (distances.at(i) > distances.at(furthestDistance))
-								{
-									furthestDistance = i;
-								}
-							}
-							finalLocation = currentSpawnPos.at(furthestDistance);
-							pos = furthestDistance;
-						}
-						finalLocation += (currentSpawnPos.at(pos) - GetActorLocation()).GetSafeNormal() * MinSpawnRadius;
-						finalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
-						GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], finalLocation, {});
-						SpawnTimer = AverageSpawnTime + rand() % 4;
-					}
-				}
-			}
+			SpawnPlantSeeds(SpawnedSeeds, _DeltaTime, MaxSeedPackets);
 		
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWeaponSeed::StaticClass(), SpawnedSeeds);
-			if (WeaponSeeds.Num() > 0 && SpawnedSeeds.Num() < WeaponMaxSeedPackets)
-			{
-				if (WeaponSpawnTimer > 0)
-					WeaponSpawnTimer -= DeltaTime;
-				else 
-				{
-					// Spawn Seed
-					if (UNavigationSystemV1* navSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
-					{
-						FNavLocation Result;
-						navSys->GetRandomPointInNavigableRadius(GetActorLocation(), WeaponMaxSpawnRadius, Result);
-						FVector finalLocation = Result.Location;
-						finalLocation += (Result.Location - GetActorLocation()).GetSafeNormal() * WeaponMinSpawnRadius;
-						finalLocation.Z = 100; // finalLocation.Z = 800.0f; for bens platform map
-						GetWorld()->SpawnActor<ASeed>(WeaponSeeds[rand() % WeaponSeeds.Num()], finalLocation, {});
-						WeaponSpawnTimer = WeaponAverageSpawnTime + rand() % 4;
-					}
-				}
-			}
+			SpawnWeaponSeeds(SpawnedSeeds, _DeltaTime, WeaponMaxSeedPackets);
 		}
 	}
 }
 
-void ASeedSpawner::Tick(float DeltaTime)
+void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds)
 {
-	Super::Tick(DeltaTime);
+	float MaxSeedsToSpawn = _MaxSeeds;
+	if (SeedPrefabs.Num() <= 0 || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
+	{
+		return;
+	}
+	
+	SpawnTimer -= _DeltaTime;
+	
+	if (SpawnTimer > 0)
+		return;
+
+	// Spawn Seed
+	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+	{
+		for (int i = 0; i < Size; i++)
+		{
+			FNavLocation Result;
+			NavSys->GetRandomPointInNavigableRadius(GetActorLocation(), MaxSpawnRadius, Result);
+			CurrentSpawnPos.at(i) = Result.Location;
+		}
+		FVector FinalLocation = FVector(0, 0, 0);
+		int Pos = 0;
+		if (PreviousSpawnPos == FVector(0, 0, 0))
+		{
+			FinalLocation = CurrentSpawnPos.at(0);
+		}
+		else
+		{
+			int furthestDistance = 0;
+			for (int i = 0; i < Size; i++)
+			{
+				Distances.at(i) = FVector::Dist(PreviousSpawnPos, CurrentSpawnPos.at(i));
+				if (i == 0)
+				{
+					furthestDistance = i;
+				}
+				else if (Distances.at(i) > Distances.at(furthestDistance))
+				{
+					furthestDistance = i;
+				}
+			}
+			FinalLocation = CurrentSpawnPos.at(furthestDistance);
+			Pos = furthestDistance;
+		}
+		FinalLocation += (CurrentSpawnPos.at(Pos) - GetActorLocation()).GetSafeNormal() * MinSpawnRadius;
+		FinalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
+		GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], FinalLocation, {});
+		SpawnTimer = AverageSpawnTime + rand() % 4;
+	}
+}
+
+void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds)
+{
+	float MaxSeedsToSpawn = _MaxSeeds;
+	if (SeedPrefabs.Num() <= 0 || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
+	{
+		return;
+	}
+	
+	SpawnTimer -= _DeltaTime;
+	
+	if (SpawnTimer > 0)
+		return;
+
+	// Spawn Seed
+	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+	{
+		for (int i = 0; i < Size; i++)
+		{
+			FNavLocation Result;
+			NavSys->GetRandomPointInNavigableRadius(GetActorLocation(), WeaponMaxSpawnRadius, Result);
+			CurrentSpawnPos.at(i) = Result.Location;
+		}
+		FVector FinalLocation = FVector(0, 0, 0);
+		int Pos = 0;
+		if (PreviousSpawnPos == FVector(0, 0, 0))
+		{
+			FinalLocation = CurrentSpawnPos.at(0);
+		}
+		else
+		{
+			int FurthestDistance = 0;
+			for (int i = 0; i < Size; i++)
+			{
+				Distances.at(i) = FVector::Dist(PreviousSpawnPos, CurrentSpawnPos.at(i));
+				if (i == 0)
+				{
+					FurthestDistance = i;
+				}
+				else if (Distances.at(i) > Distances.at(FurthestDistance))
+				{
+					FurthestDistance = i;
+				}
+			}
+			FinalLocation = CurrentSpawnPos.at(FurthestDistance);
+			Pos = FurthestDistance;
+		}
+		FinalLocation += (CurrentSpawnPos.at(Pos) - GetActorLocation()).GetSafeNormal() * WeaponMinSpawnRadius;
+		FinalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
+		GetWorld()->SpawnActor<AWeaponSeed>(WeaponSeeds[rand() % WeaponSeeds.Num()], FinalLocation, {});
+		WeaponSpawnTimer = AverageSpawnTime + rand() % 4;
+	}
+}
+
+void ASeedSpawner::Tick(float _DeltaTime)
+{
+	Super::Tick(_DeltaTime);
 	if (HasAuthority())
 	{
-		SpawnSeedsOnTick(DeltaTime);
+		SpawnSeedsOnTick(_DeltaTime);
 	}
 }
 

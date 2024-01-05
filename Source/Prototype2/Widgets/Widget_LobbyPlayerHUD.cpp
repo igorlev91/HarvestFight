@@ -124,15 +124,15 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			}
 		}
 		// Show map choice
-		if (GameStateRef->bShowMapChoice)
+		if (GameStateRef->ShouldShowMapChoices())
 		{
 			MapChoiceWidget->SetVisibility(ESlateVisibility::Visible);
 			//MapChoiceWidget->EnableMapChoice(); // Show map choice UI
 			
-			MapChoiceWidget->Farm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->Farm)));
-			MapChoiceWidget->WinterFarm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->WinterFarm)));
+			MapChoiceWidget->Farm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->GetFarm())));
+			MapChoiceWidget->WinterFarm_Counter->SetText(FText::FromString(FString::FromInt(GameStateRef->GetWinterFarm())));
 
-			if (GameStateRef->Farm > 0)
+			if (GameStateRef->GetFarm() > 0)
 			{
 				MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Visible);
 			}
@@ -140,7 +140,7 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			{
 				MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Hidden);
 			}
-			if (GameStateRef->WinterFarm > 0)
+			if (GameStateRef->GetWinterFarm() > 0)
 			{
 				MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Visible);
 			}
@@ -150,12 +150,12 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 			}
 		}
 		// Show timer
-		if (GameStateRef->bMapChosen)
+		if (GameStateRef->HasMapBeenChosen())
 		{
 			MapChoiceWidget->MapChoiceTimer->SetVisibility(ESlateVisibility::Visible);
-			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateRef->MapChoiceLengthSeconds)));
+			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateRef->GetMapChoiceLengthSeconds())));
 		}
-		if (GameStateRef->MapChoiceLengthSeconds <= 0)
+		if (GameStateRef->GetMapChoiceLengthSeconds() <= 0)
 		{
 			MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 		}

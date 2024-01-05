@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+.
+* File Name : GrowableWeapon.h
+* Description : The class for the growable weapon object, used to seperate from other pickups
+.
 
 #pragma once
 
@@ -17,5 +20,5 @@ public:
 	AGrowableWeapon();
 	//virtual  void BeginPlay() override;
 	virtual void Interact(APrototype2Character* player) override;
-	//virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID) override;
+	//virtual void OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* Owner, int _PlayerID) override;
 };

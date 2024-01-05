@@ -18,32 +18,32 @@ void ALobbyGamestate::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ALobbyGamestate::Tick(float DeltaSeconds)
+void ALobbyGamestate::Tick(float _DeltaSeconds)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(_DeltaSeconds);
 	
 	if (HasAuthority())
 	{
-		if (PreviousServerTravel != ShouldServerTravel)
+		if (bPreviousServerTravel != bShouldServerTravel)
 		{
-			PreviousServerTravel = ShouldServerTravel;
+			bPreviousServerTravel = bShouldServerTravel;
 
-			if (ShouldServerTravel)
+			if (bShouldServerTravel)
 			{
 				if (LobbyLengthSeconds > 0 || LobbyLengthMinutes > 0)
 				{
-					IsCountingDown = true;
+					bIsCountingDown = true;
 				}
-				PreviousServerTravel = false;
-				ShouldServerTravel = false;
+				bPreviousServerTravel = false;
+				bShouldServerTravel = false;
 			}
 		}
 
-		if (IsCountingDown)
+		if (bIsCountingDown)
 		{
 			if (LobbyLengthSeconds > 0)
 			{
-				LobbyLengthSeconds -= DeltaSeconds;
+				LobbyLengthSeconds -= _DeltaSeconds;
 			}
 			else
 			{
@@ -81,10 +81,10 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 						}
 
 						// Countdown between all players choosing map and actually starting
-						MapChoiceLengthSeconds -= DeltaSeconds;
+						MapChoiceLengthSeconds -= _DeltaSeconds;
 						if (MapChoiceLengthSeconds <= 0)
 						{
-							IsCountingDown = false;
+							bIsCountingDown = false;
 							if (auto gamestate = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 							{
 								if (auto gameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
@@ -118,13 +118,13 @@ void ALobbyGamestate::Tick(float DeltaSeconds)
 	}
 }
 
-void ALobbyGamestate::SetIsReady(int _player, bool _isReady)
+void ALobbyGamestate::SetIsReady(int32 _Player, bool _bIsReady)
 {
-	if (Server_Players.Num() >= _player)
+	if (Server_Players.Num() >= _Player)
 	{
-		if (auto playerState = Server_Players[_player])
+		if (auto playerState = Server_Players[_Player])
 		{
-			playerState->SetIsReady(_isReady);
+			playerState->SetIsReady(_bIsReady);
 		}
 	}
 
@@ -137,28 +137,63 @@ void ALobbyGamestate::SetIsReady(int _player, bool _isReady)
 	
 	if (isEveryoneReady && Server_Players.Num() >= 1)
 	{
-		ShouldServerTravel = true;
+		bShouldServerTravel = true;
 		LobbyLengthSeconds = 2.0f;
 	}
 	else
 	{
-		ShouldServerTravel = false;
-		IsCountingDown = false;
-		PreviousServerTravel = false;
+		bShouldServerTravel = false;
+		bIsCountingDown = false;
+		bPreviousServerTravel = false;
 		LobbyLengthSeconds = 2.0f;
 	}
 }
 
-void ALobbyGamestate::VoteMap(int _player, EFarm _level)
+void ALobbyGamestate::VoteMap(EFarm _Level)
 {
-	if (_level == EFarm::FARM)
+	if (_Level == EFarm::FARM)
 	{
 		Farm = Farm + 1;
 	}
-	else if (_level == EFarm::WINTERFARM)
+	else if (_Level == EFarm::WINTERFARM)
 	{
 		WinterFarm = WinterFarm + 1;
 	}
+}
+
+void ALobbyGamestate::SetMaxPlayersOnServer(int32 _maxPlayersOnServer)
+{
+	MaxPlayersOnServer = _maxPlayersOnServer;
+}
+
+int32 ALobbyGamestate::GetMaxPlayersOnServer() const
+{
+	return MaxPlayersOnServer;
+}
+
+bool ALobbyGamestate::ShouldShowMapChoices() const
+{
+	return bShowMapChoice;
+}
+
+int32 ALobbyGamestate::GetFarm() const
+{
+	return Farm;
+}
+
+int32 ALobbyGamestate::GetWinterFarm() const
+{
+	return WinterFarm;
+}
+
+bool ALobbyGamestate::HasMapBeenChosen() const
+{
+	return bMapChosen;
+}
+
+int32 ALobbyGamestate::GetMapChoiceLengthSeconds() const
+{
+	return MapChoiceLengthSeconds;
 }
 
 void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -166,8 +201,8 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ALobbyGamestate, LobbyLengthMinutes);
 	DOREPLIFETIME(ALobbyGamestate, LobbyLengthSeconds);
-	DOREPLIFETIME(ALobbyGamestate, IsCountingDown);
-	DOREPLIFETIME(ALobbyGamestate, PreviousServerTravel);
+	DOREPLIFETIME(ALobbyGamestate, bIsCountingDown);
+	DOREPLIFETIME(ALobbyGamestate, bPreviousServerTravel);
 	DOREPLIFETIME(ALobbyGamestate, Server_Players);
 	DOREPLIFETIME(ALobbyGamestate, bShowMapChoice);
 
@@ -180,18 +215,18 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 }
 
-void ALobbyGamestate::UpdateCharacterMaterial(int _player, ECharacters _character, ECharacterColours _characterColour)
+void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,ECharacters _Character, ECharacterColours _CharacterColour)
 {
-	if (Server_Players.Num() > _player)
+	if (Server_Players.Num() > _Player)
 	{
-		if (auto playerState = Server_Players[_player])
+		if (auto playerState = Server_Players[_Player])
 		{
-			playerState->UpdateCharacterMaterial(_character, _characterColour);
+			playerState->UpdateCharacterMaterial(_Character, _CharacterColour);
 		}
 	}
 }
 
-int ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _desiredCharacter)
+int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter) const
 {
 	int characterCount{};
 	if (Server_Players.Num() > 0)
@@ -200,7 +235,7 @@ int ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _desiredCharacter)
 		{
 			if (playerState.Get())
 			{
-				if (playerState->Character == _desiredCharacter)
+				if (playerState->Character == _DesiredCharacter)
 					characterCount++;
 			}
 		}
@@ -208,7 +243,7 @@ int ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _desiredCharacter)
 	return characterCount;
 }
 
-int ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _desiredCharacter, ECharacterColours _desiredColour)
+int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _DesiredCharacter, ECharacterColours _DesiredCharacterColour) const
 {
 	int characterColourCount{};
 	if (Server_Players.Num() > 0)
@@ -217,7 +252,7 @@ int ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _desiredCharac
 		{
 			if (playerState.Get())
 			{
-				if (playerState->Character == _desiredCharacter && playerState->CharacterColour == _desiredColour)
+				if (playerState->Character == _DesiredCharacter && playerState->CharacterColour == _DesiredCharacterColour)
 					characterColourCount++;
 			}
 		}
@@ -225,7 +260,6 @@ int ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _desiredCharac
 	
 	return characterColourCount;
 }
-
 
 
 

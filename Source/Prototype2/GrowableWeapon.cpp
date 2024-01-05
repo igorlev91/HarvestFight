@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "GrowableWeapon.h"
 #include "Weapon.h"
 #include "Components/StaticMeshComponent.h"
@@ -28,11 +25,11 @@ void AGrowableWeapon::Interact(APrototype2Character* player)
 	// attach the mesh to the player
 }
 /*
-void AGrowableWeapon::OnDisplayInteractText(UWidget_PlayerHUD* _invokingWiget, APrototype2Character* owner,
-	int _playerID)
+void AGrowableWeapon::OnDisplayInteractText(UWidget_PlayerHUD* InvokingWidget, APrototype2Character* Owner,
+	int _PlayerID)
 {
-	if (!owner->HeldItem)
+	if (!Owner->HeldItem)
 	{
-		_invokingWiget->SetHUDInteractText("Pick Up");
+		InvokingWidget->SetHUDInteractText("Pick Up");
 	}
 }*/

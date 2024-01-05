@@ -21,13 +21,13 @@ ALobbyGamemode::ALobbyGamemode()
 	}
 }
 
-void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
+void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 {
-	Super::PostLogin(NewPlayer);
+	Super::PostLogin(_NewPlayer);
 	
 	if (HasAuthority())
 	{
-		if (auto playerState = NewPlayer->GetPlayerState<ALobbyPlayerState>())
+		if (auto playerState = _NewPlayer->GetPlayerState<ALobbyPlayerState>())
 		{
 			if (auto gamestate = GetGameState<ALobbyGamestate>())
 			{
@@ -62,7 +62,7 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
 
-				if (auto character = Cast<ALobbyCharacter>(NewPlayer->GetCharacter()))
+				if (auto character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter()))
 				{
 					character->SetPlayerState(playerState);
 					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
@@ -72,58 +72,58 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 					
 					character->PlayerStateRef = playerState;
 					
-					NewPlayer->Possess(character);
-					character->SetOwner(NewPlayer);
-					gamestate->MaxPlayersOnServer = GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer;
+					_NewPlayer->Possess(character);
+					character->SetOwner(_NewPlayer);
+					gamestate->SetMaxPlayersOnServer(GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer);
 					switch(playerState->Player_ID)
 					{
 					case 0:
 						{
-							if (gamestate->MaxPlayersOnServer == 4)
+							if (gamestate->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({Position1});
+								character->SetActorLocation({PlayerPositions[0]});
 							}
-							else if (gamestate->MaxPlayersOnServer == 3)
+							else if (gamestate->GetMaxPlayersOnServer() == 3)
 							{
-								character->SetActorLocation({Position2});
+								character->SetActorLocation({PlayerPositions[1]});
 							}
 							else
 							{
-								character->SetActorLocation({Position3});
+								character->SetActorLocation({PlayerPositions[2]});
 							}
 							break;
 						}
 					case 1:
 						{
-							if (gamestate->MaxPlayersOnServer == 4)
+							if (gamestate->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({Position3});
+								character->SetActorLocation({PlayerPositions[2]});
 							}
-							else if (gamestate->MaxPlayersOnServer == 3)
+							else if (gamestate->GetMaxPlayersOnServer() == 3)
 							{
-								character->SetActorLocation({Position4});
+								character->SetActorLocation({PlayerPositions[3]});
 							}
 							else
 							{
-								character->SetActorLocation({Position5});
+								character->SetActorLocation({PlayerPositions[4]});
 							}
 							break;
 						}
 					case 2:
 						{
-							if (gamestate->MaxPlayersOnServer == 4)
+							if (gamestate->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({Position5});
+								character->SetActorLocation({PlayerPositions[4]});
 							}
 							else
 							{
-								character->SetActorLocation({Position6});
+								character->SetActorLocation({PlayerPositions[5]});
 							}
 							break;
 						}
 					case 3:
 						{
-							character->SetActorLocation({Position7});
+							character->SetActorLocation({PlayerPositions[6]});
 							break;
 						}
 					default:
@@ -136,14 +136,14 @@ void ALobbyGamemode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
-void ALobbyGamemode::Logout(AController* Exiting)
+void ALobbyGamemode::Logout(AController* _Exiting)
 {
-	Super::Logout(Exiting);
+	Super::Logout(_Exiting);
 
 	if (auto gamestate = GetGameState<ALobbyGamestate>())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		if (auto playerState = Exiting->GetPlayerState<ALobbyPlayerState>())
+		if (auto playerState = _Exiting->GetPlayerState<ALobbyPlayerState>())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s froom Server_Players"), *FString::FromInt(playerState->Player_ID));
 			gamestate->Server_Players.Remove(playerState);
@@ -151,9 +151,9 @@ void ALobbyGamemode::Logout(AController* Exiting)
 	}
 }
 
-void ALobbyGamemode::Tick(float DeltaSeconds)
+void ALobbyGamemode::Tick(float _DeltaSeconds)
 {
-	Super::Tick(DeltaSeconds);
+	Super::Tick(_DeltaSeconds);
 
 	if (auto gamestate = GetGameState<ALobbyGamestate>())
 	{

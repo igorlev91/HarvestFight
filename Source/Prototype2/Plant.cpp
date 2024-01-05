@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+.
+* File Name : Plant.cpp
+* Description : Implementation File
+.
 
 
 #include "Plant.h"
@@ -10,8 +13,8 @@
 APlant::APlant()
 {
 	bReplicates = true;
-	LeavesMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Leaves Mesh"));
-	LeavesMesh->SetupAttachment(RootComponent);
+	//LeavesMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Leaves Mesh"));
+	//LeavesMesh->SetupAttachment(RootComponent);
 
 	InterfaceType = EInterfaceType::Default;
 }
@@ -19,61 +22,66 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-	//Server_ToggleGold();
+	
+	Server_ToggleGold();
 
-	LeavesMesh->SetupAttachment(RootComponent);
-	LeavesMesh->SetCollisionProfileName(FName("NoCollision"));
+	SetReplicatingMovement(true);
+
+	/*LeavesMesh->SetupAttachment(RootComponent);
+	LeavesMesh->SetCollisionProfileName(FName("NoCollision"));*/
 }
 
 
-void APlant::Interact(APrototype2Character* player)
+void APlant::Interact(APrototype2Character* _Player)
 {
-	if (isGrown)
+	if (!bGrown)
 	{
-		ItemComponent->Interact(player, this);
+		return;
+	}
+	
+	ItemComponent->Interact(_Player, this);
 
-		player->EnableStencil(false);
-		if (player->PlayerHUDRef)
-		{
-			player->PlayerHUDRef->SetHUDInteractText("");
-		}
-		ItemComponent->Mesh->SetRenderCustomDepth(false);
-		LeavesMesh->SetRenderCustomDepth(false);
+	_Player->EnableStencil(false);
+	if (_Player->PlayerHUDRef)
+	{
+		_Player->PlayerHUDRef->SetHUDInteractText("");
+	}
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+	//LeavesMesh->SetRenderCustomDepth(false);
+}
+
+void APlant::ClientInteract(APrototype2Character* _Player)
+{
+	IInteractInterface::ClientInteract(_Player);
+
+	if (bGrown)
+	{
+		_Player->UpdateDecalDirection(true, true);
 	}
 }
 
-void APlant::ClientInteract(APrototype2Character* player)
+void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
 {
-	IInteractInterface::ClientInteract(player);
-
-	if (isGrown)
+	if (!_Owner->HeldItem || _Owner->HeldItem != this)
 	{
-		player->UpdateDecalDirection(true, true);
+		InvokingWidget->SetHUDInteractText("Pick Up");
+
+		_Owner->EnableStencil(true);
 	}
 }
 
-void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _invokingWiget, class APrototype2Character* owner, int _playerID)
+bool APlant::IsInteractable(APrototype2PlayerState* _Player)
 {
-	if (!owner->HeldItem || owner->HeldItem != this)
-	{
-		_invokingWiget->SetHUDInteractText("Pick Up");
-
-		owner->EnableStencil(true);
-	}
-}
-
-bool APlant::IsInteractable(APrototype2PlayerState* player)
-{
-	if (!player)
+	if (!_Player)
 		return false;
 
-	if (auto controller = player->GetPlayerController())
+	if (auto Controller = _Player->GetPlayerController())
 	{
-		if (auto character = controller->GetCharacter())
+		if (auto Character = Controller->GetCharacter())
 		{
-			if (auto casted = Cast<APrototype2Character>(character))
+			if (auto Casted = Cast<APrototype2Character>(Character))
 			{
-				if (!casted->HeldItem || casted->HeldItem != this)
+				if (!Casted->HeldItem || Casted->HeldItem != this)
 				{
 					return true;
 				}
@@ -84,6 +92,23 @@ bool APlant::IsInteractable(APrototype2PlayerState* player)
 	return false;
 }
 
+void APlant::MakeGold()
+{
+	if (GoldMaterial)
+	{
+		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
+	}
+	if (GoldMaterial2)
+	{
+		ItemComponent->Mesh->SetMaterial(1, GoldMaterial2);
+	}
+	if (GoldMaterial3)
+	{
+		ItemComponent->Mesh->SetMaterial(2, GoldMaterial3);
+	}
+	ItemComponent->CropValue *= GoldMultiplier;
+}
+
 void APlant::Server_ToggleGold_Implementation()
 {
 	Multi_ToggleGold();
@@ -92,22 +117,9 @@ void APlant::Server_ToggleGold_Implementation()
 void APlant::Multi_ToggleGold_Implementation()
 {
 	int x = rand() % 100;
-	if (x < chanceOfGold)
+	if (x < ChanceOfGold)
 	{
 		ItemComponent->gold = true;
-	}
-
-	if (ItemComponent->gold)
-	{
-		// change the plant material to gold
-		if (goldMaterial)
-		{
-			ItemComponent->Mesh->SetMaterial(0, goldMaterial);
-		}
-		if (goldMaterial2)
-		{
-			LeavesMesh->SetMaterial(0, goldMaterial2);
-		}
-		ItemComponent->CropValue *= goldMultiplier;
+		MakeGold();
 	}
 }
