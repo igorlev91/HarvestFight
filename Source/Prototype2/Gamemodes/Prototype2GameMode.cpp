@@ -87,26 +87,23 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 						Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 						Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
 
-						if (GameInstance->FinalPlayerNames.Num() > 0)
+						FString NewPlayerName = FString::FromInt(PlayerState->Player_ID);
+						IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+						if (IdentityInterface.IsValid())
 						{
-							for(auto i = 0; i < GameInstance->FinalPlayerNames.Num(); i++)
-							{
-								FString NewPlayerName;
-								IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
-								if (IdentityInterface.IsValid())
-								{
-									NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerState->Player_ID);
-									UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerState->Player_ID), *NewPlayerName);
-								}
-								if (GameInstance->FinalPlayerNames[i] == NewPlayerName)
-								{
-									if (GameInstance->FinalCharacters.Num() > i)
-										PlayerState->Character = GameInstance->FinalCharacters[i];
-									if (GameInstance->FinalColours.Num() > i)
-										PlayerState->CharacterColour = GameInstance->FinalColours[i];
-								}
-							}
+							NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerState->GetPlayerId());
+							UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerState->GetPlayerId()), *NewPlayerName);
+								
 						}
+						PlayerState->PlayerName = NewPlayerName;
+						
+						//for(auto i = 0; i < Gamestate->GetFinalConnectionCount(); i++)
+						//{
+						//	if (GameInstance->FinalCharacters.Num() > PlayerState->Player_ID)
+						//		PlayerState->Character = GameInstance->FinalCharacters[PlayerState->Player_ID];
+						//	if (GameInstance->FinalColours.Num() > PlayerState->Player_ID)
+						//		PlayerState->CharacterColour = GameInstance->FinalColours[PlayerState->Player_ID];
+						//}
 
 						bool bDuplicateSkin{};
 						for(auto i = 0; i < GameInstance->FinalPlayerNames.Num() && bDuplicateSkin == false; i++)

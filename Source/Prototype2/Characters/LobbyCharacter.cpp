@@ -4,6 +4,7 @@
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
+#include "Components/WidgetComponent.h"
 
 UMaterialInstance* ALobbyCharacter::GetPlayerMat()
 {
@@ -26,12 +27,18 @@ ALobbyCharacter::ALobbyCharacter()
 	SetReplicates(true);
 	
 	GetMesh()->SetIsReplicated(true);
+
+	PlayerNameWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNameWidgetComponent"));
+	PlayerNameWidgetComponent->SetupAttachment(RootComponent);
+	PlayerNameWidgetComponent->SetIsReplicated(true);
+	PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ALobbyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ALobbyCharacter, PlayerMat);
+	DOREPLIFETIME(ALobbyCharacter, PlayerNameWidgetComponent);
 }
 
 void ALobbyCharacter::BeginPlay()

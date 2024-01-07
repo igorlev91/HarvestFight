@@ -96,7 +96,8 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 										IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
 										if (IdentityInterface.IsValid())
 										{
-											gameInstance->FinalPlayerNames.Add(IdentityInterface->GetPlayerNickname(player->Player_ID));
+											int newPlayer = gameInstance->FinalPlayerNames.Add(IdentityInterface->GetPlayerNickname(player->Player_ID));
+											//UE_LOG(LogTemp, Warning, TEXT("%s Joined the game"), *(gameInstance->FinalPlayerNames[newPlayer]));
 										}
 										
 										gameInstance->FinalCharacters.Add(player->Character);

@@ -7,6 +7,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
+class UPlantData;
 /* Enum for items that can be picked up */
 UENUM(BlueprintType)
 enum EPickup
@@ -49,6 +50,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EnableEndgameMenu();
 
+	/* Update Pickup UI with Texture passed in */
+	void UpdatePickupUI(UTexture2D* _PickupTexture);
+	
+	/* Clears the pickup UI slot in the HUD */
+	void ClearPickupUI();
+	
 	/* Updates the UI image and turns on/off when picking up/dropping pickups*/
 	UFUNCTION(BlueprintCallable)
 	void UpdatePickupUI(EPickup _Pickup, bool _bIsPickupGold);

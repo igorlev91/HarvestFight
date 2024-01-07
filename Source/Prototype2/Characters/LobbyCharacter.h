@@ -1,3 +1,5 @@
+
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -5,14 +7,18 @@
 #include "GameFramework/Character.h"
 #include "LobbyCharacter.generated.h"
 
+class UWidgetComponent;
 UCLASS()
 class PROTOTYPE2_API ALobbyCharacter : public ACharacter
 {
 	GENERATED_BODY()
+
+	/* Public Functions */
 public:
-	UMaterialInstance* GetPlayerMat();
 	void SetPlayerMat(UMaterialInstance* _NewPlayerMat);
 	void SetPlayerStateRef(class ALobbyPlayerState* _NewLobbyPlayerState);
+
+	/* Protected Functions */
 protected:
 	ALobbyCharacter();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
@@ -27,7 +33,13 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetCharacterMesh();
 	void Multi_SetCharacterMesh_Implementation();
+
+	/* Public Variables */
+public:
+	UMaterialInstance* GetPlayerMat();
 	
+	/* Protected Variables */
+protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UMaterialInstance* PlayerMat;
 
@@ -36,4 +48,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<USkeletalMesh*> PlayerMeshes;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	UWidgetComponent* PlayerNameWidgetComponent;
+	
 };

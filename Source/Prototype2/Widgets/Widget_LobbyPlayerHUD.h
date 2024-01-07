@@ -1,11 +1,4 @@
-/* Bachelor of Software Engineering
- * Media Design School
- * Auckland
- * New Zealand
- * (c) Media Design School
- * File Name : Widget_LobbyPlayerHUD.h
- * Description : All functionality for player HUD in lobby map
- * Author/s : Stace Frear */
+
 
 #pragma once
 

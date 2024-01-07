@@ -17,6 +17,8 @@ void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(APrototype2PlayerState, Character);
 	DOREPLIFETIME(APrototype2PlayerState, CharacterColour);
+
+	DOREPLIFETIME(APrototype2PlayerState, PlayerName);
 }
 
 APrototype2PlayerState::APrototype2PlayerState()

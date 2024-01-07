@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -5,6 +6,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "NiagaraComponent.h"
+#include "Prototype2/Pickups/Beehive.h"
 #include "GrowSpot.generated.h"
 
 class APlant;
@@ -86,7 +88,12 @@ public:
 	 * @param _GrowTime 
 	 */
 	void SetWeapon(AGrowableWeapon* _Weapon, float _GrowTime);
-
+	/**
+	 * @brief sets the beehive and the variables for the beehive
+	 * @param _Weapon 
+	 * @param _GrowTime 
+	 */
+	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
 	void MakePlantGold();
 
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -96,6 +103,8 @@ public:
 	APlant* Plant = nullptr;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	AGrowableWeapon* Weapon = nullptr;
+	UPROPERTY(Replicated, VisibleAnywhere)
+	ABeehive* Beehive = nullptr;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float GrowTimer{};

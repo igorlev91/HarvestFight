@@ -23,6 +23,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	int32 Player_ID{};
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FString PlayerName{};
 	
 	void SetIsReady(bool _bIsReady);
 

@@ -1,4 +1,5 @@
 
+
 #include "LobbyGamemode.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -62,6 +63,16 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 				
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				PlayerStateReference->Player_ID = GameStateReference->Server_Players.Add(PlayerStateReference);
+				
+				FString NewPlayerName = FString::FromInt(PlayerStateReference->Player_ID);
+				IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+				if (IdentityInterface.IsValid())
+				{
+					NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerStateReference->GetPlayerId());
+					UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
+								
+				}
+				PlayerStateReference->PlayerName = NewPlayerName;
 
 				if (auto LobbyCharacterCast = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter()))
 				{
@@ -76,6 +87,7 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 					_NewPlayer->Possess(LobbyCharacterCast);
 					LobbyCharacterCast->SetOwner(_NewPlayer);
 					GameStateReference->SetMaxPlayersOnServer(GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer);
+					
 					switch(PlayerStateReference->Player_ID)
 					{
 					case 0:

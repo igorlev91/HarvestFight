@@ -37,6 +37,9 @@ public:
 	UPROPERTY(Replicated, EditAnywhere)
 	int32 Coins{0};
 
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FString PlayerName{};
+
 	// Showing coins that are being added to total
 	UPROPERTY(Replicated, EditAnywhere)
 	int32 ExtraCoins{0};

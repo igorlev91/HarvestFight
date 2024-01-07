@@ -273,6 +273,17 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 	bEndgame = true;
 }
 
+void UWidget_PlayerHUD::UpdatePickupUI(UTexture2D* _PickupTexture)
+{
+	OverlayPickup->SetVisibility(ESlateVisibility::Visible);
+	PickupImage->SetBrushFromTexture(_PickupTexture);
+}
+
+void UWidget_PlayerHUD::ClearPickupUI()
+{
+	OverlayPickup->SetVisibility(ESlateVisibility::Hidden);
+}
+
 void UWidget_PlayerHUD::UpdatePickupUI(EPickup _Pickup, bool _bIsPickupGold)
 {
 	if (_Pickup != None)

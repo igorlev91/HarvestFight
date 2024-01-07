@@ -1,3 +1,5 @@
+
+
 #include "Prototype2Character.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -458,13 +460,9 @@ void APrototype2Character::ExecuteAttack(float _AttackSphereRadius)
 
 void APrototype2Character::Interact()
 {
-	if(!HeldItem)
+	if(!HeldItem && !Weapon)
 	{
-		PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-	}
-	if (!Weapon)
-	{
-		PlayerHUDRef->UpdateWeaponUI(EPickup::None);
+		PlayerHUDRef->ClearPickupUI();
 	}
 	
 	if (InteractTimer <= 0.0f)
@@ -811,6 +809,49 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystem _New
 {
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 		ParticleSystemsToDeActivate.Add(_NewSystem);
+}
+
+void APrototype2Character::PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item)
+{
+	// Set the HUD UI pickup icon depending on seed/plant/weapon
+	switch (_Item->PickupActor)
+	{
+	case EPickupActor::PlantActor:
+		{
+			if (PlayerHUDRef && HeldItem && _Item->PlantData)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->PlantData->PlantIcon);
+			}
+			break;
+		}
+	case EPickupActor::WeaponActor:
+		{
+			// Set UI
+			if (PlayerHUDRef && HeldItem && _Item->WeaponData)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->WeaponData->WeaponIcon);
+			}
+			break;
+		}
+	case EPickupActor::SeedActor:
+		{
+			if (PlayerHUDRef)
+			{
+				if (_Item->DataAssetPickupType == EPickupDataType::WeaponData)
+				{
+					PlayerHUDRef->UpdatePickupUI(_Item->WeaponData->SeedIcon);
+					
+				}
+				else if (_Item->DataAssetPickupType == EPickupDataType::PlantData)
+				{
+					PlayerHUDRef->UpdatePickupUI(_Item->PlantData->SeedIcon);
+				}
+			}
+			break;
+		}
+	}
+	
+	Server_PickupItem(_ItemComponent, _Item);
 }
 
 void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off)
@@ -1320,7 +1361,7 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	// Set HUD image
 	if (PlayerHUDRef)
 	{
-		PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+		PlayerHUDRef->ClearPickupUI();
 	}
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
 }
@@ -1350,6 +1391,7 @@ void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* _Item
 	// Audio
 	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
 
+	// Setup picked up items mesh physics and collision response
 	if (_ItemComponent->Mesh)
 	{
 		_ItemComponent->Mesh->SetSimulatePhysics(false);
@@ -1358,28 +1400,33 @@ void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* _Item
 		// So that CheckForInteractables() cant see it while player is holding it
 		_ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	}
-	
-	if (_Item->PickupActor == EPickupActor::WeaponActor) // _ItemComponent->PickupType == EPickup::Weapon) todo: delete when data done
-	{
-		CurrentWeaponData = _Item->WeaponData;
-		Weapon->Mesh->SetStaticMesh(_Item->WeaponData->WeaponMesh);// ->GetStaticMesh()); todo: delete when data done
-		//Weapon->Mesh->SetHiddenInGame(false);
-		//Weapon->Mesh->SetVisibility(true);
-		HeldItem = nullptr;
-		return;
-	}
-		
-	_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
 
-	HeldItem = _Item;
-	
-	if (HeldItem->ItemComponent->bGold)
+	// Attach plant/seed ot the HeldItemSocket, and change weapon mesh to the one passed in
+	switch (_Item->PickupActor)
 	{
-		bIsHoldingGold = true;
+	case EPickupActor::PlantActor:
+		{
+			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+			HeldItem = _Item;	
+			if (HeldItem->ItemComponent->bGold)
+			{
+				bIsHoldingGold = true;
+			}
+			break;
+		}
+	case EPickupActor::WeaponActor:
+		{
+			CurrentWeaponData = _Item->WeaponData;
+			Weapon->Mesh->SetStaticMesh(_Item->WeaponData->WeaponMesh);
+			break;
+		}
+	case EPickupActor::SeedActor:
+		{
+			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+			HeldItem = _Item;
+			break;
+		}
 	}
-		
-	if (PlayerHUDRef && HeldItem)
-		PlayerHUDRef->UpdatePickupUI(HeldItem->ItemComponent->PickupType, bIsHoldingGold);
 }
 
 void APrototype2Character::Multi_DropWeapon_Implementation()

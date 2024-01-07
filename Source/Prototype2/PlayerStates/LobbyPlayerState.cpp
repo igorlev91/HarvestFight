@@ -22,6 +22,7 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ALobbyPlayerState, Player_ID);
 	DOREPLIFETIME(ALobbyPlayerState, Character);
 	DOREPLIFETIME(ALobbyPlayerState, CharacterColour);
+	DOREPLIFETIME(ALobbyPlayerState, PlayerName);
 }
 
 void ALobbyPlayerState::Tick(float _DeltaSeconds)

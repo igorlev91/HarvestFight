@@ -1,3 +1,5 @@
+
+
 #include "GrowSpot.h"
 #include "GrowSpot.h"
 #include "Prototype2/Pickups/Plant.h"
@@ -391,7 +393,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					}
 					
 					
-					// Planting seed from old way
+					/*// Planting seed from old way
 					// // seed has an assigned plant
 					// if (!Seed->PlantToGrow)
 					// {
@@ -451,7 +453,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					// _Player->EnableStencil(false);
 					//
 					// Multi_UpdateState(EGrowSpotState::Growing);
-					// GrowSpotState = EGrowSpotState::Growing;
+					// GrowSpotState = EGrowSpotState::Growing;*/
 				}
 				break;
 			}
@@ -461,6 +463,8 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				if (!_Player->HeldItem)
 					break;
 				if (Weapon)
+					break;
+				if (Beehive)
 					break;
 				
 				if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
@@ -488,7 +492,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to Harvest something!"));
 						
-				if (_Player->HeldItem)
+				if (_Player->HeldItem && !Beehive)
 				{
 					if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 					{
@@ -510,6 +514,12 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 						_Player->PlayerHUDRef->SetHUDInteractText("");
 					}
 					_Player->EnableStencil(false);
+				}
+
+				if (Beehive)
+				{
+					// do beehive stuff
+					break;
 				}
 
 				if (Weapon)
@@ -647,13 +657,13 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 
 				_Owner->EnableStencil(true);
 			}
-			else if (_Owner->HeldItem && (Plant || Weapon))
+			else if (_Owner->HeldItem && (Plant || Weapon) && !Beehive)
 			{
 				// Set to "Grow"
 				_InvokingWidget->SetHUDInteractText("Pick Up");
 				_Owner->EnableStencil(true);
 			}
-			else if (!_Owner->HeldItem && (Plant || Weapon))
+			else if (!_Owner->HeldItem && (Plant || Weapon) && !Beehive)
 			{
 				// Set to "Grow"
 				_InvokingWidget->SetHUDInteractText("Pick Up");
@@ -721,6 +731,7 @@ void AGrowSpot::PlantWeapon(APrototype2Character* _Player)
 
 void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 {
+	
 	// Set grow time
 	if (_Player->HeldItem->PlantData->GrowTime > 0)
 	{
@@ -732,20 +743,28 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 	}
 
 	Plant = GetWorld()->SpawnActor<APlant>(PlantPrefab);
-	Plant->SetPlantData(_Player->HeldItem->PlantData);
-	Plant->ItemComponent->bGold = false;
-	int32 X = rand() % 100;
-	if (X < Plant->PlantData->ChanceOfGold)
+	// doesnt properly check beehive yet
+	if (auto BeehiveCast = Cast<ABeehive>(Plant))
 	{
-		MakePlantGold();
+		SetBeehive(BeehiveCast, BeehiveCast->PlantData->GrowTime);
 	}
-	SetPlant(Plant, GrowTime);
-
-	// Todo: Dawn we need this here?
-	if (bIsFertilised && Plant && !Plant->ItemComponent->bGold)
+	else
 	{
-		MakePlantGold();
-		bIsFertilised = false;
+		Plant->SetPlantData(_Player->HeldItem->PlantData);
+		Plant->ItemComponent->bGold = false;
+		int32 X = rand() % 100;
+		if (X < Plant->PlantData->ChanceOfGold)
+		{
+			MakePlantGold();
+		}
+		SetPlant(Plant, GrowTime);
+
+		// Todo: Dawn we need this here?
+		if (bIsFertilised && Plant && !Plant->ItemComponent->bGold)
+		{
+			MakePlantGold();
+			bIsFertilised = false;
+		}
 	}
 							
 	Multi_Plant();
@@ -782,6 +801,18 @@ void AGrowSpot::SetWeapon(AGrowableWeapon* _Weapon, float _GrowTime)
 	GrowTimer = _GrowTime;
 	GrowSpotState = EGrowSpotState::Growing;
 		
+	if (GrowTimer <= 0)
+	{
+		GrowTimer = 1.0f;
+	}
+}
+
+void AGrowSpot::SetBeehive(ABeehive* _Beehive, float _GrowTime)
+{
+	Beehive = _Beehive;
+	GrowTimer = _GrowTime;
+	GrowSpotState = EGrowSpotState::Growing;
+
 	if (GrowTimer <= 0)
 	{
 		GrowTimer = 1.0f;

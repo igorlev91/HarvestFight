@@ -1,3 +1,5 @@
+
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -89,10 +91,13 @@ public:
 	/* Activating and Deactivating particle systems */
 	void ActivateParticleSystemFromEnum(EParticleSystem _NewSystem);
 	void DeActivateParticleSystemFromEnum(EParticleSystem _NewSystem);
-
+	
 	/* Getters */
 	UFUNCTION(BlueprintCallable)
 	UWeaponData* GetWeaponData() const { return CurrentWeaponData; }
+
+	/* Pickup function for doing stuff that doens't need rpc/multi, but calls the rpc which calls multi */
+	void PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item);
 	
 	/* Public Variables */
 	
