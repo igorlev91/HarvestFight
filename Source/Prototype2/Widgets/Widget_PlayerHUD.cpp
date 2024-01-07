@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Widget_PlayerHUD.h"
@@ -14,57 +13,56 @@
 #include "GameFramework/GameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
-#include "Prototype2/GrowSpot.h"
+#include "Prototype2/Gameplay/GrowSpot.h"
 #include "Prototype2/InteractInterface.h"
-#include "Prototype2/Prototype2Character.h"
-#include "Prototype2/Prototype2PlayerState.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
-#include "Prototype2/PickUpItem.h"
-#include "Prototype2/Prototype2PlayerController.h"
+#include "Prototype2/Pickups/PickUpItem.h"
+#include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Widgets/SOverlay.h"
 #include "Layout/Margin.h"
-#include "Prototype2/PrototypeGameInstance.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 
 void UWidget_PlayerHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
-	if (auto* gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		GameStateRef = gameState;
+		GameStateReference = GameState;
 	}
 
-	// Set starting pickup item
+	/* Set starting pickup item */
 	UpdatePickupUI(None, false);
 
-	// Set interaction text to be hidden on start
+	/* Set interaction text to be hidden on start */
 	InteractionUI->SetVisibility(ESlateVisibility::Hidden);
 	InteractionText->SetVisibility(ESlateVisibility::Visible);
 	interactionButtonTimer = interactionButtonMaxTime;
-
 	
-	// Set number of UI shown on screen
-	if (GameStateRef->GetFinalConnectionCount() <= 4)
+	/* Set number of UI shown on screen */
+	if (GameStateReference->GetFinalConnectionCount() <= 4)
 	{
 		Overlay_P1->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P2->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P3->SetVisibility(ESlateVisibility::Visible);
 		Overlay_P4->SetVisibility(ESlateVisibility::Visible);
 			
-		if (GameStateRef->GetFinalConnectionCount() <= 3)
+		if (GameStateReference->GetFinalConnectionCount() <= 3)
 		{
 			Overlay_P4->SetVisibility(ESlateVisibility::Hidden);
 
-			if (GameStateRef->GetFinalConnectionCount() <= 2)
+			if (GameStateReference->GetFinalConnectionCount() <= 2)
 			{
 				Overlay_P3->SetVisibility(ESlateVisibility::Hidden);
 					
-				if (GameStateRef->GetFinalConnectionCount() == 2)
+				if (GameStateReference->GetFinalConnectionCount() == 2)
 				{
 					Overlay_P2->SetVisibility(ESlateVisibility::Visible);
 
 				}
-				else if (GameStateRef->GetFinalConnectionCount() == 1)
+				else if (GameStateReference->GetFinalConnectionCount() == 1)
 				{
 					Overlay_P2->SetVisibility(ESlateVisibility::Hidden);
 				}
@@ -77,7 +75,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	}
 
 	// Set positions of slots
-	if (GameStateRef->GetFinalConnectionCount() == 4 || GameStateRef->GetFinalConnectionCount() == 3)
+	if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
 	{
 		UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
 		overlaySlot->SetPadding(FMargin(0,0,650,0));
@@ -98,23 +96,23 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	
-	if (GameStateRef)
+	if (GameStateReference)
 	{
-		Minutes->SetText(FText::FromString(FString::FromInt(GameStateRef->GetMatchLengthMinutes())));
+		Minutes->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMatchLengthMinutes())));
 		//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
 		
-		int seconds = (int)GameStateRef->GetMatchLengthSeconds();
+		int seconds = (int)GameStateReference->GetMatchLengthSeconds();
 
 		if (seconds < 10)
 			Seconds->SetText(FText::FromString("0" + FString::FromInt(seconds)));
 		else
 			Seconds->SetText(FText::FromString(FString::FromInt(seconds)));
 
-		if (GameStateRef->HasGameFinished())
+		if (GameStateReference->HasGameFinished())
 		{
 			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
-		else if (GameStateRef->HasGameStarted())
+		else if (GameStateReference->HasGameStarted())
 		{
 			StartAndEndMenu->SetVisibility(ESlateVisibility::Hidden);
 		}
@@ -127,13 +125,13 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		//if (!GetOwningPlayerPawn()->HasAuthority())
 		//	UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->PlayerArray.Num()));
 
-		for (int i = 0; i < GameStateRef->Server_Players.Num(); i++)
+		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 		{
-			if (auto player = GameStateRef->Server_Players[i])
+			if (auto player = GameStateReference->Server_Players[i])
 			{
 				auto coins = player->Coins;
 				auto extraCoins = FString::FromInt(player->ExtraCoins);
-				auto isShowingExtraCoins = player->IsShowingExtraCoins;
+				auto isShowingExtraCoins = player->bIsShowingExtraCoins;
 				
 				//UE_LOG(LogTemp, Warning, TEXT("Player [%s] ID = %s"), *FString::FromInt(i), *FString::FromInt(player->Player_ID));
 				
@@ -233,7 +231,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 				}
 			}
 		}
-		if (GameStateRef->IsGameReadyForVote())
+		if (GameStateReference->IsGameReadyForVote())
 		{
 			EnableEndgameMenu();
 			SetHUDInteractText("");
@@ -241,8 +239,6 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		
 		if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
 		{
-			//Owner->GetPlayerState<APrototype2PlayerState>()->GrabSkinFromGameInstance();
-			
 			if (auto closestInteractable = Owner->ClosestInteractableItem)
 			{
 				
@@ -258,7 +254,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	{
 		if (auto gameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			GameStateRef = gameState;
+			GameStateReference = gameState;
 		}
 	}
 
@@ -267,7 +263,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UWidget_PlayerHUD::EnableDisableMenu()
 {
-	IngameMenu->EnableDisableMenu();
+	IngameMenu->ToggleMenu();
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()
@@ -277,32 +273,26 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 	bEndgame = true;
 }
 
-void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
+void UWidget_PlayerHUD::UpdatePickupUI(EPickup _Pickup, bool _bIsPickupGold)
 {
-	if (_pickup != None)
+	if (_Pickup != None)
 	{
-		//if (PickupImage->GetVisibility() == ESlateVisibility::Hidden)
-		//{
-		//	PickupImage->SetVisibility(ESlateVisibility::Visible);
-		//}
-
 		if (OverlayPickup->GetVisibility() == ESlateVisibility::Hidden)
 		{
 			OverlayPickup->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 	
-	switch(_pickup)
+	switch(_Pickup)
 	{
 	case None:
 		{
-			//PickupImage->SetVisibility(ESlateVisibility::Hidden);
 			OverlayPickup->SetVisibility(ESlateVisibility::Hidden);
 			break;
 		}
 	case Carrot:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(CarrotGoldTexture);
 			}
@@ -319,7 +309,7 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 		}
 	case Cabbage:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(CabbageGoldTexture);
 			}
@@ -337,7 +327,7 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 		}
 	case Mandrake:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(MandrakeGoldTexture);
 			}
@@ -355,7 +345,7 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 		}
 	case Broccoli:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(BroccoliGoldTexture);
 			}
@@ -373,7 +363,7 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 		}
 	case Daikon:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(DaikonGoldTexture);
 			}
@@ -391,7 +381,7 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 		}
 	case Radish:
 		{
-			if (_isGold)
+			if (_bIsPickupGold)
 			{
 				PickupImage->SetBrushFromTexture(RadishGoldTexture);
 			}
@@ -412,16 +402,6 @@ void UWidget_PlayerHUD::UpdatePickupUI(EPickup _pickup, bool _isGold)
 			PickupImage->SetBrushFromTexture(WeaponSeedTexture);
 			break;
 		}
-	//case Weapon:
-	//	{
-	//		WeaponImage->SetVisibility(ESlateVisibility::Visible);
-	//		break;
-	//	}
-	//case NoWeapon:
-	//	{
-	//		WeaponImage->SetVisibility(ESlateVisibility::Hidden);
-	//		break;
-	//	}
 	default:
 		{
 			 
@@ -450,9 +430,9 @@ void UWidget_PlayerHUD::UpdateWeaponUI(EPickup _Weapon)
 	}
 }
 
-void UWidget_PlayerHUD::SetHUDInteractText(FString _interactionText)
+void UWidget_PlayerHUD::SetHUDInteractText(FString _InteractionText)
 {
-	if (_interactionText == "")
+	if (_InteractionText == "")
 	{
 		InteractionUI->SetVisibility(ESlateVisibility::Hidden);
 		bInteractionButtonShowing = false;
@@ -460,16 +440,16 @@ void UWidget_PlayerHUD::SetHUDInteractText(FString _interactionText)
 	else
 	{
 		InteractionUI->SetVisibility(ESlateVisibility::Visible);
-		InteractionText->SetText(FText::FromString(_interactionText));
+		InteractionText->SetText(FText::FromString(_InteractionText));
 		bInteractionButtonShowing = true;
 	}
 }
 
-void UWidget_PlayerHUD::InteractionImagePulse(float _dt)
+void UWidget_PlayerHUD::InteractionImagePulse(float _DeltaTime)
 {
 	if (bInteractionButtonShowing == true)
 	{
-		interactionButtonTimer -= _dt;
+		interactionButtonTimer -= _DeltaTime;
 
 		if (interactionButtonTimer <= 0)
 		{
@@ -489,9 +469,9 @@ void UWidget_PlayerHUD::InteractionImagePulse(float _dt)
 	}
 }
 
-void UWidget_PlayerHUD::SetPlayerSprintTimer(float _sprintTime)
+void UWidget_PlayerHUD::SetPlayerSprintTimer(float _SprintTime)
 {
-	if (_sprintTime < 0.0f)
+	if (_SprintTime < 0.0f)
 	{
 		//SprintImage->SetBrushFromTexture(CanSprintIconTexture);
 	}
@@ -501,74 +481,56 @@ void UWidget_PlayerHUD::SetPlayerSprintTimer(float _sprintTime)
 	}
 }
 
-void UWidget_PlayerHUD::SetWeaponDurability(int _durability)
+void UWidget_PlayerHUD::SetWeaponDurability(int32 _Durability)
 {
 }
 
-void UWidget_PlayerHUD::SetPlayerIcons(int _iconNum, APrototype2PlayerState* _player)
+void UWidget_PlayerHUD::SetPlayerIcons(int32 _IconNumber, APrototype2PlayerState* _Player)
 {
-	int playerNum = _iconNum - 1;
-	if (playerNum <= 0)
-		playerNum = 0;
+	int PlayerNumber = _IconNumber - 1;
+	if (PlayerNumber <= 0)
+		PlayerNumber = 0;
 	
-	switch (playerNum)
+	switch (PlayerNumber)
 	{
 	case 0: // Player 1 Icon
-		P1Icon->SetBrushFromTexture(SetIcon(_player));
-		//UE_LOG(LogTemp, Warning, TEXT("P1"));
-		//UE_LOG(LogTemp, Warning, TEXT("Character %d"), _player->Character);
-		//UE_LOG(LogTemp, Warning, TEXT("CharacterColour %d"), _player->CharacterColour);
+		P1Icon->SetBrushFromTexture(SetIcon(_Player));
 		break;
 	case 1:
-		P2Icon->SetBrushFromTexture(SetIcon(_player));
-		//UE_LOG(LogTemp, Warning, TEXT("P2"));
-		//UE_LOG(LogTemp, Warning, TEXT("Character %d"), _player->Character);
-		//UE_LOG(LogTemp, Warning, TEXT("CharacterColour %d"), _player->CharacterColour);
+		P2Icon->SetBrushFromTexture(SetIcon(_Player));
 		break;
 	case 2:
-		P3Icon->SetBrushFromTexture(SetIcon(_player));
-		//UE_LOG(LogTemp, Warning, TEXT("P3"));
-		//UE_LOG(LogTemp, Warning, TEXT("Character %d"), _player->Character);
-		//UE_LOG(LogTemp, Warning, TEXT("CharacterColour %d"), _player->CharacterColour);
+		P3Icon->SetBrushFromTexture(SetIcon(_Player));
 		break;
 	case 3:
-		P4Icon->SetBrushFromTexture(SetIcon(_player));
-		//UE_LOG(LogTemp, Warning, TEXT("P4"));
-		//UE_LOG(LogTemp, Warning, TEXT("Character %d"), _player->Character);
-		//UE_LOG(LogTemp, Warning, TEXT("CharacterColour %d"), _player->CharacterColour);
+		P4Icon->SetBrushFromTexture(SetIcon(_Player));
 		break;
 	default:
-		//UE_LOG(LogTemp, Warning, TEXT("NONE"));
 		break;
 	}
 }
 
-UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _player)
+UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _Player)
 {
-	switch (_player->Character)
+	switch (_Player->Character)
 	{
 	case ECharacters::COW:
 		{
-			switch (_player->CharacterColour)
+			switch (_Player->CharacterColour)
 			{
 			case ECharacterColours::RED:
-				//UE_LOG(LogTemp, Warning, TEXT("RED COW"));
 				return Cow_Red_Texture;
 				break;
 			case ECharacterColours::BLUE:
-				//UE_LOG(LogTemp, Warning, TEXT("BLUE COW"));
 				return Cow_Blue_Texture;
 				break;
 			case ECharacterColours::GREEN:
-				//UE_LOG(LogTemp, Warning, TEXT("GREEN COW"));
 				return Cow_Green_Texture;
 				break;
 			case ECharacterColours::YELLOW:
-				//UE_LOG(LogTemp, Warning, TEXT("YELLOW COW"));
 				return Cow_Yellow_Texture;
 				break;
 			default:
-				//UE_LOG(LogTemp, Warning, TEXT("DEFAULT COW"));
 				return Cow_Red_Texture;
 				break;
 			}
@@ -576,7 +538,7 @@ UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _player)
 		}
 	case ECharacters::PIG:
 		{
-			switch (_player->CharacterColour)
+			switch (_Player->CharacterColour)
 			{
 			case ECharacterColours::RED:
 				return Pig_Red_Texture;
@@ -598,7 +560,7 @@ UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _player)
 		}
 	case ECharacters::CHICKEN:
 		{
-			switch (_player->CharacterColour)
+			switch (_Player->CharacterColour)
 			{
 			case ECharacterColours::RED:
 				return Chicken_Red_Texture;
@@ -620,7 +582,7 @@ UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _player)
 		}
 	case ECharacters::DUCK:
 		{
-			switch (_player->CharacterColour)
+			switch (_Player->CharacterColour)
 			{
 			case ECharacterColours::RED:
 				return Duck_Red_Texture;
@@ -641,7 +603,6 @@ UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _player)
 			break;
 		}
 	default:
-		//UE_LOG(LogTemp, Warning, TEXT("CHARACTER DEFAULT"));
 		return Cow_Red_Texture;
 		break;
 	}

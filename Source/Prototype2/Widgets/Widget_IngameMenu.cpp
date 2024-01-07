@@ -1,35 +1,27 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+
 
 
 #include "Widget_IngameMenu.h"
 #include "Kismet/GameplayStatics.h"
 
-void UWidget_IngameMenu::ReturnToMenu()
+void UWidget_IngameMenu::ToggleMenu()
 {
-	//UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/Game/Maps/Level_MainMen")));
-}
-
-void UWidget_IngameMenu::EnableDisableMenu()
-{
-	if (GetVisibility() == ESlateVisibility::Hidden)
+	if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
-		SetVisibility(ESlateVisibility::Visible);
-
-		if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+		if (GetVisibility() == ESlateVisibility::Hidden)
 		{
-			controller->SetInputMode(FInputModeGameAndUI{});
-			controller->bShowMouseCursor = true;
-		}
-	}
-	else
-	{
-		if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-		{
-			controller->bShowMouseCursor = false;
-			controller->SetInputMode(FInputModeGameOnly{});
-		}
+			SetVisibility(ESlateVisibility::Visible);
 
-		SetVisibility(ESlateVisibility::Hidden);
+			Controller->SetInputMode(FInputModeGameAndUI{});
+			Controller->bShowMouseCursor = true;
+		}
+		else
+		{
+			Controller->bShowMouseCursor = false;
+			Controller->SetInputMode(FInputModeGameOnly{});
+			
+			SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 

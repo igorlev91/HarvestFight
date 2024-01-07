@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #pragma once
 
@@ -6,24 +6,22 @@
 #include "Blueprint/UserWidget.h"
 #include "Widget_IngameMenu.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API UWidget_IngameMenu : public UUserWidget
 {
 	GENERATED_BODY()
 
-
+	/* Public Functions */
 public:
-
+	/**
+	 * @brief Toggles menu widget on/off
+	 */
 	UFUNCTION(BlueprintCallable)
-	void EnableDisableMenu();
+	void ToggleMenu();
 
-	// Turns off ingame menu if visible
+	/**
+	 * @brief Turns off menu widget
+	 */
 	UFUNCTION(BlueprintCallable)
 	void DisableMenu();
-	
-	UFUNCTION(BlueprintCallable)
-	void ReturnToMenu();
 };

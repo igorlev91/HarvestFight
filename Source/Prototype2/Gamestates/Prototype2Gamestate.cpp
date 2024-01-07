@@ -1,8 +1,8 @@
 #include "Prototype2Gamestate.h"
 
 #include "Net/UnrealNetwork.h"
-#include "Prototype2/Prototype2PlayerController.h"
-#include "Prototype2/Prototype2PlayerState.h"
+#include "Prototype2/Controllers/Prototype2PlayerController.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
 APrototype2Gamestate::APrototype2Gamestate()
 {

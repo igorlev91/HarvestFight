@@ -1,12 +1,12 @@
-#include "Widget_MainMenu.h"
 
+
+#include "Widget_MainMenu.h"
 #include "Components/Button.h"
-#include "Prototype2/PrototypeGameInstance.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 
 void UWidget_MainMenu::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
 }
 
 void UWidget_MainMenu::NativeOnInitialized()

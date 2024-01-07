@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
-#include "Prototype2/PrototypeGameInstance.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2Gamestate.generated.h"
 
 UCLASS()

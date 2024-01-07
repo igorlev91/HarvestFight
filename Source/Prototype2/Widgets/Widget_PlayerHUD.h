@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
+/* Enum for items that can be picked up */
 UENUM(BlueprintType)
 enum EPickup
 {
@@ -33,11 +34,54 @@ class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 {
 	GENERATED_BODY()
 
+	/* Public Functions */
 public:
+	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	//class UWidget_InteractionPanel* InteractionPanel;
+	class APrototype2Gamestate* GameStateReference;
 
+	/* Turns ingame menu on/off */
+	UFUNCTION(BlueprintCallable)
+	void EnableDisableMenu();
+
+	/* Enables the endgame menu */
+	UFUNCTION(BlueprintCallable)
+	void EnableEndgameMenu();
+
+	/* Updates the UI image and turns on/off when picking up/dropping pickups*/
+	UFUNCTION(BlueprintCallable)
+	void UpdatePickupUI(EPickup _Pickup, bool _bIsPickupGold);
+
+	/* Updates the UI image for weapon - turns on/off if holding a weapon */
+	UFUNCTION(BlueprintCallable)
+	void UpdateWeaponUI(EPickup _Weapon);
+
+	/* Changes the text for interaction eg) Pickup, Sell, Grow */
+	UFUNCTION(BlueprintCallable)
+	void SetHUDInteractText(FString _InteractionText);
+
+	/* Makes the interaction image pulse eg) 'E' */
+	UFUNCTION(BlueprintCallable)
+	void InteractionImagePulse(float _DeltaTime);
+
+	// Probably can delete
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerSprintTimer(float _SprintTime);
+
+	// probably can delete
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponDurability(int32 _Durability);
+
+	/* Sets the player icons - top of screen for each player */
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerIcons(int32 _IconNumber, APrototype2PlayerState* _Player);
+
+	/* Sets the player icon based on SetPlayerIcons function */
+	UFUNCTION(BlueprintCallable)
+	UTexture2D* SetIcon(APrototype2PlayerState* _Player);
+	
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
@@ -46,7 +90,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bEndgame{false};
-
+	
 	// Timer
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Minutes;
@@ -153,7 +197,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* RadishSeedTexture;
 	
-	// Interaction image and text
+	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
 	class UTextBlock* InteractionText; 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -175,7 +219,7 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UWidget_StartAndEndMenu* StartAndEndMenu;
 
-	// Player Icon Textures
+	/* Player Icon Textures */
 	// Cow
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Cow_White_Texture;
@@ -220,46 +264,6 @@ public:
 	UTexture2D* Duck_Green_Texture;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Duck_Yellow_Texture;
-	
-public:
-	// Functions
-	virtual void NativeOnInitialized() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-	class APrototype2Gamestate* GameStateRef;
-	
-	UFUNCTION(BlueprintCallable)
-	void EnableDisableMenu();
-
-	UFUNCTION(BlueprintCallable)
-	void EnableEndgameMenu();
-
-	//UFUNCTION(BlueprintCallable)
-	//void UpdateWeaponUI();
-
-	UFUNCTION(BlueprintCallable)
-	void UpdatePickupUI(EPickup _pickup, bool _isGold);
-	
-	UFUNCTION(BlueprintCallable)
-	void UpdateWeaponUI(EPickup _Weapon);
-
-	UFUNCTION(BlueprintCallable)
-	void SetHUDInteractText(FString _interactionText);
-
-	UFUNCTION(BlueprintCallable)
-	void InteractionImagePulse(float _dt);
-
-	UFUNCTION(BlueprintCallable)
-	void SetPlayerSprintTimer(float _sprintTime);
-
-	UFUNCTION(BlueprintCallable)
-	void SetWeaponDurability(int _durability);
-
-	UFUNCTION(BlueprintCallable)
-	void SetPlayerIcons(int _iconNum, APrototype2PlayerState* _player);
-
-	UFUNCTION(BlueprintCallable)
-	UTexture2D* SetIcon(APrototype2PlayerState* _player);
 };
 
 

@@ -1,8 +1,8 @@
 #include "LobbyGamestate.h"
 
 #include "Net/UnrealNetwork.h"
-#include "Prototype2/LobbyCharacter.h"
-#include "Prototype2/LobbyPlayerState.h"
+#include "Prototype2/Characters/LobbyCharacter.h"
+#include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Widgets/Widget_IngameMenu.h"
 #include "Prototype2/Widgets/Widget_MapChoice.h"

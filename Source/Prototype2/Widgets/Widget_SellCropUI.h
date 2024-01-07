@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #pragma once
 
@@ -6,17 +6,19 @@
 #include "Blueprint/UserWidget.h"
 #include "Widget_SellCropUI.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API UWidget_SellCropUI : public UUserWidget
 {
 	GENERATED_BODY()
 
+	/* Public Functions */
+public:
+	void SetCropValue(int32 _Value);
+
+	/* Public Variables */
 public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* SellText;
+	class UTextBlock* SellText; // Amount player has earned from sale
 
-	void SetCropValue(int _value);
+
 };

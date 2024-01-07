@@ -1,40 +1,57 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Prototype2/PrototypeGameInstance.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Math/Vector.h"
 #include "Widget_LobbyCharacterSelection.generated.h"
-
-/**
- * 
- */
-
-/*UENUM(BlueprintType)
-enum class ECharacters : uint8
-{
-	COW,
-	PIG,
-	CHICKEN,
-	DUCK
-};
-
-UENUM(BlueprintType)
-enum class ECharacterColours : uint8
-{
-	RED,
-	BLUE,
-	GREEN,
-	YELLOW
-};*/
 
 UCLASS()
 class PROTOTYPE2_API UWidget_LobbyCharacterSelection : public UUserWidget
 {
 	GENERATED_BODY()
 
+	/* Public functions */
+public:
+	virtual void NativeOnInitialized() override;
+	
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
+	/* Updates the UI character image based on the selected character */
+	UFUNCTION(BlueprintCallable)
+	void UpdateCharacterImage();
+
+	/**
+	 * @brief Changes the character colour
+	 * @param _bIsTowardsRight 
+	 */
+	UFUNCTION(BlueprintCallable)
+	void ChangeCharacterColour(bool _bIsTowardsRight);
+
+	/**
+	 * @brief Changes the character model
+	 * @param _bIsTowardsRight 
+	 */
+	UFUNCTION(BlueprintCallable)
+	void ChangeCharacter(bool _bIsTowardsRight);
+
+	/**
+	 * @brief Checks through other players to see if current skin (colour) is taken
+	 * @param _bIsTowardsRight 
+	 */
+	UFUNCTION(BlueprintCallable)
+	void CheckForTakenSkin(bool _bIsTowardsRight);
+
+	/**
+	 * @brief Checks through other players to see if current character skin is taken
+	 * @param _bIsTowardsRight 
+	 */
+	UFUNCTION(BlueprintCallable)
+	void CheckForTakenCharacter(bool _bIsTowardsRight);
+
+	/* Public Variables */
 public:
 	class APrototype2Gamestate* GameStateRef;
 	
@@ -44,8 +61,8 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PlayerColourImage;
 
-	// -- Character image textures --
-	// Cow
+	/* Character image textures */
+	/* Cow */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Texture_CowRed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -69,38 +86,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECharacterColours IdealCharacterColour{ECharacterColours::RED};
-	
-
-	virtual void NativeOnInitialized() override;
-	
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterLeft();
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterRight();
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterColourLeft();
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterColourRight();
-
-	UFUNCTION(BlueprintCallable)
-	void UpdateCharacterImage();
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterColour(bool _right);
-
-	UFUNCTION(BlueprintCallable)
-	void ChangeCharacter(bool _right);
-
-	UFUNCTION(BlueprintCallable)
-	void CheckForTakenSkin(bool _right);
-
-	UFUNCTION(BlueprintCallable)
-	void CheckForTakenCharacter(bool _right);
-
-	void UpdateCharacterColourImage(ECharacters _desiredCharacter);
 };

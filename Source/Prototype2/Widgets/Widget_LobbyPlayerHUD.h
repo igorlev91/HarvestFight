@@ -1,4 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* Bachelor of Software Engineering
+ * Media Design School
+ * Auckland
+ * New Zealand
+ * (c) Media Design School
+ * File Name : Widget_LobbyPlayerHUD.h
+ * Description : All functionality for player HUD in lobby map
+ * Author/s : Stace Frear */
 
 #pragma once
 
@@ -6,14 +13,25 @@
 #include "Blueprint/UserWidget.h"
 #include "Widget_LobbyPlayerHUD.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PROTOTYPE2_API UWidget_LobbyPlayerHUD : public UUserWidget
 {
 	GENERATED_BODY()
 
+	/* Public Functions */
+public:
+
+	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+	/* Updates playerstate to being ready & turns on ready UI*/
+	UFUNCTION(BlueprintCallable)
+	void SetReady();
+
+	/* Updates playerstate to being not-ready & turns off ready UI */
+	UFUNCTION(BlueprintCallable)
+	void SetCancel();
+	
 public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -22,12 +40,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UButton* CancelButton;
 
-	class ALobbyGamestate* GameStateRef;
+	class ALobbyGamestate* GameStateReference;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_MapChoice* MapChoiceWidget;
 
-	// Player ready button (above character head)
+	/* Player ready button (above character head) */
 	// Player 1
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player1ReadyImage;
@@ -40,26 +58,4 @@ public:
 	// Player 4
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* Player4ReadyImage;
-
-	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	//class UTextBlock* StartCountDown;
-
-	// Player number
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	int playerNumber{};
-	
-	FIntVector2 resolution;
-	
-public:
-
-	virtual void NativeOnInitialized() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-	
-	
-	UFUNCTION(BlueprintCallable)
-	void SetReady();
-
-	UFUNCTION(BlueprintCallable)
-	void SetCancel();
-
 };

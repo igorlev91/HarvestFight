@@ -1,17 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Widget_SellCropUI.h"
 
 #include "Components/TextBlock.h"
 
-void UWidget_SellCropUI::SetCropValue(int _value)
+void UWidget_SellCropUI::SetCropValue(int32 _Value)
 {
-	FString firstString = "$";
-	FString secondString = FString::FromInt(_value);
+	FString FirstString = "$";
+	FString SecondString = FString::FromInt(_Value);
 
-	FString combinedString = FString::Printf(TEXT("%s %s"), *firstString, *secondString);
+	FString CombinedString = FString::Printf(TEXT("%s %s"), *FirstString, *SecondString);
 
 	if (SellText)
-		SellText->SetText(FText::FromString(combinedString));
+		SellText->SetText(FText::FromString(CombinedString));
 }

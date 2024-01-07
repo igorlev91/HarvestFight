@@ -26,24 +26,22 @@ enum class EGrowSpotState : uint8
 	Default			UMETA(DisplayName = "Default"),
 };
 
-// This class does not need to be modified.
+
 UINTERFACE()
 class UInteractInterface : public UInterface
 {
+	// This class does not need to be modified.
 	GENERATED_BODY()
+	// This class does not need to be modified.
 };
 
 class PROTOTYPE2_API IInteractInterface
 {
 	GENERATED_BODY()
-
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface
 public:
-	virtual void Interact(APrototype2Character* player) = 0;
-	virtual void ClientInteract(APrototype2Character* player){};
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* Owner, int _PlayerID) = 0;
-	virtual bool IsInteractable(APrototype2PlayerState* player) = 0;
+	virtual void Interact(APrototype2Character* _Player) = 0;
+	virtual void ClientInteract(APrototype2Character* _Player){};
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) = 0;
+	virtual bool IsInteractable(APrototype2PlayerState* _Player) = 0;
 	EInterfaceType InterfaceType = EInterfaceType::Default;
-
-	// For setting HUD text in Prototype2Character::SetHUDText
 };

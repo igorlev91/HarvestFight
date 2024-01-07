@@ -1,10 +1,11 @@
+
 #include "LobbyGamemode.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "Prototype2/LobbyCharacter.h"
-#include "Prototype2/LobbyPlayerState.h"
-#include "Prototype2/Prototype2Character.h"
-#include "Prototype2/PrototypeGameInstance.h"
+#include "Prototype2/Characters/LobbyCharacter.h"
+#include "Prototype2/PlayerStates/LobbyPlayerState.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
 
@@ -27,103 +28,103 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	
 	if (HasAuthority())
 	{
-		if (auto playerState = _NewPlayer->GetPlayerState<ALobbyPlayerState>())
+		if (ALobbyPlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>())
 		{
-			if (auto gamestate = GetGameState<ALobbyGamestate>())
+			if (ALobbyGamestate* GameStateReference = GetGameState<ALobbyGamestate>())
 			{
-				playerState->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
-				int numOfPlayersWithSameColour{2};
-				while(numOfPlayersWithSameColour >= 1)
+				PlayerStateReference->CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+				int32 NumberOfPlayersWithSameColour{2};
+				while(NumberOfPlayersWithSameColour >= 1)
 				{
-					numOfPlayersWithSameColour = 0;
-					for(auto otherPlayerState : gamestate->Server_Players)
+					NumberOfPlayersWithSameColour = 0;
+					for(auto OtherPlayerState : GameStateReference->Server_Players)
 					{
-						if (otherPlayerState->CharacterColour == playerState->CharacterColour)
+						if (OtherPlayerState->CharacterColour == PlayerStateReference->CharacterColour)
 						{
-							numOfPlayersWithSameColour++;
+							NumberOfPlayersWithSameColour++;
 						}
 					}
-					if (numOfPlayersWithSameColour >= 1)
+					if (NumberOfPlayersWithSameColour >= 1)
 					{
-						int newColour = (int)playerState->CharacterColour;
-						newColour ++;
-						if (newColour > 3)
+						int32 NewColour = (int32)PlayerStateReference->CharacterColour;
+						NewColour ++;
+						if (NewColour > 3)
 						{
-							newColour = 0;
+							NewColour = 0;
 						}
-						else if (newColour < 0)
+						else if (NewColour < 0)
 						{
-							newColour = 3;
+							NewColour = 3;
 						}
-						playerState->CharacterColour = (ECharacterColours)newColour;
+						PlayerStateReference->CharacterColour = (ECharacterColours)NewColour;
 					}
 				}
 				
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
-				playerState->Player_ID = gamestate->Server_Players.Add(playerState);
+				PlayerStateReference->Player_ID = GameStateReference->Server_Players.Add(PlayerStateReference);
 
-				if (auto character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter()))
+				if (auto LobbyCharacterCast = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter()))
 				{
-					character->SetPlayerState(playerState);
-					if (PlayerMaterials.Num() > (int)playerState->Character * 3 + (int)playerState->CharacterColour)
+					LobbyCharacterCast->SetPlayerState(PlayerStateReference);
+					if (PlayerMaterials.Num() > (int32)PlayerStateReference->Character * 3 + (int32)PlayerStateReference->CharacterColour)
 					{
-						character->PlayerMat = PlayerMaterials[(int)playerState->Character * 3 + (int)playerState->CharacterColour];
+						LobbyCharacterCast->SetPlayerMat(PlayerMaterials[(int32)PlayerStateReference->Character * 3 + (int32)PlayerStateReference->CharacterColour]);
 					}
 					
-					character->PlayerStateRef = playerState;
+					LobbyCharacterCast->SetPlayerStateRef(PlayerStateReference);
 					
-					_NewPlayer->Possess(character);
-					character->SetOwner(_NewPlayer);
-					gamestate->SetMaxPlayersOnServer(GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer);
-					switch(playerState->Player_ID)
+					_NewPlayer->Possess(LobbyCharacterCast);
+					LobbyCharacterCast->SetOwner(_NewPlayer);
+					GameStateReference->SetMaxPlayersOnServer(GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer);
+					switch(PlayerStateReference->Player_ID)
 					{
 					case 0:
 						{
-							if (gamestate->GetMaxPlayersOnServer() == 4)
+							if (GameStateReference->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({PlayerPositions[0]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[0]});
 							}
-							else if (gamestate->GetMaxPlayersOnServer() == 3)
+							else if (GameStateReference->GetMaxPlayersOnServer() == 3)
 							{
-								character->SetActorLocation({PlayerPositions[1]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[1]});
 							}
 							else
 							{
-								character->SetActorLocation({PlayerPositions[2]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[2]});
 							}
 							break;
 						}
 					case 1:
 						{
-							if (gamestate->GetMaxPlayersOnServer() == 4)
+							if (GameStateReference->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({PlayerPositions[2]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[2]});
 							}
-							else if (gamestate->GetMaxPlayersOnServer() == 3)
+							else if (GameStateReference->GetMaxPlayersOnServer() == 3)
 							{
-								character->SetActorLocation({PlayerPositions[3]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[3]});
 							}
 							else
 							{
-								character->SetActorLocation({PlayerPositions[4]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[4]});
 							}
 							break;
 						}
 					case 2:
 						{
-							if (gamestate->GetMaxPlayersOnServer() == 4)
+							if (GameStateReference->GetMaxPlayersOnServer() == 4)
 							{
-								character->SetActorLocation({PlayerPositions[4]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[4]});
 							}
 							else
 							{
-								character->SetActorLocation({PlayerPositions[5]});
+								LobbyCharacterCast->SetActorLocation({PlayerPositions[5]});
 							}
 							break;
 						}
 					case 3:
 						{
-							character->SetActorLocation({PlayerPositions[6]});
+							LobbyCharacterCast->SetActorLocation({PlayerPositions[6]});
 							break;
 						}
 					default:
@@ -140,13 +141,13 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 {
 	Super::Logout(_Exiting);
 
-	if (auto gamestate = GetGameState<ALobbyGamestate>())
+	if (auto LobbyGamestate = GetGameState<ALobbyGamestate>())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		if (auto playerState = _Exiting->GetPlayerState<ALobbyPlayerState>())
+		if (auto PlayerStateReference = _Exiting->GetPlayerState<ALobbyPlayerState>())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s froom Server_Players"), *FString::FromInt(playerState->Player_ID));
-			gamestate->Server_Players.Remove(playerState);
+			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s froom Server_Players"), *FString::FromInt(PlayerStateReference->Player_ID));
+			LobbyGamestate->Server_Players.Remove(PlayerStateReference);
 		}
 	}
 }
@@ -154,33 +155,43 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 void ALobbyGamemode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
-
-	if (auto gamestate = GetGameState<ALobbyGamestate>())
+	auto GamestateReference = GetGameState<ALobbyGamestate>();
+	if (!GamestateReference)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		for(auto i = 0; i < gamestate->Server_Players.Num(); i++)
-		{
-			if (auto playerState = gamestate->Server_Players[i])
-			{
-				if (auto controller = playerState->GetPlayerController())
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Controller"));
-					if (auto character = Cast<ALobbyCharacter>(controller->GetCharacter()))
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Player Character"));
-						if (PlayerMaterials.Num() > (int)playerState->CharacterColour)
-						{
-							//UE_LOG(LogTemp, Warning, TEXT("Gamemode: Set Player Material"));
-							if (PlayerMaterials.Num() > (int)playerState->Character * 4 + (int)playerState->CharacterColour)
-								character->PlayerMat = PlayerMaterials[(int)playerState->Character * 4 + (int)playerState->CharacterColour];
-							else
-								character->PlayerMat = PlayerMaterials[(int)playerState->CharacterColour];
-						}
-					}
-				}
-			}
-		}
+		return;
 	}
+
+	for(auto i = 0; i < GamestateReference->Server_Players.Num(); i++)
+	{
+		auto PlayerStateReference = GamestateReference->Server_Players[i];
+		if (!PlayerStateReference)
+		{
+			continue;
+		}
+		
+		auto ControllerReference = PlayerStateReference->GetPlayerController();
+		if (!ControllerReference)
+		{
+			continue;
+		}
+
+		auto CharacterReference = Cast<ALobbyCharacter>(ControllerReference->GetCharacter());
+		if (!CharacterReference)
+		{
+			continue;
+		}
+		
+		if (PlayerMaterials.Num() <= (int32)PlayerStateReference->CharacterColour)
+		{
+			continue;
+		}
+		
+		if (PlayerMaterials.Num() > (int32)PlayerStateReference->Character * 4 + (int32)PlayerStateReference->CharacterColour)
+			CharacterReference->SetPlayerMat(PlayerMaterials[(int32)PlayerStateReference->Character * 4 + (int32)PlayerStateReference->CharacterColour]);
+		else
+			CharacterReference->SetPlayerMat(PlayerMaterials[(int32)PlayerStateReference->CharacterColour]);				
+	}
+	
 }
 
 
