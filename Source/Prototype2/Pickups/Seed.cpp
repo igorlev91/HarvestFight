@@ -4,6 +4,7 @@
 
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 ASeed::ASeed()
 {
@@ -16,6 +17,8 @@ ASeed::ASeed()
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	PrimaryActorTick.bCanEverTick = true;
+
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void ASeed::BeginPlay()
@@ -30,24 +33,8 @@ void ASeed::BeginPlay()
 	ParachuteMesh->SetRelativeScale3D({2,2,2});
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ParachuteMesh->SetSimulatePhysics(false);
-	//ParachuteMesh->SetIsReplicated(true);
-
-	UE_LOG(LogTemp, Warning, TEXT("Map name: %s"), *levelName);
-	if (levelName == "Level_Winter")
-	{
-		if (WinterParachute)
-		{
-			ParachuteMesh->SetStaticMesh(WinterParachute);
-		}
-	}
-	else
-	{
-		if (NormalParachute)
-		{
-			ParachuteMesh->SetStaticMesh(NormalParachute);
-		}
-	}
-
+	ParachuteMesh->SetVisibility(false);
+	
 	SpawnPos = GetActorLocation();
 	SpawnRotation = GetActorRotation();
 	SpawnTime = GetWorld()->GetTimeSeconds();
@@ -58,7 +45,10 @@ void ASeed::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 	
-	HandleParachuteMovement();
+	if (bIsParachuteStaticMeshSet)
+	{
+		HandleParachuteMovement();
+	}
 }
 
 void ASeed::Interact(APrototype2Character* _Player)
@@ -103,6 +93,16 @@ void ASeed::Multi_ToggleParachuteVisibility_Implementation(bool _Visible)
 	
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ParachuteMesh->SetVisibility(_Visible);
+}
+
+void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
+{
+	if (_InMesh)
+	{
+		bIsParachuteStaticMeshSet = true;
+		ParachuteMesh->SetVisibility(true);
+		ParachuteMesh->SetStaticMesh(_InMesh);
+	}
 }
 
 void ASeed::HandleParachuteMovement()

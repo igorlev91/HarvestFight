@@ -64,15 +64,10 @@ private:
 	TArray<UWeaponData*> WeaponDataArray;	
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<ASeed> WeaponSeedPrefab;
+
+	UPROPERTY(EditAnywhere, Category = Parachute, meta = (AllowPrivateAccess))
+	UStaticMesh* ParachuteMesh;
 	
-	// Todo: Remove when data asset set up
-	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
-	TArray<TSubclassOf<ASeed>> SeedPrefabs;
-
-	// Todo: Remove when data asset set up
-	UPROPERTY(EditAnywhere, Category = WeaponSeeds, meta = (AllowPrivateAccess))
-	TArray<TSubclassOf<ASeed>> WeaponSeeds;
-
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AFertiliser> FertiliserAsset;
 	

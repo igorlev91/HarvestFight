@@ -17,7 +17,7 @@ class PROTOTYPE2_API UWeaponData : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Appearance")
 	FName Name;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
@@ -37,10 +37,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Seed")
 	UMaterialInstance* SeedMaterial;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	UStaticMesh* ParachuteMesh;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* SeedIcon;
 		

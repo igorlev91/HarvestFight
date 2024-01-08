@@ -98,7 +98,10 @@ void ASellBin::FireSellFX(APlant* _Plant, APrototype2Character* _Player)
 				
 				if (auto sellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
 				{
-					sellCropUI->SetCropValue(_Plant->ItemComponent->CropValue);
+					if (_Plant->PlantData)
+					{
+						sellCropUI->SetCropValue(_Plant->PlantData->SellValue);
+					}
 					if (sellCropUI->SellText)
 					{
 						sellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
@@ -156,7 +159,7 @@ void ASellBin::ClientInteract(APrototype2Character* _Player)
 			FireSellFX(Plant, _Player);
 			_Player->UpdateDecalDirection(false);
 			if (_Player->PlayerHUDRef)
-				_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+				_Player->PlayerHUDRef->ClearPickupUI();
 		}
 	}
 }
@@ -223,7 +226,7 @@ void ASellBin::Interact(APrototype2Character* _Player)
 
 			if (_Player->PlayerHUDRef)
 			{
-				_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+				_Player->PlayerHUDRef->ClearPickupUI();
 				_Player->PlayerHUDRef->SetHUDInteractText("");
 			}
 			_Player->EnableStencil(false);
@@ -236,14 +239,8 @@ void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProtot
 {
 	if(auto HeldItem = _Owner->HeldItem)
 	{
-		if (HeldItem->ItemComponent->PickupType == EPickup::Cabbage ||
-			HeldItem->ItemComponent->PickupType == EPickup::Carrot ||
-			HeldItem->ItemComponent->PickupType == EPickup::Mandrake ||
-			HeldItem->ItemComponent->PickupType == EPickup::Broccoli ||
-			HeldItem->ItemComponent->PickupType == EPickup::Daikon ||
-			HeldItem->ItemComponent->PickupType == EPickup::Radish)
+		if (HeldItem->PickupActor == EPickupActor::PlantActor)
 		{
-			
 			_InvokingWidget->SetHUDInteractText("Sell");
 
 			_Owner->EnableStencil(true);

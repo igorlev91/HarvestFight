@@ -68,7 +68,7 @@ void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
 void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds)
 {
 	float MaxSeedsToSpawn = _MaxSeeds;
-	if (PlantDataArray.Num() <= 0 || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
+	if (!PlantSeedPrefab || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
 	{
 		return;
 	}
@@ -115,6 +115,9 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 		FinalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
 		//GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], FinalLocation, {});
 
+		FTransform SpawnTransform;
+		SpawnTransform.SetLocation(FinalLocation);
+
 		// Spawn plant seed from data asset
 		if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(PlantSeedPrefab, FinalLocation, {}))
 		{
@@ -122,9 +125,9 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 			if (PlantDataArray[RandomIndex] != nullptr)
 			{
 				NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
+				NewSeed->SetParachuteMesh(ParachuteMesh);
 			}
 		}
-		
 		SpawnTimer = AverageSpawnTime + rand() % 4;
 	}
 }
@@ -132,7 +135,7 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds)
 {
 	float MaxSeedsToSpawn = _MaxSeeds;
-	if (SeedPrefabs.Num() <= 0 || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
+	if (!WeaponSeedPrefab || _SpawnedSeeds.Num() >= FMath::RoundToInt(MaxSeedsToSpawn))
 	{
 		return;
 	}
@@ -187,6 +190,7 @@ void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaT
 			if (WeaponDataArray[RandomIndex] != nullptr)
 			{
 				NewSeed->SetWeaponSeedData(WeaponDataArray[RandomIndex]);
+				NewSeed->SetParachuteMesh(ParachuteMesh);
 			}
 		}
 		WeaponSpawnTimer = AverageSpawnTime + rand() % 4;
@@ -243,7 +247,8 @@ void ASeedSpawner::SpawnFertiliser(TArray<AActor*> _SpawnedFertiliser, float _De
 		FinalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
 		//GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], FinalLocation, {});
 
-		GetWorld()->SpawnActor<AFertiliser>(FertiliserAsset, FinalLocation, {});
+		AFertiliser* SpawnedFertiliser = GetWorld()->SpawnActor<AFertiliser>(FertiliserAsset, FinalLocation, {});
+		SpawnedFertiliser->PickupActor = EPickupActor::FertilizerActor;
 		
 		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 4;
 	}

@@ -97,7 +97,7 @@ public:
 	UWeaponData* GetWeaponData() const { return CurrentWeaponData; }
 
 	/* Pickup function for doing stuff that doens't need rpc/multi, but calls the rpc which calls multi */
-	void PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item);
+	void PickupItem(APickUpItem* _Item);
 	
 	/* Public Variables */
 	
@@ -337,12 +337,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	float InteractRadius = 225.0f;
 	
-	/* Amount of knockback applied which is multiplied by charge */
-	//UPROPERTY(EditDefaultsOnly, Category = KnockBack)
-	//float KnockBackAmount = 1000.0f;
-	//UPROPERTY(EditDefaultsOnly, Category = KnockBack)
-	//float MaxKnockBackVelocity = 10000.0f;
-	
 	/* Interact timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimerTime = 1.0f;
@@ -416,15 +410,8 @@ private:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FTransform MeshLocationWhenStunned{};
 
-	/* Vector for trajectory of being knocked away from a hit */
-	//UPROPERTY(EditAnywhere, Category=Attack)
-	//FVector KnockUp = {1.0f, 1.0f, 100000000.0f};
-
 	/* Attack radius and reach */
 	float BaseAttackRadius = 75.0f;
-	//float WeaponAttackRadiusScalar = 30.0f;
-	//float WeaponReach = 100.0f;
-	//float MeleeReach = 30.0f;
 
 	/* Default Weapon Data Asset is no weapon (punching with fists) */
 	UPROPERTY(EditDefaultsOnly)
@@ -438,28 +425,23 @@ public: /* Pubic Networking */
 	
 	/* RPC for picking up items */
 	UFUNCTION(Server, Reliable)
-	void Server_PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item);
-	void Server_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item);
+	void Server_PickupItem(APickUpItem* _Item);
 
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem();
-	void Server_DropItem_Implementation();
 
 	/* RPC for socketing item, used for weapon */
 	UFUNCTION(Server, Reliable)
 	void Server_SocketItem(UStaticMeshComponent* _Object, FName _Socket);
-	void Server_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket);
 
 	/* Multicast for socketing items, used for weapon*/
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SocketItem(UStaticMeshComponent* _Object, FName _Socket);
-	void Multi_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket);
 
 	/* RPC for dropping a weapon */
 	UFUNCTION(Server, Reliable)
 	void Server_DropWeapon();
-	void Server_DropWeapon_Implementation();
 
 	/**
 	 * @brief Starting attack sets bIsChargingAttack to true,
@@ -467,60 +449,46 @@ public: /* Pubic Networking */
 	 */
 	 UFUNCTION(Server, Reliable)
 	void Server_StartAttack();
-	void Server_StartAttack_Implementation();
 
 	/* RPC for when attack key is released */
 	UFUNCTION(Server, Reliable)
 	void Server_ReleaseAttack();
-	void Server_ReleaseAttack_Implementation();
 
 	/* Multicast for when attack key is released */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ReleaseAttack();
-	void Multi_ReleaseAttack_Implementation();
 
 	/* Adding a HUD for to player */
 	UFUNCTION(Server, Reliable)
 	void Server_AddHUD();
-	void Server_AddHUD_Implementation();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Client_AddHUD();
-	void Multi_Client_AddHUD_Implementation();	
 	UFUNCTION(Client, Reliable)
 	void Client_AddHUD();
-	void Client_AddHUD_Implementation();
 
 	/* Playing Audio */
 	UFUNCTION(Server, Reliable)
 	void Server_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
-	void Server_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
-	void Multi_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 
 	/* Ragdoll */
 	UFUNCTION(Server, Reliable)
 	void Server_Ragdoll(bool _Ragdoll);
-	void Server_Ragdoll_Implementation(bool _Ragdoll);	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Ragdoll(bool _Ragdoll);
-	void Multi_Ragdoll_Implementation(bool _Ragdoll);
 
 	/* Teleporting at start and end of game */
 	UFUNCTION(Server, Reliable)
 	void Server_TeleportToLocation(FVector _DestinationLocation, FRotator _DestinationRotation);
-	void Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_TeleportToLocation(FVector _DestinationLocation, FRotator _DestinationRotation);
-	void Multi_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation);
 
 	/* Toggling particle effects */
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleParticleSystems(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off);
-	void Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ToggleParticleSystems(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off);
-	void Multi_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off);
 	
 protected: /* Protected Networking */
 	/* The Ideal Net Role for if human controlling */
@@ -529,78 +497,60 @@ protected: /* Protected Networking */
 	/* Playing animation montages */
 	UFUNCTION(Server, Reliable)
 	void Server_PlayNetworkMontage(UAnimMontage* _Montage);
-	void Server_PlayNetworkMontage_Implementation(UAnimMontage* _Montage);	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayNetworkMontage(UAnimMontage* _Montage);
-	void Multi_PlayNetworkMontage_Implementation(UAnimMontage* _Montage);
 
 	/* Setting player colour*/
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerColour();
-	void Server_SetPlayerColour_Implementation();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetPlayerColour();
-	void Multi_SetPlayerColour_Implementation();
 
 	/* Sprint RPC */
 	UFUNCTION(Server, Reliable)
 	void Server_Sprint();
-	void Server_Sprint_Implementation();
 
 	/* Interact RPC */
 	UFUNCTION(Server, Reliable)
 	void Server_TryInteract();
-	void Server_TryInteract_Implementation();
 
 	/* Multicast dropping an item */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DropItem();
-	void Multi_DropItem_Implementation();
 
 	/* Multicast for picking up item */
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item);
-	void Multi_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item);
+	void Multi_PickupItem(APickUpItem* _Item);
 
 	/* Mutlicast for dropping a weapon */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DropWeapon();
-	void Multi_DropWeapon_Implementation();
 
 	/* Receiving materials for the farmer costume */
 	UFUNCTION(Server, Reliable)
 	void Server_ReceiveMaterialsArray(const TArray<UMaterialInstance*>& _InMaterialsArray);
-	void Server_ReceiveMaterialsArray_Implementation(const TArray<UMaterialInstance*>& _InMaterialsArray);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ReceiveMaterialsArray(const TArray<UMaterialInstance*>& _InMaterialsArray);
-	void Multi_ReceiveMaterialsArray_Implementation(const TArray<UMaterialInstance*>& _InMaterialsArray);
 
 	/* Potentially unused particle functions */
 	UFUNCTION(Server, Reliable)
 	void Server_FireParticleSystem(UNiagaraSystem* _NiagaraSystem, FVector _Position);
-	void Server_FireParticleSystem_Implementation(UNiagaraSystem* _NiagaraSystem, FVector _Position);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_FireParticleSystem(UNiagaraSystem* _NiagaraSystem, FVector _Position);
-	void Multi_FireParticleSystem_Implementation(UNiagaraSystem* _NiagaraSystem, FVector _Position);
 
 	/* New way of activating/deactivating particle systems */
 	UFUNCTION(Server, Reliable)
 	void Server_SetParticleActive(UNiagaraComponent* _NiagaraComponent, bool _bIsActive);
-	void Server_SetParticleActive_Implementation(UNiagaraComponent* _NiagaraComponent, bool _bIsActive);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetParticleActive(UNiagaraComponent* _NiagaraComponent, bool _bIsActive);
-	void Multi_SetParticleActive_Implementation(UNiagaraComponent* _NiagaraComponent, bool _bIsActive);
 
 	/* Charging weapon sound control */
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleChargeSound(bool _bIsSoundEnabled);
-	void Server_ToggleChargeSound_Implementation(bool _bIsSoundEnabled);	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ToggleChargeSound(bool _bIsSoundEnabled);
-	void Multi_ToggleChargeSound_Implementation(bool _bIsSoundEnabled);
 
 	/* Countdown timers */
 	UFUNCTION(Server, Reliable)
 	void Server_CountdownTimers(float _DeltaSeconds);
-	void Server_CountdownTimers_Implementation(float _DeltaSeconds);
 };

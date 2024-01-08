@@ -64,13 +64,20 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				PlayerStateReference->Player_ID = GameStateReference->Server_Players.Add(PlayerStateReference);
 				
-				FString NewPlayerName = FString::FromInt(PlayerStateReference->Player_ID);
-				IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
-				if (IdentityInterface.IsValid())
+				FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
+				auto SubSystem = IOnlineSubsystem::Get(FName("Steam"));
+				if (SubSystem)
 				{
-					NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerStateReference->GetPlayerId());
-					UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
-								
+					IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+					if (IdentityInterface.IsValid())
+					{
+						if (IdentityInterface->GetLoginStatus(PlayerStateReference->GetPlayerId()) == ELoginStatus::LoggedIn ||
+							IdentityInterface->GetLoginStatus(PlayerStateReference->GetPlayerId()) == ELoginStatus::UsingLocalProfile)
+						{
+							NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerStateReference->GetPlayerId());
+							UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
+						}
+					}
 				}
 				PlayerStateReference->PlayerName = NewPlayerName;
 

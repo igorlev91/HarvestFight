@@ -5,6 +5,7 @@
 #include "Weapon.h"
 #include "Components/StaticMeshComponent.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 AGrowableWeapon::AGrowableWeapon()
 {
@@ -15,4 +16,5 @@ AGrowableWeapon::AGrowableWeapon()
 
 void AGrowableWeapon::Interact(APrototype2Character* _Player)
 {
+	SSComponent->Enable();
 }

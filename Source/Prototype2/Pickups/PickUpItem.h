@@ -14,9 +14,11 @@
 UENUM()
 enum class EPickupActor : uint8
 {
+	Default = 0,
 	WeaponActor,
 	PlantActor,
-	SeedActor
+	SeedActor,
+	FertilizerActor,
 };
 class APrototype2Character;
 UCLASS()

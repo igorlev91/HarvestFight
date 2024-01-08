@@ -42,7 +42,7 @@ void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActo
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
 {
-	_Player->Server_PickupItem(this, _ItemPickedUp);
+	_Player->PickupItem(_ItemPickedUp);
 	_Player->HeldItem = _ItemPickedUp;
 }
 
@@ -51,8 +51,6 @@ void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UItemComponent, bGold);
-	DOREPLIFETIME(UItemComponent, bIsGold);
-	DOREPLIFETIME(UItemComponent, PickupType);
 }
 
 void UItemComponent::InitializeSeed(UMaterialInstance* _InMaterial)

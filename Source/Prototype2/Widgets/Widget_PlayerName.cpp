@@ -2,7 +2,6 @@
 
 #include "Widget_PlayerName.h"
 
-#include "FindInBlueprints.h"
 #include "Components/TextBlock.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
@@ -31,9 +30,42 @@ void UWidget_PlayerName::UpdatePlayerName()
 	{
 		if (auto PlayerState = PlayerController->GetPlayerState<ALobbyPlayerState>())
 		{
-			auto PlayerID = PlayerState->Player_ID;
-		
-			PlayerName->SetText(FText::FromString(FString::FromInt(PlayerID)));
+			auto PlayerStatePlayerID = PlayerState->Player_ID;
+			auto PlayerStatePlayerName = PlayerState->PlayerName;
+			
+			PlayerName->SetText(FText::FromString(PlayerStatePlayerName));
+			
+			/* Set colour of player name */
+			switch (PlayerStatePlayerID)
+			{
+			case 0:
+				{
+					PlayerName->SetColorAndOpacity(Player1Colour); // Player 1
+					break;
+				}
+			case 1:
+				{
+					PlayerName->SetColorAndOpacity(Player2Colour); // Player 2
+					break;
+				}
+			case 2:
+				{
+					PlayerName->SetColorAndOpacity(Player3Colour); // Player 3
+					break;
+				}
+			case 3:
+				{
+					PlayerName->SetColorAndOpacity(Player4Colour); // Player 4
+					break;
+				}
+			default:
+				{
+					PlayerName->SetColorAndOpacity(Player1Colour);
+					break;
+				}
+			}
+			
+			
 		}
 	}
 }

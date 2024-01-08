@@ -13,6 +13,7 @@
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/DataAssets/PlantData.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 AGrowSpot::AGrowSpot()
 {
@@ -105,7 +106,7 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 				if (Cast<ASeed>(_Player->HeldItem))
 				{
 					if (_Player->PlayerHUDRef)
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+						_Player->PlayerHUDRef->ClearPickupUI();
 					_Player->UpdateDecalDirection(false, false);
 				}
 				break;
@@ -203,10 +204,12 @@ void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
 			if (Plant)
 			{
 				Plant->bGrown = true;
+				Plant->SSComponent->Enable();
 			}
 			if (Weapon)
 			{
 				Weapon->bGrown = true;
+				Weapon->SSComponent->Enable();
 			}
 		}
 	}
@@ -281,7 +284,12 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 		return;
 	}
 
-	if (_Player->HeldItem->ItemComponent->PickupType != EPickup::Mandrake)
+	if (!_Player->HeldItem->PlantData)
+	{
+		return;
+	}
+
+	if (!_Player->HeldItem->PlantData->Name.Compare("Mandrake"))
 	{
 		return;
 	}
@@ -301,17 +309,14 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 
 void AGrowSpot::MakePlantGold()
 {
-	if (Plant->PlantData->GoldMaterial1)
+	if (!Plant->PlantData)
 	{
-		Plant->ItemComponent->Mesh->SetMaterial(0, Plant->PlantData->GoldMaterial1);
+		return;
 	}
-	if (Plant->PlantData->GoldMaterial2)
+
+	for (int i = 0; i < Plant->PlantData->GoldMaterials.Num() - 1; i++)
 	{
-		Plant->ItemComponent->Mesh->SetMaterial(1, Plant->PlantData->GoldMaterial2);
-	}
-	if (Plant->PlantData->GoldMaterial3)
-	{
-		Plant->ItemComponent->Mesh->SetMaterial(2, Plant->PlantData->GoldMaterial3);
+		Plant->ItemComponent->Mesh->SetMaterial(i, Plant->PlantData->GoldMaterials[i]);
 	}
 
 	Plant->ItemComponent->bGold = true;
@@ -335,14 +340,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
 					_Player->Server_DropItem();
-				
-					//Player->UpdateDecalDirection(true, true);
-					_Player->HeldItem = nullptr;
-					if (_Player->PlayerHUDRef)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-						_Player->PlayerHUDRef->SetHUDInteractText("");
-					}
 					_Player->EnableStencil(false);
 					break;
 				}
@@ -354,14 +351,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
 					_Player->Server_DropItem();
-				
-					//Player->UpdateDecalDirection(true, true);
-					_Player->HeldItem = nullptr;
-					if (_Player->PlayerHUDRef)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-						_Player->PlayerHUDRef->SetHUDInteractText("");
-					}
 					_Player->EnableStencil(false);
 					break;
 				}
@@ -391,69 +380,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						PlantPlant(_Player);
 					}
-					
-					
-					/*// Planting seed from old way
-					// // seed has an assigned plant
-					// if (!Seed->PlantToGrow)
-					// {
-					// 	return;
-					// }
-					//
-					// // Audio
-					// if (_Player->PlantCue)
-					// {
-					// 	_Player->PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
-					// }
-					//
-					// // Set grow time
-					// if (Seed->GrowTime > 0)
-					// {
-					// 	GrowTimer = Seed->GrowTime;
-					// }
-					// else if (Seed->ItemComponent->GrowTime > 0)
-					// {
-					// 	// deprecated soon
-					// 	GrowTimer = Seed->ItemComponent->GrowTime;
-					// }
-					// else
-					// {
-					// 	GrowTimer = 1.0f;
-					// }
-					// 		
-					// if (Seed->bIsWeapon)
-					// {
-					// 	Weapon = GetWorld()->SpawnActor<AGrowableWeapon>(Seed->PlantToGrow);
-					// 	SetWeapon(Weapon, GrowTime);
-					// }
-					// else
-					// {
-					// 	Plant = GetWorld()->SpawnActor<APlant>(Seed->PlantToGrow);
-					// 	SetPlant(Plant, GrowTime);
-					// }
-					//
-					// if (bIsFertilised && Plant)
-					// {
-					// 	Plant->MakeGold();
-					// 	bIsFertilised = false;
-					// }
-					// 		
-					// Multi_Plant();
-					// 	
-					// if (Seed)
-					// 	Seed->Destroy();
-					//
-					// _Player->HeldItem = nullptr;
-					//
-					// if (_Player->PlayerHUDRef)
-					// {
-					// 	_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-					// 	_Player->PlayerHUDRef->SetHUDInteractText("");
-					// }
-					// _Player->EnableStencil(false);
-					//
-					// Multi_UpdateState(EGrowSpotState::Growing);
-					// GrowSpotState = EGrowSpotState::Growing;*/
 				}
 				break;
 			}
@@ -477,14 +403,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				}
 				UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
 				_Player->Server_DropItem();
-				
-				//Player->UpdateDecalDirection(true, true);
-				_Player->HeldItem = nullptr;
-				if (_Player->PlayerHUDRef)
-				{
-					_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-					_Player->PlayerHUDRef->SetHUDInteractText("");
-				}
 				_Player->EnableStencil(false);
 				break;
 			}
@@ -505,14 +423,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					}
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
 					_Player->Server_DropItem();
-					
-					//Player->UpdateDecalDirection(true, true);
-					_Player->HeldItem = nullptr;
-					if (_Player->PlayerHUDRef)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-						_Player->PlayerHUDRef->SetHUDInteractText("");
-					}
 					_Player->EnableStencil(false);
 				}
 
@@ -527,20 +437,11 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					UE_LOG(LogTemp, Warning, TEXT("Tis a weapon!"));
 					Weapon->bGrown = true;
 							
-					_Player->Server_PickupItem(Weapon->ItemComponent, Weapon);
-					_Player->WeaponCurrentDurability = _Player->GetWeaponData()->Durability;
-					
-					//// Change the weapon UI for this player
-					_Player->GetPlayerHUD()->UpdateWeaponUI(EPickup::Weapon);
-					
+					_Player->PickupItem(Weapon);
+
 					Weapon->Destroy();
 					Weapon = nullptr;
-				
-					if (_Player->PlayerHUDRef)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-						_Player->PlayerHUDRef->SetHUDInteractText("");
-					}
+
 					_Player->EnableStencil(false);
 					ItemComponent->Mesh->SetRenderCustomDepth(false);
 
@@ -555,24 +456,14 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					Plant->bGrown = true;
 
 					Plant->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-							
-					// Put players weapon on back
-					_Player->Multi_SocketItem_Implementation(_Player->Weapon->Mesh, FName("WeaponHolsterSocket"));
-					_Player->Server_PickupItem(Plant->ItemComponent, Plant);
-					//_Player->UpdateDecalDirection(true, true);
-
-					_Player->HeldItem = Plant;
 					
-					// Special sound for mandrake when picked up
+					_Player->PickupItem(Plant);
+
+					// Special sound for mandrake when picked up because its special
 					MandrakePickupNoise(_Player);
 					
 					Plant = nullptr;
-				
-					if (_Player->PlayerHUDRef)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-						_Player->PlayerHUDRef->SetHUDInteractText("");
-					}
+
 					_Player->EnableStencil(false);
 					ItemComponent->Mesh->SetRenderCustomDepth(false);
 
@@ -691,6 +582,7 @@ void AGrowSpot::PlantWeapon(APrototype2Character* _Player)
 		UE_LOG(LogTemp, Warning, TEXT("WeaponPrefab not set."));
 		return;
 	}
+	
 	// Set grow time
 	if (_Player->HeldItem->WeaponData->GrowTime > 0)
 	{
@@ -705,13 +597,6 @@ void AGrowSpot::PlantWeapon(APrototype2Character* _Player)
 	Weapon->SetWeaponData(_Player->HeldItem->WeaponData);
 	Weapon->ItemComponent->bGold = false;
 	SetWeapon(Weapon, GrowTime);
-
-	// Todo: Dawn we need this here?
-	//if (bIsFertilised && Plant && !Plant->ItemComponent->bGold)
-	//{
-	//	MakePlantGold();
-	//	bIsFertilised = false;
-	//}
 							
 	Multi_Plant();
 
@@ -720,7 +605,7 @@ void AGrowSpot::PlantWeapon(APrototype2Character* _Player)
 
 	if (_Player->PlayerHUDRef)
 	{
-		_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+		_Player->PlayerHUDRef->ClearPickupUI();
 		_Player->PlayerHUDRef->SetHUDInteractText("");
 	}
 	_Player->EnableStencil(false);
@@ -731,7 +616,6 @@ void AGrowSpot::PlantWeapon(APrototype2Character* _Player)
 
 void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 {
-	
 	// Set grow time
 	if (_Player->HeldItem->PlantData->GrowTime > 0)
 	{
@@ -774,7 +658,7 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 
 	if (_Player->PlayerHUDRef)
 	{
-		_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
+		_Player->PlayerHUDRef->ClearPickupUI();
 		_Player->PlayerHUDRef->SetHUDInteractText("");
 	}
 	_Player->EnableStencil(false);
@@ -836,69 +720,4 @@ void AGrowSpot::Multi_SetPlantReadySparkle_Implementation(bool _bIsActive)
 			PlantReadySparkle_NiagaraComponent->Deactivate();
 		}
 	}
-}
-
-void AGrowSpot::TemporaryPlantWeapon(ASeed* _WeaponSeed, APrototype2Character* _Player)
-{
-	//Planting seed from old way
-	// seed has an assigned plant
-	if (!_WeaponSeed->PlantToGrow)
-	{
-		return;
-	}
-	
-	// Audio
-	if (_Player->PlantCue)
-	{
-		_Player->PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
-	}
-	
-	// Set grow time
-	if (_WeaponSeed->GrowTime > 0)
-	{
-		GrowTime = _WeaponSeed->GrowTime;
-	}
-	else if (_WeaponSeed->ItemComponent->GrowTime > 0)
-	{
-		// deprecated soon
-		GrowTime = _WeaponSeed->ItemComponent->GrowTime;
-	}
-	else
-	{
-		GrowTimer = 1.0f;
-	}
-			
-	if (_WeaponSeed->bIsWeapon)
-	{
-		Weapon = GetWorld()->SpawnActor<AGrowableWeapon>(_WeaponSeed->PlantToGrow);
-		SetWeapon(Weapon, GrowTime);
-	}
-	else
-	{
-		Plant = GetWorld()->SpawnActor<APlant>(_WeaponSeed->PlantToGrow);
-		SetPlant(Plant, GrowTime);
-	}
-	
-	if (bIsFertilised && Plant)
-	{
-		Plant->MakeGold();
-		bIsFertilised = false;
-	}
-			
-	Multi_Plant();
-		
-	if (_WeaponSeed)
-		_WeaponSeed->Destroy();
-	
-	_Player->HeldItem = nullptr;
-	
-	if (_Player->PlayerHUDRef)
-	{
-		_Player->PlayerHUDRef->UpdatePickupUI(EPickup::None, false);
-		_Player->PlayerHUDRef->SetHUDInteractText("");
-	}
-	_Player->EnableStencil(false);
-	
-	Multi_UpdateState(EGrowSpotState::Growing);
-	GrowSpotState = EGrowSpotState::Growing;
 }

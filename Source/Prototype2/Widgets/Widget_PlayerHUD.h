@@ -55,14 +55,6 @@ public:
 	
 	/* Clears the pickup UI slot in the HUD */
 	void ClearPickupUI();
-	
-	/* Updates the UI image and turns on/off when picking up/dropping pickups*/
-	UFUNCTION(BlueprintCallable)
-	void UpdatePickupUI(EPickup _Pickup, bool _bIsPickupGold);
-
-	/* Updates the UI image for weapon - turns on/off if holding a weapon */
-	UFUNCTION(BlueprintCallable)
-	void UpdateWeaponUI(EPickup _Weapon);
 
 	/* Changes the text for interaction eg) Pickup, Sell, Grow */
 	UFUNCTION(BlueprintCallable)

@@ -22,7 +22,8 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	}
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(FVector(0, 0, 0), {});
 	Honey->PlantData = BeehiveData->Honey;
-	Honey->ItemComponent->CropValue *= NumberOfNearbyFlowers + 1;
+
+	Honey->PlantData->SellValue *= NumberOfNearbyFlowers + 1;
 	ItemComponent->Interact(_Player, Honey);
 
 	_Player->EnableStencil(false);

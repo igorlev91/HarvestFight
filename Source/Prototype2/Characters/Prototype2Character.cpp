@@ -33,6 +33,7 @@
 #include "Sound/SoundCue.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/Image.h"
 #include "Prototype2/Pickups/GrowableWeapon.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
@@ -212,6 +213,8 @@ void APrototype2Character::BeginPlay()
 
 	// Assign Current Weapon Data to the default which is always punching
 	CurrentWeaponData = DefaultWeaponData;
+	if (PlayerHUDRef)
+		PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponData->WeaponIcon);
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
@@ -811,25 +814,36 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystem _New
 		ParticleSystemsToDeActivate.Add(_NewSystem);
 }
 
-void APrototype2Character::PickupItem(UItemComponent* _ItemComponent, APickUpItem* _Item)
+void APrototype2Character::PickupItem(APickUpItem* _Item)
 {
+	if (PlayerHUDRef)
+	PlayerHUDRef->SetHUDInteractText("");
+	
 	// Set the HUD UI pickup icon depending on seed/plant/weapon
 	switch (_Item->PickupActor)
 	{
 	case EPickupActor::PlantActor:
 		{
-			if (PlayerHUDRef && HeldItem && _Item->PlantData)
+			if (!PlayerHUDRef || !_Item->PlantData)
+			{
+				break;
+			}
+			if (_Item->ItemComponent->bGold)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->PlantData->GoldPlantIcon);
+			}
+			else
 			{
 				PlayerHUDRef->UpdatePickupUI(_Item->PlantData->PlantIcon);
-			}
+			}				
 			break;
 		}
 	case EPickupActor::WeaponActor:
 		{
 			// Set UI
-			if (PlayerHUDRef && HeldItem && _Item->WeaponData)
+			if (PlayerHUDRef && _Item->WeaponData)
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->WeaponData->WeaponIcon);
+				PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->WeaponData->WeaponIcon);
 			}
 			break;
 		}
@@ -851,7 +865,7 @@ void APrototype2Character::PickupItem(UItemComponent* _ItemComponent, APickUpIte
 		}
 	}
 	
-	Server_PickupItem(_ItemComponent, _Item);
+	Server_PickupItem(_Item);
 }
 
 void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off)
@@ -1326,6 +1340,13 @@ void APrototype2Character::Server_TryInteract_Implementation()
 void APrototype2Character::Server_DropItem_Implementation()
 {
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		
+	// Set HUD image
+	if (PlayerHUDRef)
+	{
+		PlayerHUDRef->ClearPickupUI();
+		PlayerHUDRef->SetHUDInteractText("");
+	}
 	
 	Multi_DropItem();
 }
@@ -1357,23 +1378,18 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	}
 	
 	HeldItem = nullptr;
-	
-	// Set HUD image
-	if (PlayerHUDRef)
-	{
-		PlayerHUDRef->ClearPickupUI();
-	}
+
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
 }
 
-void APrototype2Character::Server_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item)
+void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item)
 {
 	if (HeldItem)
 	{
 		Server_DropItem();
 	}
 
-	Multi_PickupItem(_ItemComponent, _Item);
+	Multi_PickupItem(_Item);
 }
 
 void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
@@ -1386,19 +1402,19 @@ void APrototype2Character::Server_DropWeapon_Implementation()
 	Multi_DropWeapon();
 }
 
-void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* _ItemComponent, APickUpItem* _Item)
+void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
 {
 	// Audio
 	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
 
 	// Setup picked up items mesh physics and collision response
-	if (_ItemComponent->Mesh)
+	if (_Item->ItemComponent->Mesh)
 	{
-		_ItemComponent->Mesh->SetSimulatePhysics(false);
-		_ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		_Item->ItemComponent->Mesh->SetSimulatePhysics(false);
+		_Item->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		
 		// So that CheckForInteractables() cant see it while player is holding it
-		_ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		_Item->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	}
 
 	// Attach plant/seed ot the HeldItemSocket, and change weapon mesh to the one passed in
@@ -1417,10 +1433,18 @@ void APrototype2Character::Multi_PickupItem_Implementation(UItemComponent* _Item
 	case EPickupActor::WeaponActor:
 		{
 			CurrentWeaponData = _Item->WeaponData;
+			WeaponCurrentDurability = CurrentWeaponData->Durability;
 			Weapon->Mesh->SetStaticMesh(_Item->WeaponData->WeaponMesh);
+			Multi_SocketItem_Implementation(Weapon->Mesh, FName("WeaponHolsterSocket"));
 			break;
 		}
 	case EPickupActor::SeedActor:
+		{
+			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+			HeldItem = _Item;
+			break;
+		}
+	case EPickupActor::FertilizerActor:
 		{
 			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
 			HeldItem = _Item;

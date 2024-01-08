@@ -87,13 +87,20 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 						Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 						Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
 
-						FString NewPlayerName = FString::FromInt(PlayerState->Player_ID);
-						IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
-						if (IdentityInterface.IsValid())
+						FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerState->Player_ID);
+						auto SubSystem = IOnlineSubsystem::Get(FName("Steam"));
+						if (SubSystem)
 						{
-							NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerState->GetPlayerId());
-							UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerState->GetPlayerId()), *NewPlayerName);
-								
+							IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+							if (IdentityInterface.IsValid())
+							{
+								if (IdentityInterface->GetLoginStatus(PlayerState->GetPlayerId()) == ELoginStatus::LoggedIn ||
+									IdentityInterface->GetLoginStatus(PlayerState->GetPlayerId()) == ELoginStatus::UsingLocalProfile)
+								{
+									NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerState->GetPlayerId());
+									UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerState->GetPlayerId()), *NewPlayerName);
+								}
+							}
 						}
 						PlayerState->PlayerName = NewPlayerName;
 						

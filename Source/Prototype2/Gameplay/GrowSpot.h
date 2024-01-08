@@ -31,11 +31,9 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Plant();
-	void Multi_Plant_Implementation();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_FireParticleSystem();
-	void Multi_FireParticleSystem_Implementation();
 
 	void GrowPlantOnTick(float _DeltaTime);
 	/**
@@ -56,15 +54,12 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_GrowOnTick(float _DeltaTime);
-	void Multi_GrowOnTick_Implementation(float _DeltaTime);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_UpdateState(EGrowSpotState _NewState);
-	void Multi_UpdateState_Implementation(EGrowSpotState _NewState);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetPlantReadySparkle(bool _bIsActive);
-	void Multi_SetPlantReadySparkle_Implementation(bool _bIsActive);
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -139,7 +134,6 @@ public:
 	/* Planting from PlantData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<APlant> PlantPrefab;
-	void TemporaryPlantWeapon(ASeed* _WeaponSeed, APrototype2Character* _Player); // Todo: Remove this when weapon data asset done
 
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)

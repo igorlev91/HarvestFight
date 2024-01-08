@@ -29,22 +29,7 @@ public:
 public:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
-
-	// To be deleted when weapon data asset is implemented
-	UPROPERTY(EditAnywhere)
-	int32 WeaponDurability;
-	UPROPERTY(Replicated ,EditAnywhere, BlueprintReadWrite)
-	TEnumAsByte<EPickup> PickupType;// For HUD changing icons
-
-	// To be replaced by plant data asset
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float GrowTime;
-	UPROPERTY(EditAnywhere)
-	float CropValue; 
-
-	//Todo: One of these needs to be deleted, I think bIsGold at this time maybe? -ben
+	
 	UPROPERTY(Replicated , EditAnywhere)
 	bool bGold{};
-	UPROPERTY(Replicated)
-	bool bIsGold;
 };

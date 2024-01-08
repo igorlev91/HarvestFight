@@ -6,26 +6,22 @@
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 APlant::APlant()
 {
 	bReplicates = true;
-	//LeavesMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Leaves Mesh"));
-	//LeavesMesh->SetupAttachment(RootComponent);
 
 	InterfaceType = EInterfaceType::Default;
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+	SSComponent->Disable();
 }
 
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	Server_ToggleGold();
 
 	SetReplicatingMovement(true);
-
-	/*LeavesMesh->SetupAttachment(RootComponent);
-	LeavesMesh->SetCollisionProfileName(FName("NoCollision"));*/
 }
 
 
@@ -44,7 +40,8 @@ void APlant::Interact(APrototype2Character* _Player)
 		_Player->PlayerHUDRef->SetHUDInteractText("");
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
-	//LeavesMesh->SetRenderCustomDepth(false);
+
+	SSComponent->Enable();
 }
 
 void APlant::ClientInteract(APrototype2Character* _Player)
@@ -89,37 +86,8 @@ bool APlant::IsInteractable(APrototype2PlayerState* _Player)
 	return false;
 }
 
-void APlant::MakeGold()
+void APlant::Tick(float DeltaSeconds)
 {
-	if (ItemComponent->bGold)
-		return;
+	Super::Tick(DeltaSeconds);
 	
-	if (GoldMaterial)
-	{
-		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
-	}
-	if (GoldMaterial2)
-	{
-		ItemComponent->Mesh->SetMaterial(1, GoldMaterial2);
-	}
-	if (GoldMaterial3)
-	{
-		ItemComponent->Mesh->SetMaterial(2, GoldMaterial3);
-	}
-	ItemComponent->CropValue *= GoldMultiplier;
-	ItemComponent->bGold = true;
-}
-
-void APlant::Server_ToggleGold_Implementation()
-{
-	Multi_ToggleGold();
-}
-
-void APlant::Multi_ToggleGold_Implementation()
-{
-	int32 X = rand() % 100;
-	if (X < ChanceOfGold)
-	{
-		MakeGold();
-	}
 }

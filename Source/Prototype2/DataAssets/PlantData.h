@@ -41,18 +41,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Seed")
 	UMaterialInstance* SeedMaterial;
 
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	UStaticMesh* ParachuteMesh;
-	
 	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	UMaterialInstance* GoldMaterial1;
+	TArray<UMaterialInstance*> GoldMaterials;
 
-	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	UMaterialInstance* GoldMaterial2;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	UMaterialInstance* GoldMaterial3;
-	
 	UPROPERTY(EditDefaultsOnly, Category= "Gold")
 	int32 GoldMultiplier = 3;
 

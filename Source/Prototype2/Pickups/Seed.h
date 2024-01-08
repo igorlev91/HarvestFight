@@ -29,11 +29,7 @@ public:
 	void Multi_ToggleParachuteVisibility(bool _Visible);
 	void Multi_ToggleParachuteVisibility_Implementation(bool _Visible);
 
-	UPROPERTY(EditAnywhere)
-	class UStaticMesh* WinterParachute;
-
-	UPROPERTY(EditAnywhere)
-	class UStaticMesh* NormalParachute;
+	void SetParachuteMesh(UStaticMesh* _InMesh);
 	
 	UPROPERTY(EditAnywhere)
 	float BobSpeed{120.0f};
@@ -69,4 +65,9 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> PlantToGrow;
+
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
+
+	bool bIsParachuteStaticMeshSet;
 };
