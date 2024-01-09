@@ -26,12 +26,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	UStaticMesh* WeaponMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category= "Animation")
-	UAnimMontage* ChargeAttackMontage;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Animation")
-	UAnimMontage* ExecuteAttackMontage;
-	
 	UPROPERTY(EditDefaultsOnly, Category= "Seed")
 	float GrowTime;
 	

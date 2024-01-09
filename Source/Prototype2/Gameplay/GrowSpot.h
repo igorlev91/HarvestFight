@@ -6,6 +6,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "NiagaraComponent.h"
+#include "RadialPlot.h"
 #include "Prototype2/Pickups/Beehive.h"
 #include "GrowSpot.generated.h"
 
@@ -20,12 +21,16 @@ class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 	
 public:	
 	AGrowSpot();
+	void SetRadialReferance(ARadialPlot* _RadialPlot);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	UPROPERTY(Replicated, EditAnywhere)
 	int32 Player_ID = 0;
+
+	UPROPERTY(VisibleAnywhere)
+	ARadialPlot* RadialPlot;
 
 protected:
 	virtual void BeginPlay() override;
@@ -52,6 +57,12 @@ public:
 	// Called every frame
 	virtual void Tick(float _DeltaTime) override;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetFertilised();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_MakePlantGold();
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_GrowOnTick(float _DeltaTime);
 
@@ -110,10 +121,10 @@ public:
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsFertilised;
 
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(EditAnywhere)
 	float FertiliseInteractDelay = 0.1;
 
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	float FertiliseInteractDelayTime;
 
 	UPROPERTY(EditAnywhere)
@@ -135,7 +146,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<APlant> PlantPrefab;
 
+	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
+	TSubclassOf<ABeehive> BeehivePrefab;
+
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGrowableWeapon> WeaponPrefab;
+
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
 };

@@ -9,6 +9,7 @@
 #include "Engine.h"
 #include "Online.h"
 #include "Online/CoreOnline.h"
+#include "Prototype2/DataAssets/AnimationData.h"
 #include "PrototypeGameInstance.generated.h"
 
 USTRUCT(BlueprintType)
@@ -26,13 +27,17 @@ enum class ECharacters : uint8
 	DUCK
 };
 
-UENUM(BlueprintType)
-enum class ECharacterColours : uint8
+USTRUCT()
+struct FCharacterDetails
 {
-	RED,
-	BLUE,
-	GREEN,
-	YELLOW
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(VisibleAnywhere)
+	ECharacters Character{ECharacters::COW};
+
+	UPROPERTY(VisibleAnywhere)
+	FVector4 CharacterColour{0.428690,0.102242,0.102242,1.000000};
 };
 
 UCLASS()
@@ -41,6 +46,7 @@ class PROTOTYPE2_API UPrototypeGameInstance : public UGameInstance
 	GENERATED_BODY()
 public:
 	UPrototypeGameInstance();
+	virtual void StartGameInstance() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 MaxPlayersOnServer{0};
@@ -48,13 +54,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 FinalConnectionCount{0};
 
-	TArray<FString> FinalPlayerNames;
-	TArray<ECharacters> FinalCharacters;
-	TArray<ECharacterColours> FinalColours;
+	UPROPERTY(VisibleAnywhere)
+	FString UniqueNetIDName{};
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	ECharacters Character{ECharacters::COW};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	ECharacterColours CharacterColour{ECharacterColours::RED};
+	UPROPERTY(VisibleAnywhere)
+	TMap<FString, FCharacterDetails> FinalPlayerDetails{};
 };

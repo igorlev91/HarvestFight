@@ -15,9 +15,10 @@ class PROTOTYPE2_API ALobbyCharacter : public ACharacter
 
 	/* Public Functions */
 public:
-	void SetPlayerMat(UMaterialInstance* _NewPlayerMat);
 	void SetPlayerStateRef(class ALobbyPlayerState* _NewLobbyPlayerState);
-
+	void SetNameWidget(FString _name);
+	void SetNameWidgetPlayerRef();
+	
 	/* Protected Functions */
 protected:
 	ALobbyCharacter();
@@ -25,7 +26,10 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float _DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* _PlayerInputComponent) override;
-
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetNameWidget(const FString& _name);
+	
 	UFUNCTION(Server, Reliable)
 	void Server_SetCharacterMesh();
 	void Server_SetCharacterMesh_Implementation();
@@ -36,20 +40,30 @@ protected:
 
 	/* Public Variables */
 public:
-	UMaterialInstance* GetPlayerMat();
 	
 	/* Protected Variables */
 protected:
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UMaterialInstance* PlayerMat;
-
+	//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class ALobbyPlayerState* PlayerStateRef;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<USkeletalMesh*> PlayerMeshes;
 
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	/* Display name widget (above head) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* PlayerNameWidgetComponent;
 	
+	UPROPERTY()
+	class UWidget_PlayerName* PlayerNameWidget{nullptr};
+
+	/* Ready button widget (above head) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UWidgetComponent* ReadyImageWidgetComponent;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstanceDynamic*> PlayerMaterialsDynamic{};
 };

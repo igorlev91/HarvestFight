@@ -15,8 +15,17 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 	Super::NativeOnInitialized();
 	
 	PlayerImage->SetBrushFromTexture(Texture_CowRed);
-	PlayerColourImage->SetColorAndOpacity(FLinearColor(0.427083f, 0.100098f, 0.100098f, 1.0f));
-	CheckForTakenSkin(true);
+	
+	CheckForTakenCharacter(true);
+	if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	{
+		if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
+		{
+			auto PlayerID = PlayerState->Player_ID;
+			PlayerControllerCast->UpdateCharacterMaterial(PlayerID, IdealCharacter, IdealCharacterColour);
+		}
+	}
+	UpdateCharacterImage();
 }
 
 void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
@@ -27,85 +36,68 @@ void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 		{
 			if (CowTextures.Num() > 0)
 			{
-				PlayerImage->SetBrushFromTexture(CowTextures[(int32)IdealCharacterColour]);
+				PlayerImage->SetBrushFromTexture(CowTextures[0]);
 			}
 			break;
 		}
 	case ECharacters::CHICKEN:
 		{
 			if (ChickenTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(ChickenTextures[(int32)IdealCharacterColour]);
+				PlayerImage->SetBrushFromTexture(ChickenTextures[0]);
 			break;
 		}
 	case ECharacters::DUCK:
 		{
 			if (DuckTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(DuckTextures[(int32)IdealCharacterColour]);
+				PlayerImage->SetBrushFromTexture(DuckTextures[0]);
 			break;
 		}
 	case ECharacters::PIG:
 		{
 			if (PigTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(PigTextures[(int32)IdealCharacterColour]);
+				PlayerImage->SetBrushFromTexture(PigTextures[0]);
 			break;
 		}
 	default:
 		{
 			if (CowTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(CowTextures[(int32)IdealCharacterColour]);
+				PlayerImage->SetBrushFromTexture(CowTextures[0]);
 			break;
 		}
 	}
 
-	switch(IdealCharacterColour)
-	{
-	case ECharacterColours::RED:
-		PlayerColourImage->SetColorAndOpacity(FLinearColor(0.427083f, 0.100098f, 0.100098f, 1.0f));
-		break;
-	case ECharacterColours::BLUE:
-		PlayerColourImage->SetColorAndOpacity(FLinearColor(0.034125f, 0.118703f, 0.192708f, 1.0f));
-		break;
-	case ECharacterColours::GREEN:
-		PlayerColourImage->SetColorAndOpacity(FLinearColor(0.078957f, 0.192708f, 0.056207f, 1.0f));
-		break;
-	case ECharacterColours::YELLOW:
-		PlayerColourImage->SetColorAndOpacity(FLinearColor(0.317708f, 0.180145, 0.033095, 1.0f));
-		break;
-	default:
-		PlayerColourImage->SetColorAndOpacity(FLinearColor(0.427083f, 0.100098f, 0.100098f, 1.0f));
-		break;
-	}
+	PlayerColourImage->SetColorAndOpacity((FLinearColor)IdealCharacterColour);
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRight)
 {
-	if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
-	{
-		if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
-		{
-			int32 NewColour = (int32)IdealCharacterColour;
-			if (_bIsTowardsRight)
-			{
-				NewColour ++;
-			}
-			else
-			{
-				NewColour --;
-			}
-	
-			if (NewColour > 3)
-			{
-				NewColour = 0;
-			}
-			else if (NewColour < 0)
-			{
-				
-				NewColour = 3;
-			}
-			
-			IdealCharacterColour = (ECharacterColours)NewColour;
-		}
-	}
+	//if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	//{
+	//	if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
+	//	{
+	//		int32 NewColour = (int32)IdealCharacterColour;
+	//		if (_bIsTowardsRight)
+	//		{
+	//			NewColour ++;
+	//		}
+	//		else
+	//		{
+	//			NewColour --;
+	//		}
+	//
+	//		if (NewColour > 3)
+	//		{
+	//			NewColour = 0;
+	//		}
+	//		else if (NewColour < 0)
+	//		{
+	//			
+	//			NewColour = 3;
+	//		}
+	//		
+	//		IdealCharacterColour = (ECharacterColours)NewColour;
+	//	}
+	//}
 
 	// check for taken sskin
 	CheckForTakenSkin(_bIsTowardsRight);
@@ -114,92 +106,44 @@ void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRigh
 
 	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
 	{
-		GameInstance->Character = IdealCharacter;
-		GameInstance->CharacterColour = IdealCharacterColour;
-					
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int32)GameInstance->Character));
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int32)GameInstance->CharacterColour));
+		GameInstance->FinalPlayerDetails.FindOrAdd(GameInstance->UniqueNetIDName, {IdealCharacter, IdealCharacterColour});
 	}
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacter(bool _bIsTowardsRight)
 {
-	if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	int32 NewCharacter = (int32)IdealCharacter;
+	if (_bIsTowardsRight)
 	{
-		if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
-		{
-			int32 NewCharacter = (int32)IdealCharacter;
-			if (_bIsTowardsRight)
-			{
-				NewCharacter ++;
-			}
-			else
-			{
-				NewCharacter --;
-			}
-	
-			if (NewCharacter > 3)
-			{
-				NewCharacter = 0;
-			}
-			else if (NewCharacter < 0)
-			{
-				NewCharacter = 3;
-			}
-			
-			IdealCharacter = ECharacters(NewCharacter);
-		}
+		NewCharacter ++;
 	}
+	else
+	{
+		NewCharacter --;
+	}
+	
+	if (NewCharacter > 3)
+	{
+		NewCharacter = 0;
+	}
+	else if (NewCharacter < 0)
+	{
+		NewCharacter = 3;
+	}
+	IdealCharacter = ECharacters(NewCharacter);
 
 	// Check for taken skin
 	CheckForTakenCharacter(_bIsTowardsRight);
-	
-	UpdateCharacterImage();
-	
-	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		GameInstance->Character = IdealCharacter;
-		GameInstance->CharacterColour = IdealCharacterColour;
-					
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int32)GameInstance->Character));
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int32)GameInstance->CharacterColour));
-	}
 }
 
 void UWidget_LobbyCharacterSelection::CheckForTakenSkin(bool _bIsTowardsRight)
 {
-	if (auto GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 	{
-		if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+		if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
 		{
-			if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
-			{
-				int32 NumberOfDesiredCharacterColours{1};
-				while(NumberOfDesiredCharacterColours >= 1)
-				{
-					NumberOfDesiredCharacterColours = GameStateCast->GetNumberOfCharacterColoursTaken(IdealCharacter, IdealCharacterColour);
-					if (NumberOfDesiredCharacterColours >= 1)
-					{
-						int32 NewColour = (int32)IdealCharacterColour;
-						if (_bIsTowardsRight)
-							NewColour ++;
-						else
-							NewColour --;
-						if (NewColour > 3)
-						{
-							NewColour = 0;
-						}
-						else if (NewColour < 0)
-						{
-							NewColour = 3;
-						}
-						IdealCharacterColour = (ECharacterColours)NewColour;
-					}
-				}
-
-				auto PlayerID = PlayerState->Player_ID;
-				PlayerControllerCast->UpdateCharacterMaterial(PlayerID, IdealCharacter, IdealCharacterColour);
-			}
+			auto PlayerID = PlayerState->Player_ID;
+			PlayerControllerCast->UpdateCharacterMaterial(PlayerID, IdealCharacter, IdealCharacterColour);
 		}
 	}
 }
@@ -208,35 +152,26 @@ void UWidget_LobbyCharacterSelection::CheckForTakenCharacter(bool _bIsTowardsRig
 {
 	if (auto GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		if (auto PlayerControllerCast = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+		int32 NumberOfDesiredCharacter{1};
+		while(NumberOfDesiredCharacter >= 1)
 		{
-			if (auto PlayerState = PlayerControllerCast->GetPlayerState<ALobbyPlayerState>())
+			NumberOfDesiredCharacter = GameStateCast->GetNumberOfCharactersTaken(IdealCharacter);
+			if (NumberOfDesiredCharacter >= 1)
 			{
-				int32 NumberOfDesiredCharacter{1};
-				while(NumberOfDesiredCharacter >= 1)
+				int32 NewColour = (int32)IdealCharacter;
+				if (_bIsTowardsRight)
+					NewColour ++;
+				else
+					NewColour --;
+				if (NewColour > 3)
 				{
-					NumberOfDesiredCharacter = GameStateCast->GetNumberOfCharacterColoursTaken(IdealCharacter, IdealCharacterColour);
-					if (NumberOfDesiredCharacter >= 1)
-					{
-						int32 NewColour = (int32)IdealCharacter;
-						if (_bIsTowardsRight)
-							NewColour ++;
-						else
-							NewColour --;
-						if (NewColour > 3)
-						{
-							NewColour = 0;
-						}
-						else if (NewColour < 0)
-						{
-							NewColour = 3;
-						}
-						IdealCharacter = (ECharacters)NewColour;
-					}
+					NewColour = 0;
 				}
-
-				auto PlayerID = PlayerState->Player_ID;
-				PlayerControllerCast->UpdateCharacterMaterial(PlayerID, IdealCharacter, IdealCharacterColour);
+				else if (NewColour < 0)
+				{
+					NewColour = 3;
+				}
+				IdealCharacter = (ECharacters)NewColour;
 			}
 		}
 	}
@@ -252,14 +187,29 @@ void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, fl
 		{
 			if (PlayerState->Character != IdealCharacter || PlayerState->CharacterColour != IdealCharacterColour)
 			{
-				CheckForTakenSkin(true);
-
 				if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
 				{
-					GameInstance->Character = IdealCharacter;
-					GameInstance->CharacterColour = IdealCharacterColour;
+					if (PlayerControllerCast->HasAuthority())
+					{
+						FString Name{};
+						IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+						if (IdentityInterface.IsValid())
+						{
+							Name = IdentityInterface->GetPlayerNickname(*PlayerState->GetUniqueId().GetUniqueNetId());
+						}
+						FCharacterDetails Details{};
+						Details.Character = IdealCharacter;
+						Details.CharacterColour = IdealCharacterColour;
+					
+						if (GameInstance->FinalPlayerDetails.Contains(Name))
+							GameInstance->FinalPlayerDetails[Name] = Details;
+						else
+							GameInstance->FinalPlayerDetails.Add(Name, Details);
+					}
 				}
-				
+
+				auto PlayerID = PlayerState->Player_ID;
+				PlayerControllerCast->UpdateCharacterMaterial(PlayerID, IdealCharacter, IdealCharacterColour);
 				UpdateCharacterImage();
 			}
 		}

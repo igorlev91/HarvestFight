@@ -13,14 +13,14 @@ APlant::APlant()
 	bReplicates = true;
 
 	InterfaceType = EInterfaceType::Default;
-	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
-	SSComponent->Disable();
+
 }
 
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetReplicates(true);
 	SetReplicatingMovement(true);
 }
 
@@ -41,7 +41,8 @@ void APlant::Interact(APrototype2Character* _Player)
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Enable();
+	SSComponent->FindMeshesToStretch();
+	SSComponent->Disable();
 }
 
 void APlant::ClientInteract(APrototype2Character* _Player)

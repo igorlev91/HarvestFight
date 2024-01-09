@@ -38,102 +38,45 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 		return;
 	}
 	
-	/* Preset ready images to being Hidden */
-	Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-	Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-	Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-	Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-	
-	for(int i = 0; i < GameStateReference->Server_Players.Num(); i++)
-	{
-		if (auto* PlayerState = Cast<ALobbyPlayerState>(GameStateReference->Server_Players[i]))
-		{
-			switch(i)
-			{
-			case 0:
-				{
-					if (PlayerState->IsReady == true)
-					{
-						Player1ReadyImage->SetVisibility(ESlateVisibility::Visible);
-					}
-					else
-					{
-						Player1ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-					}
-					break;
-				}
-			case 1:
-				{
-					if (PlayerState->IsReady == true)
-					{
-						Player2ReadyImage->SetVisibility(ESlateVisibility::Visible);
-					}
-					else
-					{
-						Player2ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-					}
-					break;
-				}
-			case 2:
-				{
-					if (PlayerState->IsReady == true)
-					{
-						Player3ReadyImage->SetVisibility(ESlateVisibility::Visible);
-					}
-					else
-					{
-						Player3ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-					}
-					break;
-				}
-			case 3:
-				{
-					if (PlayerState->IsReady == true)
-					{
-						Player4ReadyImage->SetVisibility(ESlateVisibility::Visible);
-					}
-					else
-					{
-						Player4ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-					}
-					break;
-				}
-			default:
-				break;
-			}
-		}
-	}
 	/* Showing map choice widget */
 	if (GameStateReference->ShouldShowMapChoices())
 	{
 		MapChoiceWidget->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
-		
-		MapChoiceWidget->Farm_Counter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
-		MapChoiceWidget->WinterFarm_Counter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
-		if (GameStateReference->GetFarm() > 0)
+
+		/* Increasing value of counter for each map */
+		MapChoiceWidget->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
+		MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
+		MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
+
+		/* Turning on visibility of maps if value is higher than 0 */
+		if (GameStateReference->GetFarm() > 0) // Normal farm
 		{
-			MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Visible); // Turns on visibility of vote text only if not 0
+			MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 		}
 		else
 		{
-			MapChoiceWidget->Farm_Counter->SetVisibility(ESlateVisibility::Hidden);
+			MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 		}
-		if (GameStateReference->GetWinterFarm() > 0)
+		if (GameStateReference->GetWinterFarm() > 0) // Winter farm
 		{
-			MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Visible); // Turns on visibility of vote text only if not 0
+			MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 		}
 		else
 		{
-			MapChoiceWidget->WinterFarm_Counter->SetVisibility(ESlateVisibility::Hidden);
+			MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+		}
+		if (GameStateReference->GetHoneyFarm() > 0) // Honey farm
+		{
+			MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+		}
+		else
+		{
+			MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 	/* Show timer after map vote */
-	if (GameStateReference->HasMapBeenChosen())
-	{
-		MapChoiceWidget->MapChoiceTimer->SetVisibility(ESlateVisibility::Visible);
-		MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceLengthSeconds())));
-	}
-	if (GameStateReference->GetMapChoiceLengthSeconds() <= 0)
+	MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
+	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
 	{
 		MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}

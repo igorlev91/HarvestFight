@@ -11,6 +11,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/DataAssets/PlantData.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_SellCropUI.h"
 
 ASellBin::ASellBin()
@@ -30,6 +31,8 @@ ASellBin::ASellBin()
 	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
 	InteractSystem->SetupAttachment(RootComponent);
 	InteractSystem->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void ASellBin::BeginPlay()
@@ -202,17 +205,19 @@ void ASellBin::Interact(APrototype2Character* _Player)
 				_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue);
 			}
 
+			int32 PlantSellValue = Plant->PlantData->SellValue * (Plant->NumberOfNearbyFlowers + 1);
+
 			if (Plant->ItemComponent->bGold)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(Plant->PlantData->SellValue * Plant->PlantData->GoldMultiplier));
+				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue * Plant->PlantData->GoldMultiplier));
 				//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
-				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = Plant->PlantData->SellValue * Plant->PlantData->GoldMultiplier;
+				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue * Plant->PlantData->GoldMultiplier;
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(Plant->PlantData->SellValue));
+				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue));
 				//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
-				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = Plant->PlantData->SellValue;	
+				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue;	
 			}
 			
 			Cast<APrototype2PlayerState>(_Player->GetPlayerState())->bIsShowingExtraCoins = true; 

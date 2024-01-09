@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "RadialPlot.generated.h"
 
+class APrototype2PlayerState;
 UCLASS()
 class PROTOTYPE2_API ARadialPlot : public AActor
 {
@@ -13,21 +14,26 @@ public:
 	void SetPlayerID(int32 _Id);
 	int32 GetPlayerID() const;
 
+	void UpdateBeehiveFlowers();
+
 protected:
 	ARadialPlot();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 
 	UFUNCTION(NetMulticast, Reliable, meta = (AllowPrivateAccess))
-	void Multi_SetPlotMaterial(int32 _Id);
-	void Multi_SetPlotMaterial_Implementation(int32 _Id);
+	void Multi_SetPlotMaterial(APrototype2PlayerState* _Id);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	TArray<class AGrowSpot*> growSpots;
+	TArray<class AGrowSpot*> GrowSpots;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<UMaterialInstance*> PlotSignMaterials;
+	UMaterialInstance* PlotSignMaterial;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	UMaterialInstanceDynamic* PlotSignMaterialDynamic;
 
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
 	class UStaticMeshComponent* PlotSignMesh;
@@ -43,4 +49,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float PlotZHeight {-20.0f};
+	
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
+
+	bool bDoOnce{true};
 };

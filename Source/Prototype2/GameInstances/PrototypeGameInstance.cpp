@@ -5,3 +5,8 @@
 UPrototypeGameInstance::UPrototypeGameInstance()
 {
 }
+
+void UPrototypeGameInstance::StartGameInstance()
+{
+	Super::StartGameInstance();
+}

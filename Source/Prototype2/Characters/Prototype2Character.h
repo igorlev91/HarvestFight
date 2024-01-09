@@ -10,6 +10,7 @@
 #include "Prototype2/DataAssets/WeaponData.h"
 #include "Prototype2Character.generated.h"
 
+class UAnimationData;
 class UAudioComponent;
 class USoundCue;
 class UItemComponent;
@@ -44,14 +45,11 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/* Getter for when character is sprinting */
+	UFUNCTION(BlueprintCallable)
 	bool IsSprinting();
 
 	/* Checks if player is on the ground */
 	void CheckForFloorSurface();
-
-	/* Players unique ID */
-	UPROPERTY(VisibleAnywhere, Replicated)
-	int PlayerID{-1};
 
 	/* Blueprint event for VFX when player attacks */
 	UFUNCTION(BlueprintImplementableEvent)
@@ -136,7 +134,7 @@ public:
 
 	/* Player Material */
 	UPROPERTY(VisibleAnywhere, Replicated)
-	UMaterialInstance* PlayerMat;
+	UMaterialInstanceDynamic* PlayerMat;
 
 	/* Player Mesh */
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -220,7 +218,9 @@ public:
 	TArray<EParticleSystem> ParticleSystemsToDeActivate;
 	UPROPERTY(EditAnywhere)
 	bool ToggleNiagraTestComponent{false};
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UAnimationData* AnimationData;
 protected:
 	/* Protected Functions */
 
@@ -293,9 +293,12 @@ protected:
 	void PlayNetworkMontage(UAnimMontage* _Montage);
 
 	/* Display name widget (above head) */
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* PlayerNameWidgetComponent;
 
+	UPROPERTY()
+	class UWidget_PlayerName* PlayerNameWidget{nullptr};
+	
 private:
 	/* Private variables */
 	/* Input */
@@ -366,11 +369,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
 	
-	/* References to change speed: Sprint/Walk/Slow Walk */
-	UPROPERTY(EditAnywhere, Category = Animation)
-	UAnimSequence* RunAnimation;	
-	UPROPERTY(EditAnywhere, Category = Animation)
-	TArray<UAnimSequence*> RunAnimations;
+	/* References to change speed: Sprint/Walk/Slow Walk */ // Todo: remove when animation data asset done
+	//UPROPERTY(EditAnywhere, Category = Animation)
+	//UAnimSequence* RunAnimation;	
+	//UPROPERTY(EditAnywhere, Category = Animation)
+	//TArray<UAnimSequence*> RunAnimations;
 
 	/* Friction for when player is on the ice */
 	UPROPERTY(EditAnywhere)
@@ -427,6 +430,12 @@ private:
 	/* The current weapon data to use data from */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
 	UWeaponData* CurrentWeaponData;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstanceDynamic*> PlayerMaterialsDynamic{};
 
 public: /* Pubic Networking */
 	

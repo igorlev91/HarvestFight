@@ -6,13 +6,29 @@
 
 ALobbyPlayerState::ALobbyPlayerState()
 {
-	CharacterColour = (ECharacterColours)((rand() % 3) + 1);
+	//CharacterColour = (ECharacterColours)((rand() % 3) + 1);
 }
 
 void ALobbyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		FString Name{};
+		auto OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem)
+		{
+			if (auto Interface = OnlineSubsystem->GetIdentityInterface())
+			{
+				if (auto uniqueID = GetUniqueId().GetUniqueNetId())
+				{
+					Name = Interface->GetPlayerNickname(*uniqueID);
+				}
+			}
+		}
+		GameInstance->FinalPlayerDetails.FindOrAdd(Name, FCharacterDetails{});
+	}
 }
 
 void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -28,6 +44,23 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 void ALobbyPlayerState::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
+
+	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		FString Name{};
+		auto OnlineSubsystem = IOnlineSubsystem::Get();
+		if (OnlineSubsystem)
+		{
+			if (auto Interface = OnlineSubsystem->GetIdentityInterface())
+			{
+				if (auto uniqueID = GetUniqueId().GetUniqueNetId())
+				{
+					Name = Interface->GetPlayerNickname(*uniqueID);
+				}
+			}
+		}
+		GameInstance->UniqueNetIDName = Name;
+	}
 }
 
 void ALobbyPlayerState::SetIsReady(bool _bIsReady)
@@ -35,7 +68,7 @@ void ALobbyPlayerState::SetIsReady(bool _bIsReady)
 	IsReady = _bIsReady;
 }
 
-void ALobbyPlayerState::UpdateCharacterMaterial(ECharacters _Character, ECharacterColours _CharacterColour)
+void ALobbyPlayerState::UpdateCharacterMaterial(ECharacters _Character, FVector4d _CharacterColour)
 {
 	Character = _Character;
 	CharacterColour = _CharacterColour;

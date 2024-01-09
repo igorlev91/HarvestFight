@@ -1,6 +1,5 @@
 
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -30,11 +29,15 @@ public:
 	
 	/* Friendly Farm vote counter */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Farm_Counter;
+	class UTextBlock* NormalLevelCounter;
 
 	/* Winter Farm vote counter */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* WinterFarm_Counter;
+	class UTextBlock* WinterLevelCounter;
+
+	/* Honey Farm vote counter */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* HoneyLevelCounter;
 
 	/* Timer after players have voted on map */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

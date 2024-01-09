@@ -19,7 +19,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 	bool bGrown = false;
-
 	UPROPERTY(EditAnywhere)
-	class USquashAndStretch* SSComponent;	
+	int32 NumberOfNearbyFlowers = 0;
+	
 };

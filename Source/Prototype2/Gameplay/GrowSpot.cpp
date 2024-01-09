@@ -1,4 +1,4 @@
-
+.
 
 #include "GrowSpot.h"
 #include "GrowSpot.h"
@@ -10,9 +10,11 @@
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "RadialPlot.h"
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/DataAssets/PlantData.h"
+#include "Prototype2/Pickups/PlantSeed.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
 AGrowSpot::AGrowSpot()
@@ -20,6 +22,7 @@ AGrowSpot::AGrowSpot()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
+	ItemComponent->Mesh->SetIsReplicated(false);
 	bReplicates = true;
 
 	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
@@ -29,12 +32,18 @@ AGrowSpot::AGrowSpot()
 
 	PlantReadySparkle_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Attack Component"));
 	PlantReadySparkle_NiagaraComponent->SetupAttachment(RootComponent);
+
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
-void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const
+void AGrowSpot::SetRadialReferance(ARadialPlot* _RadialPlot)
 {
-	Super::GetLifetimeReplicatedProps(_OutLifetimeProps);
-	TArray<FLifetimeProperty> OutLifetimeProps = _OutLifetimeProps;
+	RadialPlot = _RadialPlot;
+}
+
+void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AGrowSpot, GrowTimer);
 	DOREPLIFETIME(AGrowSpot, GrowTime);
 	DOREPLIFETIME(AGrowSpot, Plant);
@@ -42,6 +51,9 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifeti
 	DOREPLIFETIME(AGrowSpot, GrowSpotState);
 	DOREPLIFETIME(AGrowSpot, Player_ID);
 	DOREPLIFETIME(AGrowSpot, PlantReadySparkle_NiagaraComponent);
+
+	DOREPLIFETIME(AGrowSpot, bIsFertilised);
+	DOREPLIFETIME(AGrowSpot, FertiliseInteractDelayTime);
 }
 
 bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
@@ -97,7 +109,10 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
 
-	if (_Player->PlayerID == Player_ID)
+	if (!_Player->PlayerStateRef)
+		return;
+	
+	if (_Player->PlayerStateRef->Player_ID == Player_ID)
 	{
 		switch(GrowSpotState)
 		{
@@ -121,6 +136,11 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 					_Player->UpdateDecalDirection(true, true);
 				else
 					_Player->UpdateDecalDirection(false);
+
+				if (Plant)
+					Plant->SSComponent->Boing();
+				if (Weapon)
+					Weapon->SSComponent->Boing();
 			}
 		default:
 			break;
@@ -224,7 +244,14 @@ void AGrowSpot::ScalePlant(APlant* _Plant, FVector _TargetScale, float _PosOffse
 	_Plant->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	_Plant->ItemComponent->Mesh->SetWorldScale3D(Scale);
 	_Plant->SetActorLocation(Pos);
-	_Plant->SetActorRotation(FRotator(0,0,0));
+	if (Weapon)
+	{
+		_Plant->SetActorRotation(FRotator(90,0,0));
+	}
+	else
+	{
+		_Plant->SetActorRotation(FRotator(0,0,0));
+	}
 }
 
 
@@ -239,6 +266,11 @@ void AGrowSpot::Tick(float _DeltaTime)
 	if (FertiliseInteractDelayTime > 0)
 	{
 		FertiliseInteractDelayTime -= _DeltaTime;
+	}
+	
+	if (Beehive)
+	{
+		ScalePlant(Beehive, Beehive->BeehiveData->PlantScale, 0.0f);
 	}
 	
 	if (Plant)
@@ -267,6 +299,29 @@ void AGrowSpot::Tick(float _DeltaTime)
 	
 }
 
+void AGrowSpot::Multi_MakePlantGold_Implementation()
+{
+	if (!Plant)
+		return;
+	
+	if (!Plant->PlantData)
+	{
+		return;
+	}
+
+	Plant->ItemComponent->bGold = true;
+	
+	for (int i = 0; i < Plant->PlantData->GoldMaterials.Num(); i++)
+	{
+		Plant->ItemComponent->Mesh->SetMaterial(i, Plant->PlantData->GoldMaterials[i]);
+	}
+}
+
+void AGrowSpot::Multi_SetFertilised_Implementation()
+{
+	bIsFertilised = true;
+}
+
 void AGrowSpot::Multi_GrowOnTick_Implementation(float _DeltaTime)
 {
 	
@@ -289,7 +344,7 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 		return;
 	}
 
-	if (!_Player->HeldItem->PlantData->Name.Compare("Mandrake"))
+	if (_Player->HeldItem->PlantData->Name.Compare("Mandrake"))
 	{
 		return;
 	}
@@ -309,24 +364,18 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 
 void AGrowSpot::MakePlantGold()
 {
-	if (!Plant->PlantData)
-	{
-		return;
-	}
-
-	for (int i = 0; i < Plant->PlantData->GoldMaterials.Num() - 1; i++)
-	{
-		Plant->ItemComponent->Mesh->SetMaterial(i, Plant->PlantData->GoldMaterials[i]);
-	}
-
-	Plant->ItemComponent->bGold = true;
+	Multi_MakePlantGold();
 }
 
 
 void AGrowSpot::Interact(APrototype2Character* _Player)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to interact with the grow spot"));
-	if (_Player->PlayerID != Player_ID)
+
+	if (!_Player->PlayerStateRef)
+		return;
+	
+	if (_Player->PlayerStateRef->Player_ID != Player_ID)
 	{
 		return;
 	}
@@ -346,7 +395,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				
 				if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 				{
-					bIsFertilised = true;
+					Multi_SetFertilised();
 					Fertiliser->Destroy();
 
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
@@ -376,10 +425,26 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						PlantWeapon(_Player);
 					}
-					else if (_Player->HeldItem->DataAssetPickupType == EPickupDataType::PlantData)
+					else if (_Player->HeldItem->DataAssetPickupType == EPickupDataType::PlantData || _Player->HeldItem->DataAssetPickupType == EPickupDataType::BeehiveData
+						|| _Player->HeldItem->DataAssetPickupType == EPickupDataType::FlowerData)
 					{
 						PlantPlant(_Player);
 					}
+
+					/*
+					if (Beehive)
+					{
+						RadialPlot->UpdateBeehiveFlowers();
+					}
+					
+					if (Plant)
+					{
+						if (Plant->PlantData->PickupType == EPickupDataType::FlowerData)
+						{
+							RadialPlot->UpdateBeehiveFlowers();
+						}	
+					}
+					*/
 				}
 				break;
 			}
@@ -399,6 +464,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						MakePlantGold();
 						Fertiliser->Destroy();
+						bIsFertilised = false;
 					}
 				}
 				UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
@@ -419,6 +485,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 							MakePlantGold();
 							Fertiliser->Destroy();
 							FertiliseInteractDelayTime = FertiliseInteractDelay;
+							bIsFertilised = false;
 						}
 					}
 					UE_LOG(LogTemp, Warning, TEXT("But dropped it..."));
@@ -429,6 +496,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				if (Beehive)
 				{
 					// do beehive stuff
+					Beehive->Interact(_Player);
 					break;
 				}
 
@@ -436,6 +504,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Tis a weapon!"));
 					Weapon->bGrown = true;
+					Weapon->SSComponent->Disable();
 							
 					_Player->PickupItem(Weapon);
 
@@ -454,6 +523,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Tis a Plant!"));
 					Plant->bGrown = true;
+					Plant->SSComponent->Disable();
 
 					Plant->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 					
@@ -483,16 +553,12 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 	//UE_LOG(LogTemp, Warning, TEXT("PlayerID: %s"), *FString::FromInt(_PlayerID))
 	//UE_LOG(LogTemp, Warning, TEXT("GrowSpotID: %s"), *FString::FromInt(Player_ID))
 
-	if (auto PlayerState = _Owner->GetPlayerState<APrototype2PlayerState>())
+	if (_Owner->PlayerStateRef)
 	{
-		if (PlayerState->Player_ID != _PlayerID)
+		if (_Owner->PlayerStateRef->Player_ID != _PlayerID)
 		{
 			return;	
 		}
-	}
-	else
-	{
-		return;
 	}
 
 	switch (GrowSpotState)
@@ -502,7 +568,6 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			// Set to "Grow"
 			if(_Owner->HeldItem && Cast<ASeed>(_Owner->HeldItem))
 			{
-						
 				_InvokingWidget->SetHUDInteractText("Grow");
 
 				_Owner->EnableStencil(true);
@@ -522,7 +587,7 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 		}
 	case EGrowSpotState::Growing:
 		{
-			if(_Owner->HeldItem && Cast<AFertiliser>(_Owner->HeldItem) && !Plant->ItemComponent->bGold && Plant && !Weapon)
+			if(_Owner->HeldItem && Cast<AFertiliser>(_Owner->HeldItem) && !Plant->ItemComponent->bGold && Plant && !Weapon && !Beehive)
 			{
 						
 				_InvokingWidget->SetHUDInteractText("Fertilise");
@@ -542,10 +607,15 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 				_InvokingWidget->SetHUDInteractText("Pick Up");
 				_Owner->EnableStencil(true);
 			}
-			else if(_Owner->HeldItem && Cast<AFertiliser>(_Owner->HeldItem) && Plant && !Weapon)
+			else if(_Owner->HeldItem && Cast<AFertiliser>(_Owner->HeldItem) && Plant && !Weapon && !Beehive)
 			{
 				_InvokingWidget->SetHUDInteractText("Fertilise");
 
+				_Owner->EnableStencil(true);
+			}
+			else if (Beehive && Beehive->bIsReadyToCollect)
+			{
+				_InvokingWidget->SetHUDInteractText("Pick Up");
 				_Owner->EnableStencil(true);
 			}
 			else if (_Owner->HeldItem && (Plant || Weapon) && !Beehive)
@@ -626,13 +696,21 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 		GrowTime = 1.0f;
 	}
 
-	Plant = GetWorld()->SpawnActor<APlant>(PlantPrefab);
-	// doesnt properly check beehive yet
-	if (auto BeehiveCast = Cast<ABeehive>(Plant))
+	if (_Player->HeldItem->PlantData->PickupType == EPickupDataType::BeehiveData)
 	{
-		SetBeehive(BeehiveCast, BeehiveCast->PlantData->GrowTime);
+		Beehive = GetWorld()->SpawnActor<ABeehive>(BeehivePrefab);
 	}
 	else
+	{
+		Plant = GetWorld()->SpawnActor<APlant>(PlantPrefab);
+	}
+	// doesnt properly check beehive yet
+	if (Beehive)
+	{
+		Beehive->SetBeehiveData(Cast<UBeehiveData>(_Player->HeldItem->PlantData));
+		SetBeehive(Beehive, Beehive->BeehiveData->GrowTime);
+	}
+	else if (Plant)
 	{
 		Plant->SetPlantData(_Player->HeldItem->PlantData);
 		Plant->ItemComponent->bGold = false;
@@ -643,8 +721,7 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 		}
 		SetPlant(Plant, GrowTime);
 
-		// Todo: Dawn we need this here?
-		if (bIsFertilised && Plant && !Plant->ItemComponent->bGold)
+		if (bIsFertilised)
 		{
 			MakePlantGold();
 			bIsFertilised = false;
@@ -652,7 +729,7 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 	}
 							
 	Multi_Plant();
-
+	
 	_Player->HeldItem->Destroy();
 	_Player->HeldItem = nullptr;
 

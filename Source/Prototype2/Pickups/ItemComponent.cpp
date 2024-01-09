@@ -49,7 +49,6 @@ void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemP
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
 	DOREPLIFETIME(UItemComponent, bGold);
 }
 

@@ -18,15 +18,15 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 public:
 	void GrabSkinFromGameInstance();
 
-	void UpdateCharacterMaterial(ECharacters _Character, ECharacterColours _Colour);
+	void UpdateCharacterMaterial(ECharacters _Character, FVector4d _Colour);
 	
 	UFUNCTION(Server, Reliable)
-	void Server_GrabSkinFromGameInstance(ECharacters _Character, ECharacterColours _Colour);
-	void Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, ECharacterColours _Colour);
+	void Server_GrabSkinFromGameInstance(ECharacters _Character, FVector4d _Colour);
+	void Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_GrabSkinFromGameInstance(ECharacters _Character, ECharacterColours _Colour);
-	void Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, ECharacterColours _Colour);
+	void Multi_GrabSkinFromGameInstance(ECharacters _Character, FVector4d _Colour);
+	void Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour);
 
 public:
 	bool bSkinSet{};
@@ -55,6 +55,6 @@ public:
 	ECharacters Character{ECharacters::COW};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
-	ECharacterColours CharacterColour{ECharacterColours::RED};
+	FVector4 CharacterColour{0.428690,0.102242,0.102242,1.000000};
 	
 };

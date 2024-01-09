@@ -29,12 +29,12 @@ public:
 	
 	void SetIsReady(bool _bIsReady);
 
-	void UpdateCharacterMaterial(ECharacters _Character, ECharacterColours _CharacterColour);
+	void UpdateCharacterMaterial(ECharacters _Character, FVector4d _CharacterColour);
 
 	// Character & Colour
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	ECharacters Character{ECharacters::COW};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
-	ECharacterColours CharacterColour{ECharacterColours::RED};
+	FVector4 CharacterColour{0.428690,0.102242,0.102242,1.000000};
 };

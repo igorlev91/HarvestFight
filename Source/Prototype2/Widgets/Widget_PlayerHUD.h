@@ -126,6 +126,20 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P4Icon;
 
+	UPROPERTY(EditAnywhere)
+	class UTexture2D* RingTexture{};
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P1ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P2ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P3ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P4ring;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<UImage*> Rings;
+
 	// Player UI overlays
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UOverlay* TopOverlayUI;

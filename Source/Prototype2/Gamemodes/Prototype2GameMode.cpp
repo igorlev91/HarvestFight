@@ -68,85 +68,73 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
 	
-	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
+	if (HasAuthority())
 	{
-		if (auto PlayerState = _NewPlayer->GetPlayerState<APrototype2PlayerState>())
+		if (APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>())
 		{
-			if (auto Gamestate = GetGameState<APrototype2Gamestate>())
+			if (APrototype2Gamestate* Gamestate = GetGameState<APrototype2Gamestate>())
 			{
-				//UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
-				PlayerState->Player_ID = Gamestate->RegisterPlayer(PlayerState);
+				PlayerStateReference->Player_ID = Gamestate->RegisterPlayer(PlayerStateReference);
+
+				FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
+				auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
+				if (SubSystem)
+				{
+					IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+					if (IdentityInterface.IsValid())
+					{
+						TSharedPtr<const FUniqueNetId> UserId = PlayerStateReference->GetUniqueId().GetUniqueNetId();
+						if (UserId.IsValid())
+						{
+							if (IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::LoggedIn ||
+							IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::UsingLocalProfile)
+							{
+								NewPlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+								UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
+							}
+						}
+					}
+				}
+				PlayerStateReference->PlayerName = NewPlayerName;
+				
 				if (auto Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter()))
 				{
-					Character->SetPlayerState(PlayerState);
+					Character->PlayerStateRef = PlayerStateReference;
+					Character->SetPlayerState(PlayerStateReference);
+					Character->SetOwner(_NewPlayer);
 					
-					Character->PlayerID = PlayerState->Player_ID;
-					Character->PlayerStateRef = PlayerState;
 					if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
 					{
 						Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 						Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
 
-						FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerState->Player_ID);
-						auto SubSystem = IOnlineSubsystem::Get(FName("Steam"));
-						if (SubSystem)
+						FString Name{};
+						auto OnlineSubsystem = IOnlineSubsystem::Get();
+						if (OnlineSubsystem)
 						{
-							IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
-							if (IdentityInterface.IsValid())
+							if (auto Interface = OnlineSubsystem->GetIdentityInterface())
 							{
-								if (IdentityInterface->GetLoginStatus(PlayerState->GetPlayerId()) == ELoginStatus::LoggedIn ||
-									IdentityInterface->GetLoginStatus(PlayerState->GetPlayerId()) == ELoginStatus::UsingLocalProfile)
+								if (auto uniqueID = PlayerStateReference->GetUniqueId().GetUniqueNetId())
 								{
-									NewPlayerName = IdentityInterface->GetPlayerNickname(PlayerState->GetPlayerId());
-									UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerState->GetPlayerId()), *NewPlayerName);
+									Name = Interface->GetPlayerNickname(*uniqueID);
 								}
 							}
 						}
-						PlayerState->PlayerName = NewPlayerName;
-						
-						//for(auto i = 0; i < Gamestate->GetFinalConnectionCount(); i++)
-						//{
-						//	if (GameInstance->FinalCharacters.Num() > PlayerState->Player_ID)
-						//		PlayerState->Character = GameInstance->FinalCharacters[PlayerState->Player_ID];
-						//	if (GameInstance->FinalColours.Num() > PlayerState->Player_ID)
-						//		PlayerState->CharacterColour = GameInstance->FinalColours[PlayerState->Player_ID];
-						//}
-
-						bool bDuplicateSkin{};
-						for(auto i = 0; i < GameInstance->FinalPlayerNames.Num() && bDuplicateSkin == false; i++)
+						if (GameInstance->FinalPlayerDetails.Contains(Name))
 						{
-							for(auto j = 0; j < GameInstance->FinalPlayerNames.Num() && bDuplicateSkin == false; j++)
-							{
-								if (j != i)
-								{
-									if (GameInstance->FinalPlayerNames[i] == GameInstance->FinalPlayerNames[j])
-									{
-										bDuplicateSkin = true;
-									}
-								}
-							}
-						}
-
-						if (bDuplicateSkin)
-						{
-							if (GameInstance->FinalCharacters.Num() > 0)
-								PlayerState->Character = GameInstance->FinalCharacters[PlayerState->Player_ID];
-							if (GameInstance->FinalColours.Num() > 0)
-								PlayerState->CharacterColour = GameInstance->FinalColours[PlayerState->Player_ID];
+							PlayerStateReference->Character = GameInstance->FinalPlayerDetails[Name].Character;
+							PlayerStateReference->CharacterColour = GameInstance->FinalPlayerDetails[Name].CharacterColour;
 						}
 					}
 
-					if (PlayerMaterials.Num() > (int)PlayerState->Character * 4 + (int)PlayerState->CharacterColour
-						&& PlayerMeshes.Num() > (int)PlayerState->Character)
+					if (PlayerMaterials.Num() > (int)PlayerStateReference->Character && PlayerMeshes.Num() > (int)PlayerStateReference->Character)
 					{
-						Character->PlayerMat = PlayerMaterials[(int)PlayerState->Character * 4 + (int)PlayerState->CharacterColour];
-						Character->PlayerMesh = PlayerMeshes[(int)PlayerState->Character];
+						// Set the animation data asset for the character
+						Character->AnimationData = AnimationDatas[(int)PlayerStateReference->Character];
+						
+						//Character->PlayerMat = UMaterialInstanceDynamic::Create(PlayerMaterials[(int)PlayerStateReference->Character], nullptr);
+						Character->PlayerMesh = PlayerMeshes[(int)PlayerStateReference->Character]; // Todo: Remove when animation data set up
 					}
-
-					UE_LOG(LogTemp, Warning, TEXT("Player %s Character: %s Colour: %s"), *FString::FromInt(PlayerState->Player_ID),
-						*FString::FromInt((int)PlayerState->Character),
-						*FString::FromInt((int)PlayerState->CharacterColour));
-					UE_LOG(LogTemp, Warning, TEXT("Player ID Assigned"));
 				}
 			}
 		}

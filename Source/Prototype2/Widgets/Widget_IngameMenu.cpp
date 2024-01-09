@@ -2,7 +2,19 @@
 
 
 #include "Widget_IngameMenu.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+
+void UWidget_IngameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	
+	HoverButton(bIsButtonHovered, ButtonToPulse, PulseTime, InDeltaTime, FVector2D(1.0f, 1.0f), ButtonScale);
+
+	
+}
 
 void UWidget_IngameMenu::ToggleMenu()
 {
@@ -21,6 +33,12 @@ void UWidget_IngameMenu::ToggleMenu()
 			Controller->SetInputMode(FInputModeGameOnly{});
 			
 			SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		/* Toggle character movement - stops movement while menu open */
+		if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+		{
+			Owner->GetCharacterMovement()->ToggleActive();
 		}
 	}
 }

@@ -21,18 +21,26 @@ public:
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 
-	bool GetIfReady() const {return bIsReadyToCollect;}
+	void SetBeehiveData(UBeehiveData* _Data);
 private:
+	virtual void Tick(float DeltaSeconds) override;
 
 	// Variables
 public:
-
-private:
-	UPROPERTY(VisibleAnywhere)
-	int32 NumberOfNearbyFlowers;
+	UPROPERTY(EditAnywhere)
+	UBeehiveData* BeehiveData;
+	
 	UPROPERTY(EditAnywhere)
 	bool bIsReadyToCollect;
 
 	UPROPERTY(EditAnywhere)
-	UBeehiveData* BeehiveData;
+	bool bCollectOverTime;
+
+	UPROPERTY(EditAnywhere)
+	float TimeTillCollect = 15.0f;
+	float TrackerTimeTillCollect;
+	
+private:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<APlant> Plant;
 };

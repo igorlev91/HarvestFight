@@ -5,6 +5,18 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
+AFertiliser::AFertiliser()
+{
+	bReplicates = true;
+}
+
+void AFertiliser::BeginPlay()
+{
+	Super::BeginPlay();
+	PickupActor = EPickupActor::FertilizerActor;
+	SetReplicatingMovement(true);
+}
+
 void AFertiliser::Interact(APrototype2Character* _Player)
 {
 	ItemComponent->Interact(_Player, this);

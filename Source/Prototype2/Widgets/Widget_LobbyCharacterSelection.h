@@ -53,6 +53,7 @@ public:
 
 	/* Public Variables */
 public:
+	UPROPERTY()
 	class APrototype2Gamestate* GameStateRef;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -85,5 +86,5 @@ public:
 	ECharacters IdealCharacter{ECharacters::COW};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ECharacterColours IdealCharacterColour{ECharacterColours::RED};
+	FVector4 IdealCharacterColour{0.428690,0.102242,0.102242,1.000000};
 };

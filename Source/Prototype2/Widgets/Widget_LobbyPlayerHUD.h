@@ -37,18 +37,4 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_MapChoice* MapChoiceWidget;
-
-	/* Player ready button (above character head) */
-	// Player 1
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UImage* Player1ReadyImage;
-	// Player 2
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UImage* Player2ReadyImage;
-	// Player 3
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UImage* Player3ReadyImage;
-	// Player 4
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UImage* Player4ReadyImage;
 };

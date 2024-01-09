@@ -64,4 +64,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UNiagaraComponent* InteractSystem;
+
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
 };

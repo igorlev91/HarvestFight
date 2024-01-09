@@ -1,4 +1,11 @@
-
+/* Bachelor of Software Engineering
+ * Media Design School
+ * Auckland
+ * New Zealand
+ * (c) Media Design School
+ * File Name : Widget_EndgameCheck.h
+ * Description : Toggles endgame widget on/off
+ * Author/s : Stace Frear */
 
 #pragma once
 

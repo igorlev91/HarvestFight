@@ -70,6 +70,9 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<USkeletalMesh*> PlayerMeshes;
 
+	UPROPERTY(EditDefaultsOnly)
+	TArray<UAnimationData*> AnimationDatas; 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TArray<TObjectPtr<APrototype2Character>> Server_Characters;
 

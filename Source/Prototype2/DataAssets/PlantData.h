@@ -49,6 +49,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category= "Gold")
 	int32 ChanceOfGold = 5; /* x/100 */
+
+	UPROPERTY(EditDefaultsOnly, Category= "Flower")
+	int32 FlowerValue = 0;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* SeedIcon;

@@ -19,6 +19,7 @@ enum class EPickupActor : uint8
 	PlantActor,
 	SeedActor,
 	FertilizerActor,
+	BeehiveActor,
 };
 class APrototype2Character;
 UCLASS()
@@ -29,7 +30,7 @@ class PROTOTYPE2_API APickUpItem : public AActor
 public:	
 	/* Sets default values for this actor's properties */
 	APickUpItem();
-	
+
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
@@ -40,18 +41,43 @@ public:
 	/* Called from GrowSpot to give plant a specific data asset and setup static mesh */
 	void SetPlantData(UPlantData* _Data);
 	void SetWeaponData(UWeaponData* _Data);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlantSeedData(UPlantData* _Data);
+	UFUNCTION(Server, Reliable)
+	void Server_SetWeaponSeedData(UWeaponData* _Data);
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlantData(UPlantData* _Data);
+	UFUNCTION(Server, Reliable)
+	void Server_SetWeaponData(UWeaponData* _Data);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlantSeedData(UPlantData* _Data);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetWeaponSeedData(UWeaponData* _Data);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlantData(UPlantData* _Data);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetWeaponData(UWeaponData* _Data);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
 
-	/* Data Assets */ // Todo: Replicate?
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
+
+	UPROPERTY(VisibleAnywhere)
 	UPlantData* PlantData = nullptr;
+	UPROPERTY(VisibleAnywhere)
 	UWeaponData* WeaponData = nullptr;
 
 	// Todo: Rename to PickupType when other Enum is replaced
-	// Todo: Replicate?
+	UPROPERTY(VisibleAnywhere)
 	EPickupDataType DataAssetPickupType; //to replace pickup type in itemcomponent
+
+	UPROPERTY(VisibleAnywhere)
 	EPickupActor PickupActor;
+
 protected:
 	/* Called when the game starts or when spawned */
 	virtual void BeginPlay() override;

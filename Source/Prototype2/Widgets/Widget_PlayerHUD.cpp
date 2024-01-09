@@ -33,6 +33,29 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 		GameStateReference = GameState;
 	}
 
+	if (RingTexture)
+	{
+		P1ring->SetBrushFromTexture(RingTexture);
+		P2ring->SetBrushFromTexture(RingTexture);
+		P3ring->SetBrushFromTexture(RingTexture);
+		P4ring->SetBrushFromTexture(RingTexture);
+	}
+	Rings.Add(P1ring);
+	Rings.Add(P2ring);
+	Rings.Add(P3ring);
+	Rings.Add(P4ring);
+
+	for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+	{
+		if (auto player = GameStateReference->Server_Players[i])
+		{
+			if (Rings.Num() > i)
+			{
+				Rings[i]->SetColorAndOpacity((FLinearColor)(player->CharacterColour));
+			}
+		}
+	}
+	
 	/* Set starting pickup item */
 	ClearPickupUI();
 
@@ -241,8 +264,10 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		{
 			if (auto closestInteractable = Owner->ClosestInteractableItem)
 			{
-				
-				closestInteractable->OnDisplayInteractText(this, Owner, Owner->PlayerID);
+				if ( Owner->PlayerStateRef)
+				{
+					closestInteractable->OnDisplayInteractText(this, Owner, Owner->PlayerStateRef->Player_ID);
+				}
 			}
 			else
 			{
@@ -264,6 +289,12 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 void UWidget_PlayerHUD::EnableDisableMenu()
 {
 	IngameMenu->ToggleMenu();
+
+	/* Toggle character movement - stops movement while menu open */
+	//if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+	//{
+	//	Owner->GetCharacterMovement()->ToggleActive();
+	//}
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()
@@ -341,124 +372,126 @@ void UWidget_PlayerHUD::SetWeaponDurability(int32 _Durability)
 
 void UWidget_PlayerHUD::SetPlayerIcons(int32 _IconNumber, APrototype2PlayerState* _Player)
 {
-	int PlayerNumber = _IconNumber - 1;
-	if (PlayerNumber <= 0)
-		PlayerNumber = 0;
-	
-	switch (PlayerNumber)
-	{
-	case 0: // Player 1 Icon
-		P1Icon->SetBrushFromTexture(SetIcon(_Player));
-		break;
-	case 1:
-		P2Icon->SetBrushFromTexture(SetIcon(_Player));
-		break;
-	case 2:
-		P3Icon->SetBrushFromTexture(SetIcon(_Player));
-		break;
-	case 3:
-		P4Icon->SetBrushFromTexture(SetIcon(_Player));
-		break;
-	default:
-		break;
-	}
+	//int PlayerNumber = _IconNumber - 1;
+	//if (PlayerNumber <= 0)
+	//	PlayerNumber = 0;
+	//
+	//switch (PlayerNumber)
+	//{
+	//case 0: // Player 1 Icon
+	//	P1Icon->SetBrushFromTexture(SetIcon(_Player));
+	//	break;
+	//case 1:
+	//	P2Icon->SetBrushFromTexture(SetIcon(_Player));
+	//	break;
+	//case 2:
+	//	P3Icon->SetBrushFromTexture(SetIcon(_Player));
+	//	break;
+	//case 3:
+	//	P4Icon->SetBrushFromTexture(SetIcon(_Player));
+	//	break;
+	//default:
+	//	break;
+	//}
 }
 
 UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _Player)
 {
-	switch (_Player->Character)
-	{
-	case ECharacters::COW:
-		{
-			switch (_Player->CharacterColour)
-			{
-			case ECharacterColours::RED:
-				return Cow_Red_Texture;
-				break;
-			case ECharacterColours::BLUE:
-				return Cow_Blue_Texture;
-				break;
-			case ECharacterColours::GREEN:
-				return Cow_Green_Texture;
-				break;
-			case ECharacterColours::YELLOW:
-				return Cow_Yellow_Texture;
-				break;
-			default:
-				return Cow_Red_Texture;
-				break;
-			}
-			break;
-		}
-	case ECharacters::PIG:
-		{
-			switch (_Player->CharacterColour)
-			{
-			case ECharacterColours::RED:
-				return Pig_Red_Texture;
-				break;
-			case ECharacterColours::BLUE:
-				return Pig_Blue_Texture;
-				break;
-			case ECharacterColours::GREEN:
-				return Pig_Green_Texture;
-				break;
-			case ECharacterColours::YELLOW:
-				return Pig_Yellow_Texture;
-				break;
-			default:
-				return Pig_Red_Texture;
-				break;
-			}
-			break;
-		}
-	case ECharacters::CHICKEN:
-		{
-			switch (_Player->CharacterColour)
-			{
-			case ECharacterColours::RED:
-				return Chicken_Red_Texture;
-				break;
-			case ECharacterColours::BLUE:
-				return Chicken_Blue_Texture;
-				break;
-			case ECharacterColours::GREEN:
-				return Chicken_Green_Texture;
-				break;
-			case ECharacterColours::YELLOW:
-				return Chicken_Yellow_Texture;
-				break;
-			default:
-				return Chicken_Red_Texture;
-				break;
-			}
-			break;
-		}
-	case ECharacters::DUCK:
-		{
-			switch (_Player->CharacterColour)
-			{
-			case ECharacterColours::RED:
-				return Duck_Red_Texture;
-				break;
-			case ECharacterColours::BLUE:
-				return Duck_Blue_Texture;
-				break;
-			case ECharacterColours::GREEN:
-				return Duck_Green_Texture;
-				break;
-			case ECharacterColours::YELLOW:
-				return Duck_Yellow_Texture;
-				break;
-			default:
-				return Duck_Red_Texture;
-				break;
-			}
-			break;
-		}
-	default:
-		return Cow_Red_Texture;
-		break;
-	}
+	//switch (_Player->Character)
+	//{
+	//case ECharacters::COW:
+	//	{
+	//		switch (_Player->CharacterColour)
+	//		{
+	//		case ECharacterColours::RED:
+	//			return Cow_Red_Texture;
+	//			break;
+	//		case ECharacterColours::BLUE:
+	//			return Cow_Blue_Texture;
+	//			break;
+	//		case ECharacterColours::GREEN:
+	//			return Cow_Green_Texture;
+	//			break;
+	//		case ECharacterColours::YELLOW:
+	//			return Cow_Yellow_Texture;
+	//			break;
+	//		default:
+	//			return Cow_Red_Texture;
+	//			break;
+	//		}
+	//		break;
+	//	}
+	//case ECharacters::PIG:
+	//	{
+	//		switch (_Player->CharacterColour)
+	//		{
+	//		case ECharacterColours::RED:
+	//			return Pig_Red_Texture;
+	//			break;
+	//		case ECharacterColours::BLUE:
+	//			return Pig_Blue_Texture;
+	//			break;
+	//		case ECharacterColours::GREEN:
+	//			return Pig_Green_Texture;
+	//			break;
+	//		case ECharacterColours::YELLOW:
+	//			return Pig_Yellow_Texture;
+	//			break;
+	//		default:
+	//			return Pig_Red_Texture;
+	//			break;
+	//		}
+	//		break;
+	//	}
+	//case ECharacters::CHICKEN:
+	//	{
+	//		switch (_Player->CharacterColour)
+	//		{
+	//		case ECharacterColours::RED:
+	//			return Chicken_Red_Texture;
+	//			break;
+	//		case ECharacterColours::BLUE:
+	//			return Chicken_Blue_Texture;
+	//			break;
+	//		case ECharacterColours::GREEN:
+	//			return Chicken_Green_Texture;
+	//			break;
+	//		case ECharacterColours::YELLOW:
+	//			return Chicken_Yellow_Texture;
+	//			break;
+	//		default:
+	//			return Chicken_Red_Texture;
+	//			break;
+	//		}
+	//		break;
+	//	}
+	//case ECharacters::DUCK:
+	//	{
+	//		switch (_Player->CharacterColour)
+	//		{
+	//		case ECharacterColours::RED:
+	//			return Duck_Red_Texture;
+	//			break;
+	//		case ECharacterColours::BLUE:
+	//			return Duck_Blue_Texture;
+	//			break;
+	//		case ECharacterColours::GREEN:
+	//			return Duck_Green_Texture;
+	//			break;
+	//		case ECharacterColours::YELLOW:
+	//			return Duck_Yellow_Texture;
+	//			break;
+	//		default:
+	//			return Duck_Red_Texture;
+	//			break;
+	//		}
+	//		break;
+	//	}
+	//default:
+	//	return Cow_Red_Texture;
+	//	break;
+	//}
+
+	return nullptr;
 }
 

@@ -3,12 +3,14 @@
 #include "PickUpItem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 UWeapon::UWeapon()
 {
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	InterfaceType = EInterfaceType::Weapon;
 }
+
 
 void UWeapon::Interact(APrototype2Character* _Player)
 {

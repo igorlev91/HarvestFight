@@ -16,5 +16,5 @@ AGrowableWeapon::AGrowableWeapon()
 
 void AGrowableWeapon::Interact(APrototype2Character* _Player)
 {
-	SSComponent->Enable();
+	SSComponent->Disable();
 }

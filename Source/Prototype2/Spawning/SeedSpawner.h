@@ -56,19 +56,19 @@ private:
 	/* Spawning seed from PlantData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TArray<UPlantData*> PlantDataArray;	
-	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
+	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<ASeed> PlantSeedPrefab;
 
 	/* Spawning seed from WeaponData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TArray<UWeaponData*> WeaponDataArray;	
-	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
+	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<ASeed> WeaponSeedPrefab;
 
 	UPROPERTY(EditAnywhere, Category = Parachute, meta = (AllowPrivateAccess))
 	UStaticMesh* ParachuteMesh;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AFertiliser> FertiliserAsset;
 	
 	FVector PreviousSpawnPos = FVector(0, 0, 0);

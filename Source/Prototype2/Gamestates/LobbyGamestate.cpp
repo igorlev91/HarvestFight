@@ -1,3 +1,5 @@
+
+
 #include "LobbyGamestate.h"
 
 #include "Net/UnrealNetwork.h"
@@ -49,65 +51,37 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					// Show map choice
-					bShowMapChoice = true;
-					
-					//UE_LOG(LogTemp, Warning, TEXT("Farm: %d"), Farm);
-					//UE_LOG(LogTemp, Warning, TEXT("WinterFarm: %d"), WinterFarm);
+					PickRandomMapToPlay();
 
-					int totalVotes = Farm + WinterFarm;
-					if (totalVotes == Server_Players.Num())
+					// Countdown between all players choosing map and actually starting
+					MapChoiceTotalLengthSeconds -= _DeltaSeconds;
+					if (MapChoiceTotalLengthSeconds <= 0)
 					{
-						bMapChosen = true; // Turned true so that it will change HUD visibility for timer
-						if (Farm > WinterFarm)
+						bIsCountingDown = false;
+						
+						if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 						{
-							MapChoice = "Level_Main";
-						}
-						else if (WinterFarm > Farm)
-						{
-							MapChoice = "Level_Winter";
-						}
-						else
-						{
-							int randomNum = FMath::RandRange(0, 1);
-							if (randomNum == 0)
-							{
-								MapChoice = "Level_Main";
-							}
-							else
-							{
-								MapChoice = "Level_Winter";
-							}
-						}
+							GameInstance->FinalConnectionCount = Server_Players.Num();
 
-						// Countdown between all players choosing map and actually starting
-						MapChoiceLengthSeconds -= _DeltaSeconds;
-						if (MapChoiceLengthSeconds <= 0)
-						{
-							bIsCountingDown = false;
-							if (auto gamestate = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+							for(auto Player : Server_Players)
 							{
-								if (auto gameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+								FCharacterDetails Details{};
+								FString PlayerName{};
+								IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+								if (IdentityInterface.IsValid())
 								{
-									gameInstance->FinalConnectionCount = gamestate->Server_Players.Num();
-
-									for(auto player : Server_Players)
-									{
-										IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
-										if (IdentityInterface.IsValid())
-										{
-											int newPlayer = gameInstance->FinalPlayerNames.Add(IdentityInterface->GetPlayerNickname(player->Player_ID));
-											//UE_LOG(LogTemp, Warning, TEXT("%s Joined the game"), *(gameInstance->FinalPlayerNames[newPlayer]));
-										}
-										
-										gameInstance->FinalCharacters.Add(player->Character);
-										gameInstance->FinalColours.Add(player->CharacterColour);
-									}
+									PlayerName = IdentityInterface->GetPlayerNickname(*Player->GetUniqueId().GetUniqueNetId());
 								}
+								Details.Character = Player->Character;
+								Details.CharacterColour = Player->CharacterColour;
+								
+								//UE_LOG(LogTemp, Warning, TEXT("%s Has Character %s and Colour %s"), *PlayerName, *FString::FromInt((int)Details.Character),*FString::FromInt((int)Details.CharacterColour) );
+								GameInstance->FinalPlayerDetails.Add(PlayerName, Details);
 							}
-							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 						}
+						GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 					}
+					
 				}
 				else
 				{
@@ -160,6 +134,10 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 	{
 		WinterFarm = WinterFarm + 1;
 	}
+	else if (_Level == EFarm::HONEYFARM)
+	{
+		HoneyFarm = HoneyFarm + 1;
+	}
 }
 
 void ALobbyGamestate::SetMaxPlayersOnServer(int32 _maxPlayersOnServer)
@@ -187,14 +165,19 @@ int32 ALobbyGamestate::GetWinterFarm() const
 	return WinterFarm;
 }
 
+int32 ALobbyGamestate::GetHoneyFarm() const
+{
+	return HoneyFarm;
+}
+
 bool ALobbyGamestate::HasMapBeenChosen() const
 {
 	return bMapChosen;
 }
 
-int32 ALobbyGamestate::GetMapChoiceLengthSeconds() const
+int32 ALobbyGamestate::GetMapChoiceTotalLengthSeconds() const
 {
-	return MapChoiceLengthSeconds;
+	return MapChoiceTotalLengthSeconds;
 }
 
 void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -210,13 +193,108 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, Farm);
 	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
 
-	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
+	DOREPLIFETIME(ALobbyGamestate, MapChoiceTotalLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 }
 
-void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,ECharacters _Character, ECharacterColours _CharacterColour)
+void ALobbyGamestate::PickRandomMapToPlay()
+{
+	bShowMapChoice = true; // Show map choice
+
+	const int32 TotalVotes = Farm + WinterFarm + HoneyFarm;
+	if (TotalVotes == Server_Players.Num() && bMapChosen == false)
+	{
+		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
+		if (Farm > WinterFarm && Farm > HoneyFarm) // Normal farm gets most votes
+		{
+			MapChoice = "Level_Main";
+		}
+		else if (WinterFarm > Farm && WinterFarm > HoneyFarm) // Winter farm gets most votes
+		{
+			MapChoice = "Level_Winter";
+		}
+		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm) // Honey farm gets most votes
+		{
+			MapChoice = "Level_Honey";
+		}
+		else // Pick a random map from highest votes
+		{
+			int32 MapChoiceArray[3] = {Farm, WinterFarm, HoneyFarm};
+			bool MapChoiceTopVotesArray[3] = {false, false, false};
+			int32 HighestVote = 0;
+			/* Work out the highest vote */
+			for (int32 i = 0; i < NumberOfMaps; i++)
+			{
+				if (MapChoiceArray[i] >= HighestVote)
+					HighestVote = MapChoiceArray[i];
+			}
+			/* Set which map choices got top votes */
+			int32 NumberOfHighVotes = 0;
+			for (int32 i = 0; i < NumberOfMaps; i++)
+			{
+				if (MapChoiceArray[i] == HighestVote)
+				{
+					MapChoiceTopVotesArray[i] = true;
+					UE_LOG(LogTemp, Warning, TEXT("True"));
+					NumberOfHighVotes += 1;
+				}
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Number of votes: %d"), NumberOfHighVotes);
+			/* Picking random map from highest votes */
+			int32 RandomNumber = FMath::RandRange(0, NumberOfHighVotes - 1);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+			/* Working out which map was chosen by random number */
+			for (int32 i = 0; i < NumberOfMaps; i++)
+			{
+				if (MapChoiceTopVotesArray[i] == false)
+				{
+					RandomNumber++;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Array elements checked: %d"), i);
+					if (i == RandomNumber)
+					{
+						switch (i)
+						{
+						case 0:
+							{
+								MapChoice = "Level_Main";
+								UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
+								break;
+							}
+						case 1:
+							{
+								MapChoice = "Level_Winter";
+								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
+								break;
+							}
+						case 2:
+							{
+								MapChoice = "Level_Honey";
+								UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+								break;
+							}
+						default:
+							{
+								break;
+							}
+						}
+						i = NumberOfMaps;
+					}
+				}
+			}
+		}
+		if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
+		{
+			MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds + 1.0f;
+		}
+	}
+}
+
+void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,ECharacters _Character, FVector4d _CharacterColour)
 {
 	if (Server_Players.Num() > _Player)
 	{
@@ -244,7 +322,7 @@ int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)
 	return characterCount;
 }
 
-int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _DesiredCharacter, ECharacterColours _DesiredCharacterColour) const
+int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _DesiredCharacter, FVector _DesiredCharacterColour) const
 {
 	int characterColourCount{};
 	if (Server_Players.Num() > 0)

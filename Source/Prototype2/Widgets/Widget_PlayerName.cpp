@@ -5,67 +5,55 @@
 #include "Components/TextBlock.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
 void UWidget_PlayerName::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	PlayerName->SetText(FText::FromString(""));
-
 }
 
 void UWidget_PlayerName::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (PlayerName->GetText().ToString() == FString{} )
-	{
-		UpdatePlayerName();
-	}
+	UpdatePlayerName();
 }
 
 void UWidget_PlayerName::UpdatePlayerName()
 {
-	if (auto* PlayerController = GetOwningPlayer())
+	if (IsValid(OwningPlayer))
 	{
-		if (auto PlayerState = PlayerController->GetPlayerState<ALobbyPlayerState>())
+		ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(OwningPlayer);
+		APrototype2PlayerState* PlayerState = Cast<APrototype2PlayerState>(OwningPlayer);
+		
+		FString PlayerStatePlayerName{};
+		FLinearColor PlayerStateColour{};
+		if (IsValid(LobbyPlayerState))
 		{
-			auto PlayerStatePlayerID = PlayerState->Player_ID;
-			auto PlayerStatePlayerName = PlayerState->PlayerName;
-			
-			PlayerName->SetText(FText::FromString(PlayerStatePlayerName));
-			
-			/* Set colour of player name */
-			switch (PlayerStatePlayerID)
-			{
-			case 0:
-				{
-					PlayerName->SetColorAndOpacity(Player1Colour); // Player 1
-					break;
-				}
-			case 1:
-				{
-					PlayerName->SetColorAndOpacity(Player2Colour); // Player 2
-					break;
-				}
-			case 2:
-				{
-					PlayerName->SetColorAndOpacity(Player3Colour); // Player 3
-					break;
-				}
-			case 3:
-				{
-					PlayerName->SetColorAndOpacity(Player4Colour); // Player 4
-					break;
-				}
-			default:
-				{
-					PlayerName->SetColorAndOpacity(Player1Colour);
-					break;
-				}
-			}
-			
-			
+			PlayerStatePlayerName = LobbyPlayerState->PlayerName;
+			PlayerStateColour = FLinearColor(LobbyPlayerState->CharacterColour.X, LobbyPlayerState->CharacterColour.Y, LobbyPlayerState->CharacterColour.Z, 255);
 		}
+		if (IsValid(PlayerState))
+		{
+			PlayerStatePlayerName = PlayerState->PlayerName;
+			PlayerStateColour = FLinearColor(PlayerState->CharacterColour.X, PlayerState->CharacterColour.Y, PlayerState->CharacterColour.Z, 255);
+		}
+
+		PlayerName->SetText(FText::FromString(PlayerStatePlayerName));
+		PlayerName->SetColorAndOpacity(PlayerStateColour);
 	}
 }
+
+void UWidget_PlayerName::SetPlayerRef(APlayerState* _Player)
+{
+	if (IsValid(_Player))
+		OwningPlayer = _Player;
+}
+
+APlayerState* UWidget_PlayerName::GetPlayerRef()
+{
+	return OwningPlayer;
+}
+

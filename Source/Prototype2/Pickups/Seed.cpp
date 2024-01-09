@@ -17,8 +17,6 @@ ASeed::ASeed()
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	PrimaryActorTick.bCanEverTick = true;
-
-	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void ASeed::BeginPlay()
@@ -85,6 +83,17 @@ bool ASeed::IsInteractable(APrototype2PlayerState* _Player)
 	return true;
 }
 
+void ASeed::Multi_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
+{
+	ParachuteMesh->SetVisibility(true);
+	ParachuteMesh->SetStaticMesh(_InMesh);
+}
+
+void ASeed::Server_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
+{
+	Multi_SetParachuteMesh(_InMesh);
+}
+
 void ASeed::Multi_ToggleParachuteVisibility_Implementation(bool _Visible)
 {
 
@@ -100,8 +109,7 @@ void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
 	if (_InMesh)
 	{
 		bIsParachuteStaticMeshSet = true;
-		ParachuteMesh->SetVisibility(true);
-		ParachuteMesh->SetStaticMesh(_InMesh);
+		Server_SetParachuteMesh(_InMesh);
 	}
 }
 

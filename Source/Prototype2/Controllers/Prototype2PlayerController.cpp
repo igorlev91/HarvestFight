@@ -26,6 +26,8 @@ void APrototype2PlayerController::BeginPlay()
 	}
 
 	bCanPossessWithoutAuthority = true;
+
+
 }
 
 void APrototype2PlayerController::Tick(float DeltaSeconds)
@@ -48,12 +50,11 @@ void APrototype2PlayerController::Tick(float DeltaSeconds)
 			}
 		}
 		
-	
 		if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
 		{
 			if (auto playerState = GetPlayerState<ALobbyPlayerState>())
 			{
-				UpdateCharacterMaterial(playerState->Player_ID, gameInstance->Character, gameInstance->CharacterColour);
+				UpdateCharacterMaterial(playerState->Player_ID, gameInstance->FinalPlayerDetails[gameInstance->UniqueNetIDName].Character, gameInstance->FinalPlayerDetails[gameInstance->UniqueNetIDName].CharacterColour);
 			}
 		}
 	}
@@ -86,13 +87,13 @@ void APrototype2PlayerController::Server_VoteMap_Implementation(int32 _Player, E
 	}
 }
 
-void APrototype2PlayerController::UpdateCharacterMaterial(int32 _Player, ECharacters _Character, ECharacterColours _CharacterColour)
+void APrototype2PlayerController::UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour)
 {
 	Server_UpdateCharacterMaterial(_Player, _Character, _CharacterColour);
 }
 
 void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(int32 _Player, ECharacters _Character,
-	ECharacterColours _CharacterColour)
+	FVector4d _CharacterColour)
 {
 	if (auto GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{

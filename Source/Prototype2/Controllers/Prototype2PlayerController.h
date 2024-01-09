@@ -1,4 +1,5 @@
 
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -26,7 +27,7 @@ public:
 	void VoteMap(int32 _Player, EFarm _Level);
 
 	/* Update characters material when they change the costume */
-	void UpdateCharacterMaterial(int32 _Player, ECharacters _Character, ECharacterColours _CharacterColour);
+	void UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
 
 	/* Sends player back to menu */
 	UFUNCTION(BlueprintCallable)
@@ -51,6 +52,6 @@ public:
 
 	/* Multicast that updates the characters costume */
 	UFUNCTION(Server, Reliable)
-	void Server_UpdateCharacterMaterial(int32 _Player, ECharacters _Character, ECharacterColours _CharacterColour);
-	void Server_UpdateCharacterMaterial_Implementation(int32 _Player, ECharacters _Character, ECharacterColours _CharacterColour);
+	void Server_UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
+	void Server_UpdateCharacterMaterial_Implementation(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
 };

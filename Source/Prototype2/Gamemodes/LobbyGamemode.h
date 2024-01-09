@@ -1,4 +1,4 @@
-
+.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -9,12 +9,19 @@ UCLASS()
 class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
 {
 	GENERATED_BODY()
+	/* Public Functions */
 public:
 	/* Constructor */
 	ALobbyGamemode();
 
+	/* Public Variables */
+public:
+	/* Player Z Positions */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PlayerZPosition = 90.0f;
+
 private:
-	/* Called after loging in */
+	/* Called after logging in */
 	virtual void PostLogin(APlayerController* _NewPlayer) override;
 
 	/* Called when logging out */
@@ -28,16 +35,11 @@ private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 
-	// Player character lobby magical positions
+	/* Player 1 character lobby starting positions */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<FVector> PlayerPositions
-	{
-		FVector{567.4f,-143.0f,97.0f}, // Left position for 4 player
-		FVector{446.0f, -187.2f, 97.0f}, // Left position for 3 player
-		FVector{324.6f,-231.4f,97.0f}, // Left position for 2 player
-		FVector{212.2f, -272.3f, 97.0f}, // Centre position for 3 player
-		FVector{99.8f,-313.2f,97.0f},  // Right position for 2 player
-		FVector{-11.5, -353.7f, 97.0f}, // Right position for 3 player
-		FVector{-122.7f,-394.2f,97.0f} // Right position for 4 player
-	};
+	FVector Player1StartPosition = FVector{2000.0f,40.0f, PlayerZPosition};
+
+	/* Player distances in lobby */
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	float DistanceBetweenPlayers = 230.0f;
 };

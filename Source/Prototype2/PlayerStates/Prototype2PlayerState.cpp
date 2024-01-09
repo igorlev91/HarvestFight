@@ -57,29 +57,29 @@ void APrototype2PlayerState::GrabSkinFromGameInstance()
 {
 	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
 	{
-		Character = GameInstance->Character;
-		CharacterColour = GameInstance->CharacterColour;
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int32)GameInstance->Character));
-		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int32)GameInstance->CharacterColour));
+		Character = GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].Character;
+		CharacterColour = GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].CharacterColour;
+		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int32)GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].Character));
+		//UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int32)GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].CharacterColour));
 	}
 
 	Server_GrabSkinFromGameInstance(Character, CharacterColour);
 }
 
-void APrototype2PlayerState::Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, ECharacterColours _Colour)
+void APrototype2PlayerState::Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour)
 {
 	Multi_GrabSkinFromGameInstance(_Character, _Colour);
 }
 
-void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, ECharacterColours _Colour)
+void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour)
 {
 	Character = _Character;
 	CharacterColour = _Colour;
 	UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character: %s"), *FString::FromInt((int32)_Character));
-	UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character Colour: %s"), *FString::FromInt((int32)_Colour));
+	//UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character Colour: %s"), *FString::FromInt((int32)_Colour));
 }
 
-void APrototype2PlayerState::UpdateCharacterMaterial(ECharacters _Character, ECharacterColours _Colour)
+void APrototype2PlayerState::UpdateCharacterMaterial(ECharacters _Character, FVector4d _Colour)
 {
 	Character = _Character;
 	CharacterColour = _Colour;
