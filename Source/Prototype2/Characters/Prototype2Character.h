@@ -276,6 +276,9 @@ protected:
 	/* Updates the area of attack indicator */
 	void UpdateAOEIndicator();
 
+	/* Billboarding player names + removing current players name */
+	void UpdatePlayerNames();
+
 	/* Protected variables */
 	
 	/** Camera boom positioning the camera behind the character */
@@ -288,6 +291,10 @@ protected:
 
 	/* Playing montages */
 	void PlayNetworkMontage(UAnimMontage* _Montage);
+
+	/* Display name widget (above head) */
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	UWidgetComponent* PlayerNameWidgetComponent;
 
 private:
 	/* Private variables */
@@ -335,7 +342,7 @@ private:
 	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere)
-	float InteractRadius = 225.0f;
+	float InteractRadius = 260.0f;
 	
 	/* Interact timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))

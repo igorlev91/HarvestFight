@@ -34,6 +34,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/Image.h"
+#include "Components/WidgetComponent.h"
 #include "Prototype2/Pickups/GrowableWeapon.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
@@ -116,6 +117,12 @@ APrototype2Character::APrototype2Character()
 	DecalComponent = CreateDefaultSubobject<UDecalComponent>(TEXT("DecalArrow"));
 	DecalComponent->AttachToComponent(DecalArmSceneComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	DecalComponent->SetIsReplicated(false);
+
+	/* Display name widget (above head) */
+	PlayerNameWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNameWidgetComponent"));
+	PlayerNameWidgetComponent->SetupAttachment(RootComponent);
+	PlayerNameWidgetComponent->SetIsReplicated(true);
+	PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 }
 
@@ -215,6 +222,12 @@ void APrototype2Character::BeginPlay()
 	CurrentWeaponData = DefaultWeaponData;
 	if (PlayerHUDRef)
 		PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponData->WeaponIcon);
+
+	/* Turn off local players display name */
+	if (IsLocallyControlled())
+	{
+		PlayerNameWidgetComponent->SetVisibility(false);
+	}
 }
 
 void APrototype2Character::Tick(float DeltaSeconds)
@@ -345,6 +358,10 @@ void APrototype2Character::Tick(float DeltaSeconds)
 		ParticleSystemsToActivate.Empty();
 		ParticleSystemsToDeActivate.Empty();
 	}
+
+	/* Update billboarding for display names */
+	UpdatePlayerNames();
+
 }
 
 void APrototype2Character::Server_CountdownTimers_Implementation(float _DeltaSeconds)
@@ -800,6 +817,16 @@ void APrototype2Character::UpdateAOEIndicator()
 	AttackAreaIndicatorMesh->SetRelativeScale3D({AttackSphereRadius,AttackSphereRadius,AttackChargeAmount * CurrentWeaponData->AOEMultiplier});//WeaponAttackRadiusScalar}); // Todo: Delete when data done
 	TriggerAttackVFX(DownVector, AttackSphereRadius, AttackChargeAmount);	
 	
+}
+
+void APrototype2Character::UpdatePlayerNames()
+{
+	const FVector CameraLocation = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation();
+	FVector LookAtDirection = CameraLocation - PlayerNameWidgetComponent->GetComponentLocation();
+	LookAtDirection.Normalize();
+
+	FRotator LookAtRotation = LookAtDirection.Rotation();
+	PlayerNameWidgetComponent->SetWorldRotation(LookAtRotation);
 }
 
 void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystem _NewSystem)
