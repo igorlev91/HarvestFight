@@ -1,4 +1,11 @@
-.
+/* Bachelor of Software Engineering
+* Media Design School
+* Auckland
+* New Zealand
+* (c) Media Design School
+* File Name : GrowSpot.cpp
+* Description : Implemtation File
+* Author/s : Dawn Bell */
 
 #include "GrowSpot.h"
 #include "GrowSpot.h"
@@ -212,6 +219,11 @@ void AGrowSpot::Multi_FireParticleSystem_Implementation()
 
 void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
 {
+	if (FertiliseInteractDelayTime > 0)
+	{
+		FertiliseInteractDelayTime -= _DeltaTime;
+	}
+	
 	if (GrowTimer > 0)
 	{
 		GrowSpotState = EGrowSpotState::Growing;
@@ -262,15 +274,10 @@ void AGrowSpot::Tick(float _DeltaTime)
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
-	if (FertiliseInteractDelayTime > 0)
-	{
-		FertiliseInteractDelayTime -= _DeltaTime;
-	}
 	
 	if (Beehive)
 	{
-		ScalePlant(Beehive, Beehive->BeehiveData->PlantScale, 0.0f);
+		ScalePlant(Beehive, Beehive->PlantData->PlantScale, 0.0f);
 	}
 	
 	if (Plant)
@@ -425,26 +432,10 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						PlantWeapon(_Player);
 					}
-					else if (_Player->HeldItem->DataAssetPickupType == EPickupDataType::PlantData || _Player->HeldItem->DataAssetPickupType == EPickupDataType::BeehiveData
-						|| _Player->HeldItem->DataAssetPickupType == EPickupDataType::FlowerData)
+					else
 					{
 						PlantPlant(_Player);
 					}
-
-					/*
-					if (Beehive)
-					{
-						RadialPlot->UpdateBeehiveFlowers();
-					}
-					
-					if (Plant)
-					{
-						if (Plant->PlantData->PickupType == EPickupDataType::FlowerData)
-						{
-							RadialPlot->UpdateBeehiveFlowers();
-						}	
-					}
-					*/
 				}
 				break;
 			}
@@ -475,6 +466,11 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 		case EGrowSpotState::Grown:
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to Harvest something!"));
+
+				if (Beehive)
+				{
+					RadialPlot->UpdateBeehiveFlowers();
+				}
 						
 				if (_Player->HeldItem && !Beehive)
 				{
@@ -540,6 +536,14 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					UE_LOG(LogTemp, Warning, TEXT("Empty the plot."));
 					Multi_UpdateState(EGrowSpotState::Empty);
 					GrowSpotState = EGrowSpotState::Empty;
+				}
+
+				if (Plant)
+				{
+					if (Plant->PlantData->PickupType == EPickupDataType::FlowerData)
+					{
+						RadialPlot->UpdateBeehiveFlowers();
+					}	
 				}
 				
 			}
@@ -707,8 +711,8 @@ void AGrowSpot::PlantPlant(APrototype2Character* _Player)
 	// doesnt properly check beehive yet
 	if (Beehive)
 	{
-		Beehive->SetBeehiveData(Cast<UBeehiveData>(_Player->HeldItem->PlantData));
-		SetBeehive(Beehive, Beehive->BeehiveData->GrowTime);
+		Beehive->SetPlantData(_Player->HeldItem->PlantData);
+		SetBeehive(Beehive, Beehive->PlantData->GrowTime);
 	}
 	else if (Plant)
 	{

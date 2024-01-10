@@ -24,9 +24,22 @@ void AMovingPlatforms::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	TimeTrackerTimeToMove += DeltaTime;
+	if (bDoMove)
+	{
+		TimeStop -= DeltaTime;
 
-	MovePlatform();
+		if (TimeStop > 0)
+			return;
+
+		TimeTrackerTimeToMove += DeltaTime;
+
+		MovePlatform();
+	}
+
+	if (bDoRotate)
+	{
+		Rotate(DeltaTime);
+	}
 }
 
 void AMovingPlatforms::MovePlatform()
@@ -43,7 +56,7 @@ void AMovingPlatforms::MovePlatform()
 
 void AMovingPlatforms::MovePlatformForward()
 {
-	if (PositionInMoveArray >= PositionArray.Num())
+	if (PositionInMoveArray >= MovementInfoArray.Num())
 	{
 		bMoveArrayBackwards = true;
 		PositionInMoveArray -= 2;
@@ -55,10 +68,19 @@ void AMovingPlatforms::MovePlatformForward()
 		PositionInMoveArray++;
 	}
 	
-	const FVector Position = FMath::Lerp<FVector>(PositionArray[PositionInMoveArray - 1], PositionArray[PositionInMoveArray], TimeTrackerTimeToMove / TimeToMove);
+	const FVector Position = FMath::Lerp<FVector>(MovementInfoArray[PositionInMoveArray - 1].Position, MovementInfoArray[PositionInMoveArray].Position, TimeTrackerTimeToMove / TimeToMove);
 	SetActorLocation(Position);
 	if  (TimeTrackerTimeToMove >= TimeToMove)
 	{
+		if (!bUseBaseTimers)
+		{
+			TimeStop = MovementInfoArray[PositionInMoveArray].TimeToStopFor;
+			TimeToMove = MovementInfoArray[PositionInMoveArray].TimeToMove;
+		}
+		else
+		{
+			TimeStop = BaseTimeStop;
+		}
 		TimeTrackerTimeToMove = 0;
 		PositionInMoveArray += 1;
 	}
@@ -73,17 +95,32 @@ void AMovingPlatforms::MovePlatformBackwards()
 		return;	
 	}
 
-	if (PositionInMoveArray == PositionArray.Num() - 1)
+	if (PositionInMoveArray == MovementInfoArray.Num() - 1)
 	{
 		PositionInMoveArray--;
 	}
 	
-	const FVector Position = FMath::Lerp<FVector>(PositionArray[PositionInMoveArray + 1], PositionArray[PositionInMoveArray], TimeTrackerTimeToMove / TimeToMove);
+	const FVector Position = FMath::Lerp<FVector>(MovementInfoArray[PositionInMoveArray + 1].Position, MovementInfoArray[PositionInMoveArray].Position, TimeTrackerTimeToMove / TimeToMove);
 	SetActorLocation(Position);
 	if  (TimeTrackerTimeToMove >= TimeToMove)
 	{
+		if (!bUseBaseTimers)
+		{
+			TimeStop = MovementInfoArray[PositionInMoveArray].TimeToStopFor;
+			TimeToMove = MovementInfoArray[PositionInMoveArray].TimeToMove;
+		}
+		else
+		{
+			TimeStop = BaseTimeStop;
+		}
 		TimeTrackerTimeToMove = 0;
 		PositionInMoveArray -= 1;
 	}
+}
+
+void AMovingPlatforms::Rotate(float DeltaTime)
+{
+	FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
+	SetActorRotation(NewRotation);
 }
 

@@ -4,6 +4,7 @@
 
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
 ASeed::ASeed()
@@ -15,6 +16,7 @@ ASeed::ASeed()
 
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Parachute"));
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ParachuteMesh->SetIsReplicated(true);
 
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -59,6 +61,8 @@ void ASeed::Interact(APrototype2Character* _Player)
 		_Player->PlayerHUDRef->SetHUDInteractText("");
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+	SSComponent->Disable();
 }
 
 void ASeed::ClientInteract(APrototype2Character* _Player)
@@ -81,6 +85,13 @@ void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class
 bool ASeed::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return true;
+}
+
+void ASeed::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASeed, ParachuteMesh);
 }
 
 void ASeed::Multi_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
@@ -117,7 +128,8 @@ void ASeed::HandleParachuteMovement()
 {
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
+		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z &&
+			!bHasLanded)
 		{
 			float XVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
 			float ZVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
@@ -128,6 +140,7 @@ void ASeed::HandleParachuteMovement()
 		else
 		{
 			Multi_ToggleParachuteVisibility(false);
+			bHasLanded = true;
 		}
 	}
 }

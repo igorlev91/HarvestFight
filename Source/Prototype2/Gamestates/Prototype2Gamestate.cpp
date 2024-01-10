@@ -1,7 +1,9 @@
 #include "Prototype2Gamestate.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
+#include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
 APrototype2Gamestate::APrototype2Gamestate()
@@ -111,6 +113,7 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 				{
 					bHasGameFinished = true;
 					bIsCountingDown = false;
+					PupeteerCharactersForEndGame();
 				}
 				else
 				{
@@ -227,5 +230,52 @@ int32 APrototype2Gamestate::GetCountdownLengthSeconds()
 int32 APrototype2Gamestate::GetBriefTimesUpLengthSeconds()
 {
 	return BriefTimesUpEndGameLengthSeconds;
+}
+
+void APrototype2Gamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
+{
+	Server_Players[_Player]->Details = _CharacterDetails;
+}
+
+void APrototype2Gamestate::PupeteerCharactersForEndGame()
+{
+	AActor* EndGamePodiumActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
+	AEndGamePodium* EndGamePodiumActorCasted = Cast<AEndGamePodium>(EndGamePodiumActor);
+	
+	int32 WinningPlayer{};
+	int32 HighestCoins{};
+		
+	for(auto PlayerState : PlayerArray)
+	{
+		if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+		{
+			if (CastedPlayerstate->Coins > HighestCoins)
+			{
+				HighestCoins = CastedPlayerstate->Coins;
+			}
+		}
+	}
+
+	if (EndGamePodiumActorCasted)
+	{
+		for(int32 i = 0; i < PlayerArray.Num(); i++)
+		{
+			if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[i]))
+			{
+				if (APrototype2Character* CastedPlayerCharacter = Cast<APrototype2Character>(CastedPlayerState->GetPlayerController()->GetCharacter()))
+				{
+					if (HighestCoins > 0 && CastedPlayerState->Coins == HighestCoins)
+						CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(WinningPlayer)->GetComponentTransform());
+					else
+						CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetLossPosition(i)->GetComponentTransform());
+					
+					if (auto ControllerCast = Cast<APrototype2PlayerController>(CastedPlayerState->GetPlayerController()))
+					{
+						ControllerCast->SetViewTarget_Networked(EndGamePodiumActorCasted->EndGameCamera);
+					}
+				}
+			}
+		}
+	}
 }
 

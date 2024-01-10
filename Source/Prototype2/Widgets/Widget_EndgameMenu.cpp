@@ -44,127 +44,40 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 		}
 	}
 
-	/* Checking for draws */
-	bool bHasP1Won{false}; // P1
-	bool bHasP2Won{false}; // P2
-	bool bHasP3Won{false}; // P3
-	bool bHasP4Won{false}; // P4
-	
+	/* Check if only one player has won, or multiple (draw) */
+	int32 WinnerCounter = 0;
 	if (GameStateReference)
 	{
 		/* Loop through players and see if they have same score as winning score */
 		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 		{
-			if (auto player = GameStateReference->Server_Players[i])
+			if (auto Player = GameStateReference->Server_Players[i])
 			{
-				if (player->Coins == WinningScore)
+				if (Player->Coins == WinningScore)
 				{
-					if (i == 0)
-					{
-						bHasP1Won = true;
-					}
-					else if (i == 1)
-					{
-						bHasP2Won = true;
-					}
-					else if (i == 2)
-					{
-						bHasP3Won = true;
-					}
-					else if (i == 3)
-					{
-						bHasP4Won = true;
-					}
+					WinnerCounter++;
 				}
 			}
 		}
 	}
 
-	// Update text
-	if (bHasP1Won == true && bHasP2Won == false && bHasP3Won == false  && bHasP4Won == false) // P1 wins
-	{
-		TextGameWinner->SetText(FText::FromString("WINNER!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Player 1"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == true && bHasP3Won == false  && bHasP4Won == false) // P2 Wins
-	{
-		TextGameWinner->SetText(FText::FromString("WINNER!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Player 2"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == false && bHasP3Won == true  && bHasP4Won == false) // P3 Wins
-	{
-		TextGameWinner->SetText(FText::FromString("WINNER!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Player 3"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == false && bHasP3Won == false  && bHasP4Won == true) // P4 Wins
-	{
-		TextGameWinner->SetText(FText::FromString("WINNER!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Player 4"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == true && bHasP3Won == false  && bHasP4Won == false) // P1 & P2 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1 & 2"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == false && bHasP3Won == true  && bHasP4Won == false) // P1 & P3 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1 & 3"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == false && bHasP3Won == false  && bHasP4Won == true) // P1 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1 & 4"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == true && bHasP3Won == true  && bHasP4Won == false) // P2 & P3 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 2 & 3"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == true && bHasP3Won == false  && bHasP4Won == true) // P2 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 2 & 4"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == false && bHasP3Won == true  && bHasP4Won == true) // P3 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 3 & 4"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == true && bHasP3Won == true  && bHasP4Won == false) // P1 & P2 & P3 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1, 2 & 3"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == true && bHasP3Won == false  && bHasP4Won == true) // P1 & P2 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1, 2 & 4"));
-	}
-	else if (bHasP1Won == true && bHasP2Won == false && bHasP3Won == true  && bHasP4Won == true) // P1 & P3 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 1, 3 & 4"));
-	}
-	else if (bHasP1Won == false && bHasP2Won == true && bHasP3Won == true  && bHasP4Won == true) // P2 & P3 & P4 Draw
-	{
-		TextGameWinner->SetText(FText::FromString("Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString("Players 2, 3 & 4"));
-	}
-	else
-	{
-		TextGameWinner->SetText(FText::FromString("4 Cow Draw!"));
-		TextGameWinnerPlayer->SetText(FText::FromString(""));
-	}
+	/* Update text to say Draw */
+	if (WinnerCounter > 1)
+		TextGameWinner->SetText(FText::FromString("DRAW!"));
+	
 }
 
 void UWidget_EndgameMenu::EnableEndgameMenu()
 {
-	SetVisibility(ESlateVisibility::Visible);
-	
-	if (auto* controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	if (GetVisibility() != ESlateVisibility::Visible)
 	{
-		controller->SetInputMode(FInputModeUIOnly{});
-		controller->bShowMouseCursor = true;
+		SetVisibility(ESlateVisibility::Visible);
+	
+		/*if (auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+		{
+			
+			//PlayerController->SetInputMode(FInputModeUIOnly{});
+			PlayerController->bShowMouseCursor = true;
+		}*/
 	}
 }

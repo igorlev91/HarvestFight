@@ -1,7 +1,6 @@
 
 #include "Prototype2/Pickups/Beehive.h"
 #include "Prototype2/Characters/Prototype2Character.h"
-#include "Prototype2/DataAssets/BeehiveData.h"
 
 void ABeehive::BeginPlay()
 {
@@ -15,15 +14,16 @@ void ABeehive::Interact(APrototype2Character* _Player)
 		return;
 	}
 
-	if (!BeehiveData->Honey)
+	if (!HoneyData)
 	{
 		return;
 	}
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(Plant, FVector(0, 0, 0), {});
-	Honey->PlantData = BeehiveData->Honey;
+	Honey->PlantData = HoneyData;
 	Honey->SetPlantData(Honey->PlantData);
 	Honey->bGrown = true;
 	Honey->NumberOfNearbyFlowers = NumberOfNearbyFlowers;
+	Honey->Multi_ScalePlant();
 	
 	Honey->Interact(_Player);
 
@@ -44,14 +44,6 @@ void ABeehive::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProtot
 bool ABeehive::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return Super::IsInteractable(_Player);
-}
-
-void ABeehive::SetBeehiveData(UBeehiveData* _Data)
-{
-	BeehiveData = _Data;
-	ItemComponent->InitializePlant(_Data->PlantMesh);
-	PickupActor = EPickupActor::BeehiveActor;
-	DataAssetPickupType = EPickupDataType::BeehiveData;
 }
 
 void ABeehive::Tick(float DeltaSeconds)

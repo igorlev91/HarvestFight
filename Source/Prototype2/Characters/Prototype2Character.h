@@ -1,5 +1,4 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -73,9 +72,6 @@ public:
 	/* Ragdolls character - not implemented yet*/
 	void Ragdoll(bool _bShouldRagdoll);
 
-	/* PlayerHUD getter */
-	class UWidget_PlayerHUD* GetPlayerHUD();
-
 	/* Stencil - on/off */
 	void EnableStencil(bool _bIsOn);
 
@@ -94,13 +90,29 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UWeaponData* GetWeaponData() const { return CurrentWeaponData; }
 
+	/* PlayerHUD getter */
+	class UWidget_PlayerHUD* GetPlayerHUD();
+
 	/* Pickup function for doing stuff that doens't need rpc/multi, but calls the rpc which calls multi */
 	void PickupItem(APickUpItem* _Item);
+	
+	/* Called when hit by another player */
+	UFUNCTION(BlueprintCallable)
+	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	
+	/* Playing montages */
+	void PlayNetworkMontage(UAnimMontage* _Montage);
+
+	class UCameraComponent* ReturnFollowCamera();
+
+	/* Allows for client only functionality when dropping weapon */
+	void DropWeapon();
 	
 	/* Public Variables */
 	
 	/* Camera used for end of the game */
-	class AEndGameCamera* EndGameCamera;
+	UPROPERTY(VisibleAnywhere)
+	class UCameraComponent* EndGameCamera;
 
 	/* PlayerHUD reference */
 	UPROPERTY(VisibleAnywhere)
@@ -169,8 +181,6 @@ public:
 	/* Weapon degrading */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int WeaponCurrentDurability;
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//int WeaponMaxDurability = 5;
 
 	/* The closest interactable item for HUD showing popup text */
 	class IInteractInterface* ClosestInteractableItem;
@@ -198,7 +208,7 @@ public:
 	ASellBin* SellBin;
 
 	/* Variables needed for VFX */
-	UPROPERTY(EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX) 
 	UStaticMeshComponent* AttackAreaIndicatorMesh;
 	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* WalkPoof_NiagaraComponent;
@@ -221,6 +231,22 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UAnimationData* AnimationData;
+	
+	/* Attack radius and reach */
+	//float BaseAttackRadius = 75.0f;
+
+	/* The current weapon data to use data from */
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
+	UWeaponData* CurrentWeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class UStaticMeshComponent* WeaponMesh;
+
+	UPROPERTY(BlueprintReadOnly)
+	EWeaponAnimation CurrentWeaponAnimation;
+
+	/* Used to stop player input moving the player */
+	bool bAllowMovementFromInput = true;
 protected:
 	/* Protected Functions */
 
@@ -263,10 +289,6 @@ protected:
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
 	
-	/* Called when hit by another player */
-	UFUNCTION(BlueprintCallable)
-	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
-	
 	/* UI */
 	void OpenIngameMenu();
 	
@@ -279,6 +301,8 @@ protected:
 	/* Billboarding player names + removing current players name */
 	void UpdatePlayerNames();
 
+	void SyncCharacterColourWithPlayerState();
+
 	/* Protected variables */
 	
 	/** Camera boom positioning the camera behind the character */
@@ -289,8 +313,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	/* Playing montages */
-	void PlayNetworkMontage(UAnimMontage* _Montage);
 
 	/* Display name widget (above head) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -368,12 +390,6 @@ private:
 	/* Player HUD Prefab */
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_PlayerHUD> PlayerHudPrefab;
-	
-	/* References to change speed: Sprint/Walk/Slow Walk */ // Todo: remove when animation data asset done
-	//UPROPERTY(EditAnywhere, Category = Animation)
-	//UAnimSequence* RunAnimation;	
-	//UPROPERTY(EditAnywhere, Category = Animation)
-	//TArray<UAnimSequence*> RunAnimations;
 
 	/* Friction for when player is on the ice */
 	UPROPERTY(EditAnywhere)
@@ -420,16 +436,9 @@ private:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FTransform MeshLocationWhenStunned{};
 
-	/* Attack radius and reach */
-	float BaseAttackRadius = 75.0f;
-
 	/* Default Weapon Data Asset is no weapon (punching with fists) */
 	UPROPERTY(EditDefaultsOnly)
 	UWeaponData* DefaultWeaponData;
-
-	/* The current weapon data to use data from */
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
-	UWeaponData* CurrentWeaponData;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
@@ -460,12 +469,14 @@ public: /* Pubic Networking */
 	void Server_DropWeapon();
 
 	/**
-	 * @brief Starting attack sets bIsChargingAttack to true,
+	 * @brief Chargeattack sets bIsChargingAttack to true,
 	 * Drops item if holding one, and sockets weapon to attacking socket
 	 */
-	 UFUNCTION(Server, Reliable)
-	void Server_StartAttack();
-
+	UFUNCTION(Server, Reliable)
+	void Server_ChargeAttack();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
+	
 	/* RPC for when attack key is released */
 	UFUNCTION(Server, Reliable)
 	void Server_ReleaseAttack();
@@ -506,6 +517,12 @@ public: /* Pubic Networking */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ToggleParticleSystems(const TArray<EParticleSystem>& _On, const TArray<EParticleSystem>& _Off);
 	
+	/* Mutlicast for dropping a weapon */
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DropWeapon();
+
+	/* Called from ExecuteAttack() in UWeapon derived class to reset attack variables */
+	void ResetAttack();
 protected: /* Protected Networking */
 	/* The Ideal Net Role for if human controlling */
 	ENetRole IdealNetRole{ROLE_AutonomousProxy};
@@ -538,10 +555,6 @@ protected: /* Protected Networking */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PickupItem(APickUpItem* _Item);
 
-	/* Mutlicast for dropping a weapon */
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_DropWeapon();
-
 	/* Receiving materials for the farmer costume */
 	UFUNCTION(Server, Reliable)
 	void Server_ReceiveMaterialsArray(const TArray<UMaterialInstance*>& _InMaterialsArray);
@@ -569,4 +582,20 @@ protected: /* Protected Networking */
 	/* Countdown timers */
 	UFUNCTION(Server, Reliable)
 	void Server_CountdownTimers(float _DeltaSeconds);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SyncCharacterColour();
+
+public:
+	void TeleportToEndGame(FTransform _EndGameTransform);
+
+protected:
+	UFUNCTION(Server, Reliable)
+	void Server_TeleportToEndGame(FTransform _EndGameTransform);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_TeleportToEndGame(FTransform _EndGameTransform);
+
+	bool HasIdealRole();
+
+	bool DoOnce{true};
 };

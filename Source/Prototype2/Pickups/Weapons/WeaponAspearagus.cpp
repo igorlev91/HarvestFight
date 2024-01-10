@@ -1,0 +1,101 @@
+
+
+#include "WeaponAspearagus.h"
+
+#include "AspearagusProjectile.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/DataAssets/AnimationData.h"
+#include "Prototype2/Gameplay/SellBin_Winter.h"
+
+void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
+{
+	Super::ChargeAttack(_Player);
+
+	_Player->Multi_SetPlayerAimingMovement(true);
+}
+
+void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
+{
+	Super::ReleaseAttack(_bIsFullCharge, _Player);
+
+	_Player->Multi_SetPlayerAimingMovement(false);
+	
+	if (_bIsFullCharge)
+	{
+		if (_Player->AnimationData->FullChargePunchingAttack)
+		{
+			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeAspearagusAttack);
+		}
+	}
+	else
+	{
+		if (_Player->AnimationData->NormalPunchingAttack)
+		{
+			_Player->PlayNetworkMontage(_Player->AnimationData->NormalAspearagusAttack);
+		}
+	}
+}
+
+void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+{
+	Super::ExecuteAttack(_AttackSphereRadius, _Player);
+	
+	Server_SpawnProjectile(_Player, _AttackSphereRadius);
+	
+	_Player->WeaponCurrentDurability--;
+	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
+		
+	if (_Player->WeaponCurrentDurability <= 0)
+	{
+		_Player->DropWeapon();
+
+		//AttackTrail_NiagaraComponent->Deactivate();
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
+	}
+	// Play attack audio
+	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
+
+	// Reset all attack variables
+	_Player->ResetAttack();
+}
+
+void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
+{
+	Super::UpdateAOEIndicator(_Player);
+		
+	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
+	
+	float AttackSphereRadius = _Player->CurrentWeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponData->AOEMultiplier;	
+	
+	FVector DownVector = {_Player->GetActorLocation().X, _Player->GetActorLocation().Y, _Player->GetMesh()->GetComponentLocation().Z};
+	DownVector += _Player->GetActorForwardVector() * 10000.0f;
+	
+	_Player->AttackAreaIndicatorMesh->SetWorldLocation(DownVector);
+	_Player->AttackAreaIndicatorMesh->SetWorldRotation(_Player->GetActorRotation());
+	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({10000.0f, AttackSphereRadius,_Player->AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
+
+}
+
+void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
+{
+	// Spawn projectile
+	FTransform ProjectileTransform = _Player->GetTransform();
+	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
+	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActorDeferred<AAspearagusProjectile>(AAspearagusProjectile::StaticClass(),ProjectileTransform, _Player);
+	if (NewAspearagusProjectile)
+	{
+		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponData->WeaponMesh,
+												5000.0f, 10000.0f, _AttackSphereRadius);
+		NewAspearagusProjectile->SetOwner(_Player);
+		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile,ProjectileTransform);
+		NewAspearagusProjectile->SetReplicates(true);
+		NewAspearagusProjectile->SetReplicateMovement(true);
+	}
+}
+
+void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
+{
+	Multi_SpawnProjectile(_Player, _AttackSphereRadius);
+}

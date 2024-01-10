@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
+#include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2PlayerController.generated.h"
 
 UCLASS()
@@ -27,7 +28,7 @@ public:
 	void VoteMap(int32 _Player, EFarm _Level);
 
 	/* Update characters material when they change the costume */
-	void UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
+	void UpdateCharacterMaterial(int32 _Player, FCharacterDetails _Details);
 
 	/* Sends player back to menu */
 	UFUNCTION(BlueprintCallable)
@@ -37,21 +38,29 @@ public:
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
 	bool bEnableMovement{false};
+	
+	UPROPERTY(VisibleAnywhere)
+	float CameraBlendTimer{};
 
-	/* Networking */
+	void SetViewTarget_Networked(AActor* _ViewTarget);
+	UFUNCTION(Server, Reliable)
+	void Server_SetViewTarget_Networked(AActor* _ViewTarget);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetViewTarget_Networked(AActor* _ViewTarget);
 	
 	/* RPC for setting player ready in lobby */
 	UFUNCTION(Server, Reliable)
 	void Server_SetIsReady(int32 _Player, bool _bIsReady);
-	void Server_SetIsReady_Implementation(int32 _Player, bool _bIsReady);
-
 	/* RPC for voting for a map */
 	UFUNCTION(Server, Reliable)
 	void Server_VoteMap(int32 _Player, EFarm _Level);
-	void Server_VoteMap_Implementation(int32 _Player, EFarm _Level);
 
 	/* Multicast that updates the characters costume */
 	UFUNCTION(Server, Reliable)
-	void Server_UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
-	void Server_UpdateCharacterMaterial_Implementation(int32 _Player, ECharacters _Character, FVector4d _CharacterColour);
+	void Server_UpdateCharacterMaterial(int32 _Player, FCharacterDetails _Details);
+	
+	void SyncPlayerMaterial(FCharacterDetails _CharacterDetails);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails, const FString& _PlayerName);
 };

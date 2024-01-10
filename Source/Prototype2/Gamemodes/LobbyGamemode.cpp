@@ -22,144 +22,118 @@ ALobbyGamemode::ALobbyGamemode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 
-	
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
+
+	if (!HasAuthority())
+		return;
+
+	auto PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>();
+	if (!PlayerStateReference)
+		return;
 	
-	if (HasAuthority())
-	{
-		if (ALobbyPlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>())
-		{
-			if (ALobbyGamestate* GameStateReference = GetGameState<ALobbyGamestate>())
-			{
-				PlayerStateReference->Player_ID = GameStateReference->Server_Players.Add(PlayerStateReference);
-				
-				FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
-				auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-				if (SubSystem)
-				{
-					IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
-					if (IdentityInterface.IsValid())
-					{
-						TSharedPtr<const FUniqueNetId> UserId = PlayerStateReference->GetUniqueId().GetUniqueNetId();
-						if (UserId.IsValid())
-						{
-							if (IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::LoggedIn ||
-							IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::UsingLocalProfile)
-							{
-								NewPlayerName = IdentityInterface->GetPlayerNickname(*UserId);
-								UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
-							}
-						}
-					}
-				}
-				PlayerStateReference->PlayerName = NewPlayerName;
-				
-				if (auto Character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter()))
-				{
-					Character->SetPlayerStateRef(PlayerStateReference);
-					Character->SetPlayerState(PlayerStateReference);
-					Character->SetOwner(_NewPlayer);
-					GameStateReference->SetMaxPlayersOnServer(GetGameInstance<UPrototypeGameInstance>()->MaxPlayersOnServer);
-
-					/* Reset Player 1 position */
-					if (PlayerStateReference->Player_ID == 0)
-					{
-						/* Set player 1 starting position */
-						if (GameStateReference->GetMaxPlayersOnServer() == 3)
-						{
-							Player1StartPosition.Y = Player1StartPosition.Y + (DistanceBetweenPlayers / 2.0f);
-						}
-						else if (GameStateReference->GetMaxPlayersOnServer() == 2)
-						{
-							Player1StartPosition.Y = Player1StartPosition.Y + DistanceBetweenPlayers;
-						}
-						else
-						{
-							// Nothing - player position stays where it was
-						}
-						UE_LOG(LogTemp, Warning, TEXT("Player 1 position changed"));
-						Character->SetActorLocation(Player1StartPosition);
-					}
-
-					/* Set player 2 - 4 positions  */
-					for (int32 i = 1; i < 4; i++)
-					{
-						if (i == PlayerStateReference->Player_ID)
-						{
-							FVector NewPosition = Player1StartPosition + FVector(0, DistanceBetweenPlayers * i, 0);
-
-							Character->SetActorLocation(NewPosition);
-						}
-					}
-
-					/* Set player 5 - 8 positions  */
-					for (int32 i = 4; i < 8; i++)
-					{
-						if (i == PlayerStateReference->Player_ID)
-						{
-							FVector NewPosition = Player1StartPosition + FVector(200.0f, (DistanceBetweenPlayers / 2.0f) * i, 0);
-
-							Character->SetActorLocation(NewPosition);
-						}
-					}
-				}
-			}
-		}
-	}
+	ALobbyGamestate* GameStateReference = GetGameState<ALobbyGamestate>();
+	if (!GameStateReference)
+		return;
+	
+	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	if (!GameInstance)
+		return;
+		
+	GameStateReference->Server_Players.Add(PlayerStateReference);
+	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
+			
+	ALobbyCharacter* Character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter());
+	if (!Character)
+		return;
+			
+	Character->SetPlayerStateRef(PlayerStateReference);
+	Character->SetPlayerState(PlayerStateReference);
+	Character->SetOwner(_NewPlayer);
+	
+	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 }
 
 void ALobbyGamemode::Logout(AController* _Exiting)
 {
 	Super::Logout(_Exiting);
+	
+	if (!HasAuthority())
+		return;
 
-	if (auto LobbyGamestate = GetGameState<ALobbyGamestate>())
+	ALobbyPlayerState* PlayerStateReference = _Exiting->GetPlayerState<ALobbyPlayerState>();
+	if (!PlayerStateReference)
+		return;
+	
+	ALobbyGamestate* LobbyGamestate = GetGameState<ALobbyGamestate>();
+	if (!LobbyGamestate)
+		return;
+
+	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
+	if (!PrototypeGameInstance)
+		return;
+
+	LobbyGamestate->Server_Players.Remove(PlayerStateReference);
+	
+	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		if (auto PlayerStateReference = _Exiting->GetPlayerState<ALobbyPlayerState>())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s froom Server_Players"), *FString::FromInt(PlayerStateReference->Player_ID));
-			LobbyGamestate->Server_Players.Remove(PlayerStateReference);
-		}
+		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
 	}
+	
+	UpdateAllPlayerInfo(LobbyGamestate, PrototypeGameInstance);
 }
 
 void ALobbyGamemode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
-	//auto GamestateReference = GetGameState<ALobbyGamestate>();
-	//if (!GamestateReference)
-	//{
-	//	return;
-	//}
-//
-	//for(auto i = 0; i < GamestateReference->Server_Players.Num(); i++)
-	//{
-	//	auto PlayerStateReference = GamestateReference->Server_Players[i];
-	//	if (!PlayerStateReference)
-	//	{
-	//		continue;
-	//	}
-	//	
-	//	auto ControllerReference = PlayerStateReference->GetPlayerController();
-	//	if (!ControllerReference)
-	//	{
-	//		continue;
-	//	}
-//
-	//	auto CharacterReference = Cast<ALobbyCharacter>(ControllerReference->GetCharacter());
-	//	if (!CharacterReference)
-	//	{
-	//		continue;
-	//	}
-	//	
-	//	if (PlayerMaterials.Num() > (int32)PlayerStateReference->Character)
-	//		CharacterReference->SetPlayerMat(PlayerMaterials[(int32)PlayerStateReference->Character]);
-	//}
-	
+}
+
+void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference)
+{
+	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
+	{
+		int32 SomePlayerID = i;
+		FString SomePlayerName = FString("Player ") + FString::FromInt(i + 1);
+				
+		auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
+		if (SubSystem)
+		{
+			IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+			if (IdentityInterface.IsValid())
+			{
+				TSharedPtr<const FUniqueNetId> UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
+				if (UserId.IsValid())
+				{
+					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+				}
+			}
+		}
+		if (ALobbyPlayerState* CasterPlayerState = Cast<ALobbyPlayerState>(_GameStateReference->Server_Players[i]))
+		{
+			CasterPlayerState->Player_ID = SomePlayerID;
+			CasterPlayerState->PlayerName = SomePlayerName;
+			_gameInstanceReference->FinalPlayerDetails.FindOrAdd(SomePlayerName);
+
+			FVector NewPosition = Player1StartPosition + FVector(0, DistanceBetweenPlayers * i, 0);
+					
+			APlayerController* SomeController = CasterPlayerState->GetPlayerController();
+			if (!SomeController)
+				continue;
+
+			ACharacter* SomeCharacter = SomeController->GetCharacter();
+			if (!SomeCharacter)
+				continue;
+
+			ALobbyCharacter* SomeCastedCharacter = Cast<ALobbyCharacter>(SomeCharacter);
+			if (!SomeCastedCharacter)
+				continue;
+					
+			SomeCastedCharacter->SetActorLocation(NewPosition);
+		}
+	}
 }
 
 

@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WidgetUtility.h"
 #include "Blueprint/UserWidget.h"
 #include "Widget_LobbyPlayerHUD.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API UWidget_LobbyPlayerHUD : public UUserWidget
+class PROTOTYPE2_API UWidget_LobbyPlayerHUD : public UUserWidget, public IWidgetUtilityInterface
 {
 	GENERATED_BODY()
 
@@ -24,17 +25,30 @@ public:
 	/* Updates playerstate to being not-ready & turns off ready UI */
 	UFUNCTION(BlueprintCallable)
 	void SetCancel();
-	
+
+	/* Public Variables */
 public:
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Ready Button")
 	class UButton* ReadyButton;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Cancel Button")
 	class UButton* CancelButton;
 
 	class ALobbyGamestate* GameStateReference;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UWidget_MapChoice* MapChoiceWidget;
+	class UWidget_MapChoice* WBP_MapChoice;
+
+	/* Widget Variables related to button pulsing/size changes */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	bool bIsButtonHovered;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	int32 ButtonIndex;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	FVector2D ButtonScale;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	class UButton* ButtonToPulse;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	float PulseTime;
 };

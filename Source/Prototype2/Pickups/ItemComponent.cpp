@@ -15,11 +15,17 @@ UItemComponent::UItemComponent()
 
 	Mesh->SetRenderCustomDepth(false);
 	Mesh->CustomDepthStencilValue = 1;
+	Mesh->SetIsReplicated(true);
 }
 
 void UItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!bDoBeginPlay)
+	{
+		return;
+	}
 	
 	Mesh->SetCollisionProfileName("Ragdoll");
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -49,7 +55,9 @@ void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemP
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UItemComponent, Mesh);
 	DOREPLIFETIME(UItemComponent, bGold);
+	DOREPLIFETIME(UItemComponent, bDoBeginPlay);
 }
 
 void UItemComponent::InitializeSeed(UMaterialInstance* _InMaterial)

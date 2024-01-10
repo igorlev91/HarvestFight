@@ -8,7 +8,8 @@
 
 /* Needed for PickupType Enum */
 class APickUpItem;
-
+class UWeapon;
+class USoundCue;
 /**
  * Data Asset to hold all data for the weapons
  */
@@ -24,8 +25,14 @@ public:
 	EPickupDataType PickupType;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
+	EWeaponAnimation WeaponAnimationType;
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	UStaticMesh* WeaponMesh;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
+	USoundCue* AttackAudio;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "Seed")
 	float GrowTime;
 	
@@ -40,7 +47,10 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Attack")
 	float WeaponReach;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Attack")
+	float BaseAttackRadius = 75.0f;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "Attack")
 	float AOEMultiplier = 1.0f;
 
@@ -58,4 +68,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category= "Knockback")
 	float KnockUpMultiplier = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
+	TSubclassOf<UWeapon> WeaponComponent;
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
+	UStaticMesh* AOEIndicatorMesh;
 };

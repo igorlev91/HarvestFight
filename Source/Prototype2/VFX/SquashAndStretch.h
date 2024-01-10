@@ -14,7 +14,7 @@ class PROTOTYPE2_API USquashAndStretch : public UActorComponent
 	USquashAndStretch();
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float _DeltaTime, ELevelTick _TickType, FActorComponentTickFunction* _ThisTickFunction) override;
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 public:
 	void Enable();
 	void Disable();
@@ -29,21 +29,43 @@ protected:
 	UFUNCTION()
 	void OnBoingUpdate(float _Value);
 
-	UPROPERTY(EditAnywhere)
+	UFUNCTION(Server, Reliable)
+	void Server_Enable();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Disable();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Boing();
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetMeshesToStretch(const TArray<class UStaticMeshComponent*>& _Statics, const TArray<class USkeletalMeshComponent*>& _Skeletons);
+
+	UFUNCTION(Server, Reliable)
+	void Server_BoingUpdate(float _Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_BoingUpdate(float _Value);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SquashAndStretch();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SquashAndStretch(float _ServerCurrentTime);
+
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bShouldUpdate{false};
 	
-	UPROPERTY(meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, meta = (AllowPrivateAccess))
 	TArray<class UStaticMeshComponent*> StaticMeshes{};
-	UPROPERTY(meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, meta = (AllowPrivateAccess))
 	TArray<class USkeletalMeshComponent*> SkeletalMeshes{};
 
-	UPROPERTY(meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, meta = (AllowPrivateAccess))
 	TArray<FVector> StartingStaticScales{};
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	FVector SSAxis{1,1,-1};
 	
-	UPROPERTY(meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, meta = (AllowPrivateAccess))
 	TArray<FVector> StartingSkeletalScales{};
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
@@ -58,11 +80,12 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float BoingSquashMag{0.2f};
 
-	UPROPERTY()
+	UPROPERTY(meta = (AllowPrivateAccess))
 	FTimeline BoingTimeline;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UCurveFloat* BoingCurve{};
 
+	UPROPERTY(Replicated, meta = (AllowPrivateAccess))
 	bool bDoOnce{true};
 };

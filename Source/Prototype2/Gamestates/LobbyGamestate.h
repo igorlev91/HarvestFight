@@ -27,14 +27,15 @@ class PROTOTYPE2_API ALobbyGamestate : public AGameStateBase
 public:
 	ALobbyGamestate();
 
-	void UpdateCharacterMaterial(int32 _Player,ECharacters _Character, FVector4d _CharacterColour);
+	void UpdateCharacterMaterial(int32 _Player,FCharacterDetails _Details);
 
 	int32 GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)  const;
-	int32 GetNumberOfCharacterColoursTaken(ECharacters _DesiredCharacter, FVector _DesiredCharacterColour)  const;
+	int32 GetNumberOfCharacterColoursTaken(FCharacterDetails _Details)  const;
 
 	void SetIsReady(int32 _Player, bool _bIsReady);
 
 	void VoteMap(EFarm _Level);
+	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 
 	void SetMaxPlayersOnServer(int32 _maxPlayersOnServer);
 	int32 GetMaxPlayersOnServer() const;

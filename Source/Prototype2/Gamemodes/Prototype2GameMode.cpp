@@ -1,3 +1,5 @@
+
+
 #include "Prototype2GameMode.h"
 
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
@@ -43,10 +45,13 @@ void APrototype2GameMode::BeginPlay()
 	if (EndGamePodiumPrefab)
 	{
 		EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(EndGamePodiumPrefab,
-			FVector{3031.58f,-1426.65f,-17.30},
-			FRotator{0.0f,140.59f,0.0f});
+			FVector{2650.000000,290.000000,-10.000000},
+			FRotator{0.0,30.937500,0.000000});
+		EndGamePodium->SetActorLocationAndRotation(
+			FVector{2650.000000,290.000000,-10.000000},
+			FRotator{0.0,30.937500,0.000000});
 		EndGamePodium->SetReplicates(true);
-		EndGamePodium->SetReplicatingMovement(true);
+		EndGamePodium->SetReplicateMovement(true);
 	}
 	
 	if (SellBinPrefab)
@@ -68,77 +73,71 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
 	
-	if (HasAuthority())
+	APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>();
+	if (!PlayerStateReference)
+		return;
+	APrototype2Gamestate* Gamestate = GetGameState<APrototype2Gamestate>();
+	if (!Gamestate)
+		return;
+	
+	PlayerStateReference->Player_ID = Gamestate->RegisterPlayer(PlayerStateReference);
+
+	/* Player name */
+	FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
+	auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
+	if (SubSystem)
 	{
-		if (APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>())
+		IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+		if (IdentityInterface.IsValid())
 		{
-			if (APrototype2Gamestate* Gamestate = GetGameState<APrototype2Gamestate>())
+			TSharedPtr<const FUniqueNetId> UserId = PlayerStateReference->GetUniqueId().GetUniqueNetId();
+			if (UserId.IsValid())
 			{
-				PlayerStateReference->Player_ID = Gamestate->RegisterPlayer(PlayerStateReference);
-
-				FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
-				auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-				if (SubSystem)
+				if (IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::LoggedIn ||
+				IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::UsingLocalProfile)
 				{
-					IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
-					if (IdentityInterface.IsValid())
-					{
-						TSharedPtr<const FUniqueNetId> UserId = PlayerStateReference->GetUniqueId().GetUniqueNetId();
-						if (UserId.IsValid())
-						{
-							if (IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::LoggedIn ||
-							IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::UsingLocalProfile)
-							{
-								NewPlayerName = IdentityInterface->GetPlayerNickname(*UserId);
-								UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
-							}
-						}
-					}
-				}
-				PlayerStateReference->PlayerName = NewPlayerName;
-				
-				if (auto Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter()))
-				{
-					Character->PlayerStateRef = PlayerStateReference;
-					Character->SetPlayerState(PlayerStateReference);
-					Character->SetOwner(_NewPlayer);
-					
-					if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
-					{
-						Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
-						Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
-
-						FString Name{};
-						auto OnlineSubsystem = IOnlineSubsystem::Get();
-						if (OnlineSubsystem)
-						{
-							if (auto Interface = OnlineSubsystem->GetIdentityInterface())
-							{
-								if (auto uniqueID = PlayerStateReference->GetUniqueId().GetUniqueNetId())
-								{
-									Name = Interface->GetPlayerNickname(*uniqueID);
-								}
-							}
-						}
-						if (GameInstance->FinalPlayerDetails.Contains(Name))
-						{
-							PlayerStateReference->Character = GameInstance->FinalPlayerDetails[Name].Character;
-							PlayerStateReference->CharacterColour = GameInstance->FinalPlayerDetails[Name].CharacterColour;
-						}
-					}
-
-					if (PlayerMaterials.Num() > (int)PlayerStateReference->Character && PlayerMeshes.Num() > (int)PlayerStateReference->Character)
-					{
-						// Set the animation data asset for the character
-						Character->AnimationData = AnimationDatas[(int)PlayerStateReference->Character];
-						
-						//Character->PlayerMat = UMaterialInstanceDynamic::Create(PlayerMaterials[(int)PlayerStateReference->Character], nullptr);
-						Character->PlayerMesh = PlayerMeshes[(int)PlayerStateReference->Character]; // Todo: Remove when animation data set up
-					}
+					NewPlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+					UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
 				}
 			}
 		}
 	}
+	PlayerStateReference->PlayerName = NewPlayerName;
+	
+	
+	auto Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
+	if (!Character)
+		return;
+	
+	Character->SetOwner(_NewPlayer);
+	Character->PlayerStateRef = PlayerStateReference;
+	Character->SetPlayerState(PlayerStateReference);
+
+	Multi_AssignCharacterSkin(Cast<APrototype2Character>(Character), (int32)PlayerStateReference->Details.Character);
+
+	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	if (!GameInstance)
+		return;
+	
+	Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
+	Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
+	FString Name{};
+	auto OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		if (auto Interface = OnlineSubsystem->GetIdentityInterface())
+		{
+			if (auto uniqueID = PlayerStateReference->GetUniqueId().GetUniqueNetId())
+			{
+				Name = Interface->GetPlayerNickname(*uniqueID);
+			}
+		}
+	}
+	if (GameInstance->FinalPlayerDetails.Contains(Name))
+	{
+		PlayerStateReference->Details = GameInstance->FinalPlayerDetails[Name];
+	}
+	
 }
 
 void APrototype2GameMode::Logout(AController* _Exiting)
@@ -162,7 +161,7 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 
 	KeepPlayersAtSpawnPositionUntilStart();
 	
-	LookOutForGameEnd();
+	//LookOutForGameEnd();
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* _PlayerController)
@@ -230,7 +229,8 @@ void APrototype2GameMode::LookOutForGameEnd()
 		
 		if (GameStateRef->HasGameFinished() && !bTpHasHappened)
 		{
-			TeleportEveryoneToPodium();
+			//TeleportEveryoneToPodium();
+			//PupeteerPlayerCharactersForEndGame();
 			bTpHasHappened = true;
 		}
 	}
@@ -245,11 +245,6 @@ void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 void APrototype2GameMode::TeleportEveryoneToPodium()
 {
-	APrototype2Character* Player1{nullptr};
-	APrototype2Character* Player2{nullptr};
-	APrototype2Character* Player3{nullptr};
-	APrototype2Character* Player4{nullptr};
-
 	bool bP1win{false};
 	bool bP2win{false};
 	bool bP3win{false};
@@ -259,123 +254,131 @@ void APrototype2GameMode::TeleportEveryoneToPodium()
 
 	for(auto i = 0; i < Server_PlayerStates.Num(); i++)
 	{
-		if (auto Character = Cast<APrototype2Character>(Server_Characters[i]))
+		if (Server_PlayerStates[i].Get()->Coins > HighestCoins)
 		{
-			if (Server_PlayerStates[i].Get()->Coins > HighestCoins)
-			{
-				HighestCoins = Server_PlayerStates[i].Get()->Coins;
-			}
-
-			if (i == 0)
-			{
-				Player1 = Character;
-			}
-			if (i == 1)
-			{
-				Player2 = Character;
-			}
-			if (i == 2)
-			{
-				Player3 = Character;
-			}
-			if (i == 3)
-			{
-				Player4 = Character;
-			}
+			HighestCoins = Server_PlayerStates[i].Get()->Coins;
 		}
 	}
 
 	for(auto i = 0; i < Server_PlayerStates.Num(); i++)
 	{
-		if (auto Character = Cast<APrototype2Character>(Server_Characters[i]))
+		if (Server_PlayerStates[i].Get()->Coins == HighestCoins)
 		{
-			if (Server_PlayerStates[i].Get()->Coins == HighestCoins)
+			if (i == 0)
 			{
-				if (i == 0)
-				{
-					bP1win = true;
-				}
-				if (i == 1)
-				{
-					bP2win = true;
-				}
-				if (i == 2)
-				{
-					bP3win = true;
-				}
-				if (i == 3)
-				{
-					bP4win = true;
-				}
+				bP1win = true;
+			}
+			if (i == 1)
+			{
+				bP2win = true;
+			}
+			if (i == 2)
+			{
+				bP3win = true;
+			}
+			if (i == 3)
+			{
+				bP4win = true;
 			}
 		}
 	}
-	
-	
-
-	if (auto gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	if (EndGamePodium)
 	{
-		if (auto endGamePodium = gamemode->EndGamePodium)
+		FTransform defautTransform{};
+		defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
+
+
+		APrototype2Character* CurrentCharacter{nullptr};
+		// Tp Everyone
+		if (Server_Characters.Num() > 0 && EndGamePodium)
 		{
-			FTransform defautTransform{};
-			defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
-			// Tp Everyone
+			CurrentCharacter = Server_Characters[0].Get();
+			if (!CurrentCharacter)
+				return;
+			
 			if (bP1win == true)
 			{
 				//player1->AttachToComponent(endGamePodium->P1WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				Player1->TeleportToLocation(endGamePodium->GetWinPosition(0)->GetComponentLocation(), endGamePodium->GetWinPosition(0)->GetComponentRotation());
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(0)->GetComponentLocation(), EndGamePodium->GetWinPosition(0)->GetComponentRotation());
 			}
 			else
 			{
-				Player1->TeleportToLocation(endGamePodium->GetLossPosition(0)->GetComponentLocation(), endGamePodium->GetLossPosition(0)->GetComponentRotation());
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(0)->GetComponentLocation(), EndGamePodium->GetLossPosition(0)->GetComponentRotation());
 				//player1->AttachToComponent(endGamePodium->P1LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			}
+		}
+		
+		if (Server_Characters.Num() > 1 && EndGamePodium)
+		{
+			CurrentCharacter = Server_Characters[1].Get();
+			if (!CurrentCharacter)
+				return;
 			
-
-			if (Server_PlayerStates.Num() > 1)
+			if (bP2win == true)
 			{
-				if (bP2win == true)
-				{
-					Player2->TeleportToLocation(endGamePodium->GetWinPosition(1)->GetComponentLocation(), endGamePodium->GetWinPosition(1)->GetComponentRotation());
-					//player2->AttachToComponent(endGamePodium->P2WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				else
-				{
-					Player2->TeleportToLocation(endGamePodium->GetLossPosition(1)->GetComponentLocation(), endGamePodium->GetLossPosition(1)->GetComponentRotation());
-					//player2->AttachToComponent(endGamePodium->P2LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(1)->GetComponentLocation(), EndGamePodium->GetWinPosition(1)->GetComponentRotation());
+				//player2->AttachToComponent(endGamePodium->P2WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			}
-
-			if (Server_PlayerStates.Num() > 2)
+			else
 			{
-				if (bP3win == true)
-				{
-					Player3->TeleportToLocation(endGamePodium->GetWinPosition(2)->GetComponentLocation(), endGamePodium->GetWinPosition(2)->GetComponentRotation());
-					//player3->AttachToComponent(endGamePodium->P3WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				else
-				{
-					Player3->TeleportToLocation(endGamePodium->GetLossPosition(2)->GetComponentLocation(), endGamePodium->GetLossPosition(2)->GetComponentRotation());
-					//player3->AttachToComponent(endGamePodium->P3LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(1)->GetComponentLocation(), EndGamePodium->GetLossPosition(1)->GetComponentRotation());
+				//player2->AttachToComponent(endGamePodium->P2LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			}
-
-			if (Server_PlayerStates.Num() > 3)
+			
+		}
+		if (Server_Characters.Num() > 2 && EndGamePodium)
+		{
+			CurrentCharacter = Server_Characters[2].Get();
+			if (!CurrentCharacter)
+				return;
+			if (bP3win == true)
 			{
-				if (bP4win == true)
-				{
-					Player4->TeleportToLocation(endGamePodium->GetWinPosition(3)->GetComponentLocation(), endGamePodium->GetWinPosition(3)->GetComponentRotation());
-					//player4->AttachToComponent(endGamePodium->P4WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				else
-				{
-					Player4->TeleportToLocation(endGamePodium->GetLossPosition(3)->GetComponentLocation(), endGamePodium->GetLossPosition(3)->GetComponentRotation());
-					//player4->AttachToComponent(endGamePodium->P4LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				}
-				
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(2)->GetComponentLocation(), EndGamePodium->GetWinPosition(2)->GetComponentRotation());
+				//player3->AttachToComponent(endGamePodium->P3WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 			}
+			else
+			{
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(2)->GetComponentLocation(), EndGamePodium->GetLossPosition(2)->GetComponentRotation());
+				//player3->AttachToComponent(endGamePodium->P3LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			}
+			
+		}
+		if (Server_Characters.Num() > 3 && EndGamePodium)
+		{
+			CurrentCharacter = Server_Characters[3].Get();
+			if (!CurrentCharacter)
+				return;
+			if (bP4win == true)
+			{
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(3)->GetComponentLocation(), EndGamePodium->GetWinPosition(3)->GetComponentRotation());
+				//player4->AttachToComponent(endGamePodium->P4WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			}
+			else
+			{
+				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(3)->GetComponentLocation(), EndGamePodium->GetLossPosition(3)->GetComponentRotation());
+				//player4->AttachToComponent(endGamePodium->P4LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			}
+		}
+	}
+}
+
+void APrototype2GameMode::Multi_AssignCharacterSkin_Implementation(APrototype2Character* _Target,
+	int32 _CharacterSelection)
+{
+	_Target->AnimationData = AnimationDatas[_CharacterSelection];
+
+	_Target->GetMesh()->SetSkeletalMesh(AnimationDatas[_CharacterSelection]->SkeletalMesh);
+	_Target->GetMesh()->SetMaterial(0, PlayerMaterials[_CharacterSelection]);
+	if (auto MaterialInstance = _Target->GetMesh()->CreateDynamicMaterialInstance(0))
+	{
+		if (auto PlayerState = _Target->GetPlayerState<APrototype2PlayerState>())
+		{
+			auto SkinColour = PlayerState->Details.CharacterColour;
+			auto FeaturesColour = PlayerState->Details.CharacterColour / 1.5f;
+			MaterialInstance->SetVectorParameterValue(FName("Cow Colour"), SkinColour);
+			MaterialInstance->SetVectorParameterValue(FName("Spot Colour"), FeaturesColour);
+			_Target->GetMesh()->SetMaterial(0, MaterialInstance);
+			UE_LOG(LogTemp, Warning, TEXT("Set Player Colour"));
 		}
 	}
 }
@@ -417,23 +420,61 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 									if (RadialPlot->GetPlayerID() == Player->Player_ID)
 									{
 										auto SpawnPoint = RadialPlot->GetActorLocation();
-										SpawnPoint.Z = 90.0f;
+										SpawnPoint.Z = PlayerStartingZPosition;
 										if (FVector::Distance(Character->GetActorLocation(), SpawnPoint) > 200)
 										{
 											Character->SetActorLocation(SpawnPoint);
 											Character->SetActorRotation({Character->GetActorRotation().Pitch, RadialPlot->GetActorRotation().Yaw, Character->GetActorRotation().Roll});
+
+											/* Move player forward towards sell bin */
+											FVector ForwardVector = Character->GetActorForwardVector();
+											FVector NewLocation = Character->GetActorLocation() + ForwardVector * PlayerStartingDistanceTowardsSellBin;
+											Character->SetActorLocation(NewLocation);
 										}
 										break;
 									}
 								}
 							}
 						}
-						
 					}
 				}
-				
 			}
 		}
 	}
+}
+
+void APrototype2GameMode::PupeteerPlayerCharactersForEndGame()
+{
+	if (GameStateRef)
+	{
+		if (EndGamePodium->GetEndGameCamera())
+		{
+			if (GameStateRef->HasGameFinished())
+			{
+				for(auto PlayerState : GameStateRef->PlayerArray)
+				{
+					if (auto ControllerCast = Cast<APrototype2PlayerController>(PlayerState->GetPlayerController()))
+					{
+						if (auto CharacterCast = Cast<APrototype2Character>(ControllerCast->GetCharacter()))
+						{
+							CharacterCast->GetCharacterMovement()->StopActiveMovement();
+							CharacterCast->GetCharacterMovement()->StopMovementImmediately();
+							CharacterCast->GetCharacterMovement()->Velocity = {};
+						}
+						//ControllerCast->PupiteerPlayerForEndGame(EndGamePodium->EndGameCamera);
+						UE_LOG(LogTemp, Warning, TEXT("Game is over, Change the camera now please."));
+					}
+				}
+			}
+		}
+	}
+}
+
+void APrototype2GameMode::Multi_PupeteerPlayerCharactersForEndGame_Implementation(APrototype2Character* _Target)
+{
+	_Target->GetCharacterMovement()->StopActiveMovement();
+	_Target->GetCharacterMovement()->StopMovementImmediately();
+	_Target->GetCharacterMovement()->Velocity = {};
+	_Target->GetCharacterMovement()->Deactivate();
 }
 

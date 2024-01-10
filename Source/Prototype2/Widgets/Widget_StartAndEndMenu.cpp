@@ -6,6 +6,7 @@
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 
 void UWidget_StartAndEndMenu::NativeOnInitialized()
@@ -21,9 +22,15 @@ void UWidget_StartAndEndMenu::NativeOnInitialized()
 	TimerText->SetText(FText::FromString(FString("Waiting for other players")));
 
 	/* Stops players from moving until everyone is ready and in-game */
-	if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	//if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	//{
+	//	Controller->SetInputMode(FInputModeUIOnly());
+	//}
+
+	/* Toggle character movement - stops movement while menu open */
+	if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
 	{
-		Controller->SetInputMode(FInputModeUIOnly());
+		Owner->GetCharacterMovement()->ToggleActive();
 	}
 }
 
@@ -32,6 +39,20 @@ void UWidget_StartAndEndMenu::NativeTick(const FGeometry& MyGeometry, float InDe
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	
 	UpdateTimerText();
+
+	/* Reenabling player movement after start timer ends */
+	if (bHasReenabledMovement == false)
+	{
+		if (GameStateReference->GetCountdownLengthSeconds() <= 0)
+		{
+			bHasReenabledMovement = true;
+			/* Toggle character movement - stops movement while menu open */
+			if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+			{
+				Owner->GetCharacterMovement()->ToggleActive();
+			}
+		}
+	}
 }
 
 void UWidget_StartAndEndMenu::UpdateTimerText()

@@ -38,8 +38,13 @@ protected:
 	void Multi_SetCharacterMesh();
 	void Multi_SetCharacterMesh_Implementation();
 
+	void SyncCharacterSkin();
+
 	/* Public Variables */
 public:
+	/* Haybale to stand on (if player 4+ */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UStaticMeshComponent* HayBaleMeshComponent;
 	
 	/* Protected Variables */
 protected:
@@ -57,6 +62,7 @@ protected:
 	UPROPERTY()
 	class UWidget_PlayerName* PlayerNameWidget{nullptr};
 
+	
 	/* Ready button widget (above head) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* ReadyImageWidgetComponent;

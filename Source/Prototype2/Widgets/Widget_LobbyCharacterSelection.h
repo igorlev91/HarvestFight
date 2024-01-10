@@ -3,13 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WidgetUtility.h"
 #include "Blueprint/UserWidget.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Math/Vector.h"
+#include "Prototype2/DataAssets/ColourData.h"
 #include "Widget_LobbyCharacterSelection.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API UWidget_LobbyCharacterSelection : public UUserWidget
+class PROTOTYPE2_API UWidget_LobbyCharacterSelection : public UUserWidget, public IWidgetUtilityInterface
 {
 	GENERATED_BODY()
 
@@ -36,14 +38,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ChangeCharacter(bool _bIsTowardsRight);
-
-	/**
-	 * @brief Checks through other players to see if current skin (colour) is taken
-	 * @param _bIsTowardsRight 
-	 */
-	UFUNCTION(BlueprintCallable)
-	void CheckForTakenSkin(bool _bIsTowardsRight);
-
+	
 	/**
 	 * @brief Checks through other players to see if current character skin is taken
 	 * @param _bIsTowardsRight 
@@ -51,6 +46,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CheckForTakenCharacter(bool _bIsTowardsRight);
 
+	UFUNCTION(BlueprintCallable)
+	void SetCharacterColourFromSelection(int32 _NumberOfColors);
 	/* Public Variables */
 public:
 	UPROPERTY()
@@ -83,8 +80,17 @@ public:
 	TArray<UTexture2D*> DuckTextures;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ECharacters IdealCharacter{ECharacters::COW};
+	FCharacterDetails IdealDetails{};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector4 IdealCharacterColour{0.428690,0.102242,0.102242,1.000000};
+	UPROPERTY(VisibleAnywhere)
+	EColours CurrentColourSelection{};
+
+	UPROPERTY(EditAnywhere)
+	int32 NumberOfColours{8};
+
+	UPROPERTY(EditAnywhere)
+	UColourData* SkinColourData{nullptr};
+	
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2PlayerController* OwningController{nullptr};
 };

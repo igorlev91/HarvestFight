@@ -36,8 +36,7 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ALobbyPlayerState, IsReady);
 	DOREPLIFETIME(ALobbyPlayerState, Player_ID);
-	DOREPLIFETIME(ALobbyPlayerState, Character);
-	DOREPLIFETIME(ALobbyPlayerState, CharacterColour);
+	DOREPLIFETIME(ALobbyPlayerState, Details);
 	DOREPLIFETIME(ALobbyPlayerState, PlayerName);
 }
 
@@ -68,11 +67,10 @@ void ALobbyPlayerState::SetIsReady(bool _bIsReady)
 	IsReady = _bIsReady;
 }
 
-void ALobbyPlayerState::UpdateCharacterMaterial(ECharacters _Character, FVector4d _CharacterColour)
+void ALobbyPlayerState::UpdateCharacterMaterial(FCharacterDetails _Details)
 {
-	Character = _Character;
-	CharacterColour = _CharacterColour;
-	
+	Details = _Details;
+
 	// Print
 	//UE_LOG(LogTemp, Warning, TEXT("Player %s Colour Changed: %s"), *FString::FromInt(Player_ID), *FString::FromInt((int)CharacterColour));
 }

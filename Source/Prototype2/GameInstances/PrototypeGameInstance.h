@@ -21,23 +21,39 @@ struct FSearchResults
 UENUM(BlueprintType)
 enum class ECharacters : uint8
 {
-	COW,
-	PIG,
-	CHICKEN,
-	DUCK
+	COW = 0,
+	PIG = 1,
+	CHICKEN = 2,
+	DUCK = 3
 };
 
-USTRUCT()
+UENUM(BlueprintType)
+enum class EColours : uint8
+{
+	RED = 0,
+	BLUE= 1,
+	GREEN= 2,
+	YELLOW= 3,
+	PURPLE= 4,
+	ORANGE= 5,
+	BLACK= 6,
+	WHITE= 7
+};
+
+USTRUCT(BlueprintType)
 struct FCharacterDetails
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECharacters Character{ECharacters::COW};
 
-	UPROPERTY(VisibleAnywhere)
-	FVector4 CharacterColour{0.428690,0.102242,0.102242,1.000000};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector4 CharacterColour{228.0f/255.0f,154.0f/255.0f,154.0f/255.0f,1.000000};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector4 CharacterSubColour{175.0f/255.0f,90.0f/255.0f,90.0f/255.0f,1.000000};
 };
 
 UCLASS()

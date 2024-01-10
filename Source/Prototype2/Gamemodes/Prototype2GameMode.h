@@ -1,3 +1,5 @@
+
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,9 +14,17 @@ class APrototype2GameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+	/* Public Variables */
 public:
 	class AEndGamePodium* GetEndGamePodium();
 	
+	UPROPERTY(EditAnywhere)
+	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<USkeletalMesh*> PlayerMeshes;
+
+	/* Protected Functions */
 protected:
 	APrototype2GameMode();
 	
@@ -34,6 +44,10 @@ protected:
 	void LookOutForGameEnd();
 
 	void TeleportEveryoneToPodium();
+
+	/* Networking */
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_AssignCharacterSkin(APrototype2Character* _Target, int32 _CharacterSelection);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_TeleportEveryoneToPodium();
@@ -44,7 +58,11 @@ protected:
 	void Multi_DetachShippingBinComponents_Implementation();
 
 	void KeepPlayersAtSpawnPositionUntilStart();
+	void PupeteerPlayerCharactersForEndGame();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PupeteerPlayerCharactersForEndGame(APrototype2Character* _Target);
 
+	/* Protected Variables */
 protected:
 	bool bHasGameFinishedLocal{};
 	bool bTpHasHappened{};
@@ -63,12 +81,12 @@ protected:
 	
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
 	class AEndGamePodium* EndGamePodium{};
-	
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
-	
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<USkeletalMesh*> PlayerMeshes;
+
+	/* Player start positions */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")
+	float PlayerStartingZPosition{90.0f};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")
+	float PlayerStartingDistanceTowardsSellBin{300.0f};
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<UAnimationData*> AnimationDatas; 

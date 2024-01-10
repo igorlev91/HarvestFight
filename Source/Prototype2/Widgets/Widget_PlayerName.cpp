@@ -33,12 +33,12 @@ void UWidget_PlayerName::UpdatePlayerName()
 		if (IsValid(LobbyPlayerState))
 		{
 			PlayerStatePlayerName = LobbyPlayerState->PlayerName;
-			PlayerStateColour = FLinearColor(LobbyPlayerState->CharacterColour.X, LobbyPlayerState->CharacterColour.Y, LobbyPlayerState->CharacterColour.Z, 255);
+			PlayerStateColour = FLinearColor(LobbyPlayerState->Details.CharacterColour);
 		}
 		if (IsValid(PlayerState))
 		{
 			PlayerStatePlayerName = PlayerState->PlayerName;
-			PlayerStateColour = FLinearColor(PlayerState->CharacterColour.X, PlayerState->CharacterColour.Y, PlayerState->CharacterColour.Z, 255);
+			PlayerStateColour = FLinearColor(PlayerState->Details.CharacterColour);
 		}
 
 		PlayerName->SetText(FText::FromString(PlayerStatePlayerName));

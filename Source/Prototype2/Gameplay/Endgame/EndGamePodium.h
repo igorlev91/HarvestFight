@@ -10,10 +10,22 @@ class PROTOTYPE2_API AEndGamePodium : public AActor
 	GENERATED_BODY()
 	
 public:	
-	class AEndGameCamera* GetEndGameCamera();
+	class ACameraActor* GetEndGameCamera();
 	class UArrowComponent* GetWinPosition(int32 _Placement);
 	class UArrowComponent* GetLossPosition(int32 _Placement);
-
+	
+	UPROPERTY(EditAnywhere, Replicated)
+	USceneComponent* BaseRootComponent;
+	UPROPERTY(EditAnywhere, Replicated)
+	TArray<class UStaticMeshComponent*> PodiumMeshes{nullptr, nullptr, nullptr};
+	UPROPERTY(EditAnywhere, Replicated)
+	TArray<class UArrowComponent*> WinPositions{nullptr, nullptr, nullptr, nullptr, nullptr};
+	UPROPERTY(EditAnywhere, Replicated)
+	TArray<class UArrowComponent*> LossPositions{nullptr, nullptr, nullptr, nullptr, nullptr};
+	UPROPERTY(EditAnywhere, Replicated)
+	class ACameraActor* EndGameCamera{nullptr};
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ACameraActor> EndGameCameraPrefab;
 protected:
 	AEndGamePodium();
 	virtual void BeginPlay() override;
@@ -21,34 +33,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 
 protected:
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P1LosePosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P2LosePosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P3LosePosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P4LosePosition;
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P1WinPosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P2WinPosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P3WinPosition;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	class UArrowComponent* P4WinPosition;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	//TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;
+	
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<class UArrowComponent*> WinPositions;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<class UArrowComponent*> LossPositions;
-	
-	UPROPERTY(Transient, Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class AEndGameCamera* EndGameCamera;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;
-	
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<class UStaticMeshComponent*> PodiumMeshes;
 };

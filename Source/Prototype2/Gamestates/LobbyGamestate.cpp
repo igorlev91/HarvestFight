@@ -65,15 +65,13 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 
 							for(auto Player : Server_Players)
 							{
-								FCharacterDetails Details{};
+								FCharacterDetails Details = Player->Details;
 								FString PlayerName{};
 								IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
 								if (IdentityInterface.IsValid())
 								{
 									PlayerName = IdentityInterface->GetPlayerNickname(*Player->GetUniqueId().GetUniqueNetId());
 								}
-								Details.Character = Player->Character;
-								Details.CharacterColour = Player->CharacterColour;
 								
 								//UE_LOG(LogTemp, Warning, TEXT("%s Has Character %s and Colour %s"), *PlayerName, *FString::FromInt((int)Details.Character),*FString::FromInt((int)Details.CharacterColour) );
 								GameInstance->FinalPlayerDetails.Add(PlayerName, Details);
@@ -95,18 +93,18 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 
 void ALobbyGamestate::SetIsReady(int32 _Player, bool _bIsReady)
 {
-	if (Server_Players.Num() >= _Player)
+	if (Server_Players.Num() > _Player)
 	{
-		if (auto playerState = Server_Players[_Player])
+		if (auto PlayerState = Server_Players[_Player])
 		{
-			playerState->SetIsReady(_bIsReady);
+			PlayerState->SetIsReady(_bIsReady);
 		}
 	}
 
 	bool isEveryoneReady{true};
-	for(auto player : Server_Players)
+	for(auto PlayerState : Server_Players)
 	{
-		if (!player->IsReady)
+		if (!PlayerState->IsReady)
 			isEveryoneReady = false;
 	}
 	
@@ -138,6 +136,11 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 	{
 		HoneyFarm = HoneyFarm + 1;
 	}
+}
+
+void ALobbyGamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
+{
+	Server_Players[_Player]->Details = _CharacterDetails;
 }
 
 void ALobbyGamestate::SetMaxPlayersOnServer(int32 _maxPlayersOnServer)
@@ -294,13 +297,13 @@ void ALobbyGamestate::PickRandomMapToPlay()
 	}
 }
 
-void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,ECharacters _Character, FVector4d _CharacterColour)
+void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,FCharacterDetails _Details)
 {
 	if (Server_Players.Num() > _Player)
 	{
 		if (auto playerState = Server_Players[_Player])
 		{
-			playerState->UpdateCharacterMaterial(_Character, _CharacterColour);
+			playerState->UpdateCharacterMaterial(_Details);
 		}
 	}
 }
@@ -314,7 +317,7 @@ int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)
 		{
 			if (playerState.Get())
 			{
-				if (playerState->Character == _DesiredCharacter)
+				if (playerState->Details.Character == _DesiredCharacter)
 					characterCount++;
 			}
 		}
@@ -322,7 +325,7 @@ int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)
 	return characterCount;
 }
 
-int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _DesiredCharacter, FVector _DesiredCharacterColour) const
+int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(FCharacterDetails _Details) const
 {
 	int characterColourCount{};
 	if (Server_Players.Num() > 0)
@@ -331,7 +334,7 @@ int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(ECharacters _DesiredChar
 		{
 			if (playerState.Get())
 			{
-				if (playerState->Character == _DesiredCharacter && playerState->CharacterColour == _DesiredCharacterColour)
+				if (playerState->Details.Character == _Details.Character && playerState->Details.CharacterColour == _Details.CharacterColour)
 					characterColourCount++;
 			}
 		}

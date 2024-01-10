@@ -1,6 +1,8 @@
 
 #include "SquashAndStretch.h"
 
+#include "GameFramework/GameModeBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 
@@ -13,15 +15,28 @@ void USquashAndStretch::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	FindMeshesToStretch();
-
-	// Check
-	if (BoingCurve)
+	if (GetOwner()->HasAuthority())
 	{
-		FOnTimelineFloat TimelineUpdateEvent{};
-		TimelineUpdateEvent.BindDynamic(this, &USquashAndStretch::OnBoingUpdate);
-		BoingTimeline.AddInterpFloat(BoingCurve, TimelineUpdateEvent);
-		BoingTimeline.SetPlayRate(BoingSpeed);
+		if (auto Owner = GetOwner())
+		{
+			Owner->SetOwner(UGameplayStatics::GetGameMode(GetWorld())->GetOwner());
+
+			if (auto RootOwner = GetOwner()->GetAttachParentActor())
+			{
+				RootOwner->SetOwner(UGameplayStatics::GetGameMode(GetWorld())->GetOwner());
+			}
+		}
+		
+		FindMeshesToStretch();
+
+		// Check
+		if (BoingCurve)
+		{
+			FOnTimelineFloat TimelineUpdateEvent{};
+			TimelineUpdateEvent.BindDynamic(this, &USquashAndStretch::OnBoingUpdate);
+			BoingTimeline.AddInterpFloat(BoingCurve, TimelineUpdateEvent);
+			BoingTimeline.SetPlayRate(BoingSpeed);
+		}
 	}
 }
 
@@ -29,64 +44,66 @@ void USquashAndStretch::BeginPlay()
 void USquashAndStretch::TickComponent(float _DeltaTime, ELevelTick _TickType, FActorComponentTickFunction* _ThisTickFunction)
 {
 	Super::TickComponent(_DeltaTime, _TickType, _ThisTickFunction);
-	
-	if (bDoOnce)
+
+	if (GetOwner()->HasAuthority())
 	{
-		bDoOnce = false;
-		FindMeshesToStretch();
-	}
+		if (bDoOnce)
+		{
+			bDoOnce = false;
+			FindMeshesToStretch();
+		}
+		
+		BoingTimeline.TickTimeline(_DeltaTime);
 	
-	BoingTimeline.TickTimeline(_DeltaTime);
-	
-	if (bShouldUpdate)
-	{
-		SquashAndStretch();
+		if (bShouldUpdate)
+		{
+			SquashAndStretch();
+		}
 	}
+}
+
+void USquashAndStretch::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(USquashAndStretch, StartingStaticScales);
+	DOREPLIFETIME(USquashAndStretch, StartingSkeletalScales);
+	DOREPLIFETIME(USquashAndStretch, bShouldUpdate);
+
+	DOREPLIFETIME(USquashAndStretch, bDoOnce);
+	DOREPLIFETIME(USquashAndStretch, StaticMeshes);
+	DOREPLIFETIME(USquashAndStretch, SkeletalMeshes);
 }
 
 void USquashAndStretch::Enable()
 {
-	StartingStaticScales.Empty();
-	StartingSkeletalScales.Empty();
-	bShouldUpdate = true;
-	
-	for(auto StaticMesh : StaticMeshes)
+	if (GetOwner()->HasAuthority() || GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		StartingStaticScales.Add(StaticMesh->GetComponentScale());
-	}
-	for(auto SkeletalMesh : SkeletalMeshes)
-	{
-		StartingSkeletalScales.Add(SkeletalMesh->GetComponentScale());
+		Server_Enable();
 	}
 }
 
 void USquashAndStretch::Disable()
 {
-	bShouldUpdate = false;
+	if (GetOwner()->HasAuthority() || GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_Disable();
+	}
 }
 
 void USquashAndStretch::Boing()
 {
-	BoingTimeline.PlayFromStart();
+	if (GetOwner()->HasAuthority() || GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_Boing();
+	}
 }
 
 void USquashAndStretch::SetMeshesToStretch(TArray<UStaticMeshComponent*> _Statics,
 	TArray<USkeletalMeshComponent*> _Skeletons)
 {
-	StaticMeshes.Empty();
-	SkeletalMeshes.Empty();
-	StartingStaticScales.Empty();
-	StartingSkeletalScales.Empty();
-	
-	StaticMeshes = _Statics;
-	for(auto Mesh : StaticMeshes)
+	if (GetOwner()->HasAuthority() || GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		StartingStaticScales.Add(Mesh->GetComponentScale());
-	}
-	SkeletalMeshes = _Skeletons;
-	for(auto Mesh : SkeletalMeshes)
-	{
-		StartingSkeletalScales.Add(Mesh->GetComponentScale());
+		Server_SetMeshesToStretch(_Statics, _Skeletons);
 	}
 }
 
@@ -114,17 +131,32 @@ void USquashAndStretch::FindMeshesToStretch()
 
 void USquashAndStretch::SquashAndStretch()
 {
-	for(int32 i = 0; i < StaticMeshes.Num(); i++)
-	{
-		StaticMeshes[i]->SetWorldScale3D(StartingStaticScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
-	}
-	for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
-	{
-		SkeletalMeshes[i]->SetWorldScale3D(StartingSkeletalScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
-	}
+	Multi_SquashAndStretch(GetWorld()->GetTimeSeconds());
 }
 
 void USquashAndStretch::OnBoingUpdate(float _Value)
+{
+	Multi_BoingUpdate(_Value);
+}
+
+void USquashAndStretch::Multi_SquashAndStretch_Implementation(float _ServerCurrentTime)
+{
+	for(int32 i = 0; i < StaticMeshes.Num(); i++)
+	{
+		StaticMeshes[i]->SetWorldScale3D(StartingStaticScales[i] + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * SquashMag));
+	}
+	for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
+	{
+		SkeletalMeshes[i]->SetWorldScale3D(StartingSkeletalScales[i] + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * SquashMag));
+	}
+}
+
+void USquashAndStretch::Server_SquashAndStretch_Implementation()
+{
+	Multi_SquashAndStretch(GetWorld()->GetTimeSeconds());
+}
+
+void USquashAndStretch::Multi_BoingUpdate_Implementation(float _Value)
 {
 	for(int32 i = 0; i < StaticMeshes.Num(); i++)
 	{
@@ -133,6 +165,56 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 	for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 	{
 		SkeletalMeshes[i]->SetWorldScale3D(StartingSkeletalScales[i] + (SSAxis * FMath::Sin(2 * PI * _Value) * BoingSquashMag));
+	}
+}
+
+void USquashAndStretch::Server_BoingUpdate_Implementation(float _Value)
+{
+	Multi_BoingUpdate(_Value);
+}
+
+void USquashAndStretch::Server_SetMeshesToStretch_Implementation(const TArray<class UStaticMeshComponent*>& _Statics, const TArray<class USkeletalMeshComponent*>& _Skeletons)
+{
+	StaticMeshes.Empty();
+	SkeletalMeshes.Empty();
+	StartingStaticScales.Empty();
+	StartingSkeletalScales.Empty();
+	
+	StaticMeshes = _Statics;
+	for(auto Mesh : StaticMeshes)
+	{
+		StartingStaticScales.Add(Mesh->GetComponentScale());
+	}
+	SkeletalMeshes = _Skeletons;
+	for(auto Mesh : SkeletalMeshes)
+	{
+		StartingSkeletalScales.Add(Mesh->GetComponentScale());
+	}
+}
+
+void USquashAndStretch::Server_Boing_Implementation()
+{
+	BoingTimeline.PlayFromStart();
+}
+
+void USquashAndStretch::Server_Disable_Implementation()
+{
+	bShouldUpdate = false;
+}
+
+void USquashAndStretch::Server_Enable_Implementation()
+{
+	StartingStaticScales.Empty();
+	StartingSkeletalScales.Empty();
+	bShouldUpdate = true;
+	
+	for(auto StaticMesh : StaticMeshes)
+	{
+		StartingStaticScales.Add(StaticMesh->GetComponentScale());
+	}
+	for(auto SkeletalMesh : SkeletalMeshes)
+	{
+		StartingSkeletalScales.Add(SkeletalMesh->GetComponentScale());
 	}
 }
 

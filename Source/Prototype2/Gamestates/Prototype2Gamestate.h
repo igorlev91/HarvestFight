@@ -27,6 +27,8 @@ public:
 	int32 GetCountdownLengthMinutes();
 	int32 GetCountdownLengthSeconds();
 	int32 GetBriefTimesUpLengthSeconds();
+	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
+	void PupeteerCharactersForEndGame();
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;

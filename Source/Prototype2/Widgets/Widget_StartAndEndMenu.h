@@ -30,6 +30,8 @@ public:
 	UPROPERTY(VisibleAnywhere) 
 	class APrototype2Gamestate* GameStateReference{nullptr};
 
+	bool bHasReenabledMovement{false};
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) 
 	int32 CountdownTimer{}; // Countdown at beginning of game
 };

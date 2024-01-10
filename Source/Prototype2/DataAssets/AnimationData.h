@@ -5,14 +5,6 @@
 #include "Engine/DataAsset.h"
 #include "AnimationData.generated.h"
 
-/* Enum for choosing the correct attack animations */
-UENUM(BlueprintType)
-enum class EWeaponAnimation : uint8
-{
-	Punching,
-	Leek,
-	Aspearagus,
-};
 
 UCLASS()
 class PROTOTYPE2_API UAnimationData : public UDataAsset
@@ -75,4 +67,13 @@ public:
 			
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aspearagus")
 	UAnimMontage* NormalAspearagusAttack;
+				
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HoneyStick")
+	UAnimSequence* ChargingHoneyStickAttack;
+		
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HoneyStick")
+	UAnimMontage* FullChargeHoneyStickAttack;
+			
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HoneyStick")
+	UAnimMontage* NormalHoneyStickAttack;
 };

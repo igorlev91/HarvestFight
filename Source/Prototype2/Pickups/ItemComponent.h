@@ -27,7 +27,11 @@ public:
 	void InitializeWeapon(UStaticMesh* _InMesh);
 	
 public:
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(Replicated, EditAnywhere)
+	bool bDoBeginPlay = true;;
+	
+	UPROPERTY(Replicated, EditAnywhere)
 	UStaticMeshComponent* Mesh;
 	
 	UPROPERTY(Replicated , EditAnywhere)

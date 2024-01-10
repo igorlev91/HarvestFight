@@ -43,8 +43,8 @@ void ARadialPlot::Multi_SetPlotMaterial_Implementation(APrototype2PlayerState* _
 	if (_Id && PlotSignMaterial && !PlotSignMaterialDynamic)
 	{
 		PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(PlotSignMaterial, nullptr);
-		PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), _Id->CharacterColour);
-		PlotSignMaterialDynamic->UpdateCachedData();
+		PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), _Id->Details.CharacterColour);
+		//PlotSignMaterialDynamic->UpdateCachedData();
 		PlotSignMesh->SetMaterial(0, PlotSignMaterialDynamic);
 	}
 }
@@ -76,6 +76,8 @@ void ARadialPlot::BeginPlay()
 			}
 		}
 	}
+
+
 }
 
 void ARadialPlot::SetPlayerID(int32 _Id)
@@ -113,22 +115,28 @@ int32 ARadialPlot::GetPlayerID() const
 
 void ARadialPlot::UpdateBeehiveFlowers()
 {
-	TArray<ABeehive*> BeehiveArray;
+
+	std::vector<ABeehive*> BeehiveVector;
 	for (int i = 0; i < GrowSpots.Num(); i++)
 	{
 		if (GrowSpots[i]->Beehive)
 		{
-			BeehiveArray.Add(GrowSpots[i]->Beehive);
+			BeehiveVector.insert(BeehiveVector.begin(), GrowSpots[i]->Beehive);
+			GrowSpots[i]->Beehive->NumberOfNearbyFlowers = 0;
 		}
 	}
 
 	for (int i = 0; i < GrowSpots.Num(); i++)
 	{
-		if (GrowSpots[i]->Plant->DataAssetPickupType == EPickupDataType::FlowerData)
+		if (!GrowSpots[i]->Plant)
 		{
-			for (int j = 0; j < BeehiveArray.Num(); j++)
+			
+		}
+		else if (GrowSpots[i]->Plant->PlantData->PickupType == EPickupDataType::FlowerData)
+		{
+			for (int j = 0; j < BeehiveVector.size(); j++)
 			{
-				BeehiveArray[j]->NumberOfNearbyFlowers += 1;
+				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->Plant->PlantData->FlowerValue;
 			}
 		}
 	}

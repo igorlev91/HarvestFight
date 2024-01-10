@@ -41,62 +41,64 @@ void UWidget_LobbyPlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDel
 	/* Showing map choice widget */
 	if (GameStateReference->ShouldShowMapChoices())
 	{
-		MapChoiceWidget->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
+		WBP_MapChoice->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
 
 		/* Increasing value of counter for each map */
-		MapChoiceWidget->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
-		MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
-		MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
+		WBP_MapChoice->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
+		WBP_MapChoice->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
+		WBP_MapChoice->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 
 		/* Turning on visibility of maps if value is higher than 0 */
 		if (GameStateReference->GetFarm() > 0) // Normal farm
 		{
-			MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+			WBP_MapChoice->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 		}
 		else
 		{
-			MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+			WBP_MapChoice->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 		}
 		if (GameStateReference->GetWinterFarm() > 0) // Winter farm
 		{
-			MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+			WBP_MapChoice->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 		}
 		else
 		{
-			MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+			WBP_MapChoice->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 		}
 		if (GameStateReference->GetHoneyFarm() > 0) // Honey farm
 		{
-			MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+			WBP_MapChoice->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 		}
 		else
 		{
-			MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+			WBP_MapChoice->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 	/* Show timer after map vote */
-	MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
+	WBP_MapChoice->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
 	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
 	{
-		MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		WBP_MapChoice->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
+	
+	HoverButton(bIsButtonHovered, ButtonToPulse, PulseTime, InDeltaTime, FVector2D(1.0f, 1.0f), ButtonScale);
 }
 
 void UWidget_LobbyPlayerHUD::SetReady()
 {
-	if (auto* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	if (auto PlayerState = Cast<ALobbyPlayerState>(GetOwningPlayerState()))
 	{
-		auto PlayerID = PlayerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
+		auto PlayerID = PlayerState->Player_ID;
 		
 		if (GameStateReference->Server_Players.Num() >= PlayerID)
 		{
-			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateReference->Server_Players[PlayerID]))
+			if (auto PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 			{
 				PlayerController->SetIsReady(PlayerID, true);
-
-				ReadyButton->SetVisibility(ESlateVisibility::Hidden);
-				CancelButton->SetVisibility(ESlateVisibility::Visible);
 			}
+
+			ReadyButton->SetVisibility(ESlateVisibility::Hidden);
+			CancelButton->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 }

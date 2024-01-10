@@ -15,8 +15,7 @@ void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(APrototype2PlayerState, MaxTimeShowExtraCoins);
 	DOREPLIFETIME(APrototype2PlayerState, TimerExtraCoins);
 
-	DOREPLIFETIME(APrototype2PlayerState, Character);
-	DOREPLIFETIME(APrototype2PlayerState, CharacterColour);
+	DOREPLIFETIME(APrototype2PlayerState, Details);
 
 	DOREPLIFETIME(APrototype2PlayerState, PlayerName);
 }
@@ -57,30 +56,27 @@ void APrototype2PlayerState::GrabSkinFromGameInstance()
 {
 	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
 	{
-		Character = GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].Character;
-		CharacterColour = GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].CharacterColour;
+		Details = GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName];
 		UE_LOG(LogTemp, Warning, TEXT("GameInstance Character: %s"), *FString::FromInt((int32)GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].Character));
 		//UE_LOG(LogTemp, Warning, TEXT("GameInstance Character Colour: %s"), *FString::FromInt((int32)GameInstance->FinalPlayerDetails[GameInstance->UniqueNetIDName].CharacterColour));
 	}
 
-	Server_GrabSkinFromGameInstance(Character, CharacterColour);
+	Server_GrabSkinFromGameInstance(Details);
 }
 
-void APrototype2PlayerState::Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour)
+void APrototype2PlayerState::Server_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details)
 {
-	Multi_GrabSkinFromGameInstance(_Character, _Colour);
+	Multi_GrabSkinFromGameInstance(_Details);
 }
 
-void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour)
+void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details)
 {
-	Character = _Character;
-	CharacterColour = _Colour;
-	UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character: %s"), *FString::FromInt((int32)_Character));
+	Details = _Details;
+	UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character: %s"), *FString::FromInt((int32)_Details.Character));
 	//UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character Colour: %s"), *FString::FromInt((int32)_Colour));
 }
 
-void APrototype2PlayerState::UpdateCharacterMaterial(ECharacters _Character, FVector4d _Colour)
+void APrototype2PlayerState::UpdateCharacterMaterial(FCharacterDetails _Details)
 {
-	Character = _Character;
-	CharacterColour = _Colour;
+	Details = _Details;
 }

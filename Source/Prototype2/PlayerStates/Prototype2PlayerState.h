@@ -18,15 +18,15 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 public:
 	void GrabSkinFromGameInstance();
 
-	void UpdateCharacterMaterial(ECharacters _Character, FVector4d _Colour);
+	void UpdateCharacterMaterial(FCharacterDetails _Details);
 	
 	UFUNCTION(Server, Reliable)
-	void Server_GrabSkinFromGameInstance(ECharacters _Character, FVector4d _Colour);
-	void Server_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour);
+	void Server_GrabSkinFromGameInstance(FCharacterDetails _Details);
+	void Server_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_GrabSkinFromGameInstance(ECharacters _Character, FVector4d _Colour);
-	void Multi_GrabSkinFromGameInstance_Implementation(ECharacters _Character, FVector4d _Colour);
+	void Multi_GrabSkinFromGameInstance(FCharacterDetails _Details);
+	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
 public:
 	bool bSkinSet{};
@@ -50,11 +50,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float TimerExtraCoins{};
 
-	// Character & Colour
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
-	ECharacters Character{ECharacters::COW};
-
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
-	FVector4 CharacterColour{0.428690,0.102242,0.102242,1.000000};
+	FCharacterDetails Details;
 	
 };

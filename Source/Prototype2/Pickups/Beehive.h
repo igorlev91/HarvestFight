@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Prototype2/Pickups/Plant.h"
-#include "Prototype2/DataAssets/BeehiveData.h"
 #include "Beehive.generated.h"
 
 /**
@@ -20,15 +19,13 @@ public:
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
-
-	void SetBeehiveData(UBeehiveData* _Data);
 private:
 	virtual void Tick(float DeltaSeconds) override;
 
 	// Variables
 public:
 	UPROPERTY(EditAnywhere)
-	UBeehiveData* BeehiveData;
+	UPlantData* HoneyData;
 	
 	UPROPERTY(EditAnywhere)
 	bool bIsReadyToCollect;

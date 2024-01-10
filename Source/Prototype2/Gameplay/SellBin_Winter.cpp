@@ -15,9 +15,12 @@ ASellBin_Winter::ASellBin_Winter()
 
 	IcePlane = CreateDefaultSubobject<UStaticMeshComponent>("Ice Plane");
 	IcePlane->SetWorldLocation({-104.559325,-72.190911,-13.473242});
+	//IcePlane->SetPhysMaterialOverride()
 	
 	IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
 	IceBoundary->SetWorldLocation({-104.559325,-72.190911,300});
+	IceBoundary->SetCollisionProfileName(FName("Vehicle"));
+	IceBoundary->SetRelativeScale3D({1,1,8});
 
 	InterfaceType = EInterfaceType::SellBin;
 }
@@ -54,8 +57,15 @@ void ASellBin_Winter::SetShippingBinPosition_Networked(FVector _Pos)
 	IceBoundary->SetupAttachment(RootComponent);
 	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	IceBoundary->SetRelativeLocation({});
-	
 
+	Collision->SetGenerateOverlapEvents(true);
+	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	
+	ItemComponent->Mesh->SetSimulatePhysics(true);
+	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	ItemComponent->Mesh->SetConstraintMode(EDOFMode::XYPlane);
+	Collision->SetConstraintMode(EDOFMode::XYPlane);
 }
 
 void ASellBin_Winter::Server_DetachComponents_Implementation(FVector _Pos)
@@ -84,6 +94,8 @@ void ASellBin_Winter::Multi_DetachComponents_Implementation(FVector _Pos)
 	ItemComponent->Mesh->SetSimulatePhysics(true);
 	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	ItemComponent->Mesh->SetConstraintMode(EDOFMode::XYPlane);
+	Collision->SetConstraintMode(EDOFMode::XYPlane);
 }
 
 void ASellBin_Winter::OnCollision(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

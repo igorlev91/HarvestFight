@@ -63,8 +63,6 @@ ALobbyCharacter::ALobbyCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	SetReplicates(true);
-	
-	GetMesh()->SetIsReplicated(true);
 
 	/* Display name widget (above head) */
 	PlayerNameWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNameWidgetComponent"));
@@ -77,6 +75,11 @@ ALobbyCharacter::ALobbyCharacter()
 	ReadyImageWidgetComponent->SetupAttachment(RootComponent);
 	ReadyImageWidgetComponent->SetIsReplicated(false);
 	ReadyImageWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	
+	HayBaleMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HayBaleMeshComponent"));
+	HayBaleMeshComponent->SetupAttachment(RootComponent);
+	//HayBaleMeshComponent->SetIsReplicated(false);
 }
 
 void ALobbyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -107,11 +110,19 @@ void ALobbyCharacter::BeginPlay()
 	}
 
 	ReadyImageWidgetComponent->SetVisibility(false);
+	HayBaleMeshComponent->SetVisibility(false);
+	
 }
 
 void ALobbyCharacter::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
+
+	/* Turn on haybale if on back row */
+	if (GetActorLocation().X >= 2100.0f)
+	{
+		HayBaleMeshComponent->SetVisibility(true);
+	}
 
 	if (!PlayerStateRef)
 	{
@@ -124,11 +135,6 @@ void ALobbyCharacter::Tick(float _DeltaTime)
 
 	if (PlayerStateRef)
 	{
-		if (PlayerMeshes.Num() > (int)PlayerStateRef->Character)
-		{
-			GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int)PlayerStateRef->Character]);
-		}
-
 		/* Toggle ready image */
 		if (PlayerStateRef->IsReady)
 		{
@@ -139,25 +145,7 @@ void ALobbyCharacter::Tick(float _DeltaTime)
 			ReadyImageWidgetComponent->SetVisibility(false);
 		}
 
-		if (GetMesh()->GetMaterial(0) != PlayerMaterialsDynamic[(int32)PlayerStateRef->Character] )
-		{
-			auto SkinColour = PlayerStateRef->CharacterColour;
-			auto FeaturesColour = PlayerStateRef->CharacterColour / 1.5f;
-			if (PlayerStateRef->Character == ECharacters::CHICKEN)
-			{
-				PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]->SetVectorParameterValue(FName("Skin"), SkinColour);
-				PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]->SetVectorParameterValue(FName("Beak"), FeaturesColour);
-			}
-			else
-			{
-				PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]->SetVectorParameterValue(FName("Cow Colour"), SkinColour);
-				PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]->SetVectorParameterValue(FName("Spot Colour"), FeaturesColour);
-			}
-
-			PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]->UpdateCachedData();
-			
-			GetMesh()->SetMaterial(0, PlayerMaterialsDynamic[(int32)PlayerStateRef->Character]);
-		}
+		SyncCharacterSkin();
 	}
 }
 
@@ -175,11 +163,24 @@ void ALobbyCharacter::Multi_SetCharacterMesh_Implementation()
 {
 	if (PlayerStateRef)
 	{
-		if (PlayerMeshes.Num() > (int)PlayerStateRef->Character)
+		if (PlayerMeshes.Num() > (int)PlayerStateRef->Details.Character)
 		{
-			GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int)PlayerStateRef->Character]);
+			GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int)PlayerStateRef->Details.Character]);
 		}
 	}
+}
+
+void ALobbyCharacter::SyncCharacterSkin()
+{
+	if (PlayerMeshes.Num() > (int)PlayerStateRef->Details.Character)
+	{
+		GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int32)PlayerStateRef->Details.Character]);
+	}
+	
+	PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Cow Colour"), PlayerStateRef->Details.CharacterColour);
+	PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Spot Colour"), PlayerStateRef->Details.CharacterSubColour);
+	
+	GetMesh()->SetMaterial(0, PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]);
 }
 
 

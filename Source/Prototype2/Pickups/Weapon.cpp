@@ -7,22 +7,38 @@
 
 UWeapon::UWeapon()
 {
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	//Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	InterfaceType = EInterfaceType::Weapon;
+	SetIsReplicatedByDefault(true);
 }
-
 
 void UWeapon::Interact(APrototype2Character* _Player)
 {
 }
 
-void UWeapon::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
+void UWeapon::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
 {
 }
 
 bool UWeapon::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return false;
+}
+
+void UWeapon::ChargeAttack(APrototype2Character* _Player)
+{
+}
+
+void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
+{
+}
+
+void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+{
+}
+
+void UWeapon::UpdateAOEIndicator(APrototype2Character* _Player)
+{
 }
 
 

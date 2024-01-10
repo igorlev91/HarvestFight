@@ -1,4 +1,4 @@
-.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,13 +13,12 @@ class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
 public:
 	/* Constructor */
 	ALobbyGamemode();
+	
+	UPROPERTY(EditAnywhere)
+	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 
-	/* Public Variables */
-public:
-	/* Player Z Positions */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PlayerZPosition = 90.0f;
-
+	UPROPERTY(EditAnywhere)
+	TArray<USkeletalMesh*> PlayerMeshes;
 private:
 	/* Called after logging in */
 	virtual void PostLogin(APlayerController* _NewPlayer) override;
@@ -30,14 +29,14 @@ private:
 	/* Your classic tick, tried and true */
 	virtual void Tick(float _DeltaSeconds) override;
 
+	void UpdateAllPlayerInfo(class ALobbyGamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
+
 private:
 	/* For holding all the costumes */
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 
 	/* Player 1 character lobby starting positions */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	FVector Player1StartPosition = FVector{2000.0f,40.0f, PlayerZPosition};
+	FVector Player1StartPosition = FVector{2000.0f,40.0f, 90.0f};
 
 	/* Player distances in lobby */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))

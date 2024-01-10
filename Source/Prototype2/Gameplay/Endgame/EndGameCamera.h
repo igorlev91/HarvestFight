@@ -9,5 +9,6 @@ UCLASS()
 class PROTOTYPE2_API AEndGameCamera : public ACameraActor
 {
 	GENERATED_BODY()
-	
+public:
+	AEndGameCamera();
 };

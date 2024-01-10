@@ -81,6 +81,7 @@ public:
 	UTexture2D* SetIcon(APrototype2PlayerState* _Player);
 	
 public:
+	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
@@ -90,14 +91,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bEndgame{false};
 	
-	// Timer
+	/* Timer */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Minutes;
-
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Seconds;
 
-	// Player scores
+	/* Player UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player1Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -114,7 +114,16 @@ public:
 	class UTextBlock* Player4Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player4ExtraCoins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player5Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player5ExtraCoins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player6Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Player6ExtraCoins;
 
+	/* Player Icons */
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}, {}, {}, {}, {}};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -125,32 +134,45 @@ public:
 	class UImage* P3Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P4Icon;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P5Icon;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P6Icon;
 
+	/* Icon rings */
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* RingTexture{};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P1ring;
+	class UImage* P1Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P2ring;
+	class UImage* P2Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P3ring;
+	class UImage* P3Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P4ring;
+	class UImage* P4Ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P5Ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UImage* P6Ring;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<UImage*> Rings;
 
 	// Player UI overlays
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UOverlay* TopOverlayUI;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* Overlay_P1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* Overlay_P2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* Overlay_P3;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* Overlay_P4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer3;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer5;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayPlayer6;
 	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

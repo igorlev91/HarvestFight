@@ -32,6 +32,9 @@ void ASeedSpawner::BeginPlay()
 		MatchLengthSeconds = (GameState->GetMatchLengthMinutes() * 60) + GameState->GetMatchLengthSeconds();
 		
 	}
+
+	if (FertiliserAsset)
+		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 10;
 }
 
 void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
@@ -119,24 +122,41 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 		SpawnTransform.SetLocation(FinalLocation);
 
 		// Spawn plant seed from data asset
-		if (PlantSeedPrefab)
+		if (PlantDataArray.Num() <= 0)
+		{
+			return;
+		}
+
+		int32 RandomIndex = rand() % PlantDataArray.Num();
+		if (PlantDataArray.Num() <= RandomIndex)
+		{
+			return;
+		}
+
+		if (PlantDataArray[RandomIndex] == nullptr)
+		{
+			return;
+		}
+
+		EPickupDataType PlantDataType = PlantDataArray[RandomIndex]->PickupType;
+
+		if (PlantDataType == EPickupDataType::PlantData && PlantSeedPrefab || PlantDataType == EPickupDataType::FlowerData && PlantSeedPrefab)
 		{
 			if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(PlantSeedPrefab, FinalLocation, {}))
 			{
-				if (PlantDataArray.Num() > 0)
-				{
-					int32 RandomIndex = rand() % PlantDataArray.Num();
-					if (PlantDataArray.Num() > RandomIndex && PlantDataArray.Num() > 0)
-					{
-						if (PlantDataArray[RandomIndex] != nullptr)
-						{
-							NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
-							NewSeed->SetParachuteMesh(ParachuteMesh);
-						}
-					}
-				}
+				NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
+				NewSeed->SetParachuteMesh(ParachuteMesh);
 			}
 		}
+		else if (PlantDataType == EPickupDataType::BeehiveData && BeehiveBoxPrefab)
+		{
+			if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(BeehiveBoxPrefab, FinalLocation, {}))
+			{
+				NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
+				NewSeed->SetParachuteMesh(ParachuteMesh);
+			}
+		}
+		
 		SpawnTimer = AverageSpawnTime + rand() % 4;
 	}
 }
@@ -222,6 +242,9 @@ void ASeedSpawner::SpawnFertiliser(TArray<AActor*> _SpawnedFertiliser, float _De
 	{
 		return;
 	}
+
+	if (!FertiliserAsset)
+		return;;
 	
 	FertiliserSpawnTimer -= _DeltaTime;
 	
@@ -268,7 +291,7 @@ void ASeedSpawner::SpawnFertiliser(TArray<AActor*> _SpawnedFertiliser, float _De
 		AFertiliser* SpawnedFertiliser = GetWorld()->SpawnActor<AFertiliser>(FertiliserAsset, FinalLocation, {});
 		SpawnedFertiliser->PickupActor = EPickupActor::FertilizerActor;
 		
-		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 4;
+		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 10;
 	}
 }
 

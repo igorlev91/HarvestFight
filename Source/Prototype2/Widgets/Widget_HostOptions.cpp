@@ -1,6 +1,5 @@
 
 
-
 #include "Widget_HostOptions.h"
 
 void UWidget_HostOptions::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

@@ -33,31 +33,6 @@ void APrototype2PlayerController::BeginPlay()
 void APrototype2PlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	if (!GameStateRef)
-		return;
-
-	//UE_LOG(LogTemp, Warning, TEXT("HasGameStarted? : %s"), *FString::FromInt((int)GameStateRef->GameHasStarted));
-
-	if (GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
-	{
-		if (!GameStateRef->HasGameFinished() && GameStateRef->HasGameStarted())
-		{
-			if (bEnableMovement == false)
-			{
-				SetInputMode(FInputModeGameOnly());
-				bEnableMovement = true;
-			}
-		}
-		
-		if (auto gameInstance = GetGameInstance<UPrototypeGameInstance>())
-		{
-			if (auto playerState = GetPlayerState<ALobbyPlayerState>())
-			{
-				UpdateCharacterMaterial(playerState->Player_ID, gameInstance->FinalPlayerDetails[gameInstance->UniqueNetIDName].Character, gameInstance->FinalPlayerDetails[gameInstance->UniqueNetIDName].CharacterColour);
-			}
-		}
-	}
 }
 
 void APrototype2PlayerController::SetIsReady(int32 _Player, bool _bIsReady)
@@ -65,9 +40,34 @@ void APrototype2PlayerController::SetIsReady(int32 _Player, bool _bIsReady)
 	Server_SetIsReady(_Player, _bIsReady);
 }
 
+void APrototype2PlayerController::SetViewTarget_Networked(AActor* _ViewTarget)
+{
+	if (HasAuthority())
+	{
+		Multi_SetViewTarget_Networked(_ViewTarget);
+	}
+	else
+	{
+		Server_SetViewTarget_Networked(_ViewTarget);
+	}
+}
+
+void APrototype2PlayerController::Server_SetViewTarget_Networked_Implementation(AActor* _ViewTarget)
+{
+	Multi_SetViewTarget_Networked(_ViewTarget);
+}
+
+void APrototype2PlayerController::Multi_SetViewTarget_Networked_Implementation(AActor* _ViewTarget)
+{
+	SetControlRotation({});
+	SetInputMode(FInputModeUIOnly{});
+	bShowMouseCursor = true;
+	SetViewTargetWithBlend(_ViewTarget, 0.75f);
+}
+
 void APrototype2PlayerController::Server_SetIsReady_Implementation(int32 _Player, bool _bIsReady)
 {
-	if (auto* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		GameStateCast->SetIsReady(_Player, _bIsReady);
 	}
@@ -81,23 +81,121 @@ void APrototype2PlayerController::VoteMap(int32 _Player, EFarm _Level)
 
 void APrototype2PlayerController::Server_VoteMap_Implementation(int32 _Player, EFarm _Level)
 {
-	if (auto* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		GameStateCast->VoteMap(_Level);
 	}
 }
 
-void APrototype2PlayerController::UpdateCharacterMaterial(int32 _Player, ECharacters _Character, FVector4d _CharacterColour)
+void APrototype2PlayerController::UpdateCharacterMaterial(int32 _Player, FCharacterDetails _Details)
 {
-	Server_UpdateCharacterMaterial(_Player, _Character, _CharacterColour);
+	Server_UpdateCharacterMaterial(_Player, _Details);
 }
 
-void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(int32 _Player, ECharacters _Character,
-	FVector4d _CharacterColour)
+void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(int32 _Player, FCharacterDetails _Details)
 {
-	if (auto GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		GameStateCast->UpdateCharacterMaterial(_Player, _Character, _CharacterColour);
+		GameStateCast->UpdatePlayerDetails(_Player, _Details);
+	}
+	if (APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		GameStateCast->UpdatePlayerDetails(_Player, _Details);
+	}
+}
+
+//void APrototype2PlayerController::Multi_UpdateCharacterMaterial_Implementation(FCharacterDetails _Details)
+//{
+//	if (auto GameMode = UGameplayStatics::GetGameMode(GetWorld()))
+//	{
+//		auto CastedGameMode = Cast<APrototype2GameMode>(GameMode);
+//		auto CastedLobbyGameMode = Cast<ALobbyGamemode>(GameMode);
+//		
+//		if (CastedLobbyGameMode || CastedGameMode)
+//		{
+//			if (CastedGameMode && CastedGameMode->PlayerMeshes.Num() > (int32)_Details.Character)
+//			{
+//				GetCharacter()->GetMesh()->SetSkeletalMeshAsset(
+//				CastedLobbyGameMode ? CastedLobbyGameMode->PlayerMeshes[(int32)_Details.Character]
+//				:
+//				CastedGameMode->PlayerMeshes[(int32)_Details.Character]);
+//			}
+//
+//			if (CastedLobbyGameMode && CastedLobbyGameMode->PlayerMaterials.Num() > (int32)_Details.Character)
+//			{
+//				GetCharacter()->GetMesh()->SetMaterial(0,
+//					CastedLobbyGameMode ? CastedLobbyGameMode->PlayerMaterials[(int32)_Details.Character]
+//					:
+//					CastedGameMode->PlayerMaterials[(int32)_Details.Character]);
+//			}
+//		}
+//	}
+//	
+//	auto MaterialInstance = GetCharacter()->GetMesh()->CreateDynamicMaterialInstance(0);
+//	auto SkinColour = _Details.CharacterColour;
+//	auto FeaturesColour = _Details.CharacterColour / 1.5f;
+//	// chicken??
+//	MaterialInstance->SetVectorParameterValue(FName("Cow Colour"), SkinColour);
+//	MaterialInstance->SetVectorParameterValue(FName("Spot Colour"), FeaturesColour);
+//
+//	GetCharacter()->GetMesh()->SetMaterial(0, MaterialInstance);
+//}
+
+void APrototype2PlayerController::SyncPlayerMaterial(FCharacterDetails _CharacterDetails)
+{
+	int32 PlayerID{};
+	auto LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
+	auto GamePlayerState = GetPlayerState<APrototype2PlayerState>();
+	
+	if (LobbyPlayerState)
+		PlayerID = LobbyPlayerState->Player_ID;
+	else if (GamePlayerState)
+		PlayerID = GamePlayerState->Player_ID;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Update Player %s Skin (%s)"), *FString::FromInt(PlayerID), *_CharacterDetails.CharacterColour.ToString());
+	
+	UpdateCharacterMaterial(PlayerID, _CharacterDetails);
+
+	FString Name{};
+	IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
+	if (!IdentityInterface.IsValid())
+		return;
+
+	if (LobbyPlayerState)
+	{
+		if (auto NetID = LobbyPlayerState->GetUniqueId().GetUniqueNetId())
+		{
+			Name = IdentityInterface->GetPlayerNickname(*NetID);
+		}
+	}
+	else if (GamePlayerState)
+	{
+		if (auto NetID = GamePlayerState->GetUniqueId().GetUniqueNetId())
+		{
+			Name = IdentityInterface->GetPlayerNickname(*NetID);
+		}
+	}
+
+	if (HasAuthority())
+	{
+		if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
+		{
+			if (GameInstance->FinalPlayerDetails.Contains(Name))
+				GameInstance->FinalPlayerDetails[Name] = _CharacterDetails;
+			else
+				GameInstance->FinalPlayerDetails.Add(Name, _CharacterDetails);
+		}
+	}
+}
+
+void APrototype2PlayerController::Server_UpdatePlayerDetails_Implementation(int32 _Player, FCharacterDetails _CharacterDetails, const FString& _PlayerName)
+{
+	if (UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		if (GameInstance->FinalPlayerDetails.Contains(_PlayerName))
+			GameInstance->FinalPlayerDetails[_PlayerName] = _CharacterDetails;
+		else
+			GameInstance->FinalPlayerDetails.Add(_PlayerName, _CharacterDetails);
 	}
 }
 
@@ -105,3 +203,5 @@ void APrototype2PlayerController::KickFromLobby()
 {
 	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/Game/Maps/Level_MainMenu")), true, "kicked");
 }
+
+

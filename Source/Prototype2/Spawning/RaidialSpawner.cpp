@@ -33,6 +33,8 @@ void ARaidialSpawner::BeginPlay()
 		if (PlotPrefab)
 			SetUp();
 	}
+
+	//SetupDelayed();
 }
 
 void ARaidialSpawner::SetUp()
