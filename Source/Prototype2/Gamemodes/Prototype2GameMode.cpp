@@ -7,6 +7,7 @@
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/Gameplay/RadialPlot.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
+#include "Prototype2/Gameplay/PreGameArena.h"
 #include "Blueprint/UserWidget.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
@@ -31,6 +32,7 @@ APrototype2GameMode::APrototype2GameMode()
 	}
 	
 	PrimaryActorTick.bCanEverTick = true;
+	bUseSeamlessTravel = false;
 }
 
 void APrototype2GameMode::BeginPlay()
@@ -42,30 +44,31 @@ void APrototype2GameMode::BeginPlay()
 		GameStateRef = Gamestate;
 		Gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
 	}
-	if (EndGamePodiumPrefab)
-	{
-		EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(EndGamePodiumPrefab,
-			FVector{2650.000000,290.000000,-10.000000},
-			FRotator{0.0,30.937500,0.000000});
-		EndGamePodium->SetActorLocationAndRotation(
-			FVector{2650.000000,290.000000,-10.000000},
-			FRotator{0.0,30.937500,0.000000});
-		EndGamePodium->SetReplicates(true);
-		EndGamePodium->SetReplicateMovement(true);
-	}
 	
-	if (SellBinPrefab)
+	if (!EndGamePodium)
 	{
-		SellBinRef = GetWorld()->SpawnActor<ASellBin>(SellBinPrefab,
-			{-104.559325,-72.190911,-30.0f},
-			FRotator::ZeroRotator);
-		SellBinRef->SetReplicates(true);
-		SellBinRef->SetReplicatingMovement(true);
-		if (auto winterSellBin = Cast<ASellBin_Winter>(SellBinRef))
+		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
+		if (NewActor)
 		{
-			winterSellBin->SetActorLocation({-104.559325,-72.190911,-13.473242});
+			EndGamePodium = Cast<AEndGamePodium>(NewActor);
 		}
-		Multi_DetachShippingBinComponents();
+	}
+
+	if (!SellBinRef)
+	{
+		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
+		if (NewActor)
+		{
+			SellBinRef = Cast<ASellBin>(NewActor);
+		}
+	}
+
+	if (!PreGameArena)
+	{
+		if (AActor* PreGameActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass()))
+		{
+			PreGameArena = Cast<APreGameArena>(PreGameActor);
+		}
 	}
 }
 
@@ -73,95 +76,70 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
 	
+	if (!HasAuthority())
+		return;
+
 	APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>();
 	if (!PlayerStateReference)
 		return;
-	APrototype2Gamestate* Gamestate = GetGameState<APrototype2Gamestate>();
-	if (!Gamestate)
+	
+	APrototype2Gamestate* GameStateReference = GetGameState<APrototype2Gamestate>();
+	if (!GameStateReference)
 		return;
 	
-	PlayerStateReference->Player_ID = Gamestate->RegisterPlayer(PlayerStateReference);
-
-	/* Player name */
-	FString NewPlayerName = FString("Player ") + FString::FromInt(PlayerStateReference->Player_ID + 1);
-	auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-	if (SubSystem)
-	{
-		IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
-		if (IdentityInterface.IsValid())
-		{
-			TSharedPtr<const FUniqueNetId> UserId = PlayerStateReference->GetUniqueId().GetUniqueNetId();
-			if (UserId.IsValid())
-			{
-				if (IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::LoggedIn ||
-				IdentityInterface->GetLoginStatus(*UserId) == ELoginStatus::UsingLocalProfile)
-				{
-					NewPlayerName = IdentityInterface->GetPlayerNickname(*UserId);
-					UE_LOG(LogTemp, Warning, TEXT("Player %s Has Steam Name %s"), *FString::FromInt(PlayerStateReference->GetPlayerId()), *NewPlayerName);
-				}
-			}
-		}
-	}
-	PlayerStateReference->PlayerName = NewPlayerName;
-	
-	
-	auto Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
-	if (!Character)
-		return;
-	
-	Character->SetOwner(_NewPlayer);
-	Character->PlayerStateRef = PlayerStateReference;
-	Character->SetPlayerState(PlayerStateReference);
-
-	Multi_AssignCharacterSkin(Cast<APrototype2Character>(Character), (int32)PlayerStateReference->Details.Character);
-
 	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!GameInstance)
 		return;
+		
+	GameStateReference->Server_Players.Add(PlayerStateReference);
+	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
+	GameStateReference->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
+			
+	APrototype2Character* Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
+	if (!Character)
+		return;
+			
+	Character->PlayerStateRef = PlayerStateReference;
+	Character->SetPlayerState(PlayerStateReference);
+	Character->SetOwner(_NewPlayer);
 	
-	Gamestate->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
-	Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
-	FString Name{};
-	auto OnlineSubsystem = IOnlineSubsystem::Get();
-	if (OnlineSubsystem)
-	{
-		if (auto Interface = OnlineSubsystem->GetIdentityInterface())
-		{
-			if (auto uniqueID = PlayerStateReference->GetUniqueId().GetUniqueNetId())
-			{
-				Name = Interface->GetPlayerNickname(*uniqueID);
-			}
-		}
-	}
-	if (GameInstance->FinalPlayerDetails.Contains(Name))
-	{
-		PlayerStateReference->Details = GameInstance->FinalPlayerDetails[Name];
-	}
-	
+	UpdateAllPlayerInfo(GameStateReference, GameInstance);
+	TeleportToPreGameArena(Character);
 }
 
 void APrototype2GameMode::Logout(AController* _Exiting)
 {
 	Super::Logout(_Exiting);
+	
+	if (!HasAuthority())
+		return;
 
-	if (auto Gamestate = GetGameState<APrototype2Gamestate>())
+	APrototype2PlayerState* PlayerStateReference = _Exiting->GetPlayerState<APrototype2PlayerState>();
+	if (!PlayerStateReference)
+		return;
+	
+	APrototype2Gamestate* Prototype2Gamestate = GetGameState<APrototype2Gamestate>();
+	if (!Prototype2Gamestate)
+		return;
+
+	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
+	if (!PrototypeGameInstance)
+		return;
+
+	Prototype2Gamestate->Server_Players.Remove(PlayerStateReference);
+	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Gamemode: Got Gamestate"));
-		if (auto PlayerState = _Exiting->GetPlayerState<APrototype2PlayerState>())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Gamemode: Removing Player %s from Server_Players"), *FString::FromInt(PlayerState->Player_ID));
-			Gamestate->UnRegisterPlayer(PlayerState);
-		}
+		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
 	}
+	
+	UpdateAllPlayerInfo(Prototype2Gamestate, PrototypeGameInstance);
 }
 
 void APrototype2GameMode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 
-	KeepPlayersAtSpawnPositionUntilStart();
-	
-	//LookOutForGameEnd();
+	//KeepPlayersAtSpawnPositionUntilStart();
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* _PlayerController)
@@ -241,6 +219,7 @@ void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APrototype2GameMode, EndGamePodium);
 	DOREPLIFETIME(APrototype2GameMode, SellBinRef);
+	DOREPLIFETIME(APrototype2GameMode, PreGameArena);
 }
 
 void APrototype2GameMode::TeleportEveryoneToPodium()
@@ -362,39 +341,36 @@ void APrototype2GameMode::TeleportEveryoneToPodium()
 	}
 }
 
-void APrototype2GameMode::Multi_AssignCharacterSkin_Implementation(APrototype2Character* _Target,
-	int32 _CharacterSelection)
+void APrototype2GameMode::Multi_AssignCharacterSkin_Implementation(APrototype2PlayerState* _CastedPlayerState, APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference, const FString& _NewName)
 {
-	_Target->AnimationData = AnimationDatas[_CharacterSelection];
+	APlayerController* SomeController = _CastedPlayerState->GetPlayerController();
+	if (!SomeController)
+		return;
 
-	_Target->GetMesh()->SetSkeletalMesh(AnimationDatas[_CharacterSelection]->SkeletalMesh);
-	_Target->GetMesh()->SetMaterial(0, PlayerMaterials[_CharacterSelection]);
-	if (auto MaterialInstance = _Target->GetMesh()->CreateDynamicMaterialInstance(0))
+	ACharacter* SomeCharacter = SomeController->GetCharacter();
+	if (!SomeCharacter)
+		return;
+
+	APrototype2Character* SomeCastedCharacter = Cast<APrototype2Character>(SomeCharacter);
+	if (!SomeCastedCharacter)
+		return;
+			
+	int32 CharacterSelection = (int32)_gameInstanceReference->FinalPlayerDetails[_NewName].Character;
+	SomeCastedCharacter->AnimationData = AnimationDatas[CharacterSelection];
+
+	SomeCastedCharacter->GetMesh()->SetSkeletalMesh(AnimationDatas[CharacterSelection]->SkeletalMesh);
+	SomeCastedCharacter->GetMesh()->SetMaterial(0, PlayerMaterials[CharacterSelection]);
+	if (auto MaterialInstance = SomeCastedCharacter->GetMesh()->CreateDynamicMaterialInstance(0))
 	{
-		if (auto PlayerState = _Target->GetPlayerState<APrototype2PlayerState>())
-		{
-			auto SkinColour = PlayerState->Details.CharacterColour;
-			auto FeaturesColour = PlayerState->Details.CharacterColour / 1.5f;
-			MaterialInstance->SetVectorParameterValue(FName("Cow Colour"), SkinColour);
-			MaterialInstance->SetVectorParameterValue(FName("Spot Colour"), FeaturesColour);
-			_Target->GetMesh()->SetMaterial(0, MaterialInstance);
-			UE_LOG(LogTemp, Warning, TEXT("Set Player Colour"));
-		}
+		MaterialInstance->SetVectorParameterValue(FName("Cow Colour"), _gameInstanceReference->FinalPlayerDetails[_NewName].CharacterColour);
+		MaterialInstance->SetVectorParameterValue(FName("Spot Colour"), _gameInstanceReference->FinalPlayerDetails[_NewName].CharacterSubColour);
+		SomeCastedCharacter->GetMesh()->SetMaterial(0, MaterialInstance);
 	}
 }
 
 void APrototype2GameMode::Multi_TeleportEveryoneToPodium_Implementation()
 {
 	
-}
-
-void APrototype2GameMode::Multi_DetachShippingBinComponents_Implementation()
-{
-	if (auto WinterBin = Cast<ASellBin_Winter>(SellBinRef))
-	{
-		
-		//winterBin->IceBoundary->SetWorldLocation({-104.559325,-72.190911,-13.473242});
-	}
 }
 
 void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
@@ -405,34 +381,31 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 		{
 			for(auto Player : GameStateRef->Server_Players)
 			{
-				if (auto Controller = Player->GetPlayerController())
+				if (APlayerController* Controller = Player->GetPlayerController())
 				{
-					if (auto CastedController = Cast<APrototype2PlayerController>(Controller))
+					if (ACharacter* Character = Controller->GetCharacter())
 					{
-						if (auto Character = CastedController->GetCharacter())
+						TArray<AActor*> FoundRadialPlots{};
+						UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARadialPlot::StaticClass(), FoundRadialPlots);
+						for(AActor* Plot : FoundRadialPlots)
 						{
-							TArray<AActor*> FoundRadialPlots{};
-							UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARadialPlot::StaticClass(), FoundRadialPlots);
-							for(auto Plot : FoundRadialPlots)
+							if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(Plot))
 							{
-								if (auto RadialPlot = Cast<ARadialPlot>(Plot))
+								if (RadialPlot->GetPlayerID() == Player->Player_ID)
 								{
-									if (RadialPlot->GetPlayerID() == Player->Player_ID)
+									FVector SpawnPoint = RadialPlot->GetActorLocation();
+									SpawnPoint.Z = PlayerStartingZPosition;
+									if (FVector::Distance(Character->GetActorLocation(), SpawnPoint) > 200)
 									{
-										auto SpawnPoint = RadialPlot->GetActorLocation();
-										SpawnPoint.Z = PlayerStartingZPosition;
-										if (FVector::Distance(Character->GetActorLocation(), SpawnPoint) > 200)
-										{
-											Character->SetActorLocation(SpawnPoint);
-											Character->SetActorRotation({Character->GetActorRotation().Pitch, RadialPlot->GetActorRotation().Yaw, Character->GetActorRotation().Roll});
+										Character->SetActorLocation(SpawnPoint);
+										Character->SetActorRotation({Character->GetActorRotation().Pitch, RadialPlot->GetActorRotation().Yaw, Character->GetActorRotation().Roll});
 
-											/* Move player forward towards sell bin */
-											FVector ForwardVector = Character->GetActorForwardVector();
-											FVector NewLocation = Character->GetActorLocation() + ForwardVector * PlayerStartingDistanceTowardsSellBin;
-											Character->SetActorLocation(NewLocation);
-										}
-										break;
+										/* Move player forward towards sell bin */
+										FVector ForwardVector = Character->GetActorForwardVector();
+										FVector NewLocation = Character->GetActorLocation() + ForwardVector * PlayerStartingDistanceTowardsSellBin;
+										Character->SetActorLocation(NewLocation);
 									}
+									break;
 								}
 							}
 						}
@@ -459,10 +432,9 @@ void APrototype2GameMode::PupeteerPlayerCharactersForEndGame()
 						{
 							CharacterCast->GetCharacterMovement()->StopActiveMovement();
 							CharacterCast->GetCharacterMovement()->StopMovementImmediately();
+							CharacterCast->GetCharacterMovement()->DisableMovement();
 							CharacterCast->GetCharacterMovement()->Velocity = {};
 						}
-						//ControllerCast->PupiteerPlayerForEndGame(EndGamePodium->EndGameCamera);
-						UE_LOG(LogTemp, Warning, TEXT("Game is over, Change the camera now please."));
 					}
 				}
 			}
@@ -470,11 +442,73 @@ void APrototype2GameMode::PupeteerPlayerCharactersForEndGame()
 	}
 }
 
+
+void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference)
+{
+	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
+	{
+		APrototype2PlayerState* CasterPlayerState = Cast<APrototype2PlayerState>(_GameStateReference->Server_Players[i]);
+		if (!CasterPlayerState)
+			continue;
+		
+		int32 SomePlayerID = i;
+		FString SomePlayerName{"UNASSIGNED"};
+
+		if (auto SteamSubsystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM))
+		{
+			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
+			if (IdentityInterface.IsValid())
+			{
+				TSharedPtr<const FUniqueNetId> UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
+				if (UserId.IsValid())
+				{
+					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+					
+					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
+					{
+						CasterPlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
+					}
+				}
+			}
+		}
+		else if (auto NullSubsystem = IOnlineSubsystem::Get())
+		{
+			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
+			if (IdentityInterface.IsValid())
+			{
+				TSharedPtr<const FUniqueNetId> UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
+				if (UserId.IsValid())
+				{
+					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);
+					
+					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
+					{
+						CasterPlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
+					}
+				}
+			}
+		}
+		
+		CasterPlayerState->Player_ID = SomePlayerID;
+		CasterPlayerState->PlayerName = SomePlayerName;
+	}
+}
+
+void APrototype2GameMode::TeleportToPreGameArena(APrototype2Character* _Player)
+{
+	AActor* PreGameArenaActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass());
+	if (!PreGameArenaActor)
+		return;
+
+	_Player->SetActorLocation(PreGameArenaActor->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+}
+
+
 void APrototype2GameMode::Multi_PupeteerPlayerCharactersForEndGame_Implementation(APrototype2Character* _Target)
 {
 	_Target->GetCharacterMovement()->StopActiveMovement();
 	_Target->GetCharacterMovement()->StopMovementImmediately();
+	_Target->GetCharacterMovement()->DisableMovement();
 	_Target->GetCharacterMovement()->Velocity = {};
-	_Target->GetCharacterMovement()->Deactivate();
 }
 

@@ -54,6 +54,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector4 CharacterSubColour{175.0f/255.0f,90.0f/255.0f,90.0f/255.0f,1.000000};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector4 PureToneColour{1,0,0,1};
 };
 
 UCLASS()

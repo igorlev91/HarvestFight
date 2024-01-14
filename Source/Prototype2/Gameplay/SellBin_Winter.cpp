@@ -7,6 +7,7 @@
 
 ASellBin_Winter::ASellBin_Winter()
 {
+	bReplicates = true;
 	Collision = CreateDefaultSubobject<UBoxComponent>("Collision Box");
 	Collision->SetupAttachment(RootComponent);
 	Collision->SetBoxExtent({115,115,175});
@@ -28,6 +29,8 @@ ASellBin_Winter::ASellBin_Winter()
 void ASellBin_Winter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetReplicateMovement(true);
 
 	ItemComponent->Mesh->SetSimulatePhysics(true);
 	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);

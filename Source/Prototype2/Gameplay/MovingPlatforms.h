@@ -11,13 +11,13 @@ struct FMovementInfo
 {
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere)
-	FVector Position;
+	FVector Position = {0.0f, 0.0f, 0.0f};
 
 	UPROPERTY(EditAnywhere)
-	float TimeToStopFor;
+	float TimeToStopFor = 0.f;
 
 	UPROPERTY(EditAnywhere)
-	float TimeToMove;
+	float TimeToMove = 0.f;
 };
 
 UCLASS()

@@ -1,11 +1,4 @@
-/* Bachelor of Software Engineering
-* Media Design School
-* Auckland
-* New Zealand
-* (c) Media Design School
-* File Name : GrowSpot.cpp
-* Description : Implemtation File
-* Author/s : Dawn Bell */
+
 
 #include "GrowSpot.h"
 #include "GrowSpot.h"
@@ -27,10 +20,10 @@
 AGrowSpot::AGrowSpot()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	bReplicates = true;
+	
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 	ItemComponent->Mesh->SetIsReplicated(false);
-	bReplicates = true;
 
 	InteractSystem = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle System"));
 	InteractSystem->SetupAttachment(RootComponent);
@@ -45,7 +38,7 @@ AGrowSpot::AGrowSpot()
 
 void AGrowSpot::SetRadialReferance(ARadialPlot* _RadialPlot)
 {
-	RadialPlot = _RadialPlot;
+	//RadialPlot = _RadialPlot;
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -55,6 +48,7 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, GrowTime);
 	DOREPLIFETIME(AGrowSpot, Plant);
 	DOREPLIFETIME(AGrowSpot, Weapon);
+	DOREPLIFETIME(AGrowSpot, Beehive);
 	DOREPLIFETIME(AGrowSpot, GrowSpotState);
 	DOREPLIFETIME(AGrowSpot, Player_ID);
 	DOREPLIFETIME(AGrowSpot, PlantReadySparkle_NiagaraComponent);
@@ -68,41 +62,41 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 	if (!_Player)
 		return false;
 	
+	if (_Player->Player_ID != Player_ID)
+		return false;
+	
 	if (auto Controller = _Player->GetPlayerController())
 	{
 		if (auto Character = Controller->GetCharacter())
 		{
 			if (auto Casted = Cast<APrototype2Character>(Character))
 			{
-				if (_Player->Player_ID == Player_ID)
+				switch(GrowSpotState)
 				{
-					switch(GrowSpotState)
+				case EGrowSpotState::Empty:
 					{
-					case EGrowSpotState::Empty:
-						{
-							if (Cast<ASeed>(Casted->HeldItem))
-							{
-								return true;
-							}
-							if (Cast<AFertiliser>(Casted->HeldItem) && !bIsFertilised)
-							{
-								return true;
-							}
-							break;
-						}
-					case EGrowSpotState::Growing:
-						{
-							if (Cast<AFertiliser>(Casted->HeldItem) && !Weapon)
-								return true;
-							break;
-						}
-					case EGrowSpotState::Grown:
+						if (Cast<ASeed>(Casted->HeldItem))
 						{
 							return true;
 						}
-					default:
+						if (Cast<AFertiliser>(Casted->HeldItem) && !bIsFertilised)
+						{
+							return true;
+						}
 						break;
 					}
+				case EGrowSpotState::Growing:
+					{
+						if (Cast<AFertiliser>(Casted->HeldItem) && !Weapon)
+							return true;
+						break;
+					}
+				case EGrowSpotState::Grown:
+					{
+						return true;
+					}
+				default:
+					break;
 				}
 			}
 		}
@@ -119,41 +113,37 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 	if (!_Player->PlayerStateRef)
 		return;
 	
-	if (_Player->PlayerStateRef->Player_ID == Player_ID)
+	switch(GrowSpotState)
 	{
-		switch(GrowSpotState)
+	case EGrowSpotState::Empty:
 		{
-		case EGrowSpotState::Empty:
+			if (Cast<ASeed>(_Player->HeldItem))
 			{
-				if (Cast<ASeed>(_Player->HeldItem))
-				{
-					if (_Player->PlayerHUDRef)
-						_Player->PlayerHUDRef->ClearPickupUI();
-					_Player->UpdateDecalDirection(false, false);
-				}
-				break;
+				if (_Player->PlayerHUDRef)
+					_Player->PlayerHUDRef->ClearPickupUI();
+				//_Player->UpdateDecalDirection(false, false);
 			}
-		case EGrowSpotState::Growing:
-			{
-				break;
-			}
-		case EGrowSpotState::Grown:
-			{
-				if (Plant)
-					_Player->UpdateDecalDirection(true, true);
-				else
-					_Player->UpdateDecalDirection(false);
-
-				if (Plant)
-					Plant->SSComponent->Boing();
-				if (Weapon)
-					Weapon->SSComponent->Boing();
-			}
-		default:
 			break;
 		}
+	case EGrowSpotState::Growing:
+		{
+			break;
+		}
+	case EGrowSpotState::Grown:
+		{
+			//if (Plant)
+			//	_Player->UpdateDecalDirection(true, true);
+			//else
+			//	_Player->UpdateDecalDirection(false);
+
+			if (Plant)
+				Plant->SSComponent->Boing();
+			if (Weapon)
+				Weapon->SSComponent->Boing();
+		}
+	default:
+		break;
 	}
-	
 }
 
 // Called when the game starts or when spawned
@@ -161,10 +151,7 @@ void AGrowSpot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//InterfaceType = EInterfaceType::GrowSpot;
-	//GrowSpotState = EGrowSpotState::Empty;
-
-	//ItemComponent->Mesh->SetCollisionProfileName("OverlapAll");
+	SetOwner(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -179,6 +166,16 @@ void AGrowSpot::BeginPlay()
 	if (PlantReadySparkle_NiagaraComponent)
 	{
 		PlantReadySparkle_NiagaraComponent->SetAsset(PlantReadySparkle_NiagaraSystem);
+	}
+
+	if (HasAuthority() && RiseCurve)
+	{
+		StartZHeight = GetActorLocation().Z;
+		FOnTimelineFloat FloatEvent{};
+		FloatEvent.BindDynamic(this, &AGrowSpot::RiseTimelineUpdate);
+		RiseTimeline.AddInterpFloat(RiseCurve, FloatEvent);
+		RiseTimeline.SetPlayRate(2.0f);
+		RiseTimeline.PlayFromStart();
 	}
 }
 
@@ -236,12 +233,12 @@ void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
 			if (Plant)
 			{
 				Plant->bGrown = true;
-				Plant->SSComponent->Enable();
+				//Plant->SSComponent->Enable();
 			}
 			if (Weapon)
 			{
 				Weapon->bGrown = true;
-				Weapon->SSComponent->Enable();
+				//Weapon->SSComponent->Enable();
 			}
 		}
 	}
@@ -271,9 +268,6 @@ void AGrowSpot::ScalePlant(APlant* _Plant, FVector _TargetScale, float _PosOffse
 void AGrowSpot::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
-	ItemComponent->Mesh->SetSimulatePhysics(false);
-	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	
 	if (Beehive)
 	{
@@ -291,17 +285,20 @@ void AGrowSpot::Tick(float _DeltaTime)
 	}
 
 	if (HasAuthority())
+	{
+		RiseTimeline.TickTimeline(_DeltaTime);
 		GrowPlantOnTick(_DeltaTime);
-
+	}
+	
 	// VFX
-	if (GrowSpotState == EGrowSpotState::Grown)
-	{
-		Multi_SetPlantReadySparkle_Implementation(true);
-	}
-	else
-	{
-		Multi_SetPlantReadySparkle_Implementation(false);
-	}
+	//if (GrowSpotState == EGrowSpotState::Grown)
+	//{
+	//	Multi_SetPlantReadySparkle_Implementation(true);
+	//}
+	//else
+	//{
+	//	Multi_SetPlantReadySparkle_Implementation(false);
+	//}
 
 	
 }
@@ -374,6 +371,13 @@ void AGrowSpot::MakePlantGold()
 	Multi_MakePlantGold();
 }
 
+void AGrowSpot::RiseTimelineUpdate(float _Delta)
+{
+	FVector NewLocation = GetActorLocation();
+	NewLocation.Z = FMath::Lerp(StartZHeight - 70.0f, StartZHeight, _Delta);
+	SetActorLocation(NewLocation);
+}
+
 
 void AGrowSpot::Interact(APrototype2Character* _Player)
 {
@@ -381,11 +385,6 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 	if (!_Player->PlayerStateRef)
 		return;
-	
-	if (_Player->PlayerStateRef->Player_ID != Player_ID)
-	{
-		return;
-	}
 	
 	switch(GrowSpotState)
 		{
@@ -436,6 +435,8 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						PlantPlant(_Player);
 					}
+
+					_Player->SocketWeapon(FName("Base-HumanWeapon"));
 				}
 				break;
 			}
@@ -469,7 +470,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 				if (Beehive)
 				{
-					RadialPlot->UpdateBeehiveFlowers();
+					//RadialPlot->UpdateBeehiveFlowers();
 				}
 						
 				if (_Player->HeldItem && !Beehive)
@@ -500,7 +501,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Tis a weapon!"));
 					Weapon->bGrown = true;
-					Weapon->SSComponent->Disable();
+					//Weapon->SSComponent->Disable();
 							
 					_Player->PickupItem(Weapon);
 
@@ -519,7 +520,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Tis a Plant!"));
 					Plant->bGrown = true;
-					Plant->SSComponent->Disable();
+					//Plant->SSComponent->Disable();
 
 					Plant->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 					
@@ -542,7 +543,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					if (Plant->PlantData->PickupType == EPickupDataType::FlowerData)
 					{
-						RadialPlot->UpdateBeehiveFlowers();
+						//RadialPlot->UpdateBeehiveFlowers();
 					}	
 				}
 				
@@ -556,14 +557,6 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 {
 	//UE_LOG(LogTemp, Warning, TEXT("PlayerID: %s"), *FString::FromInt(_PlayerID))
 	//UE_LOG(LogTemp, Warning, TEXT("GrowSpotID: %s"), *FString::FromInt(Player_ID))
-
-	if (_Owner->PlayerStateRef)
-	{
-		if (_Owner->PlayerStateRef->Player_ID != _PlayerID)
-		{
-			return;	
-		}
-	}
 
 	switch (GrowSpotState)
 	{

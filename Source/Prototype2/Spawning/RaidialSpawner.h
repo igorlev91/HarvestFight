@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "IndexTypes.h"
 #include "GameFramework/Actor.h"
+#include "Prototype2/Gameplay/RadialPlot.h"
 #include "RaidialSpawner.generated.h"
 
 UCLASS()
@@ -25,10 +26,10 @@ public:
 	bool bShouldChangePlayerCount = true;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ARadialPlot> PlotPrefab;
+	TSubclassOf<ARadialPlot> PlotPrefab;
 
 	UPROPERTY(EditAnywhere)
-	class USceneComponent* InitialSpawn;
+	USceneComponent* InitialSpawn;
 
 	UPROPERTY(EditAnywhere)
 	int32 PlayerCount = 12;

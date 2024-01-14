@@ -11,18 +11,22 @@ class PROTOTYPE2_API ARadialPlot : public AActor
 	GENERATED_BODY()
 	
 public:
+	ARadialPlot();
+	
 	void SetPlayerID(int32 _Id);
 	int32 GetPlayerID() const;
+
+	void SpawnGrowSpots(int32 _Id);
 
 	void UpdateBeehiveFlowers();
 
 protected:
-	ARadialPlot();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginPlay() override;
 
-	UFUNCTION(NetMulticast, Reliable, meta = (AllowPrivateAccess))
+	UFUNCTION(NetMulticast, Unreliable, meta = (AllowPrivateAccess))
 	void Multi_SetPlotMaterial(APrototype2PlayerState* _Id);
 
 protected:
@@ -36,8 +40,10 @@ protected:
 	UMaterialInstanceDynamic* PlotSignMaterialDynamic;
 
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class UStaticMeshComponent* PlotSignMesh;
-
+	class APlotSign* PlotSign;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	TSubclassOf<APlotSign> PlotSignPrefab;
+	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<AGrowSpot> GrowSpotPrefab;
 	
@@ -48,7 +54,7 @@ protected:
 	float PlotSpread {180.0f};
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float PlotZHeight {-20.0f};
+	float PlotZHeight {30.0f};
 	
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;

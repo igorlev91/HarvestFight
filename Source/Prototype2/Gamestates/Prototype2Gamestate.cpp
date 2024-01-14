@@ -54,19 +54,21 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 {
 	if (HasAuthority() && !bGameHasStarted)
 	{
-		if (Server_Players.Num() >= FinalConnectionCount && !bGameHasStarted)
+		if (Server_Players.Num() >= FinalConnectionCount)
 		{
 			if (CountdownLengthSeconds > 0)
 			{
 				CountdownLengthSeconds -= DeltaSeconds;
-				
 			}
 			else
 			{
 				CountdownLengthMinutes--;
 				CountdownLengthSeconds = 60;
+
+				
 			}
-			if (CountdownLengthSeconds <= 0)
+			
+			if (CountdownLengthSeconds <= 0 && CountdownLengthMinutes <= 0)
 			{
 				bGameHasStarted = true;
 				UE_LOG(LogTemp, Warning, TEXT("Countdown completed"));
@@ -80,47 +82,22 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), ( GameHasStarted ? TEXT("true") : TEXT("false") ));
-	if (HasAuthority() && bGameHasStarted)
+	if (HasAuthority() && bGameHasStarted && !bHasGameFinished)
 	{
-		if (CountdownLengthSeconds > 0)
+		if (MatchLengthSeconds > 0)
 		{
-			CountdownLengthSeconds -= DeltaSeconds;
-		}
-		if (bPreviousServerTravel != bShouldServerTravel)
-		{
-			bPreviousServerTravel = bShouldServerTravel;
+			MatchLengthSeconds -= DeltaSeconds;
 
-			if (bShouldServerTravel)
+			if (MatchLengthMinutes <= 0 && MatchLengthSeconds <= 0)
 			{
-				if (MatchLengthSeconds > 0 || MatchLengthMinutes > 0)
-				{
-					bIsCountingDown = true;
-				}
-				bPreviousServerTravel = false;
-				bShouldServerTravel = false;
+				bHasGameFinished = true;
+				PupeteerCharactersForEndGame();
 			}
 		}
-
-		if (bIsCountingDown)
+		else
 		{
-			if (MatchLengthSeconds > 0)
-			{
-				MatchLengthSeconds -= DeltaSeconds;
-			}
-			else
-			{
-				if (MatchLengthMinutes <= 0 && MatchLengthSeconds <= BriefTimesUpEndGameLengthSeconds)
-				{
-					bHasGameFinished = true;
-					bIsCountingDown = false;
-					PupeteerCharactersForEndGame();
-				}
-				else
-				{
-					MatchLengthMinutes--;
-					MatchLengthSeconds = 60;
-				}
-			}
+			MatchLengthMinutes--;
+			MatchLengthSeconds = 60;
 		}
 	}
 }
@@ -128,36 +105,21 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 void APrototype2Gamestate::TickEndGameTimer(float DeltaSeconds)
 {
 	// check if game has "finished"
-	if (bHasGameFinished)
+	if (bHasGameFinished && !bGameReadyForVote)
 	{
-		bIsCountingDown = false;
-		MatchLengthMinutes = 0;
-		MatchLengthSeconds = 0.0f;
-		CountdownLengthSeconds = 0.0f;
-		CountdownLengthMinutes = 0;
-		
-		if (BriefTimesUpEndGameLengthSeconds > 0.0f)
+		if (EndGameLengthSeconds > 0)
 		{
-			BriefTimesUpEndGameLengthSeconds -= DeltaSeconds;
+			EndGameLengthSeconds -= DeltaSeconds;
 		}
 		else
 		{
-			if (EndGameLengthSeconds > 0)
-			{
-				EndGameLengthSeconds -= DeltaSeconds;
-			}
-			else
-			{
-				if (EndGameLengthSeconds <= 0.0f)
-				{
-					bGameReadyForVote = true;
-				}
-				else
-				{
-					EndGameLengthMinutes--;
-					EndGameLengthSeconds = 60;
-				}
-			}
+			EndGameLengthMinutes--;
+			EndGameLengthSeconds = 60;
+		}
+
+		if (EndGameLengthSeconds <= 0.0f && EndGameLengthMinutes <= 0)
+		{
+			bGameReadyForVote = true;
 		}
 	}
 }

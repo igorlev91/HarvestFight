@@ -42,6 +42,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 		P3Ring->SetBrushFromTexture(RingTexture);
 		P4Ring->SetBrushFromTexture(RingTexture);
 	}
+	
 	/* Add rings to array */
 	Rings.Add(P1Ring);
 	Rings.Add(P2Ring);
@@ -55,7 +56,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 		{
 			if (Rings.Num() > i)
 			{
-				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.CharacterColour));
+				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
 			}
 		}
 	}

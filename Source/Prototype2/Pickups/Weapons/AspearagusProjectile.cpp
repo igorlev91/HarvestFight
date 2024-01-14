@@ -1,5 +1,4 @@
 ﻿
-
 #include "AspearagusProjectile.h"
 
 #include "Kismet/KismetSystemLibrary.h"
@@ -85,14 +84,14 @@ void AAspearagusProjectile::CheckForHitPlayers()
 			{
 				if (HitPlayerCast != OwningPlayer)
 				{
-					HitPlayerCast->GetHit(ChargeAmount, OwningPlayer->GetActorLocation(), OwningPlayer->CurrentWeaponData);
+					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponData);
 
 					bIsOtherPlayerHit = true;
 				}
 			}
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				HitSellBinCast->GetHit(1, OwningPlayer->MaxAttackCharge, OwningPlayer->GetActorLocation());
+				HitSellBinCast->GetHit(1, OwningPlayer->MaxAttackCharge, GetActorLocation());
 			}
 		}
 	}

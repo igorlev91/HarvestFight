@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Prototype2/InteractInterface.h"
+#include "Prototype2/Interface/CullingInterface.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "SellBin.generated.h"
 
@@ -42,6 +43,7 @@ protected:
 protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UItemComponent* ItemComponent;
+	
 	// Selling UI
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UWidgetComponent* SellAmountWidgetComponent;

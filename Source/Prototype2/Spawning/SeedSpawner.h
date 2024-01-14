@@ -42,9 +42,6 @@ protected:
 	 * @param _MaxSeeds 
 	 */
 	void SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
-
-	void SpawnFertiliser(TArray<AActor*> _SpawnedFertiliser, float _DeltaTime, float _MaxFertiliser);
-
 public:
 	
 	virtual void Tick(float _DeltaTime) override;
@@ -70,9 +67,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = Parachute, meta = (AllowPrivateAccess))
 	UStaticMesh* ParachuteMesh;
 	
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AFertiliser> FertiliserAsset;
-	
 	FVector PreviousSpawnPos = FVector(0, 0, 0);
 	std::vector<FVector> CurrentSpawnPos;
 	std::vector<float> Distances;
@@ -94,14 +88,7 @@ private:
 	float MinSpawnRadius{100.0f};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
 	float MaxSpawnRadius{800.0f};
-
-	float FertiliserSpawnTimer{};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	int32 MaxFertilser{5};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	float FertiliserAverageSpawnTime{10.0f};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-
+	
 	float WeaponSpawnTimer{};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
 	int32 WeaponMaxSeedPackets{3};

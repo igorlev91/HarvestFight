@@ -32,9 +32,6 @@ void ASeedSpawner::BeginPlay()
 		MatchLengthSeconds = (GameState->GetMatchLengthMinutes() * 60) + GameState->GetMatchLengthSeconds();
 		
 	}
-
-	if (FertiliserAsset)
-		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 10;
 }
 
 void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
@@ -61,9 +58,6 @@ void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
 		
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWeaponSeed::StaticClass(), SpawnedSeeds);
 			SpawnWeaponSeeds(SpawnedSeeds, _DeltaTime, WeaponMaxSeedPackets);
-
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFertiliser::StaticClass(), SpawnedSeeds);
-			SpawnFertiliser(SpawnedSeeds, _DeltaTime, MaxFertilser);
 		}
 	}
 }
@@ -232,66 +226,6 @@ void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaT
 			}
 		}
 		WeaponSpawnTimer = AverageSpawnTime + rand() % 4;
-	}
-}
-
-void ASeedSpawner::SpawnFertiliser(TArray<AActor*> _SpawnedFertiliser, float _DeltaTime, float _MaxFertiliser)
-{
-	float MaxFertiliserToSpawn = _MaxFertiliser;
-	if (_SpawnedFertiliser.Num() >= FMath::RoundToInt(MaxFertiliserToSpawn))
-	{
-		return;
-	}
-
-	if (!FertiliserAsset)
-		return;;
-	
-	FertiliserSpawnTimer -= _DeltaTime;
-	
-	if (FertiliserSpawnTimer > 0)
-		return;
-
-	// Spawn Seed
-	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
-	{
-		for (int i = 0; i < Size; i++)
-		{
-			FNavLocation Result;
-			NavSys->GetRandomPointInNavigableRadius(GetActorLocation(), MaxSpawnRadius, Result);
-			CurrentSpawnPos.at(i) = Result.Location;
-		}
-		FVector FinalLocation = FVector(0, 0, 0);
-		int Pos = 0;
-		if (PreviousSpawnPos == FVector(0, 0, 0))
-		{
-			FinalLocation = CurrentSpawnPos.at(0);
-		}
-		else
-		{
-			int furthestDistance = 0;
-			for (int i = 0; i < Size; i++)
-			{
-				Distances.at(i) = FVector::Dist(PreviousSpawnPos, CurrentSpawnPos.at(i));
-				if (i == 0)
-				{
-					furthestDistance = i;
-				}
-				else if (Distances.at(i) > Distances.at(furthestDistance))
-				{
-					furthestDistance = i;
-				}
-			}
-			FinalLocation = CurrentSpawnPos.at(furthestDistance);
-			Pos = furthestDistance;
-		}
-		FinalLocation += (CurrentSpawnPos.at(Pos) - GetActorLocation()).GetSafeNormal() * MinSpawnRadius;
-		FinalLocation.Z = SpawnHeight; // finalLocation.Z = 800.0f; for bens platform map
-		//GetWorld()->SpawnActor<ASeed>(SeedPrefabs[rand() % SeedPrefabs.Num()], FinalLocation, {});
-		
-		AFertiliser* SpawnedFertiliser = GetWorld()->SpawnActor<AFertiliser>(FertiliserAsset, FinalLocation, {});
-		SpawnedFertiliser->PickupActor = EPickupActor::FertilizerActor;
-		
-		FertiliserSpawnTimer = FertiliserAverageSpawnTime + rand() % 10;
 	}
 }
 

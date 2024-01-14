@@ -19,7 +19,7 @@ ASellBin::ASellBin()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
-
+	bReplicates = true;
 	// Sell UI
 	//SellAmountWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("SellAmountWidgetComponent"));
 	//SellAmountWidgetComponent->SetupAttachment(RootComponent);
@@ -38,6 +38,8 @@ ASellBin::ASellBin()
 void ASellBin::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetReplicateMovement(true);
 	
 	InterfaceType = EInterfaceType::SellBin;
 
@@ -47,15 +49,18 @@ void ASellBin::BeginPlay()
 
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
 void ASellBin::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+	//ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	
 	MoveUIComponent(DeltaTime);
+	
+	
 }
 
 bool ASellBin::IsInteractable(APrototype2PlayerState* _Player)
@@ -160,7 +165,7 @@ void ASellBin::ClientInteract(APrototype2Character* _Player)
 		{
 			bWidgetVisible = true;
 			FireSellFX(Plant, _Player);
-			_Player->UpdateDecalDirection(false);
+			//_Player->UpdateDecalDirection(false);
 			if (_Player->PlayerHUDRef)
 				_Player->PlayerHUDRef->ClearPickupUI();
 		}
@@ -248,7 +253,7 @@ void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProtot
 		{
 			_InvokingWidget->SetHUDInteractText("Sell");
 
-			_Owner->EnableStencil(true);
+			ItemComponent->Mesh->SetRenderCustomDepth(true);
 		}
 	}
 }

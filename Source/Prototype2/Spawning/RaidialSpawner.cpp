@@ -83,6 +83,7 @@ void ARaidialSpawner::SetUp()
 		Plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 		Plot->SetActorRelativeLocation(ObjectSpawnPosition);
 		Plot->SetPlayerID(Index);
+		
 
 		FVector SourceLocation = Plot->GetActorLocation();
 		FVector Direction = OwningLocation - SourceLocation;

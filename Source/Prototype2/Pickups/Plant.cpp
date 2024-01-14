@@ -19,8 +19,7 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetReplicates(true);
+	
 	SetReplicatingMovement(true);
 }
 
@@ -48,10 +47,10 @@ void APlant::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
 
-	if (bGrown)
-	{
-		_Player->UpdateDecalDirection(true, true);
-	}
+	//if (bGrown)
+	//{
+	//	_Player->UpdateDecalDirection(true, true);
+	//}
 }
 
 void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)

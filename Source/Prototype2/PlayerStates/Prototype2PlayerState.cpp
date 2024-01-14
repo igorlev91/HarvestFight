@@ -16,7 +16,6 @@ void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(APrototype2PlayerState, TimerExtraCoins);
 
 	DOREPLIFETIME(APrototype2PlayerState, Details);
-
 	DOREPLIFETIME(APrototype2PlayerState, PlayerName);
 }
 

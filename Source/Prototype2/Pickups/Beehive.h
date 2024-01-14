@@ -36,7 +36,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	float TimeTillCollect = 15.0f;
 	float TrackerTimeTillCollect;
-	
+
+	// Bees
+	class AFlock* Bees;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AFlock> BeesPrefab;
 private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<APlant> Plant;

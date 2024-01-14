@@ -1,10 +1,18 @@
 
+
 #include "Prototype2/Pickups/Beehive.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "WhatTheFlock/Public/Flock.h"
 
 void ABeehive::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (BeesPrefab)
+	{
+		Bees = GetWorld()->SpawnActor<AFlock>(BeesPrefab, FVector(0, 0, 0), {});
+		Bees->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	}
 }
 
 void ABeehive::Interact(APrototype2Character* _Player)

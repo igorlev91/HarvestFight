@@ -84,3 +84,8 @@ void UItemComponent::InitializeWeapon(UStaticMesh* _InMesh)
 	}
 }
 
+void UItemComponent::Multi_DisableCollisionAndAttach_Implementation()
+{
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+

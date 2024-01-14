@@ -65,13 +65,7 @@ void USquashAndStretch::TickComponent(float _DeltaTime, ELevelTick _TickType, FA
 void USquashAndStretch::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(USquashAndStretch, StartingStaticScales);
-	DOREPLIFETIME(USquashAndStretch, StartingSkeletalScales);
 	DOREPLIFETIME(USquashAndStretch, bShouldUpdate);
-
-	DOREPLIFETIME(USquashAndStretch, bDoOnce);
-	DOREPLIFETIME(USquashAndStretch, StaticMeshes);
-	DOREPLIFETIME(USquashAndStretch, SkeletalMeshes);
 }
 
 void USquashAndStretch::Enable()
@@ -131,12 +125,12 @@ void USquashAndStretch::FindMeshesToStretch()
 
 void USquashAndStretch::SquashAndStretch()
 {
-	Multi_SquashAndStretch(GetWorld()->GetTimeSeconds());
+	//Server_SquashAndStretch();
 }
 
 void USquashAndStretch::OnBoingUpdate(float _Value)
 {
-	Multi_BoingUpdate(_Value);
+	Server_BoingUpdate(_Value);
 }
 
 void USquashAndStretch::Multi_SquashAndStretch_Implementation(float _ServerCurrentTime)
@@ -153,7 +147,14 @@ void USquashAndStretch::Multi_SquashAndStretch_Implementation(float _ServerCurre
 
 void USquashAndStretch::Server_SquashAndStretch_Implementation()
 {
-	Multi_SquashAndStretch(GetWorld()->GetTimeSeconds());
+	for(int32 i = 0; i < StaticMeshes.Num(); i++)
+	{
+		StaticMeshes[i]->SetWorldScale3D(StartingStaticScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
+	}
+	for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
+	{
+		SkeletalMeshes[i]->SetWorldScale3D(StartingSkeletalScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
+	}
 }
 
 void USquashAndStretch::Multi_BoingUpdate_Implementation(float _Value)
@@ -170,7 +171,14 @@ void USquashAndStretch::Multi_BoingUpdate_Implementation(float _Value)
 
 void USquashAndStretch::Server_BoingUpdate_Implementation(float _Value)
 {
-	Multi_BoingUpdate(_Value);
+	for(int32 i = 0; i < StaticMeshes.Num(); i++)
+	{
+		StaticMeshes[i]->SetWorldScale3D(StartingStaticScales[i] + (SSAxis * FMath::Sin(2 * PI * _Value) * BoingSquashMag));
+	}
+	for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
+	{
+		SkeletalMeshes[i]->SetWorldScale3D(StartingSkeletalScales[i] + (SSAxis * FMath::Sin(2 * PI * _Value) * BoingSquashMag));
+	}
 }
 
 void USquashAndStretch::Server_SetMeshesToStretch_Implementation(const TArray<class UStaticMeshComponent*>& _Statics, const TArray<class USkeletalMeshComponent*>& _Skeletons)

@@ -51,4 +51,7 @@ public:
 	class UButton* ButtonToPulse;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
 	float PulseTime;
+
+
+	
 };

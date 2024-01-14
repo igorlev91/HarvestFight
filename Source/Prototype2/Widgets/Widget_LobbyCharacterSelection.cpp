@@ -67,10 +67,7 @@ void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 	if (SkinColourData && SkinColourData->PureColours.Num() > (int16)CurrentColourSelection)
 	{
 		PlayerColourImage->SetColorAndOpacity(SkinColourData->PureColours[(int16)CurrentColourSelection]);
-		//PlayerImage->SetColorAndOpacity(SkinColourData->PureColours[(int16)CurrentColourSelection]);
 	}
-		
-
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRight)
@@ -168,6 +165,8 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 	if (!SkinColourData)
 		return;
 
+	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) CurrentColourSelection];
+
 	switch(CurrentColourSelection)
 	{
 	case EColours::RED:
@@ -177,6 +176,7 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 
 			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterSubColour = SkinColourData->SubReds[(int16)IdealDetails.Character];
+			
 			break;
 		}
 	case EColours::BLUE:

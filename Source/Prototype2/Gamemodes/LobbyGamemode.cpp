@@ -22,6 +22,8 @@ ALobbyGamemode::ALobbyGamemode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 
+	bUseSeamlessTravel = false;
+
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
@@ -45,6 +47,12 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 		
 	GameStateReference->Server_Players.Add(PlayerStateReference);
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
+
+	/* Player positions */
+	// Find all PlayerStarts in the level
+	TArray<AActor*> PlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
+	
 			
 	ALobbyCharacter* Character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter());
 	if (!Character)
@@ -52,7 +60,6 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 			
 	Character->SetPlayerStateRef(PlayerStateReference);
 	Character->SetPlayerState(PlayerStateReference);
-	Character->SetOwner(_NewPlayer);
 	
 	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 }
@@ -96,28 +103,60 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
 		int32 SomePlayerID = i;
-		FString SomePlayerName = FString("Player ") + FString::FromInt(i + 1);
-				
-		auto SubSystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-		if (SubSystem)
+		FString SomePlayerName{};
+		
+		if (auto SteamSubsystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM))
 		{
-			IOnlineIdentityPtr IdentityInterface = SubSystem->GetIdentityInterface();
+			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
 			if (IdentityInterface.IsValid())
 			{
 				TSharedPtr<const FUniqueNetId> UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
 					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
 				}
 			}
 		}
+		else if (auto NullSubsystem = IOnlineSubsystem::Get())
+		{
+			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
+			if (IdentityInterface.IsValid())
+			{
+				TSharedPtr<const FUniqueNetId> UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
+				if (UserId.IsValid())
+				{
+					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);
+					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
+				}
+			}
+		}
+		
 		if (ALobbyPlayerState* CasterPlayerState = Cast<ALobbyPlayerState>(_GameStateReference->Server_Players[i]))
 		{
 			CasterPlayerState->Player_ID = SomePlayerID;
 			CasterPlayerState->PlayerName = SomePlayerName;
-			_gameInstanceReference->FinalPlayerDetails.FindOrAdd(SomePlayerName);
 
-			FVector NewPosition = Player1StartPosition + FVector(0, DistanceBetweenPlayers * i, 0);
+            ///* Lobby V3 stuff */
+			//FVector NewPosition{};
+			//switch (i)
+			//{
+			//case 0:
+			//	{
+			//		NewPosition = Player1StartPosition;
+			//		break;
+			//	}
+			//default:
+			//	{
+			//		NewPosition = Player1StartPosition;
+			//		break;
+			//	}
+			//}
+			FVector NewPosition = Player1StartPosition;
+			
+			
+			///* Lobby V2 stuff */
+			//FVector NewPosition = Player1StartPosition + FVector(0, DistanceBetweenPlayers * i, 0);
 					
 			APlayerController* SomeController = CasterPlayerState->GetPlayerController();
 			if (!SomeController)

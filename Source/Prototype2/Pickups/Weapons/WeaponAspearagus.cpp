@@ -52,7 +52,7 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->DropWeapon();
 
 		//AttackTrail_NiagaraComponent->Deactivate();
-		_Player->DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
@@ -87,7 +87,7 @@ void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Characte
 	if (NewAspearagusProjectile)
 	{
 		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponData->WeaponMesh,
-												5000.0f, 10000.0f, _AttackSphereRadius);
+												5000.0f, 2.0f, _AttackSphereRadius);
 		NewAspearagusProjectile->SetOwner(_Player);
 		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile,ProjectileTransform);
 		NewAspearagusProjectile->SetReplicates(true);

@@ -7,6 +7,7 @@
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "NiagaraComponent.h"
 #include "RadialPlot.h"
+#include "Components/TimelineComponent.h"
 #include "Prototype2/Pickups/Beehive.h"
 #include "GrowSpot.generated.h"
 
@@ -29,15 +30,15 @@ public:
 	UPROPERTY(Replicated, EditAnywhere)
 	int32 Player_ID = 0;
 
-	UPROPERTY(VisibleAnywhere)
-	ARadialPlot* RadialPlot;
+	//UPROPERTY(VisibleAnywhere)
+	//ARadialPlot* RadialPlot;
 
 protected:
 	virtual void BeginPlay() override;
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_Plant();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_FireParticleSystem();
 
 	void GrowPlantOnTick(float _DeltaTime);
@@ -57,19 +58,19 @@ public:
 	// Called every frame
 	virtual void Tick(float _DeltaTime) override;
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SetFertilised();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantGold();
 	
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_GrowOnTick(float _DeltaTime);
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_UpdateState(EGrowSpotState _NewState);
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SetPlantReadySparkle(bool _bIsActive);
 	
 	UPROPERTY(EditAnywhere)
@@ -101,6 +102,15 @@ public:
 	 */
 	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
 	void MakePlantGold();
+
+	UFUNCTION()
+	void RiseTimelineUpdate(float _Delta);
+	UPROPERTY(VisibleAnywhere)
+	FTimeline RiseTimeline{};
+	UPROPERTY(VisibleAnywhere)
+	float StartZHeight{};
+	UPROPERTY(EditAnywhere)
+	class UCurveFloat* RiseCurve{};
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
@@ -137,7 +147,7 @@ public:
 	USoundAttenuation* MandrakeAttenuationSettings;
 
 	// Plant ready sparkle VFX
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraSystem* PlantReadySparkle_NiagaraSystem;
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* PlantReadySparkle_NiagaraComponent;

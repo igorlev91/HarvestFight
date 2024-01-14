@@ -25,6 +25,9 @@ public:
 	void InitializeSeed(UMaterialInstance* _InMaterial);
 	void InitializePlant(UStaticMesh* _InMesh);
 	void InitializeWeapon(UStaticMesh* _InMesh);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DisableCollisionAndAttach();
 	
 public:
 

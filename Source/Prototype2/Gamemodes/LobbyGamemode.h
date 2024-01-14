@@ -34,11 +34,15 @@ private:
 private:
 	/* For holding all the costumes */
 
-	/* Player 1 character lobby starting positions */
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	FVector Player1StartPosition = FVector{2000.0f,40.0f, 90.0f};
+	///* Player 1 character lobby starting positions  - used for V2 lobby */
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	//FVector Player1StartPosition = FVector{2000.0f,40.0f, 90.0f};
 
 	/* Player distances in lobby */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float DistanceBetweenPlayers = 230.0f;
+
+	/* Player 1 character lobby starting positions - V3 Lobby */
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	FVector Player1StartPosition = FVector{1500.0f,400.0f, 90.0f};; 
 };

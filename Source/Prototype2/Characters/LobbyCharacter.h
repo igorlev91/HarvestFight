@@ -22,7 +22,6 @@ public:
 	/* Protected Functions */
 protected:
 	ALobbyCharacter();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float _DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* _PlayerInputComponent) override;
@@ -42,30 +41,26 @@ protected:
 
 	/* Public Variables */
 public:
-	/* Haybale to stand on (if player 4+ */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* HayBaleMeshComponent;
 	
 	/* Protected Variables */
 protected:
 	//
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	class ALobbyPlayerState* PlayerStateRef;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TArray<USkeletalMesh*> PlayerMeshes;
 
-	/* Display name widget (above head) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UWidgetComponent* PlayerNameWidgetComponent;
+	///* Display name widget (above head) */
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	//UWidgetComponent* PlayerNameWidgetComponent;
 	
-	UPROPERTY()
+	UPROPERTY(meta = (AllowPrivateAccess))
 	class UWidget_PlayerName* PlayerNameWidget{nullptr};
-
 	
-	/* Ready button widget (above head) */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UWidgetComponent* ReadyImageWidgetComponent;
+	///* Ready button widget (above head) */
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	//UWidgetComponent* ReadyImageWidgetComponent;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};

@@ -47,21 +47,20 @@ protected:
 
 	/* Networking */
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AssignCharacterSkin(APrototype2Character* _Target, int32 _CharacterSelection);
+	void Multi_AssignCharacterSkin(APrototype2PlayerState* _CastedPlayerState, APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference, const FString& _NewName);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_TeleportEveryoneToPodium();
 	void Multi_TeleportEveryoneToPodium_Implementation();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_DetachShippingBinComponents();
-	void Multi_DetachShippingBinComponents_Implementation();
 
 	void KeepPlayersAtSpawnPositionUntilStart();
 	void PupeteerPlayerCharactersForEndGame();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PupeteerPlayerCharactersForEndGame(APrototype2Character* _Target);
 
+	void UpdateAllPlayerInfo(class APrototype2Gamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
+
+	void TeleportToPreGameArena(APrototype2Character* _Player);
 	/* Protected Variables */
 protected:
 	bool bHasGameFinishedLocal{};
@@ -81,6 +80,9 @@ protected:
 	
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
 	class AEndGamePodium* EndGamePodium{};
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class APreGameArena* PreGameArena{};
 
 	/* Player start positions */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")

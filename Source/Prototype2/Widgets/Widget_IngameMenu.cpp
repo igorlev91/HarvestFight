@@ -36,10 +36,10 @@ void UWidget_IngameMenu::ToggleMenu()
 		}
 
 		/* Toggle character movement - stops movement while menu open */
-		if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
-		{
-			Owner->GetCharacterMovement()->ToggleActive();
-		}
+		//if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+		//{
+		//	Owner->GetCharacterMovement()->ToggleActive();
+		//}
 	}
 }
 

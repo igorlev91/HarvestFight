@@ -13,7 +13,7 @@ AEndGamePodium::AEndGamePodium()
 	BaseRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Base Root Component"));
 	RootComponent = BaseRootComponent;
 
-	SetReplicates(true);
+	bReplicates = true;
 	
 	for(int32 i = 0; i < 3; i++)
 	{
@@ -39,7 +39,7 @@ AEndGamePodium::AEndGamePodium()
 void AEndGamePodium::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	SetReplicateMovement(true);
 
 	if (HasAuthority())

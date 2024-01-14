@@ -97,6 +97,7 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Seconds;
 
+	/* Solo Player Games */
 	/* Player UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Player1Coins;
@@ -173,6 +174,27 @@ public:
 	class UOverlay* OverlayPlayer5;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UOverlay* OverlayPlayer6;
+
+	/* Team games */
+	/* Team UI scores */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Team1Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Team1ExtraCoins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Team2Coins;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* Team2ExtraCoins;
+
+	/* Team overlays */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayTeam1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UOverlay* OverlayTeam2;
+
+	
+	
+
 	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

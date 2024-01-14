@@ -14,6 +14,7 @@ enum class EInterfaceType : uint8
 	SellBin			UMETA(DisplayName = "SellShop"),
 	GrowSpot		UMETA(DisplayName = "GrowSpot"),	
 	Weapon			UMETA(DisplayName = "Weapon"),
+	FertilizerBin   UMETA(DisplayName = "FertilizerBin"),
 	Default			UMETA(DisplayName = "Default"),
 };
 

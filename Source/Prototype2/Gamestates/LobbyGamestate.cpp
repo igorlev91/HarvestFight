@@ -54,30 +54,40 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 					PickRandomMapToPlay();
 
 					// Countdown between all players choosing map and actually starting
-					MapChoiceTotalLengthSeconds -= _DeltaSeconds;
-					if (MapChoiceTotalLengthSeconds <= 0)
+					
+					if (MapChoiceTotalLengthSeconds > 0)
 					{
-						bIsCountingDown = false;
-						
-						if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
-						{
-							GameInstance->FinalConnectionCount = Server_Players.Num();
+						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 
-							for(auto Player : Server_Players)
+						if (MapChoiceTotalLengthSeconds <= 0)
+						{
+							bIsCountingDown = false;
+						
+							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 							{
-								FCharacterDetails Details = Player->Details;
-								FString PlayerName{};
-								IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
-								if (IdentityInterface.IsValid())
+								GameInstance->FinalConnectionCount = Server_Players.Num();
+
+								for(auto Player : Server_Players)
 								{
-									PlayerName = IdentityInterface->GetPlayerNickname(*Player->GetUniqueId().GetUniqueNetId());
+									FString SomePlayerName{"UNASSIGNED"};
+									if (auto NullSubsystem = IOnlineSubsystem::Get())
+									{
+										IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
+										if (IdentityInterface.IsValid())
+										{
+											TSharedPtr<const FUniqueNetId> UserId = Player->GetUniqueId().GetUniqueNetId();
+											if (UserId.IsValid())
+											{
+												SomePlayerName = UserId->ToString();
+											}
+										}
+									}
+									GameInstance->FinalPlayerDetails.Add(SomePlayerName, Player->Details);
 								}
-								
-								//UE_LOG(LogTemp, Warning, TEXT("%s Has Character %s and Colour %s"), *PlayerName, *FString::FromInt((int)Details.Character),*FString::FromInt((int)Details.CharacterColour) );
-								GameInstance->FinalPlayerDetails.Add(PlayerName, Details);
 							}
+							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
+							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 						}
-						GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 					}
 					
 				}
@@ -195,9 +205,12 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALobbyGamestate, Farm);
 	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
+	DOREPLIFETIME(ALobbyGamestate, HoneyFarm);
 
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceTotalLengthSeconds);
+	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
+	DOREPLIFETIME(ALobbyGamestate, bHasCountedDown);
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 }
@@ -212,15 +225,15 @@ void ALobbyGamestate::PickRandomMapToPlay()
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
 		if (Farm > WinterFarm && Farm > HoneyFarm) // Normal farm gets most votes
 		{
-			MapChoice = "Level_Main";
+			MapChoice = "/Game/Maps/Level_FriendlyFarm";
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm) // Winter farm gets most votes
 		{
-			MapChoice = "Level_Winter";
+			MapChoice = "/Game/Maps/Level_Winter";
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm) // Honey farm gets most votes
 		{
-			MapChoice = "Level_Honey";
+			MapChoice = "/Game/Maps/Level_Honey";
 		}
 		else // Pick a random map from highest votes
 		{
@@ -264,19 +277,19 @@ void ALobbyGamestate::PickRandomMapToPlay()
 						{
 						case 0:
 							{
-								MapChoice = "Level_Main";
+								MapChoice = "/Game/Maps/Level_FriendlyFarm";
 								UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
 								break;
 							}
 						case 1:
 							{
-								MapChoice = "Level_Winter";
+								MapChoice = "/Game/Maps/Level_Winter";
 								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
 								break;
 							}
 						case 2:
 							{
-								MapChoice = "Level_Honey";
+								MapChoice = "/Game/Maps/Level_Honey";
 								UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
 								break;
 							}

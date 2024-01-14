@@ -69,7 +69,7 @@ void ASeed::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
 
-	_Player->UpdateDecalDirection(true, false);
+	//_Player->UpdateDecalDirection(true, false);
 }
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
@@ -126,10 +126,14 @@ void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
 
 void ASeed::HandleParachuteMovement()
 {
+	if (bHasLanded)
+	{
+		return;
+	}
+	
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z &&
-			!bHasLanded)
+		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
 		{
 			float XVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
 			float ZVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;

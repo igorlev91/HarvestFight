@@ -89,7 +89,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 			_Player->Multi_DropWeapon();
 
 			//AttackTrail_NiagaraComponent->Deactivate();
-			_Player->DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
+			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
 	}
 	// Play attack audio

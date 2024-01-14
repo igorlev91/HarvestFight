@@ -17,17 +17,17 @@ void ALobbyCharacter::SetPlayerStateRef(ALobbyPlayerState* _NewLobbyPlayerState)
 
 void ALobbyCharacter::SetNameWidget(FString _name)
 {
-	// do
-	if (PlayerNameWidgetComponent)
-	{
-		if (auto Widget = PlayerNameWidgetComponent->GetWidget())
-		{
-			if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
-			{
-				NameWidget->PlayerName->SetText(FText::FromString(_name));
-			}
-		}
-	}
+	//// do
+	//if (PlayerNameWidgetComponent)
+	//{
+	//	if (auto Widget = PlayerNameWidgetComponent->GetWidget())
+	//	{
+	//		if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
+	//		{
+	//			NameWidget->PlayerName->SetText(FText::FromString(_name));
+	//		}
+	//	}
+	//}
 	//Multi_SetNameWidget(_name);
 }
 
@@ -47,45 +47,34 @@ void ALobbyCharacter::SetNameWidgetPlayerRef()
 
 void ALobbyCharacter::Multi_SetNameWidget_Implementation(const FString& _name)
 {
-	if (PlayerNameWidgetComponent)
-	{
-		if (auto Widget = PlayerNameWidgetComponent->GetWidget())
-		{
-			if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
-			{
-				NameWidget->PlayerName->SetText(FText::FromString(_name));
-			}
-		}
-	}
+	//if (PlayerNameWidgetComponent)
+	//{
+	//	if (auto Widget = PlayerNameWidgetComponent->GetWidget())
+	//	{
+	//		if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
+	//		{
+	//			NameWidget->PlayerName->SetText(FText::FromString(_name));
+	//		}
+	//	}
+	//}
 }
 
 ALobbyCharacter::ALobbyCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	SetReplicates(true);
+	bReplicates = true;
 
-	/* Display name widget (above head) */
-	PlayerNameWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNameWidgetComponent"));
-	PlayerNameWidgetComponent->SetupAttachment(RootComponent);
-	PlayerNameWidgetComponent->SetIsReplicated(false);
-	PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	///* Display name widget (above head) */
+	//PlayerNameWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNameWidgetComponent"));
+	//PlayerNameWidgetComponent->SetupAttachment(RootComponent);
+	//PlayerNameWidgetComponent->SetIsReplicated(false);
+	//PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	/* Ready button widget (above head) */
-	ReadyImageWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("ReadyImageWidgetComponent"));
-	ReadyImageWidgetComponent->SetupAttachment(RootComponent);
-	ReadyImageWidgetComponent->SetIsReplicated(false);
-	ReadyImageWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	
-	HayBaleMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HayBaleMeshComponent"));
-	HayBaleMeshComponent->SetupAttachment(RootComponent);
-	//HayBaleMeshComponent->SetIsReplicated(false);
-}
-
-void ALobbyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	//
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	///* Ready button widget (above head) */
+	//ReadyImageWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("ReadyImageWidgetComponent"));
+	//ReadyImageWidgetComponent->SetupAttachment(RootComponent);
+	//ReadyImageWidgetComponent->SetIsReplicated(false);
+	//ReadyImageWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ALobbyCharacter::BeginPlay()
@@ -93,36 +82,37 @@ void ALobbyCharacter::BeginPlay()
 	Super::BeginPlay();
 	PlayerStateRef = GetPlayerState<ALobbyPlayerState>();
 	
-	if (PlayerNameWidgetComponent)
-	{
-		if (auto Widget = PlayerNameWidgetComponent->GetWidget())
-		{
-			if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
-			{
-				PlayerNameWidget = NameWidget;
-			}
-		}
-	}
+	//if (PlayerNameWidgetComponent)
+	//{
+	//	if (auto Widget = PlayerNameWidgetComponent->GetWidget())
+	//	{
+	//		if (auto NameWidget = Cast<UWidget_PlayerName>(Widget))
+	//		{
+	//			PlayerNameWidget = NameWidget;
+	//		}
+	//	}
+	//}
 
 	for(auto Material : PlayerMaterials)
 	{
 		PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,this));
 	}
 
-	ReadyImageWidgetComponent->SetVisibility(false);
-	HayBaleMeshComponent->SetVisibility(false);
+	//ReadyImageWidgetComponent->SetVisibility(false);
 	
+	if (IsLocallyControlled())
+	{
+		GetMesh()->SetVisibility(true);
+	}
+	else
+	{
+		GetMesh()->SetVisibility(false);
+	}
 }
 
 void ALobbyCharacter::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
-
-	/* Turn on haybale if on back row */
-	if (GetActorLocation().X >= 2100.0f)
-	{
-		HayBaleMeshComponent->SetVisibility(true);
-	}
 
 	if (!PlayerStateRef)
 	{
@@ -135,15 +125,15 @@ void ALobbyCharacter::Tick(float _DeltaTime)
 
 	if (PlayerStateRef)
 	{
-		/* Toggle ready image */
-		if (PlayerStateRef->IsReady)
-		{
-			ReadyImageWidgetComponent->SetVisibility(true);
-		}
-		else
-		{
-			ReadyImageWidgetComponent->SetVisibility(false);
-		}
+		///* Toggle ready image */
+		//if (PlayerStateRef->IsReady)
+		//{
+		//	ReadyImageWidgetComponent->SetVisibility(true);
+		//}
+		//else
+		//{
+		//	ReadyImageWidgetComponent->SetVisibility(false);
+		//}
 
 		SyncCharacterSkin();
 	}

@@ -1,4 +1,5 @@
 
+
 #include "WeaponHoneyStick.h"
 
 #include "Prototype2/Characters/Prototype2Character.h"
@@ -81,7 +82,7 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 			_Player->Multi_DropWeapon();
 
 			//AttackTrail_NiagaraComponent->Deactivate();
-			_Player->DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
+			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
 	}
 	// Play attack audio

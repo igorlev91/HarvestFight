@@ -28,10 +28,10 @@ void UWidget_StartAndEndMenu::NativeOnInitialized()
 	//}
 
 	/* Toggle character movement - stops movement while menu open */
-	if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
-	{
-		Owner->GetCharacterMovement()->ToggleActive();
-	}
+	//if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+	//{
+	//	Owner->GetCharacterMovement()->ToggleActive();
+	//}
 }
 
 void UWidget_StartAndEndMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -41,30 +41,30 @@ void UWidget_StartAndEndMenu::NativeTick(const FGeometry& MyGeometry, float InDe
 	UpdateTimerText();
 
 	/* Reenabling player movement after start timer ends */
-	if (bHasReenabledMovement == false)
-	{
-		if (GameStateReference->GetCountdownLengthSeconds() <= 0)
-		{
-			bHasReenabledMovement = true;
-			/* Toggle character movement - stops movement while menu open */
-			if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
-			{
-				Owner->GetCharacterMovement()->ToggleActive();
-			}
-		}
-	}
+	//if (bHasReenabledMovement == false)
+	//{
+	//	if (GameStateReference->GetCountdownLengthSeconds() <= 0)
+	//	{
+	//		bHasReenabledMovement = true;
+	//		/* Toggle character movement - stops movement while menu open */
+	//		//if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
+	//		//{
+	//		//	Owner->GetCharacterMovement()->ToggleActive();
+	//		//}
+	//	}
+	//}
 }
 
 void UWidget_StartAndEndMenu::UpdateTimerText()
 {
-	if (TimerText && GameStateReference->Server_Players.Num() >=  GameStateReference->GetFinalConnectionCount() && ! GameStateReference->HasGameStarted())
+	if (TimerText && GameStateReference->Server_Players.Num() >= GameStateReference->GetFinalConnectionCount() && ! GameStateReference->HasGameStarted())
 	{
-		TimerText->SetText(FText::FromString(FString::FromInt((int32)GameStateReference->GetCountdownLengthSeconds())));
+		TimerText->SetText(FText::FromString(FString::FromInt(GameStateReference->GetCountdownLengthSeconds())));
 		if (GameStateReference->GetCountdownLengthSeconds() < 1)
 		{
 			TimerText->SetText(FText::FromString("Go!"));
 		}
-		CountdownTimer = (int32)GameStateReference->GetCountdownLengthSeconds();
+		CountdownTimer = GameStateReference->GetCountdownLengthSeconds();
 		TimerText->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 	else if (TimerText && GameStateReference->HasGameStarted())

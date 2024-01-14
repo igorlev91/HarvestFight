@@ -30,7 +30,7 @@ class PROTOTYPE2_API APickUpItem : public AActor
 public:	
 	/* Sets default values for this actor's properties */
 	APickUpItem();
-
+	
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
 

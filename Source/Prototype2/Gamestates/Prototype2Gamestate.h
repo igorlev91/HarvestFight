@@ -48,9 +48,6 @@ private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	bool bShouldServerTravel{true};
-	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 MatchLengthMinutes{1};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
@@ -83,6 +80,4 @@ private:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 FinalConnectionCount{0};
-
-
 };
