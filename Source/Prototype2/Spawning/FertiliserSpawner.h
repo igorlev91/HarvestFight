@@ -11,25 +11,30 @@ UCLASS()
 class PROTOTYPE2_API AFertiliserSpawner : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
-	
+
+	/* Public Functions */
 public:	
 	AFertiliserSpawner();
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float DeltaTime) override;
-	
-	class UStaticMeshComponent* GetMesh();
-	
-public:	
+
+	/* Interaction functions */
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 
+	/* Public Variables */
+public:	
+	class UStaticMeshComponent* GetMesh();
+
+	/* Protected Functions */
 protected:
 	void GenerateFertiliserOnTimer(float _DeltaTime);
 	void SpawnFertiliser();
 
+	/* Protected Variables */
 protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
@@ -45,4 +50,7 @@ protected:
 
 	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
 	float SpawnTimer{};
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	float SpawnHeight{100.0f};
 };

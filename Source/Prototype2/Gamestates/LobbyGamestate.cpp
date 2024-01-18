@@ -51,7 +51,7 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					PickRandomMapToPlay();
+					PickMapToPlay();
 
 					// Countdown between all players choosing map and actually starting
 					
@@ -136,15 +136,19 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 {
 	if (_Level == EFarm::FARM)
 	{
-		Farm = Farm + 1;
+		Farm += 1;
 	}
 	else if (_Level == EFarm::WINTERFARM)
 	{
-		WinterFarm = WinterFarm + 1;
+		WinterFarm += 1;
 	}
 	else if (_Level == EFarm::HONEYFARM)
 	{
-		HoneyFarm = HoneyFarm + 1;
+		HoneyFarm += 1;
+	}
+	else if (_Level == EFarm::FLOATINGISLANDSFARM)
+	{
+		FloatingIslandFarm += 1;
 	}
 }
 
@@ -183,6 +187,11 @@ int32 ALobbyGamestate::GetHoneyFarm() const
 	return HoneyFarm;
 }
 
+int32 ALobbyGamestate::GetFloatingIslandFarm() const
+{
+	return FloatingIslandFarm;
+}
+
 bool ALobbyGamestate::HasMapBeenChosen() const
 {
 	return bMapChosen;
@@ -191,6 +200,16 @@ bool ALobbyGamestate::HasMapBeenChosen() const
 int32 ALobbyGamestate::GetMapChoiceTotalLengthSeconds() const
 {
 	return MapChoiceTotalLengthSeconds;
+}
+
+void ALobbyGamestate::SetGameMode(int32 _Mode)
+{
+	GameMode = _Mode;
+}
+
+int32 ALobbyGamestate::GetGameMode()
+{
+	return GameMode;
 }
 
 void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -206,6 +225,7 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, Farm);
 	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
 	DOREPLIFETIME(ALobbyGamestate, HoneyFarm);
+	DOREPLIFETIME(ALobbyGamestate, FloatingIslandFarm);
 
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceTotalLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
@@ -213,30 +233,47 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, bHasCountedDown);
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
+	DOREPLIFETIME(ALobbyGamestate, GameMode);
 }
 
-void ALobbyGamestate::PickRandomMapToPlay()
+void ALobbyGamestate::PickMapToPlay()
 {
 	bShowMapChoice = true; // Show map choice
 
-	const int32 TotalVotes = Farm + WinterFarm + HoneyFarm;
+	const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
 	if (TotalVotes == Server_Players.Num() && bMapChosen == false)
 	{
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
-		if (Farm > WinterFarm && Farm > HoneyFarm) // Normal farm gets most votes
+		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm) // Normal farm gets most votes
 		{
-			MapChoice = "/Game/Maps/Level_FriendlyFarm";
+			if (GameMode == 0) // Normal Mode
+				MapChoice = "/Game/Maps/Level_FriendlyFarm";
+			else // Brawl Mode
+				MapChoice = "/Game/Maps/Level_Main";
+			
 		}
-		else if (WinterFarm > Farm && WinterFarm > HoneyFarm) // Winter farm gets most votes
+		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
 			MapChoice = "/Game/Maps/Level_Winter";
 		}
-		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm) // Honey farm gets most votes
+		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
 		{
-			MapChoice = "/Game/Maps/Level_Honey";
+			if (GameMode == 0) // Normal Mode
+				MapChoice = "/Game/Maps/Level_HoneyNormal";
+			else // Brawl Mode
+				MapChoice = "/Game/Maps/Level_Honey";
 		}
+		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm) // floating islands farm gets most votes
+			{
+			if (GameMode == 0) // Normal Mode
+				MapChoice = "/Game/Maps/Level_SkyIsland";
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Sky island brawl mode attempted to start")); // No brawl mode for floating islands
+			}
 		else // Pick a random map from highest votes
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Selecting random map from top votes"));
+			
 			int32 MapChoiceArray[3] = {Farm, WinterFarm, HoneyFarm};
 			bool MapChoiceTopVotesArray[3] = {false, false, false};
 			int32 HighestVote = 0;
@@ -277,7 +314,10 @@ void ALobbyGamestate::PickRandomMapToPlay()
 						{
 						case 0:
 							{
-								MapChoice = "/Game/Maps/Level_FriendlyFarm";
+								if (GameMode == 0) // Normal Mode
+									MapChoice = "/Game/Maps/Level_FriendlyFarm";
+								else // Brawl Mode
+									MapChoice = "/Game/Maps/Level_Main";
 								UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
 								break;
 							}
@@ -289,7 +329,10 @@ void ALobbyGamestate::PickRandomMapToPlay()
 							}
 						case 2:
 							{
-								MapChoice = "/Game/Maps/Level_Honey";
+								if (GameMode == 0) // Normal Mode
+									MapChoice = "/Game/Maps/Level_HoneyNormal";
+								else // Brawl Mode
+									MapChoice = "/Game/Maps/Level_Honey";
 								UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
 								break;
 							}

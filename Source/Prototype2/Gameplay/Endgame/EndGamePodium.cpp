@@ -48,8 +48,8 @@ void AEndGamePodium::BeginPlay()
 		{
 			EndGameCamera = GetWorld()->SpawnActor<ACameraActor>(EndGameCameraPrefab);
 			EndGameCamera->AttachToComponent(BaseRootComponent, FAttachmentTransformRules::KeepWorldTransform);
-			EndGameCamera->SetActorRelativeLocation({560.000000,90.000000,170.000000});
-			EndGameCamera->SetActorRelativeRotation({5.625000,185.625000,-0.000000});
+			EndGameCamera->SetActorRelativeLocation(CameraPosition);
+			EndGameCamera->SetActorRelativeRotation(CameraRotation);
 			EndGameCamera->SetReplicates(true);
 			EndGameCamera->SetReplicateMovement(true);
 		}

@@ -72,11 +72,12 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	}
 
 	// Lower weapon durability
-	if (bIsOtherPlayerHit)
-	{
+	//if (bIsOtherPlayerHit)
+	//{
+		_Player->OnExecuteAttackDelegate.Broadcast();
+	
 		_Player->WeaponCurrentDurability--;
 		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
-		
 		if (_Player->WeaponCurrentDurability <= 0)
 		{
 			_Player->Multi_DropWeapon();
@@ -84,7 +85,7 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 			//AttackTrail_NiagaraComponent->Deactivate();
 			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
-	}
+	//}
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
 

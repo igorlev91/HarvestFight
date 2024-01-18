@@ -29,6 +29,10 @@ void UWeapon::ChargeAttack(APrototype2Character* _Player)
 {
 }
 
+void UWeapon::ChargeAttackCancelled(APrototype2Character* _Player)
+{
+}
+
 void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
 }

@@ -44,6 +44,8 @@ public:
 
 	void Rotate(float DeltaTime);
 
+	void SineWave(float DeltaTime);
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
 
@@ -75,4 +77,20 @@ private:
 	bool bDoRotate;
 	UPROPERTY(EditAnywhere, Category = "Rotation")
 	int32 RotationSpeed;
+
+	// sine wave
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	bool bDoSineWave;
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	float Amplitude;
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	float Frequency;
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	FVector SineHeightBounce;
+	UPROPERTY(VisibleAnywhere, Category = "Sine Wave")
+	float SineTime;
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	float SineStartTimeMin;
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
+	float SineStartTimeMax;
 };

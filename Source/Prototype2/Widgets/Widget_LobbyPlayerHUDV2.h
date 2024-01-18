@@ -1,4 +1,5 @@
 
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -14,9 +15,15 @@ class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UWidget_LobbyPlayerHUD
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	void UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget);
+	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
 	
 	/* Public Variables */
 public:
+	/* Brawl Mode Map Choice Widget*/
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_MapChoice* WBP_MapChoiceBrawl;
+	
 	/* Icon rings */
 	UPROPERTY(EditAnywhere)
 	UTexture2D* RingTexture{};
@@ -44,6 +51,10 @@ public:
 	UHorizontalBox* Player5HorizontalBox;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UHorizontalBox* Player6HorizontalBox;
+	
+	/* Array of all icons */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UImage*> Icons;
 	
 	/* Player Icons */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

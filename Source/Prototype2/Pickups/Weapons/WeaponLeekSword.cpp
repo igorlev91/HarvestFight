@@ -74,8 +74,10 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 	}
 
 	// Lower weapon durability
-	if (bIsOtherPlayerHit)
-	{
+	//if (bIsOtherPlayerHit)
+	//{
+		_Player->OnExecuteAttackDelegate.Broadcast();
+	
 		_Player->WeaponCurrentDurability--;
 		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
 		
@@ -86,7 +88,7 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 			//AttackTrail_NiagaraComponent->Deactivate();
 			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
-	}
+	//}
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
 

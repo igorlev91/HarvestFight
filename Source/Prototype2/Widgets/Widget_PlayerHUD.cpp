@@ -41,6 +41,8 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 		P2Ring->SetBrushFromTexture(RingTexture);
 		P3Ring->SetBrushFromTexture(RingTexture);
 		P4Ring->SetBrushFromTexture(RingTexture);
+		P5Ring->SetBrushFromTexture(RingTexture);
+		P6Ring->SetBrushFromTexture(RingTexture);
 	}
 	
 	/* Add rings to array */
@@ -48,6 +50,8 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	Rings.Add(P2Ring);
 	Rings.Add(P3Ring);
 	Rings.Add(P4Ring);
+	Rings.Add(P5Ring);
+	Rings.Add(P6Ring);
 
 	/* Set ring colours to player colour */
 	for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
@@ -355,6 +359,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	}
 
 	InteractionImagePulse(InDeltaTime);
+
+	UpdateEmphasizers(InDeltaTime);
 }
 
 void UWidget_PlayerHUD::EnableDisableMenu()
@@ -560,3 +566,39 @@ UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _Player)
 	return nullptr;
 }
 
+void UWidget_PlayerHUD::UpdateEmphasizers(float _DeltaTime)
+{
+	if (Emphasizers.IsEmpty())
+		return;
+
+	for (FEmphasizer Emphasizer : Emphasizers)
+	{
+		if (Emphasizer.bHasEmphasized)
+		{
+			// Shrink
+			FVector2D ShrunkVector;
+			ShrunkVector.X = Emphasizer.Image->GetRenderTransform().Scale.X - _DeltaTime * Emphasizer.Speed;
+			ShrunkVector.Y = Emphasizer.Image->GetRenderTransform().Scale.Y - _DeltaTime * Emphasizer.Speed;
+			Emphasizer.Image->SetRenderScale(ShrunkVector);
+			
+			// If Image has reached original scale, remove
+			if (Emphasizer.Image->GetRenderTransform().Scale.Length() <= Emphasizer.OriginalScale.Length())
+			{
+				Emphasizer.Image->SetRenderScale(Emphasizer.OriginalScale);
+				Emphasizers.Remove(Emphasizer);
+				continue;
+			}
+		}
+
+		// Grow
+		FVector2d GrownVector;
+		GrownVector.X = Emphasizer.Image->GetRenderTransform().Scale.X + _DeltaTime * Emphasizer.Speed;
+		GrownVector.Y = Emphasizer.Image->GetRenderTransform().Scale.Y + _DeltaTime * Emphasizer.Speed;
+		Emphasizer.Image->SetRenderScale(GrownVector);
+
+		if (GrownVector.Length() > Emphasizer.DesiredScale.Length())
+		{
+			Emphasizer.bHasEmphasized = true;
+		}
+	}
+}

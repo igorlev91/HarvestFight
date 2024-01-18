@@ -22,112 +22,69 @@ class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 	
 public:	
 	AGrowSpot();
-	void SetRadialReferance(ARadialPlot* _RadialPlot);
-
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+	virtual void Tick(float _DeltaTime) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
-	UPROPERTY(Replicated, EditAnywhere)
-	int32 Player_ID = 0;
-
-	//UPROPERTY(VisibleAnywhere)
-	//ARadialPlot* RadialPlot;
-
-protected:
-	virtual void BeginPlay() override;
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_Plant();
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_FireParticleSystem();
-
-	void GrowPlantOnTick(float _DeltaTime);
-	/**
-	 * @brief play the mandrake noise if the player is holding a mandrake
-	 * @param Player 
-	 */
-	void MandrakePickupNoise(APrototype2Character* _Player);
-	/**
-	 * @brief scale and position the Plant in the grow spot, called each frame to make it grow overtime
-	 * @param Plant 
-	 * @param TargetScale 
-	 * @param PosOffset 
-	 */
-	void ScalePlant(APlant* _Plant, FVector _TargetScale, float _PosOffset) const;
-public:	
-	// Called every frame
-	virtual void Tick(float _DeltaTime) override;
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SetFertilised();
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_MakePlantGold();
-	
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_GrowOnTick(float _DeltaTime);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_UpdateState(EGrowSpotState _NewState);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SetPlantReadySparkle(bool _bIsActive);
-	
-	UPROPERTY(EditAnywhere)
-	UItemComponent* ItemComponent;
-
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
-	/* Planting from data asset called from Interact function */
-	void PlantWeapon(APrototype2Character* _Player);
-	void PlantPlant(APrototype2Character* _Player);
+	void PlantASeed(ASeed* _SeedToPlant);
 	
-	/**
-	 * @brief sets the plant and the variables for the plant to use for growing
-	 * @param _Plant 
-	 * @param _GrowTime 
-	 */
-	void SetPlant(APlant* _Plant, float _GrowTime);
-	/**
-	 * @brief sets the weapon and the variables from the weapon to be used for growing
-	 * @param _Weapon 
-	 * @param _GrowTime 
-	 */
-	void SetWeapon(AGrowableWeapon* _Weapon, float _GrowTime);
-	/**
-	 * @brief sets the beehive and the variables for the beehive
-	 * @param _Weapon 
-	 * @param _GrowTime 
-	 */
-	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
-	void MakePlantGold();
-
-	UFUNCTION()
-	void RiseTimelineUpdate(float _Delta);
+	UPROPERTY(EditAnywhere)
+	UItemComponent* ItemComponent;
 	UPROPERTY(VisibleAnywhere)
 	FTimeline RiseTimeline{};
 	UPROPERTY(VisibleAnywhere)
 	float StartZHeight{};
 	UPROPERTY(EditAnywhere)
 	class UCurveFloat* RiseCurve{};
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	ARadialPlot* RadialPlot;
 	UPROPERTY(Replicated, VisibleAnywhere)
-	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
+	AActor* GrowingActor{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	APickUpItem* GrowingItemRef{};
+	
+	UPROPERTY(Replicated, EditAnywhere)
+	int32 OwningPlayerID{};
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	APlant* Plant = nullptr;
-	UPROPERTY(Replicated, VisibleAnywhere)
-	AGrowableWeapon* Weapon = nullptr;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;
 
+protected:
 	UPROPERTY(Replicated, VisibleAnywhere)
-	float GrowTimer{};
-	
+	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
 	UPROPERTY(Replicated, EditAnywhere)
 	float GrowTime{10};
+	UPROPERTY(Replicated, EditAnywhere)
+	float GrowTimer{};
 
+	UFUNCTION()
+	void RiseTimelineUpdate(float _Delta);
+	
+	void GrowPlantOnTick(float _DeltaTime);
+	void ScalePlantOnTick() const;
+
+	void MandrakePickupNoise(APrototype2Character* _Player);
+
+	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
+	void MakePlantGold();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_MakePlantGold();
+	void SetPlantReadySparkle(bool _bIsActive);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SetPlantReadySparkle(bool _bIsActive);
+	
+	//
+	// Fertilisation
+	//
+	
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsFertilised;
 
@@ -135,23 +92,27 @@ public:
 	float FertiliseInteractDelay = 0.1;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
-	float FertiliseInteractDelayTime;
+	float FertiliseInteractDelayTimer;
 
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* ParticleSystem;
-
-	UPROPERTY(EditAnywhere)
-	class UNiagaraComponent* InteractSystem;
+	//
+	//	SFX
+	//
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* MandrakeAttenuationSettings;
-
-	// Plant ready sparkle VFX
+	
+	//
+	// VFX
+	//
 	UPROPERTY(EditAnywhere, Category = VFX)
-	class UNiagaraSystem* PlantReadySparkle_NiagaraSystem;
+	class UNiagaraSystem* PlantReadySystem;
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
-	class UNiagaraComponent* PlantReadySparkle_NiagaraComponent;
+	class UNiagaraComponent* PlantReadyComponent;
 
+	//
+	// Prefabs
+	//
+	
 	/* Planting from PlantData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<APlant> PlantPrefab;
@@ -162,7 +123,4 @@ public:
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGrowableWeapon> WeaponPrefab;
-
-	UPROPERTY(EditAnywhere)
-	class USquashAndStretch* SSComponent;
 };

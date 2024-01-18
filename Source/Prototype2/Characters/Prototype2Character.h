@@ -15,6 +15,7 @@ class UAnimationData;
 class UAudioComponent;
 class USoundCue;
 class UItemComponent;
+class UDebuffComponent;
 
 /* Enum for controlling particle systems */
 UENUM()
@@ -68,6 +69,9 @@ protected:
 	/* Called for Attack input */
 	void ChargeAttack();
 
+	/* Canceled by being hit by other player */
+	void CancelChargeAttack();
+	
 	/* Release Attack */
 	void ReleaseAttack();
 	
@@ -98,8 +102,11 @@ protected:
 
 	UFUNCTION()
 	void ClearInteractionText();
+	
+	/* Update's character speed according to bIsHoldingGold */
 	UFUNCTION()
-	void SetHoldingGold(bool _HoldingGold);
+	void UpdateCharacterSpeed(bool _HoldingGold);
+	
 	UFUNCTION()
 	void HandleAttackChargeBehavior(float _DeltaSeconds);
 	UFUNCTION()
@@ -130,10 +137,22 @@ protected:
 public:
 	bool HasClaimedPlot();
 	void SetClaimedPlot(class ARadialPlot* _Plot);
+	UFUNCTION()
+	bool HasIdealRole();
 
 	/////////////////////////////////////////////////////////////////////
 
 public:
+	/* Delegate for telling the animation blueprint when charge is cancelled*/
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChargeCancelled);
+	UPROPERTY(BlueprintAssignable)
+	FOnChargeCancelled OnChargeCancelledDelegate;
+
+	/* Delegate for telling the Player Hud widget when to emphasize UI */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExecuteAttack);
+	UPROPERTY(BlueprintAssignable)
+	FOnExecuteAttack OnExecuteAttackDelegate;
+	
 	/* Getter for when character is sprinting */
 	UFUNCTION(BlueprintCallable)
 	bool IsSprinting();
@@ -198,6 +217,17 @@ public:
 
 	/* Allows for client only functionality when dropping weapon */
 	void DropWeapon();
+
+	/* Sets the character speed */
+	void SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
+	UFUNCTION(Server, Unreliable)
+	void Server_SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
+
+	/* Getters for walkspeed and ratescale for debuff component */
+	float GetWalkSpeed(){ return WalkSpeed; }
+	float GetWalkRateScale() { return WalkRateScale; }
 	
 	/* Public Variables */
 	
@@ -260,7 +290,7 @@ public:
 	float CanSprintTime = 5.0f;
 	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
 	float CanSprintTimer{};
-
+	
 	/* Weapon degrading */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int WeaponCurrentDurability;
@@ -313,9 +343,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UAnimationData* AnimationData;
 	
-	/* Attack radius and reach */
-	//float BaseAttackRadius = 75.0f;
-
 	/* The current weapon data to use data from */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
 	UWeaponData* CurrentWeaponData;
@@ -327,7 +354,11 @@ public:
 	EWeaponAnimation CurrentWeaponAnimation{};
 
 	/* Used to stop player input moving the player */
+	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bAllowMovementFromInput = true;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	UDebuffComponent* DebuffComponent;
 protected:
 	/* Protected Functions */
 
@@ -339,9 +370,6 @@ protected:
 
 	/* Execute Attack */
 	void ExecuteAttack(float _AttackSphereRadius);
-
-	/* Handle character speed */
-	void UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
 	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
@@ -460,14 +488,15 @@ private:
 	/* Speed for when player is sprinting */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintSpeed = 750.0f;
-
 	/* How long the player sprints for */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTime = 2.0f;
-
 	/* Timer for handling sprint */
 	UPROPERTY(Replicated , VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTimer{};
+	/* Stops updating character speed on tick */
+	UPROPERTY(Replicated)
+	bool bHasSprintingStopped = false;
 
 	/* Rate scales for adjusting animation speed */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
@@ -531,8 +560,14 @@ public: /* Pubic Networking */
 	 */
 	UFUNCTION(Server, Unreliable)
 	void Server_ChargeAttack();
+	
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
+
+	UFUNCTION(Server, Unreliable)
+	void Server_CancelChargeAttack();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_CancelChargeAttack();
 	
 	/* RPC for when attack key is released */
 	UFUNCTION(Server, Unreliable)
@@ -642,8 +677,7 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_TeleportToEndGame(FTransform _EndGameTransform);
 
-	UFUNCTION()
-	bool HasIdealRole();
+
 
 	UPROPERTY(meta = (AllowPrivateAccess))
 	bool DoOnce{true};

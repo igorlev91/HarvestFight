@@ -23,6 +23,9 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	{
 		GameStateReference = GameState;
 	}
+
+	/* Set map choice to hidden */
+	WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Hidden);
 	
 	/* Add rings to array */
 	Rings.Add(P1Ring);
@@ -31,6 +34,14 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	Rings.Add(P4Ring);
 	Rings.Add(P5Ring);
 	Rings.Add(P6Ring);
+
+	// Add icons to array
+	Icons.Add(P1Icon);
+	Icons.Add(P2Icon);
+	Icons.Add(P3Icon);
+	Icons.Add(P4Icon);
+	Icons.Add(P5Icon);
+	Icons.Add(P6Icon);
 
 	/* Add Player names to array*/
 	Names.Add(P1Name);
@@ -87,6 +98,44 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
 			}
 
+			/* Set ring colours to player colour */
+			if (Icons.Num() > i)
+			{
+				switch (Player->Details.Character)
+				{
+				case ECharacters::COW:
+					{
+						Icons[i]->SetBrushFromTexture(Player->CowTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::PIG:
+					{
+						Icons[i]->SetBrushFromTexture(Player->PigTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::CHICKEN:
+					{
+						Icons[i]->SetBrushFromTexture(Player->ChickenTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::DUCK:
+					{
+						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				default:
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_LobbyPlayerHUDV2: Unable to determine character type"));
+						break;
+					}
+					
+				}
+				
+				
+					
+				
+			}
+
 			/* Set player names to actual names and changing colour to player colour */
 			if (Names.Num() > i)
 			{
@@ -121,43 +170,69 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	/* Showing map choice widget */
 	if (GameStateReference->ShouldShowMapChoices())
 	{
-		WBP_MapChoice->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
-
-		/* Increasing value of counter for each map */
-		WBP_MapChoice->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
-		WBP_MapChoice->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
-		WBP_MapChoice->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
-
-		/* Turning on visibility of maps if value is higher than 0 */
-		if (GameStateReference->GetFarm() > 0) // Normal farm
-			{
-			WBP_MapChoice->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
-			}
-		else
+		if (GameStateReference->GetGameMode() == 0) // Normal Game mode
 		{
-			WBP_MapChoice->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+			UpdateMapChoice(WBP_MapChoice);
 		}
-		if (GameStateReference->GetWinterFarm() > 0) // Winter farm
-			{
-			WBP_MapChoice->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
-			}
-		else
+		else // Brawl
 		{
-			WBP_MapChoice->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+			UpdateMapChoice(WBP_MapChoiceBrawl);
 		}
-		if (GameStateReference->GetHoneyFarm() > 0) // Honey farm
-			{
-			WBP_MapChoice->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
-			}
-		else
-		{
-			WBP_MapChoice->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
-		}
+		
 	}
+	
 	/* Show timer after map vote */
-	WBP_MapChoice->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
+	if (GameStateReference->ShouldShowMapChoices())
+	{
+		if (GameStateReference->GetGameMode() == 0) // Normal Game mode
+			{
+				UpdateMapChoiceTimer(WBP_MapChoice);
+			}
+		else // Brawl
+			{
+				UpdateMapChoiceTimer(WBP_MapChoiceBrawl);
+			}
+		
+	}
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget)
+{
+	_MapChoiceWidget->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
+
+	/* Increasing value of counter for each map */
+	_MapChoiceWidget->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
+
+	/* Turning on visibility of maps if value is higher than 0 */
+	if (GameStateReference->GetFarm() > 0) // Normal farm
+		_MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+	
+	if (GameStateReference->GetWinterFarm() > 0) // Winter farm
+		_MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+	
+	if (GameStateReference->GetHoneyFarm() > 0) // Honey farm
+		_MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->GetFloatingIslandFarm() > 0) // Floating islands farm
+		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
+{
+	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
 	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
 	{
-		WBP_MapChoice->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
 }

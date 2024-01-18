@@ -79,8 +79,9 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	}
 
 	// Lower weapon durability
-	if (bIsOtherPlayerHit)
-	{
+	//if (bIsOtherPlayerHit)
+	//{
+
 		_Player->WeaponCurrentDurability--;
 		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
 		
@@ -91,7 +92,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 			//AttackTrail_NiagaraComponent->Deactivate();
 			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
-	}
+	//}
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
 

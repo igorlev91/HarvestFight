@@ -1,4 +1,5 @@
 
+
 #include "Prototype2/Gameplay/MovingPlatforms.h"
 
 // Sets default values
@@ -15,13 +16,20 @@ AMovingPlatforms::AMovingPlatforms()
 void AMovingPlatforms::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	SineHeightBounce = GetActorLocation();
+
+	SineTime = FMath::RandRange(SineStartTimeMin * 100, SineStartTimeMax * 100);
+	SineTime /= 100;
 }
 
 // Called every frame
 void AMovingPlatforms::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bDoSineWave)
+		SineWave(DeltaTime);
 
 	if (bDoMove)
 	{
@@ -121,5 +129,17 @@ void AMovingPlatforms::Rotate(float DeltaTime)
 {
 	FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
 	SetActorRotation(NewRotation);
+}
+
+void AMovingPlatforms::SineWave(float DeltaTime)
+{
+	SineTime += DeltaTime * Frequency;
+
+	const int SineHeight = SineHeightBounce.Z;
+	SineHeightBounce = GetActorLocation();
+	SineHeightBounce.Z = SineHeight;
+
+	const FVector NewLocation = SineHeightBounce + FVector(0.0f, 0.0f, Amplitude * FMath::Sin(SineTime));
+	SetActorLocation(NewLocation);
 }
 

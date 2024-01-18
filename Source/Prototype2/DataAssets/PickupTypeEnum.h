@@ -19,4 +19,15 @@ enum class EWeaponAnimation : uint8
 	Aspearagus,
 	HoneyStick,
 };
+
+/* Enum for passing debuffs into the characters debuff component */
+UENUM()
+enum class EDebuff : uint8
+{
+	None = 0,
+	Stun,
+	Daze, // Slow + "dizzy" movement
+	Slow,
+	Punch
+};
 class PROTOTYPE2_API PickupTypeEnum {};

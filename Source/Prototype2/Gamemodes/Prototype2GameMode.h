@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HHGamemode.h"
 #include "GameFramework/GameModeBase.h"
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2/Characters/Prototype2Character.h"
@@ -10,7 +11,7 @@
 #include "Prototype2GameMode.generated.h"
 
 UCLASS(minimalapi)
-class APrototype2GameMode : public AGameModeBase
+class APrototype2GameMode : public AHHGamemodeBase
 {
 	GENERATED_BODY()
 
@@ -41,6 +42,8 @@ protected:
 	void DisableControllerInputForAll();
 	void EnableControllerInputForAll();
 
+	void AttachCrownToCurrentWinner();
+
 	void LookOutForGameEnd();
 
 	void TeleportEveryoneToPodium();
@@ -65,6 +68,10 @@ protected:
 protected:
 	bool bHasGameFinishedLocal{};
 	bool bTpHasHappened{};
+	UPROPERTY(EditAnywhere)
+	float AutomaticCrownCheckFrequency{1.0f};
+	UPROPERTY(Replicated)
+	float AutomaticCrownCheckTimer{};
 	
 	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
 	class ASellBin* SellBinRef;
@@ -83,6 +90,12 @@ protected:
 
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
 	class APreGameArena* PreGameArena{};
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class ADataAssetWorldOverride* DataAssetWorldOverride{};
+	
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class ACrown* KingCrown{};
 
 	/* Player start positions */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")

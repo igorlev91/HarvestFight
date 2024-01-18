@@ -110,7 +110,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
 			if (IdentityInterface.IsValid())
 			{
-				TSharedPtr<const FUniqueNetId> UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
+				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
 					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
@@ -123,7 +123,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
 			if (IdentityInterface.IsValid())
 			{
-				TSharedPtr<const FUniqueNetId> UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
+				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
 					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);

@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Widget_LobbyCharacterSelection.h"
@@ -17,7 +16,7 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	
-	PlayerImage->SetBrushFromTexture(Texture_CowRed);
+	//PlayerImage->SetBrushFromTexture(Texture_CowRed);
 
 	if (OwningController)
 	{
@@ -28,38 +27,48 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 
 void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 {
+	if (!OwningController)
+	{
+		return;
+	}
+	
 	switch(IdealDetails.Character)
 	{
 	case ECharacters::COW:
 		{
-			if (CowTextures.Num() > 0)
+			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
 			{
-				PlayerImage->SetBrushFromTexture(CowTextures[0]);
+				PlayerImage->SetBrushFromTexture(Player->CowTextures[(int32)Player->Details.Colour]);
 			}
 			break;
 		}
 	case ECharacters::CHICKEN:
 		{
-			if (ChickenTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(ChickenTextures[0]);
+			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
+			{
+				PlayerImage->SetBrushFromTexture(Player->ChickenTextures[(int32)Player->Details.Colour]);
+			}
 			break;
 		}
 	case ECharacters::DUCK:
 		{
-			if (DuckTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(DuckTextures[0]);
+			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
+			{
+				PlayerImage->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
+			}
 			break;
 		}
 	case ECharacters::PIG:
 		{
-			if (PigTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(PigTextures[0]);
+			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
+			{
+				PlayerImage->SetBrushFromTexture(Player->PigTextures[(int32)Player->Details.Colour]);
+			}
 			break;
 		}
 	default:
 		{
-			if (CowTextures.Num() > 0)
-				PlayerImage->SetBrushFromTexture(CowTextures[0]);
+			UE_LOG(LogTemp, Warning, TEXT("Error: Widget_LobbyCharacterSelection: Unable to determine character type"));
 			break;
 		}
 	}
@@ -90,6 +99,7 @@ void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRigh
 		newColour = NumberOfColours - 1;
 	}
 	CurrentColourSelection = (EColours)newColour;
+	IdealDetails.Colour = CurrentColourSelection;
 	
 	SetCharacterColourFromSelection(NumberOfColours);
 
@@ -176,6 +186,7 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 
 			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterSubColour = SkinColourData->SubReds[(int16)IdealDetails.Character];
+
 			
 			break;
 		}

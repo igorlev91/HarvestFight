@@ -8,10 +8,13 @@
 #include "Prototype2/Gameplay/RadialPlot.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/Gameplay/PreGameArena.h"
+#include "Prototype2/DataAssets/DataAssetWorldOverride.h"
+#include "Prototype2/DataAssets/WorldOverrideData.h"
 #include "Blueprint/UserWidget.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
@@ -45,31 +48,7 @@ void APrototype2GameMode::BeginPlay()
 		Gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
 	}
 	
-	if (!EndGamePodium)
-	{
-		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
-		if (NewActor)
-		{
-			EndGamePodium = Cast<AEndGamePodium>(NewActor);
-		}
-	}
 
-	if (!SellBinRef)
-	{
-		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
-		if (NewActor)
-		{
-			SellBinRef = Cast<ASellBin>(NewActor);
-		}
-	}
-
-	if (!PreGameArena)
-	{
-		if (AActor* PreGameActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass()))
-		{
-			PreGameArena = Cast<APreGameArena>(PreGameActor);
-		}
-	}
 }
 
 void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
@@ -139,7 +118,56 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 
-	//KeepPlayersAtSpawnPositionUntilStart();
+	if (!EndGamePodium)
+	{
+		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
+		if (NewActor)
+		{
+			EndGamePodium = Cast<AEndGamePodium>(NewActor);
+		}
+	}
+
+	if (!SellBinRef)
+	{
+		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
+		if (NewActor)
+		{
+			SellBinRef = Cast<ASellBin>(NewActor);
+		}
+	}
+
+	if (!PreGameArena)
+	{
+		if (AActor* PreGameActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass()))
+		{
+			PreGameArena = Cast<APreGameArena>(PreGameActor);
+		}
+	}
+	
+	if (!DataAssetWorldOverride)
+	{
+		if (AActor* DataAssetWorldOverrideActor = UGameplayStatics::GetActorOfClass(GetWorld(), ADataAssetWorldOverride::StaticClass()))
+		{
+			DataAssetWorldOverride = Cast<ADataAssetWorldOverride>(DataAssetWorldOverrideActor);
+			if (DataAssetWorldOverride->WorldOverrideData)
+			{
+				if (DataAssetWorldOverride->WorldOverrideData->KingCrown)
+					KingCrown = GetWorld()->SpawnActor<ACrown>(DataAssetWorldOverride->WorldOverrideData->KingCrown);
+				else
+					KingCrown = GetWorld()->SpawnActor<ACrown>(ACrown::StaticClass());
+			}
+		}
+	}
+
+	if (AutomaticCrownCheckTimer <= 0)
+	{
+		AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
+		AttachCrownToCurrentWinner();
+	}
+	else
+	{
+		AutomaticCrownCheckTimer -= _DeltaSeconds;
+	}
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* _PlayerController)
@@ -186,6 +214,47 @@ void APrototype2GameMode::EnableControllerInputForAll()
 	}
 }
 
+void APrototype2GameMode::AttachCrownToCurrentWinner()
+{
+	if (!HasAuthority())
+		return;
+	
+	if (!KingCrown)
+		return;
+		
+	UE_LOG(LogTemp, Warning, TEXT("Attempt to attach Crown To Winning Player") );
+
+	ACharacter* WinningPlayerCharacter{nullptr};
+	APrototype2PlayerState* WinningPlayer{nullptr};
+	for(auto Player : Server_PlayerStates)
+	{
+		APlayerController* Controller = Player.Get()->GetPlayerController();
+		if (!Controller)
+			continue;
+
+		ACharacter* Character = Controller->GetCharacter();
+		if (!Character)
+			continue;
+
+		if (!WinningPlayerCharacter)
+		{
+			WinningPlayerCharacter = Character;
+			WinningPlayer = Player.Get();
+		}
+		else if (WinningPlayer && WinningPlayer->Coins >= Player->Coins)
+		{
+			WinningPlayerCharacter = Character;
+			WinningPlayer = Player.Get();
+		}
+	}
+
+	if (WinningPlayerCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Attach Crown To Winning Player") );
+		KingCrown->AttachToComponent(WinningPlayerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	}
+}
+
 void APrototype2GameMode::LookOutForGameEnd()
 {
 	if (GameStateRef)
@@ -220,6 +289,9 @@ void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(APrototype2GameMode, EndGamePodium);
 	DOREPLIFETIME(APrototype2GameMode, SellBinRef);
 	DOREPLIFETIME(APrototype2GameMode, PreGameArena);
+	DOREPLIFETIME(APrototype2GameMode, KingCrown);
+	DOREPLIFETIME(APrototype2GameMode, DataAssetWorldOverride);
+	DOREPLIFETIME(APrototype2GameMode, AutomaticCrownCheckTimer);
 }
 
 void APrototype2GameMode::TeleportEveryoneToPodium()
@@ -459,7 +531,7 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
 			if (IdentityInterface.IsValid())
 			{
-				TSharedPtr<const FUniqueNetId> UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
+				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
 					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
@@ -476,7 +548,7 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
 			if (IdentityInterface.IsValid())
 			{
-				TSharedPtr<const FUniqueNetId> UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
+				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
 					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);

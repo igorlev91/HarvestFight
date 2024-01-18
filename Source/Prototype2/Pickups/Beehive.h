@@ -37,6 +37,11 @@ public:
 	float TimeTillCollect = 15.0f;
 	float TrackerTimeTillCollect;
 
+	UPROPERTY(EditAnywhere)
+	int MaxHarvestableHoney = 3;
+	UPROPERTY(VisibleAnywhere)
+	int HarvestedHoney;
+
 	// Bees
 	class AFlock* Bees;
 	UPROPERTY(EditDefaultsOnly)

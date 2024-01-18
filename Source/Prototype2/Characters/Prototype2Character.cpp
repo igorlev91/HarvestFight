@@ -1,6 +1,8 @@
 
 
 #include "Prototype2Character.h"
+
+#include "DebuffComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -86,6 +88,9 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, AttackTimer);
 	DOREPLIFETIME(APrototype2Character, InteractTimer);
 	DOREPLIFETIME(APrototype2Character, ClaimedPlot);
+	DOREPLIFETIME(APrototype2Character, DebuffComponent);
+	DOREPLIFETIME(APrototype2Character, bAllowMovementFromInput);
+	DOREPLIFETIME(APrototype2Character, bHasSprintingStopped);
 	
 	// Niagara Components
 	DOREPLIFETIME(APrototype2Character, Dizzy_NiagaraComponent);
@@ -176,7 +181,7 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	
 	CheckForFloorSurface();
 	
-	SetHoldingGold(bIsHoldingGold);
+	// UpdateCharacterSpeed(bIsHoldingGold);
 	
 	HandleAttackChargeBehavior(_DeltaSeconds);
 	
@@ -233,8 +238,12 @@ void APrototype2Character::Sprint()
 
 void APrototype2Character::ChargeAttack()
 {
-	//UpdateDecalDirection(false);
 	Server_ChargeAttack();
+}
+
+void APrototype2Character::CancelChargeAttack()
+{
+	Server_CancelChargeAttack();
 }
 
 void APrototype2Character::ReleaseAttack()
@@ -323,90 +332,31 @@ void APrototype2Character::Server_CountdownTimers_Implementation(float _DeltaSec
 	DeltaDecrement(AttackTimer, _DeltaSeconds);
 	DeltaDecrement(CanSprintTimer, _DeltaSeconds);
 	DeltaDecrement(SprintTimer, _DeltaSeconds);
+	if (SprintTimer <= 0.0f && !bHasSprintingStopped)
+	{
+		bHasSprintingStopped = true;
+		UpdateCharacterSpeed(bIsHoldingGold);
+	}
 }
 
 void APrototype2Character::ExecuteAttack(float _AttackSphereRadius)
 {
 	Weapon->ExecuteAttack(_AttackSphereRadius, this);
-	
-	// // Get a vector infront of the character for the attack sphere to spawn at
-	// const FVector InFrontOfPlayer = GetActorLocation() + (GetActorForwardVector() * _AttackSphereRadius) + (GetActorForwardVector() * CurrentWeaponData->WeaponReach);
-	//
-	// // create a collision sphere
-	// const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
-	//
-	// // Trigger the VFX in blueprint
-	// const FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, GetMesh()->GetComponentLocation().Z};
-	// TriggerAttackVFX(DownVector, _AttackSphereRadius, AttackChargeAmount);	
-	//
-	// // create tarray for catching hit results
-	// TArray<FHitResult> OutHits;
-	//
-	// // Set the sweep to stationary
-	// const FVector SweepStart = InFrontOfPlayer;
-	// const FVector SweepEnd = InFrontOfPlayer;
-	//
-	// // check if something got hit in the sweep
-	// const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
-	//
-	// // For holding if anyone was hit to degrade weapon later
-	// bool bIsOtherPlayerHit = false;
-	//
-	// if (bHasHitResult)
-	// {
-	// 	// Check if the hits were players or sell bin
-	// 	for (auto& HitResult : OutHits)
-	// 	{
-	// 		if (auto* HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
-	// 		{
-	// 			if (HitPlayerCast != this)
-	// 			{
-	// 				HitPlayerCast->GetHit(AttackChargeAmount, GetActorLocation(), CurrentWeaponData);
-	//
-	// 				bIsOtherPlayerHit = true;
-	// 			}
-	// 		}
-	// 		else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
-	// 		{
-	// 			HitSellBinCast->GetHit(AttackChargeAmount, MaxAttackCharge, GetActorLocation());
-	// 		}
-	// 	}
-	// }
-	//
-	// // Lower weapon durability
-	// if (bIsOtherPlayerHit)
-	// {
-	// 	WeaponCurrentDurability--;
-	// 	PlayerHUDRef->SetWeaponDurability(WeaponCurrentDurability);
-	// 	
-	// 	if (WeaponCurrentDurability <= 0)
-	// 	{
-	// 		Multi_DropWeapon();
-	//
-	// 		//AttackTrail_NiagaraComponent->Deactivate();
-	// 		DeActivateParticleSystemFromEnum(EParticleSystem::AttackTrail);
-	// 	}
-	// }
-	//
-	// // Todo: is this teh weapon cooldown?
-	// // Reset Attack Timer
-	// AttackTimer = AttackTimerTime;
-	//
-	// // Reset Attack variables
-	// bIsChargingAttack = false;
-	// AttackChargeAmount = 0.0f;
-	//
-	// PlaySoundAtLocation(GetActorLocation(), ExecuteCue);
-	//
-	// // Stop the player Interacting while "executing attack"
-	// InteractTimer = InteractTimerTime;
-	//
-	// bCanAttack = true;
-	//
-	// Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));//("WeaponHeldSocket"));
 }
 
-void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale)
+void APrototype2Character::SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale)
+{
+	Server_SetCharacterSpeed(_WalkSpeed, _SprintSpeed, _BaseAnimationRateScale);
+}
+
+void APrototype2Character::Server_SetCharacterSpeed_Implementation(float _WalkSpeed, float _SprintSpeed,
+																   float _BaseAnimationRateScale)
+{
+	Multi_SetCharacterSpeed(_WalkSpeed, _SprintSpeed, _BaseAnimationRateScale);
+}
+
+void APrototype2Character::Multi_SetCharacterSpeed_Implementation(float _WalkSpeed, float _SprintSpeed,
+	float _BaseAnimationRateScale)
 {
 	if (!HasIdealRole())
 		return;
@@ -422,7 +372,6 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 			AnimationData->SprintHoldingItem &&
 			AnimationData->SprintWithWeapon)
 		{
-			//RunAnimation->RateScale = _BaseAnimationRateScale;
 			AnimationData->Run->RateScale = _BaseAnimationRateScale;
 			AnimationData->RunWithWeapon->RateScale = _BaseAnimationRateScale;
 			AnimationData->Sprint->RateScale = _BaseAnimationRateScale;
@@ -433,7 +382,7 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 		DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 	}
 	else // If Sprinting
-	{
+		{
 		GetCharacterMovement()->MaxWalkSpeed = _SprintSpeed;
 		
 		if (AnimationData->Run &&
@@ -442,7 +391,6 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 			AnimationData->SprintHoldingItem &&
 			AnimationData->SprintWithWeapon)
 		{
-			//RunAnimation->RateScale = _BaseAnimationRateScale * SprintRateScaleScalar;
 			AnimationData->Run->RateScale = _BaseAnimationRateScale * SprintRateScaleScalar;
 			AnimationData->RunWithWeapon->RateScale = _BaseAnimationRateScale * SprintRateScaleScalar;
 			AnimationData->Sprint->RateScale = _BaseAnimationRateScale * SprintRateScaleScalar;
@@ -453,7 +401,7 @@ void APrototype2Character::UpdateCharacterSpeed(float _WalkSpeed, float _SprintS
 		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 		ActivateParticleSystemFromEnum(EParticleSystems::Sweat);
 		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
-	}
+		}
 	
 	if (CanSprintTimer <= 0.0f)
 	{
@@ -551,6 +499,14 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 {
 	//UpdateDecalDirection(false);
 	
+	if (DebuffComponent)
+	{
+		if (DebuffComponent->CurrentDebuff == EDebuff::None)
+		{
+			DebuffComponent->ApplyDebuff(_OtherWeaponData->Debuff, _AttackCharge);
+		}
+	}
+	
 	// Knockback
 	FVector KnockAway = (GetActorUpVector() * _OtherWeaponData->KnockUpMultiplier) + (GetActorLocation() - _AttackerLocation).GetSafeNormal();
 	
@@ -588,6 +544,11 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		ActivateParticleSystemFromEnum(EParticleSystems::Attack);
+	}
+
+	if (bIsChargingAttack)
+	{
+		CancelChargeAttack();
 	}
 }
 
@@ -684,7 +645,8 @@ void APrototype2Character::InitMiscComponents()
 	AttackAreaIndicatorMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	AttackAreaIndicatorMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	AttackAreaIndicatorMesh->SetHiddenInGame(true);
-	
+
+	// Charge attack audio
 	ChargeAttackAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("ChargeAttackAudioComponent"));
 	ChargeAttackAudioComponent->SetIsReplicated(true);
 	ChargeAttackAudioComponent->SetupAttachment(RootComponent);
@@ -702,6 +664,10 @@ void APrototype2Character::InitMiscComponents()
 	PlayerNameWidgetComponent->SetupAttachment(RootComponent);
 	PlayerNameWidgetComponent->SetIsReplicated(false);
 	PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Debuff component
+	DebuffComponent = CreateDefaultSubobject<UDebuffComponent>("DebuffComponent");
+	DebuffComponent->SetIsReplicated(true);
 }
 
 void APrototype2Character::UpdateDecalAngle()
@@ -963,7 +929,7 @@ void APrototype2Character::SetClaimedPlot(ARadialPlot* _Plot)
 
 bool APrototype2Character::IsSprinting()
 {
-	return FMath::RoundToInt(GetMovementComponent()->GetMaxSpeed()) == FMath::RoundToInt(SprintSpeed);
+	return SprintTimer > 0.0f;//FMath::RoundToInt(GetMovementComponent()->GetMaxSpeed()) == FMath::RoundToInt(SprintSpeed);
 }
 
 void APrototype2Character::CheckForFloorSurface()
@@ -1011,6 +977,9 @@ void APrototype2Character::CheckForFloorSurface()
 
 void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation)
 {
+	if (!HasIdealRole())
+		return;
+	
 	Server_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
 }
 
@@ -1121,6 +1090,18 @@ void APrototype2Character::Multi_SetPlayerAimingMovement_Implementation(bool _bI
 	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
 	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
+}
+
+void APrototype2Character::Server_CancelChargeAttack_Implementation()
+{
+	Multi_CancelChargeAttack();
+}
+
+void APrototype2Character::Multi_CancelChargeAttack_Implementation()
+{
+	// Tell the animation blueprint the charge attack is cancelled
+	OnChargeCancelledDelegate.Broadcast();
+	ResetAttack();
 }
 
 void APrototype2Character::ResetAttack()
@@ -1308,15 +1289,21 @@ void APrototype2Character::ClearInteractionText()
 	PlayerHUDRef->SetHUDInteractText("");
 }
 
-void APrototype2Character::SetHoldingGold(bool _HoldingGold)
+void APrototype2Character::UpdateCharacterSpeed(bool _HoldingGold)
 {
 	if (!HasIdealRole())
 		return;
 	
+	if (!DebuffComponent)
+		return;
+	
+	if (DebuffComponent->CurrentDebuff != EDebuff::None)
+		return;
+	
 	if (_HoldingGold)
-		UpdateCharacterSpeed(GoldPlantSpeed, WalkSpeed, GoldSlowRateScale);
+		SetCharacterSpeed(GoldPlantSpeed, WalkSpeed, GoldSlowRateScale);
 	else
-		UpdateCharacterSpeed(WalkSpeed, SprintSpeed, WalkRateScale);
+		SetCharacterSpeed(WalkSpeed, SprintSpeed, WalkRateScale);
 }
 
 void APrototype2Character::HandleAttackChargeBehavior(float _DeltaSeconds)
@@ -1428,10 +1415,14 @@ void APrototype2Character::Server_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_Sprint_Implementation()
 {
-	if (CanSprintTimer <= 0.0f && !bIsChargingAttack)
+	if (CanSprintTimer <= 0.0f &&
+		!bIsChargingAttack &&
+		DebuffComponent->CurrentDebuff == EDebuff::None)
 	{
 		SprintTimer = SprintTime;
 		CanSprintTimer = CanSprintTime;
+		bHasSprintingStopped = false;
+		UpdateCharacterSpeed(bIsHoldingGold);
 	}
 }
 
@@ -1472,7 +1463,7 @@ void APrototype2Character::Server_ChargeAttack_Implementation()
 
 		if (Weapon)
 		{
-			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));//FName("WeaponAttackingSocket"));
+			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 		}
 		Weapon->ChargeAttack(this);
 	}
@@ -1562,6 +1553,18 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_DropItem_Implementation()
 {
+	if (!HasIdealRole())
+		return;
+
+	if (!HeldItem)
+		return;
+	
+	if (!HeldItem->ItemComponent)
+		return;
+	
+	if (!HeldItem->ItemComponent->Mesh)
+		return;
+	
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 		
 	// Set HUD image
@@ -1612,6 +1615,8 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	HeldItem = nullptr;
 
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
+
+	UpdateCharacterSpeed(bIsHoldingGold);
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item)
@@ -1708,6 +1713,8 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
 	default:
 		break;
 	}
+	
+	UpdateCharacterSpeed(bIsHoldingGold);
 }
 
 void APrototype2Character::Multi_DropWeapon_Implementation()

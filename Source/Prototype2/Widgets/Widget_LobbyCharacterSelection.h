@@ -48,6 +48,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCharacterColourFromSelection(int32 _NumberOfColors);
+	
 	/* Public Variables */
 public:
 	UPROPERTY()
@@ -58,26 +59,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PlayerColourImage;
-
-	/* Character image textures */
-	/* Cow */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Texture_CowRed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Texture_CowBlue;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Texture_CowGreen;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Texture_CowYellow;
-
-	UPROPERTY(EditAnywhere)
-	TArray<UTexture2D*> CowTextures;
-	UPROPERTY(EditAnywhere)
-	TArray<UTexture2D*> ChickenTextures;
-	UPROPERTY(EditAnywhere)
-	TArray<UTexture2D*> PigTextures;
-	UPROPERTY(EditAnywhere)
-	TArray<UTexture2D*> DuckTextures;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails IdealDetails{};

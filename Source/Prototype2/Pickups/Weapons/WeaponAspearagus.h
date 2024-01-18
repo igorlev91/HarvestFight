@@ -12,6 +12,9 @@ class PROTOTYPE2_API UWeaponAspearagus : public UWeapon
 public:
 	/* Allow rotation while player isn't moving for aiming purposes */
 	virtual void ChargeAttack(APrototype2Character* _Player) override;
+
+	/* When player is hit while charging */
+	virtual void ChargeAttackCancelled(APrototype2Character* _Player) override;
 	
 	/* Play full charge or normal attack animation */
 	virtual void ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player) override;

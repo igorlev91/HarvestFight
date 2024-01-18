@@ -111,6 +111,6 @@ void AFertiliserSpawner::SpawnFertiliser()
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	SpawnedFertiliser->SetActorRelativeLocation({0.0f, 0.0f, 50.0f});
+	SpawnedFertiliser->SetActorRelativeLocation({0.0f, 0.0f, SpawnHeight});
 }
 

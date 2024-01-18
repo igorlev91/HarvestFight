@@ -1,5 +1,4 @@
 
-
 #include "WeaponAspearagus.h"
 
 #include "AspearagusProjectile.h"
@@ -14,6 +13,12 @@ void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
 	Super::ChargeAttack(_Player);
 
 	_Player->Multi_SetPlayerAimingMovement(true);
+}
+
+void UWeaponAspearagus::ChargeAttackCancelled(APrototype2Character* _Player)
+{
+	Super::ChargeAttackCancelled(_Player);
+	_Player->Multi_SetPlayerAimingMovement(false);
 }
 
 void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
@@ -44,6 +49,8 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	
 	Server_SpawnProjectile(_Player, _AttackSphereRadius);
 	
+	_Player->OnExecuteAttackDelegate.Broadcast();
+
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
 		
@@ -89,7 +96,7 @@ void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Characte
 		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponData->WeaponMesh,
 												5000.0f, 2.0f, _AttackSphereRadius);
 		NewAspearagusProjectile->SetOwner(_Player);
-		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile,ProjectileTransform);
+		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile, ProjectileTransform);
 		NewAspearagusProjectile->SetReplicates(true);
 		NewAspearagusProjectile->SetReplicateMovement(true);
 	}

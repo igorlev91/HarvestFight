@@ -39,6 +39,10 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* HoneyLevelCounter;
 
+	/* Honey Farm vote counter */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UTextBlock* FloatingIslandsLevelCounter;
+
 	/* Timer after players have voted on map */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* MapChoiceTimer;

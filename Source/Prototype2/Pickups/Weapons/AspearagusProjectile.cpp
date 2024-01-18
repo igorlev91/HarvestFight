@@ -1,4 +1,5 @@
 ﻿
+
 #include "AspearagusProjectile.h"
 
 #include "Kismet/KismetSystemLibrary.h"
@@ -69,12 +70,6 @@ void AAspearagusProjectile::CheckForHitPlayers()
 	// check if something got hit in the sweep
 	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
 
-	// Debug sphere showing the cast
-	//DrawDebugSphere(GetWorld(), SweepStart, AttackSphereRadius, 50, FColor::Green, false, 1.0f);
-	
-	// For holding if anyone was hit to degrade weapon later
-	bool bIsOtherPlayerHit = false;
-	
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
@@ -85,8 +80,6 @@ void AAspearagusProjectile::CheckForHitPlayers()
 				if (HitPlayerCast != OwningPlayer)
 				{
 					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponData);
-
-					bIsOtherPlayerHit = true;
 				}
 			}
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))

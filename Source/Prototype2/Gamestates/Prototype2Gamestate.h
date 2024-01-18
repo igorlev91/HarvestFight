@@ -80,4 +80,6 @@ private:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 FinalConnectionCount{0};
+
+
 };

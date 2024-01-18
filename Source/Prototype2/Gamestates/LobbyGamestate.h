@@ -15,7 +15,8 @@ enum class EFarm : uint8
 	NONE,
 	FARM,
 	WINTERFARM,
-	HONEYFARM
+	HONEYFARM,
+	FLOATINGISLANDSFARM
 };
 
 UCLASS()
@@ -44,10 +45,16 @@ public:
 	int32 GetFarm() const;
 	int32 GetWinterFarm() const;
 	int32 GetHoneyFarm() const;
+	int32 GetFloatingIslandFarm() const;
 
 
 	bool HasMapBeenChosen() const;
 	int32 GetMapChoiceTotalLengthSeconds() const;
+
+	UFUNCTION(BlueprintCallable)
+	void SetGameMode(int32 _Mode);
+
+	int32 GetGameMode();
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
@@ -61,7 +68,7 @@ private:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 
 	/* Picks a random map to play for the list of those maps most voted for */
-	void PickRandomMapToPlay();
+	void PickMapToPlay();
 
 	/* Private Variables */
 private:
@@ -105,7 +112,12 @@ private:
 	int32 WinterFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 HoneyFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 FloatingIslandFarm{0};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 GameMode{};
 };

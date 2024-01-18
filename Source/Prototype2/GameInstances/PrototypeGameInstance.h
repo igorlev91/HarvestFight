@@ -50,6 +50,9 @@ public:
 	ECharacters Character{ECharacters::COW};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EColours Colour{EColours::RED};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector4 CharacterColour{228.0f/255.0f,154.0f/255.0f,154.0f/255.0f,1.000000};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

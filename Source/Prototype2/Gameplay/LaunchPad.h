@@ -22,10 +22,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LaunchPlayer(APrototype2Character* _Player);
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
 	float ForwardStrength = 3000.0f;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere)
 	float VerticalStrength = 3000.0f;
 protected:
 	// Called when the game starts or when spawned

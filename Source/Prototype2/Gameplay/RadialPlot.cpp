@@ -73,7 +73,7 @@ void ARadialPlot::SetPlayerID(int32 _Id)
 	
 	for(auto growSpot : GrowSpots)
 	{
-		growSpot->Player_ID = _Id;
+		growSpot->OwningPlayerID = _Id;
 	}
 	
 	if (HasAuthority())
@@ -119,10 +119,10 @@ void ARadialPlot::SpawnGrowSpots(int32 _Id)
 				auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, RootComponent->GetComponentTransform());
 				newPlot->SetReplicates(true);
 				newPlot->SetOwner(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-				newPlot->SetRadialReferance(this);
+				newPlot->RadialPlot = this;
 				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
-				newPlot->Player_ID = _Id;
+				newPlot->OwningPlayerID = _Id;
 				GrowSpots.Add(newPlot);
 			}
 		}
@@ -142,7 +142,9 @@ void ARadialPlot::SpawnGrowSpots(int32 _Id)
 
 void ARadialPlot::UpdateBeehiveFlowers()
 {
-
+	if (GrowSpots.IsEmpty())
+		return;
+	
 	std::vector<ABeehive*> BeehiveVector;
 	for (int i = 0; i < GrowSpots.Num(); i++)
 	{
@@ -155,15 +157,12 @@ void ARadialPlot::UpdateBeehiveFlowers()
 
 	for (int i = 0; i < GrowSpots.Num(); i++)
 	{
-		if (!GrowSpots[i]->Plant)
-		{
-			
-		}
-		else if (GrowSpots[i]->Plant->PlantData->PickupType == EPickupDataType::FlowerData)
+		if (GrowSpots[i]->GrowingItemRef &&
+			GrowSpots[i]->GrowingItemRef->PlantData->PickupType == EPickupDataType::FlowerData)
 		{
 			for (int j = 0; j < BeehiveVector.size(); j++)
 			{
-				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->Plant->PlantData->FlowerValue;
+				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->GrowingItemRef->PlantData->FlowerValue;
 			}
 		}
 	}

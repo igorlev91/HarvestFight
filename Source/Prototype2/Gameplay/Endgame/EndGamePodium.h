@@ -26,6 +26,12 @@ public:
 	class ACameraActor* EndGameCamera{nullptr};
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ACameraActor> EndGameCameraPrefab;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Podium Camera")
+	FVector CameraPosition{560.0f,90.0f,170.0f};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Podium Camera")
+	FRotator CameraRotation{5.63f,185.6f,0};
+	
 protected:
 	AEndGamePodium();
 	virtual void BeginPlay() override;

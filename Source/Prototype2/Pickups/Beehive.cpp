@@ -26,6 +26,12 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	{
 		return;
 	}
+
+	if (HarvestedHoney >= MaxHarvestableHoney)
+	{
+		return;
+	}
+	
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(Plant, FVector(0, 0, 0), {});
 	Honey->PlantData = HoneyData;
 	Honey->SetPlantData(Honey->PlantData);
@@ -37,6 +43,7 @@ void ABeehive::Interact(APrototype2Character* _Player)
 
 	bIsReadyToCollect = false;
 	TrackerTimeTillCollect = 0;
+	HarvestedHoney += 1;
 }
 
 void ABeehive::ClientInteract(APrototype2Character* _Player)

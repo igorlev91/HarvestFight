@@ -2,11 +2,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HHGamemode.h"
 #include "GameFramework/GameModeBase.h"
+#include "Prototype2/InteractInterface.h"
 #include "LobbyGamemode.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API ALobbyGamemode : public AGameModeBase
+class PROTOTYPE2_API ALobbyGamemode : public AHHGamemodeBase
 {
 	GENERATED_BODY()
 	/* Public Functions */

@@ -7,28 +7,34 @@
 #include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
-class UPlantData;
-/* Enum for items that can be picked up */
-UENUM(BlueprintType)
-enum EPickup
+USTRUCT(BlueprintType)
+struct FEmphasizer
 {
-	None,
-	Carrot,
-	CarrotSeed,
-	Cabbage,
-	CabbageSeed,
-	Mandrake,
-	MandrakeSeed,
-	Broccoli,
-	BroccoliSeed,
-	Daikon,
-	DaikonSeed,
-	Radish,
-	RadishSeed,
-	Weapon,
-	WeaponSeed,
-	NoWeapon
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	class UImage* Image = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	FVector2D OriginalScale = {1.0f, 1.0f};
+	UPROPERTY(BlueprintReadWrite)
+	FVector2D DesiredScale = {2.0f, 2.0f};
+	UPROPERTY(BlueprintReadWrite)
+	float Speed = 2.0f;
+	UPROPERTY(BlueprintReadWrite)
+	bool bHasEmphasized = false;
+
+	// == operator overloaded to be able to remove from array
+	bool operator==(FEmphasizer const &B) const
+	{
+		return (this->Image == B.Image &&
+				this->OriginalScale == B.OriginalScale &&
+				this->DesiredScale == B.DesiredScale &&
+				this->Speed == B.Speed &&
+				this->bHasEmphasized == B.bHasEmphasized);
+	}
 };
+
+class UPlantData;
 
 UCLASS()
 class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
@@ -79,8 +85,12 @@ public:
 	/* Sets the player icon based on SetPlayerIcons function */
 	UFUNCTION(BlueprintCallable)
 	UTexture2D* SetIcon(APrototype2PlayerState* _Player);
-	
+
+	void UpdateEmphasizers(float _DeltaTime);
 public:
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FEmphasizer> Emphasizers;
+	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
@@ -126,7 +136,7 @@ public:
 
 	/* Player Icons */
 	UPROPERTY(EditAnywhere)
-	TArray<class UTexture2D*> PlayerIcons{{},{},{},{}, {}, {}, {}, {}};
+	TArray<class UTexture2D*> PlayerIcons{{}, {}, {}, {}, {}, {}};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P1Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -322,8 +332,3 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Duck_Yellow_Texture;
 };
-
-
-
-
-

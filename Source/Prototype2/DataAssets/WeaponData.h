@@ -74,4 +74,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
 	UStaticMesh* AOEIndicatorMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
+	EDebuff Debuff = EDebuff::None;
 };
