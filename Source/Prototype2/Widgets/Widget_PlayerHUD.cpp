@@ -33,17 +33,6 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	{
 		GameStateReference = GameState;
 	}
-
-	/* Set all rings to white */
-	if (RingTexture)
-	{
-		P1Ring->SetBrushFromTexture(RingTexture);
-		P2Ring->SetBrushFromTexture(RingTexture);
-		P3Ring->SetBrushFromTexture(RingTexture);
-		P4Ring->SetBrushFromTexture(RingTexture);
-		P5Ring->SetBrushFromTexture(RingTexture);
-		P6Ring->SetBrushFromTexture(RingTexture);
-	}
 	
 	/* Add rings to array */
 	Rings.Add(P1Ring);
@@ -53,16 +42,26 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	Rings.Add(P5Ring);
 	Rings.Add(P6Ring);
 
-	/* Set ring colours to player colour */
-	for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+	// Add icons to array
+	Icons.Add(P1Icon);
+	Icons.Add(P2Icon);
+	Icons.Add(P3Icon);
+	Icons.Add(P4Icon);
+	Icons.Add(P5Icon);
+	Icons.Add(P6Icon);
+
+	/* Add Crowns to array*/
+	Crowns.Add(P1Crown);
+	Crowns.Add(P2Crown);
+	Crowns.Add(P3Crown);
+	Crowns.Add(P4Crown);
+	Crowns.Add(P5Crown);
+	Crowns.Add(P6Crown);
+
+	/* Set crowns to hidden on game start */
+	for (int i = 0; i < Crowns.Num(); i++)
 	{
-		if (auto Player = GameStateReference->Server_Players[i])
-		{
-			if (Rings.Num() > i)
-			{
-				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
-			}
-		}
+		Crowns[i]->SetVisibility(ESlateVisibility::Hidden);
 	}
 	
 	/* Set starting pickup item */
@@ -182,9 +181,6 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		}
 		
 		// Updating points/coins
-		//if (!GetOwningPlayerPawn()->HasAuthority())
-		//	UE_LOG(LogTemp, Warning, TEXT("Players Array Size = %s"), *FString::FromInt(GameStateRef->PlayerArray.Num()));
-
 		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 		{
 			if (auto Player = GameStateReference->Server_Players[i])
@@ -213,11 +209,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player1ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						
-						//if (GameStateRef->Server_Players.Num() >= 1)
-						//	P1Icon->SetBrushFromTexture(PlayerIcons[0]);
-						SetPlayerIcons(1, Player);
-						
+
 						break;
 					}
 				case 1:
@@ -236,10 +228,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player2ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						
-						//if (GameStateRef->Server_Players.Num() >= 2)
-						//	P2Icon->SetBrushFromTexture(PlayerIcons[1]);
-						SetPlayerIcons(2, Player);
+
 						break;
 					}
 				case 2:
@@ -258,9 +247,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player3ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						//if (GameStateRef->Server_Players.Num() >= 3)
-						//	P3Icon->SetBrushFromTexture(PlayerIcons[2]);
-						SetPlayerIcons(3, Player);
+
 						break;
 					}
 				case 3:
@@ -279,9 +266,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player4ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						//if (GameStateRef->Server_Players.Num() >= 4)
-						//	P4Icon->SetBrushFromTexture(PlayerIcons[3]);
-						SetPlayerIcons(4, Player);
+
 						break;
 					}
 				case 4:
@@ -300,7 +285,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player5ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						SetPlayerIcons(5, Player);
+
 						break;
 					}
 				case 5:
@@ -319,8 +304,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						{
 							Player6ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
 						}
-						SetPlayerIcons(6, Player);
 						break;
+;
 					}
 				default:
 					{
@@ -361,6 +346,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	InteractionImagePulse(InDeltaTime);
 
 	UpdateEmphasizers(InDeltaTime);
+	
+	UpdatePlayerIcons();
 }
 
 void UWidget_PlayerHUD::EnableDisableMenu()
@@ -378,6 +365,8 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 void UWidget_PlayerHUD::UpdatePickupUI(UTexture2D* _PickupTexture)
 {
 	OverlayPickup->SetVisibility(ESlateVisibility::Visible);
+	FVector2D ImageSize ={(float)_PickupTexture->GetSizeX(), (float)_PickupTexture->GetSizeY()};
+	PickupImage->SetDesiredSizeOverride(ImageSize);
 	PickupImage->SetBrushFromTexture(_PickupTexture);
 }
 
@@ -441,130 +430,63 @@ void UWidget_PlayerHUD::SetWeaponDurability(int32 _Durability)
 {
 }
 
-void UWidget_PlayerHUD::SetPlayerIcons(int32 _IconNumber, APrototype2PlayerState* _Player)
+void UWidget_PlayerHUD::UpdatePlayerIcons()
 {
-	//int PlayerNumber = _IconNumber - 1;
-	//if (PlayerNumber <= 0)
-	//	PlayerNumber = 0;
-	//
-	//switch (PlayerNumber)
-	//{
-	//case 0: // Player 1 Icon
-	//	P1Icon->SetBrushFromTexture(SetIcon(_Player));
-	//	break;
-	//case 1:
-	//	P2Icon->SetBrushFromTexture(SetIcon(_Player));
-	//	break;
-	//case 2:
-	//	P3Icon->SetBrushFromTexture(SetIcon(_Player));
-	//	break;
-	//case 3:
-	//	P4Icon->SetBrushFromTexture(SetIcon(_Player));
-	//	break;
-	//default:
-	//	break;
-	//}
+	for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+	{
+		if (auto Player = GameStateReference->Server_Players[i])
+		{
+			/* Set Ring Colours */
+			if (Rings.Num() > i)
+			{
+				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
+			}
+			
+			/* Set Crown visibility */
+			if (Crowns.Num() > i)
+			{
+				if (GameStateReference->GetPlayerWinner() == i)
+					Crowns[i]->SetVisibility(ESlateVisibility::Visible);
+				else
+					Crowns[i]->SetVisibility(ESlateVisibility::Hidden);
+			}
+
+			/* Set player icons to correct image based on character and colour */
+			if (Icons.Num() > i)
+			{
+				switch (Player->Details.Character)
+				{
+				case ECharacters::COW:
+					{
+						Icons[i]->SetBrushFromTexture(Player->CowTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::PIG:
+					{
+						Icons[i]->SetBrushFromTexture(Player->PigTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::CHICKEN:
+					{
+						Icons[i]->SetBrushFromTexture(Player->ChickenTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::DUCK:
+					{
+						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				default:
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_PlayerHUD: Unable to determine character type"));
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
-UTexture2D* UWidget_PlayerHUD::SetIcon(APrototype2PlayerState* _Player)
-{
-	//switch (_Player->Character)
-	//{
-	//case ECharacters::COW:
-	//	{
-	//		switch (_Player->CharacterColour)
-	//		{
-	//		case ECharacterColours::RED:
-	//			return Cow_Red_Texture;
-	//			break;
-	//		case ECharacterColours::BLUE:
-	//			return Cow_Blue_Texture;
-	//			break;
-	//		case ECharacterColours::GREEN:
-	//			return Cow_Green_Texture;
-	//			break;
-	//		case ECharacterColours::YELLOW:
-	//			return Cow_Yellow_Texture;
-	//			break;
-	//		default:
-	//			return Cow_Red_Texture;
-	//			break;
-	//		}
-	//		break;
-	//	}
-	//case ECharacters::PIG:
-	//	{
-	//		switch (_Player->CharacterColour)
-	//		{
-	//		case ECharacterColours::RED:
-	//			return Pig_Red_Texture;
-	//			break;
-	//		case ECharacterColours::BLUE:
-	//			return Pig_Blue_Texture;
-	//			break;
-	//		case ECharacterColours::GREEN:
-	//			return Pig_Green_Texture;
-	//			break;
-	//		case ECharacterColours::YELLOW:
-	//			return Pig_Yellow_Texture;
-	//			break;
-	//		default:
-	//			return Pig_Red_Texture;
-	//			break;
-	//		}
-	//		break;
-	//	}
-	//case ECharacters::CHICKEN:
-	//	{
-	//		switch (_Player->CharacterColour)
-	//		{
-	//		case ECharacterColours::RED:
-	//			return Chicken_Red_Texture;
-	//			break;
-	//		case ECharacterColours::BLUE:
-	//			return Chicken_Blue_Texture;
-	//			break;
-	//		case ECharacterColours::GREEN:
-	//			return Chicken_Green_Texture;
-	//			break;
-	//		case ECharacterColours::YELLOW:
-	//			return Chicken_Yellow_Texture;
-	//			break;
-	//		default:
-	//			return Chicken_Red_Texture;
-	//			break;
-	//		}
-	//		break;
-	//	}
-	//case ECharacters::DUCK:
-	//	{
-	//		switch (_Player->CharacterColour)
-	//		{
-	//		case ECharacterColours::RED:
-	//			return Duck_Red_Texture;
-	//			break;
-	//		case ECharacterColours::BLUE:
-	//			return Duck_Blue_Texture;
-	//			break;
-	//		case ECharacterColours::GREEN:
-	//			return Duck_Green_Texture;
-	//			break;
-	//		case ECharacterColours::YELLOW:
-	//			return Duck_Yellow_Texture;
-	//			break;
-	//		default:
-	//			return Duck_Red_Texture;
-	//			break;
-	//		}
-	//		break;
-	//	}
-	//default:
-	//	return Cow_Red_Texture;
-	//	break;
-	//}
-
-	return nullptr;
-}
 
 void UWidget_PlayerHUD::UpdateEmphasizers(float _DeltaTime)
 {

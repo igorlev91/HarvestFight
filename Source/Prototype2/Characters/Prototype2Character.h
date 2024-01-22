@@ -8,6 +8,8 @@
 #include "Prototype2/Gameplay/SellBin.h"
 #include "Containers/Map.h"
 #include "Prototype2/DataAssets/WeaponData.h"
+#include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Pickups/PickUpItem.h"
 #include "Prototype2Character.generated.h"
 
 class APrototype2PlayerController;
@@ -102,10 +104,7 @@ protected:
 
 	UFUNCTION()
 	void ClearInteractionText();
-	
-	/* Update's character speed according to bIsHoldingGold */
-	UFUNCTION()
-	void UpdateCharacterSpeed(bool _HoldingGold);
+
 	
 	UFUNCTION()
 	void HandleAttackChargeBehavior(float _DeltaSeconds);
@@ -152,6 +151,13 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExecuteAttack);
 	UPROPERTY(BlueprintAssignable)
 	FOnExecuteAttack OnExecuteAttackDelegate;
+
+	UFUNCTION(BlueprintPure)
+	bool GetIsPunching () { return DefaultWeaponSeedData == CurrentWeaponSeedData; }
+	
+	/* Update's character speed according to bIsHoldingGold */
+	UFUNCTION()
+	void UpdateCharacterSpeed(bool _HoldingGold);
 	
 	/* Getter for when character is sprinting */
 	UFUNCTION(BlueprintCallable)
@@ -198,13 +204,13 @@ public:
 	
 	/* Getters */
 	UFUNCTION(BlueprintCallable)
-	UWeaponData* GetWeaponData() const { return CurrentWeaponData; }
+	class USeedData* GetWeaponData() const { return CurrentWeaponSeedData; }
 
 	/* PlayerHUD getter */
 	class UWidget_PlayerHUD* GetPlayerHUD();
 
 	/* Pickup function for doing stuff that doens't need rpc/multi, but calls the rpc which calls multi */
-	void PickupItem(APickUpItem* _Item);
+	void PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 	
 	/* Called when hit by another player */
 	UFUNCTION(BlueprintCallable)
@@ -228,6 +234,9 @@ public:
 	/* Getters for walkspeed and ratescale for debuff component */
 	float GetWalkSpeed(){ return WalkSpeed; }
 	float GetWalkRateScale() { return WalkRateScale; }
+
+	/* Client side Drop Item function */
+	void DropItem();
 	
 	/* Public Variables */
 	
@@ -295,6 +304,10 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	int WeaponCurrentDurability;
 
+	/* Default Weapon Data Asset is no weapon (punching with fists) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	USeedData* DefaultWeaponSeedData;
+	
 	/* The closest interactable item for HUD showing popup text */
 	class IInteractInterface* ClosestInteractableItem;
 
@@ -345,7 +358,7 @@ public:
 	
 	/* The current weapon data to use data from */
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
-	UWeaponData* CurrentWeaponData;
+	class USeedData* CurrentWeaponSeedData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* WeaponMesh;
@@ -449,7 +462,7 @@ private:
 	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float InteractRadius = 260.0f;
+	float InteractRadius = 150.0f;
 	
 	/* Interact timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
@@ -522,10 +535,6 @@ private:
 	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
 	FTransform MeshLocationWhenStunned{};
 
-	/* Default Weapon Data Asset is no weapon (punching with fists) */
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess))
-	UWeaponData* DefaultWeaponData;
-
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstance*> PlayerMaterials{{nullptr},{nullptr},{nullptr},{nullptr}};
 
@@ -536,7 +545,7 @@ public: /* Pubic Networking */
 	
 	/* RPC for picking up items */
 	UFUNCTION(Server, Reliable)
-	void Server_PickupItem(APickUpItem* _Item);
+	void Server_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
@@ -639,7 +648,7 @@ protected: /* Protected Networking */
 
 	/* Multicast for picking up item */
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PickupItem(APickUpItem* _Item);
+	void Multi_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
 	/* Receiving materials for the farmer costume */
 	UFUNCTION(Server, Unreliable)

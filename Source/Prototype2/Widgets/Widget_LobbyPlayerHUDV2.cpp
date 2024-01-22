@@ -98,7 +98,7 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
 			}
 
-			/* Set ring colours to player colour */
+			/* Set player icons to correct image based on character and colour */
 			if (Icons.Num() > i)
 			{
 				switch (Player->Details.Character)
@@ -128,12 +128,7 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_LobbyPlayerHUDV2: Unable to determine character type"));
 						break;
 					}
-					
 				}
-				
-				
-					
-				
 			}
 
 			/* Set player names to actual names and changing colour to player colour */

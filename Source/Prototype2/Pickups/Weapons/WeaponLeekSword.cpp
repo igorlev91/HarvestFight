@@ -4,6 +4,7 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/AnimationData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
@@ -30,7 +31,7 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 	Super::ExecuteAttack(_AttackSphereRadius, _Player);
 	
 	// Get a vector infront of the character for the attack sphere to spawn at
-	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponData->WeaponReach);
+	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
 	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
@@ -61,7 +62,7 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponData);
+					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 
 					bIsOtherPlayerHit = true;
 				}
@@ -83,14 +84,14 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 		
 		if (_Player->WeaponCurrentDurability <= 0)
 		{
-			_Player->Multi_DropWeapon();
+			_Player->DropWeapon();
 
 			//AttackTrail_NiagaraComponent->Deactivate();
 			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
 	//}
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
+	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
 
 	// Reset all attack variables
 	_Player->ResetAttack();
@@ -102,8 +103,8 @@ void UWeaponLeekSword::UpdateAOEIndicator(APrototype2Character* _Player)
 	
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponData->AOEMultiplier;	
-	FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponData->WeaponReach);
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
+	FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
 	
 	FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, _Player->GetMesh()->GetComponentLocation().Z};
 

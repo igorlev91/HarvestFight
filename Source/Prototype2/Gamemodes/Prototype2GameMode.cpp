@@ -162,7 +162,7 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 	if (AutomaticCrownCheckTimer <= 0)
 	{
 		AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
-		AttachCrownToCurrentWinner();
+		
 	}
 	else
 	{
@@ -211,47 +211,6 @@ void APrototype2GameMode::EnableControllerInputForAll()
 		{
 			EnableControllerInput(PlayerController);
 		}
-	}
-}
-
-void APrototype2GameMode::AttachCrownToCurrentWinner()
-{
-	if (!HasAuthority())
-		return;
-	
-	if (!KingCrown)
-		return;
-		
-	UE_LOG(LogTemp, Warning, TEXT("Attempt to attach Crown To Winning Player") );
-
-	ACharacter* WinningPlayerCharacter{nullptr};
-	APrototype2PlayerState* WinningPlayer{nullptr};
-	for(auto Player : Server_PlayerStates)
-	{
-		APlayerController* Controller = Player.Get()->GetPlayerController();
-		if (!Controller)
-			continue;
-
-		ACharacter* Character = Controller->GetCharacter();
-		if (!Character)
-			continue;
-
-		if (!WinningPlayerCharacter)
-		{
-			WinningPlayerCharacter = Character;
-			WinningPlayer = Player.Get();
-		}
-		else if (WinningPlayer && WinningPlayer->Coins >= Player->Coins)
-		{
-			WinningPlayerCharacter = Character;
-			WinningPlayer = Player.Get();
-		}
-	}
-
-	if (WinningPlayerCharacter)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Attach Crown To Winning Player") );
-		KingCrown->AttachToComponent(WinningPlayerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	}
 }
 
@@ -534,7 +493,7 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
-					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+					SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
 					
 					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
 					{
@@ -551,7 +510,7 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
-					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);
+					SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
 					
 					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
 					{

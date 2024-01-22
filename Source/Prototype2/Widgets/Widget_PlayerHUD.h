@@ -78,13 +78,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponDurability(int32 _Durability);
 
-	/* Sets the player icons - top of screen for each player */
+	/* Updates the player icons & colour - top of screen for each player */
 	UFUNCTION(BlueprintCallable)
-	void SetPlayerIcons(int32 _IconNumber, APrototype2PlayerState* _Player);
-
-	/* Sets the player icon based on SetPlayerIcons function */
-	UFUNCTION(BlueprintCallable)
-	UTexture2D* SetIcon(APrototype2PlayerState* _Player);
+	void UpdatePlayerIcons();
 
 	void UpdateEmphasizers(float _DeltaTime);
 public:
@@ -137,6 +133,11 @@ public:
 	/* Player Icons */
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> PlayerIcons{{}, {}, {}, {}, {}, {}};
+	
+	/* Array of all icons */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UImage*> Icons;
+	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* P1Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -185,6 +186,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UOverlay* OverlayPlayer6;
 
+	/* Array of all rings */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UImage*> Crowns;
+	
+	/* Player rings */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P1Crown;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P2Crown;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P3Crown;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P4Crown;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P5Crown;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P6Crown;
+
 	/* Team games */
 	/* Team UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -201,10 +220,6 @@ public:
 	class UOverlay* OverlayTeam1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UOverlay* OverlayTeam2;
-
-	
-	
-
 	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -218,51 +233,51 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UImage* WeaponImage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* LeekWeaponTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* AsparagusWeaponTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* LeekWeaponTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* AsparagusWeaponTexture;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* WeaponSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* WeaponSeedTexture;
 
-	// Object Textures
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CarrotTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CarrotGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CarrotSeedTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CabbageTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CabbageGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* CabbageSeedTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* MandrakeTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* MandrakeGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* MandrakeSeedTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* BroccoliTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* BroccoliGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* BroccoliSeedTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* DaikonTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* DaikonGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* DaikonSeedTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* RadishTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* RadishGoldTexture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* RadishSeedTexture;
+	//// Object Textures
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CarrotTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CarrotGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CarrotSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CabbageTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CabbageGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* CabbageSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* MandrakeTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* MandrakeGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* MandrakeSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* BroccoliTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* BroccoliGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* BroccoliSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* DaikonTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* DaikonGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* DaikonSeedTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* RadishTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* RadishGoldTexture;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* RadishSeedTexture;
 	
 	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
@@ -285,50 +300,5 @@ public:
 	float interactionButtonTimer{};
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UWidget_StartAndEndMenu* StartAndEndMenu;
-
-	/* Player Icon Textures */
-	// Cow
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Cow_White_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Cow_Red_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Cow_Blue_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Cow_Green_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Cow_Yellow_Texture;
-	// Pig
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Pig_White_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Pig_Red_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Pig_Blue_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Pig_Green_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Pig_Yellow_Texture;
-	// Chicken
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Chicken_White_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Chicken_Red_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Chicken_Blue_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Chicken_Green_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Chicken_Yellow_Texture;
-	// Duck
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Duck_White_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Duck_Red_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Duck_Blue_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Duck_Green_Texture;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Duck_Yellow_Texture;
+	
 };

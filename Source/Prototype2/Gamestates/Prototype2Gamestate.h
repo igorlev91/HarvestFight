@@ -16,6 +16,7 @@ public:
 	int32 GetFinalConnectionCount() const;
 	void SetFinalConnectionCount(int32 _FinalConnectionCount);
 	void SetMaxPlayersOnServer(int32 _FinalConnectionCount);
+	void SetPlayerWinner(int32 _WinnerID);
 	int32 RegisterPlayer(class APrototype2PlayerState* _Player);
 	void UnRegisterPlayer(class APrototype2PlayerState* _Player);
 	int32 GetCurrentConnectionCount();
@@ -27,6 +28,7 @@ public:
 	int32 GetCountdownLengthMinutes();
 	int32 GetCountdownLengthSeconds();
 	int32 GetBriefTimesUpLengthSeconds();
+	int32 GetPlayerWinner();
 	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 	void PupeteerCharactersForEndGame();
 public:
@@ -81,5 +83,7 @@ private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 FinalConnectionCount{0};
 
-
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 PlayerWinner{-1};
+	
 };

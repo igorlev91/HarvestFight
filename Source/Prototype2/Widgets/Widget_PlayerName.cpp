@@ -17,37 +17,31 @@ void UWidget_PlayerName::NativeOnInitialized()
 void UWidget_PlayerName::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
+	
 	UpdatePlayerName();
 }
 
 void UWidget_PlayerName::UpdatePlayerName()
 {
-	FString PlayerStatePlayerName{};
-	FLinearColor PlayerStateColour{};
+	if (!OwningPlayer)
+		return;
 	
-	ALobbyPlayerState* LobbyPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
-	if (LobbyPlayerState)
+	if (APrototype2PlayerState* PrototypePlayerState = Cast<APrototype2PlayerState>(OwningPlayer))
 	{
-		PlayerStatePlayerName = LobbyPlayerState->PlayerName;
-		PlayerStateColour = FLinearColor(LobbyPlayerState->Details.CharacterColour);
+		PlayerName->SetText(FText::FromString(PrototypePlayerState->PlayerName));
+		PlayerName->SetColorAndOpacity((FLinearColor)PrototypePlayerState->Details.PureToneColour);
 	}
-
-	APrototype2PlayerState* PrototypePlayerState = GetOwningPlayerState<APrototype2PlayerState>();
-	if (PrototypePlayerState)
+	else if (ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(OwningPlayer))
 	{
-		PlayerStatePlayerName = PrototypePlayerState->PlayerName;
-		PlayerStateColour = FLinearColor(PrototypePlayerState->Details.CharacterColour);
+		PlayerName->SetText(FText::FromString(LobbyPlayerState->PlayerName));
+		PlayerName->SetColorAndOpacity((FLinearColor)LobbyPlayerState->Details.PureToneColour);
 	}
-	
-	PlayerName->SetText(FText::FromString(PlayerStatePlayerName));
-	PlayerName->SetColorAndOpacity(PlayerStateColour);
+	//
 }
 
 void UWidget_PlayerName::SetPlayerRef(APlayerState* _Player)
 {
-	if (IsValid(_Player))
-		OwningPlayer = _Player;
+	OwningPlayer = _Player;
 }
 
 APlayerState* UWidget_PlayerName::GetPlayerRef()

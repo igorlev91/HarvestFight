@@ -52,5 +52,18 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails Details;
-	
+
+	/* Player UI Textures */
+public:
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> CowTextures{{}, {}, {}, {}, {}, {}, {}, {}};
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> PigTextures{{}, {}, {}, {}, {}, {}, {}, {}};
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> ChickenTextures{{}, {}, {}, {}, {}, {}, {}, {}};
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> DuckTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 };

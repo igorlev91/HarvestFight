@@ -59,7 +59,7 @@ void AFertiliserSpawner::Interact(APrototype2Character* _Player)
 
 	SpawnTimer = SpawnInterval;
 	
-	_Player->PickupItem(SpawnedFertiliser);
+	_Player->PickupItem(SpawnedFertiliser, EPickupActor::FertilizerActor);
 
 	SpawnedFertiliser = nullptr;
 }

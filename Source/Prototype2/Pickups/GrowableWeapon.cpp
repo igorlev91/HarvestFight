@@ -12,6 +12,7 @@ AGrowableWeapon::AGrowableWeapon()
 	bReplicates = true;
 
 	InterfaceType = EInterfaceType::Default;
+	
 }
 
 void AGrowableWeapon::Interact(APrototype2Character* _Player)

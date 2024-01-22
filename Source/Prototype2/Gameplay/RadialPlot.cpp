@@ -6,6 +6,7 @@
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 ARadialPlot::ARadialPlot()
 {
@@ -158,11 +159,11 @@ void ARadialPlot::UpdateBeehiveFlowers()
 	for (int i = 0; i < GrowSpots.Num(); i++)
 	{
 		if (GrowSpots[i]->GrowingItemRef &&
-			GrowSpots[i]->GrowingItemRef->PlantData->PickupType == EPickupDataType::FlowerData)
+			GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::FlowerData)
 		{
 			for (int j = 0; j < BeehiveVector.size(); j++)
 			{
-				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->GrowingItemRef->PlantData->FlowerValue;
+				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->GrowingItemRef->SeedData->StarValue * GrowSpots[i]->GrowingItemRef->SeedData->PlantData->Multiplier;
 			}
 		}
 	}

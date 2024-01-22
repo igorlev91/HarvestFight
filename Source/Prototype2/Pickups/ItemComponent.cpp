@@ -30,12 +30,12 @@ void UItemComponent::BeginPlay()
 	Mesh->SetCollisionProfileName("Ragdoll");
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 
 	if(GetOwner()->HasAuthority())
 	{
-		Mesh->SetSimulatePhysics(true);
+		//Mesh->SetSimulatePhysics(true);
 	}
 
 	Mesh->SetRenderCustomDepth(false);
@@ -48,7 +48,7 @@ void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActo
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
 {
-	_Player->PickupItem(_ItemPickedUp);
+	_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->PickupActor);
 	_Player->HeldItem = _ItemPickedUp;
 }
 
@@ -60,27 +60,15 @@ void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(UItemComponent, bDoBeginPlay);
 }
 
-void UItemComponent::InitializeSeed(UMaterialInstance* _InMaterial)
-{
-	if (_InMaterial)
-	{
-		Mesh->SetMaterial(0, _InMaterial);
-	}
-}
-
-void UItemComponent::InitializePlant(UStaticMesh* _InMesh)
+void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, UStaticMesh* _InMesh)
 {
 	if (_InMesh)
 	{
 		Mesh->SetStaticMesh(_InMesh);
 	}
-}
-
-void UItemComponent::InitializeWeapon(UStaticMesh* _InMesh)
-{
-	if (_InMesh)
+	for (int i = 0; i < _InMaterials.Num(); i++)
 	{
-		Mesh->SetStaticMesh(_InMesh);
+		Mesh->SetMaterial(i, _InMaterials[i]);
 	}
 }
 

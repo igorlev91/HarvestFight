@@ -9,6 +9,7 @@
 #include "AI/NavigationSystemBase.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 class UNavigationSystemV1;
 
@@ -132,13 +133,13 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 			return;
 		}
 
-		EPickupDataType PlantDataType = PlantDataArray[RandomIndex]->PickupType;
+		EPickupDataType PlantDataType = PlantDataArray[RandomIndex]->Type;
 
 		if (PlantDataType == EPickupDataType::PlantData && PlantSeedPrefab || PlantDataType == EPickupDataType::FlowerData && PlantSeedPrefab)
 		{
 			if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(PlantSeedPrefab, FinalLocation, {}))
 			{
-				NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
+				NewSeed->SetSeedData(PlantDataArray[RandomIndex], EPickupActor::SeedActor);
 				NewSeed->SetParachuteMesh(ParachuteMesh);
 			}
 		}
@@ -146,7 +147,7 @@ void ASeedSpawner::SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTi
 		{
 			if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(BeehiveBoxPrefab, FinalLocation, {}))
 			{
-				NewSeed->SetPlantSeedData(PlantDataArray[RandomIndex]);
+				NewSeed->SetSeedData(PlantDataArray[RandomIndex], EPickupActor::SeedActor);
 				NewSeed->SetParachuteMesh(ParachuteMesh);
 			}
 		}
@@ -209,7 +210,7 @@ void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaT
 		// Spawn plant seed from data asset
 		if (PlantSeedPrefab)
 		{
-			if (auto NewSeed = GetWorld()->SpawnActor<ASeed>(WeaponSeedPrefab, FinalLocation, {}))
+			if (AWeaponSeed* NewWeaponSeed = GetWorld()->SpawnActor<AWeaponSeed>(WeaponSeedPrefab, FinalLocation, {}))
 			{
 				if (WeaponDataArray.Num() > 0)
 				{
@@ -218,8 +219,8 @@ void ASeedSpawner::SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaT
 					{
 						if (WeaponDataArray[RandomIndex] != nullptr)
 						{
-							NewSeed->SetWeaponSeedData(WeaponDataArray[RandomIndex]);
-							NewSeed->SetParachuteMesh(ParachuteMesh);
+							NewWeaponSeed->SetSeedData(WeaponDataArray[RandomIndex], EPickupActor::SeedActor);
+							NewWeaponSeed->SetParachuteMesh(ParachuteMesh);
 						}
 					}
 				}

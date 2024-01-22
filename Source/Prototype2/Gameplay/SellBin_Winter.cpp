@@ -24,6 +24,7 @@ ASellBin_Winter::ASellBin_Winter()
 	IceBoundary->SetRelativeScale3D({1,1,8});
 
 	InterfaceType = EInterfaceType::SellBin;
+	
 }
 
 void ASellBin_Winter::BeginPlay()
@@ -32,10 +33,31 @@ void ASellBin_Winter::BeginPlay()
 
 	SetReplicateMovement(true);
 
-	ItemComponent->Mesh->SetSimulatePhysics(true);
-	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100.0f);
-	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	IcePlane->SetupAttachment(ItemComponent->Mesh);
+	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	IcePlane->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel1, ECR_Block);
 	
+	IceBoundary->SetupAttachment(ItemComponent->Mesh);
+	//IceBoundary->SetHiddenInGame(true);
+	IceBoundary->SetCollisionProfileName("NoCollision");
+	IceBoundary->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	IceBoundary->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	IceBoundary->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	Collision->SetGenerateOverlapEvents(true);
+	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	
+	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 200.0f);
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+
+
+	//
+	if (!HasAuthority())
+		return;
+
+	ItemComponent->Mesh->SetSimulatePhysics(true);
 	Collision->OnComponentBeginOverlap.AddDynamic(this, &ASellBin_Winter::OnCollision);
 }
 
@@ -45,8 +67,8 @@ void ASellBin_Winter::GetHit(float _AttackCharge, float _MaxAttackCharge, FVecto
 	auto MyLoc = FVector3d{GetActorLocation().X, GetActorLocation().Y, 0.0};
 	auto ForceMultiplier = FMath::Lerp(MinForceFromPlayerHit, MaxForceFromPlayerHit, _AttackCharge / _MaxAttackCharge);
 	ForceMultiplier = FMath::Clamp(ForceMultiplier, MinForceFromPlayerHit, MaxForceFromPlayerHit);
-	FVector Force = ((AttackLoc - MyLoc).GetSafeNormal()) * ForceMultiplier;
-	ItemComponent->Mesh->AddImpulseAtLocation({0,0,ImpactLocationZ}, Force);
+	FVector Force = ((MyLoc - AttackLoc).GetSafeNormal()) * ForceMultiplier;
+	ItemComponent->Mesh->AddImpulse(Force);
 
 	//UE_LOG(LogTemp, Warning, TEXT("Player hit Box with %s multiplier"), *FString::FromInt(forceMultiplier));
 }
@@ -83,6 +105,7 @@ void ASellBin_Winter::Multi_DetachComponents_Implementation(FVector _Pos)
 	IcePlane->SetupAttachment(RootComponent);
 	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	IcePlane->SetRelativeLocation({});
+	IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel2, ECollisionResponse::ECR_Block);
 
 	IceBoundary->SetupAttachment(RootComponent);
 	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);

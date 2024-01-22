@@ -43,6 +43,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Prototype2/DataAssets/AnimationData.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Pickups/Weapons/WeaponLeekSword.h"
 #include "Prototype2/Pickups/Weapons/WeaponPunching.h"
 #include "Prototype2/Spawning/FertiliserSpawner.h"
@@ -309,12 +310,12 @@ void APrototype2Character::Server_Interact_Implementation()
 		InteractTimer = InteractTimerTime;
 
 		// Drop Item
-		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		DropItem();
+	
 		if (Weapon)
 		{
 			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 		}
-		Multi_DropItem();
 	}
 }
 
@@ -349,8 +350,20 @@ void APrototype2Character::SetCharacterSpeed(float _WalkSpeed, float _SprintSpee
 	Server_SetCharacterSpeed(_WalkSpeed, _SprintSpeed, _BaseAnimationRateScale);
 }
 
+void APrototype2Character::DropItem()
+{
+	// clear pickup UI and text
+	if (PlayerHUDRef)
+	{
+		PlayerHUDRef->ClearPickupUI();
+		PlayerHUDRef->SetHUDInteractText("");
+	}
+	
+	Server_DropItem();
+}
+
 void APrototype2Character::Server_SetCharacterSpeed_Implementation(float _WalkSpeed, float _SprintSpeed,
-																   float _BaseAnimationRateScale)
+                                                                   float _BaseAnimationRateScale)
 {
 	Multi_SetCharacterSpeed(_WalkSpeed, _SprintSpeed, _BaseAnimationRateScale);
 }
@@ -415,7 +428,7 @@ void APrototype2Character::CheckForInteractables()
 		return;
 	
 	TArray<FHitResult> OutHits;
-	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(InteractRadius);
+	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(InteractRadius * 1.5f);
 	const bool HasFoundCloseActor = GetWorld()->SweepMultiByChannel(OutHits, GetActorLocation(), GetActorLocation(), FQuat::Identity, ECC_Visibility, CollisionSphere);
 	if (!HasFoundCloseActor)
 	{
@@ -424,36 +437,43 @@ void APrototype2Character::CheckForInteractables()
 		ClosestInteractableItem = nullptr;
 		return;
 	}
-	
+
+	TArray<FHitResult> InteractableHitResults;
 	TArray<AActor*> InteractableActors;
-	for (FHitResult& HitActor : OutHits)
+	for (FHitResult& HitResult : OutHits)
 	{
-		if (IInteractInterface* InteractInterface = Cast<IInteractInterface>(HitActor.GetActor()))
+		if (IInteractInterface* InteractInterface = Cast<IInteractInterface>(HitResult.GetActor()))
 		{
 			if (InteractInterface->IsInteractable(PlayerStateRef))
-				InteractableActors.Add(HitActor.GetActor());
+			{
+				InteractableHitResults.Add(HitResult);
+				InteractableActors.Add(HitResult.GetActor());
+			}
+				
 		}
 	}
 
+	TArray<FHitResult> ImportantHitResults;
 	TArray<AActor*> ImportantActors;
-	for(AActor* InteractableActor : InteractableActors)
+	for(int i = 0; i < InteractableActors.Num(); i++)
 	{
-		if (FVector::Distance(InteractableActor->GetActorLocation(), GetActorLocation()) <= InteractRadius)
+		if (Cast<ASellBin>(InteractableActors[i]) || Cast<AGrowSpot>(InteractableActors[i]) || Cast<AFertiliserSpawner>(InteractableActors[i]))
 		{
-			if (Cast<ASellBin>(InteractableActor) || Cast<AGrowSpot>(InteractableActor) || Cast<AFertiliserSpawner>(InteractableActor))
-			{
-				ImportantActors.Add(InteractableActor);
-			}
+			ImportantActors.Add(InteractableActors[i]);
+			ImportantHitResults.Add(InteractableHitResults[i]);
 		}
 	}
 	if (ImportantActors.Num() > 0)
 	{
 		InteractableActors.Empty();
+		InteractableHitResults.Empty();
 		InteractableActors = ImportantActors;
+		InteractableHitResults = ImportantHitResults;
 	}
-
+	
 	float DistanceToClosest;
 	AActor* NearestActor = UGameplayStatics::FindNearestActor(GetActorLocation(), InteractableActors, DistanceToClosest);
+	int32 NearestActorIndex = InteractableActors.Find(NearestActor);
 	if (!NearestActor)
 	{
 		EnableStencil(false);
@@ -461,8 +481,7 @@ void APrototype2Character::CheckForInteractables()
 		ClosestInteractableActor = nullptr;
 		return;
 	}
-	
-	if (DistanceToClosest <= InteractRadius && NearestActor)
+	else if (NearestActor && FVector::Distance(InteractableHitResults[NearestActorIndex].TraceEnd, GetActorLocation()) <= InteractRadius)
 	{
 		if (ClosestInteractableActor && ClosestInteractableActor != NearestActor)
 		{
@@ -530,7 +549,7 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	// Drop item
 	if (HeldItem)
 	{
-		Server_DropItem();
+		DropItem();
 	}
 
 	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
@@ -638,7 +657,7 @@ void APrototype2Character::InitMiscComponents()
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 
 	// Area of attack indicator mesh set up
 	AttackAreaIndicatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttackAreaIndicatorMesh"));
@@ -740,36 +759,39 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _Ne
 		ParticleSystemsToDeActivate.Add(_NewSystem);
 }
 
-void APrototype2Character::PickupItem(APickUpItem* _Item)
+void APrototype2Character::PickupItem(APickUpItem* _Item, EPickupActor _PickupType)
 {
 	if (PlayerHUDRef)
 	PlayerHUDRef->SetHUDInteractText("");
 	
 	// Set the HUD UI pickup icon depending on seed/plant/weapon
-	switch (_Item->PickupActor)
+	switch (_PickupType)
 	{
 	case EPickupActor::PlantActor:
 		{
-			if (!PlayerHUDRef || !_Item->PlantData)
+			if (!PlayerHUDRef || !_Item->SeedData->PlantData)
 			{
 				break;
 			}
 			if (_Item->ItemComponent->bGold)
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->PlantData->GoldPlantIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PlantData->GoldPlantIcon);
 			}
 			else
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->PlantData->PlantIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PlantData->PlantIcon);
 			}				
 			break;
 		}
 	case EPickupActor::WeaponActor:
 		{
 			// Set UI
-			if (PlayerHUDRef && _Item->WeaponData)
+			if (PlayerHUDRef && _Item->SeedData->WeaponData)
 			{
-				PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->WeaponData->WeaponIcon);
+				PlayerHUDRef->ClearPickupUI();
+				PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->SeedData->WeaponData->WeaponIcon);
+				FVector2D ImageSize ={(float)_Item->SeedData->WeaponData->WeaponIcon->GetSizeX(), (float)_Item->SeedData->WeaponData->WeaponIcon->GetSizeY()};
+				PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
 			}
 			break;
 		}
@@ -777,15 +799,7 @@ void APrototype2Character::PickupItem(APickUpItem* _Item)
 		{
 			if (PlayerHUDRef)
 			{
-				if (_Item->DataAssetPickupType == EPickupDataType::WeaponData)
-				{
-					PlayerHUDRef->UpdatePickupUI(_Item->WeaponData->SeedIcon);
-					
-				}
-				else if (_Item->DataAssetPickupType == EPickupDataType::PlantData)
-				{
-					PlayerHUDRef->UpdatePickupUI(_Item->PlantData->SeedIcon);
-				}
+				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->Icon);
 			}
 			break;
 		}
@@ -793,7 +807,7 @@ void APrototype2Character::PickupItem(APickUpItem* _Item)
 		break;
 	}
 	
-	Server_PickupItem(_Item);
+	Server_PickupItem(_Item, _PickupType);
 }
 
 void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off)
@@ -953,7 +967,7 @@ void APrototype2Character::CheckForFloorSurface()
 	GetCharacterMovement()->GroundFriction = 8.0f;
 	
 	// Perform the line trace
-	if (!GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	if (!GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
 	{
 		return;
 	}
@@ -1077,9 +1091,11 @@ UCameraComponent* APrototype2Character::ReturnFollowCamera()
 void APrototype2Character::DropWeapon()
 {
 	// Set UI
-	if (PlayerHUDRef && DefaultWeaponData)
+	if (PlayerHUDRef && DefaultWeaponSeedData)
 	{
-		PlayerHUDRef->WeaponImage->SetBrushFromTexture(DefaultWeaponData->WeaponIcon);
+		PlayerHUDRef->WeaponImage->SetBrushFromTexture(DefaultWeaponSeedData->WeaponData->WeaponIcon);
+		FVector2D ImageSize ={(float)DefaultWeaponSeedData->WeaponData->WeaponIcon->GetSizeX(), (float)DefaultWeaponSeedData->WeaponData->WeaponIcon->GetSizeY()};
+		PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
 	}
 	Server_DropWeapon();
 }
@@ -1202,20 +1218,23 @@ void APrototype2Character::InitAudioComponents()
 
 void APrototype2Character::InitWeapon()
 {
-	if (CurrentWeaponData)
+	if (CurrentWeaponSeedData)
 		return;
 	
 	InitWeaponMesh();
 
-	if (!DefaultWeaponData)
+	if (!DefaultWeaponSeedData)
+		return;
+
+	if (!DefaultWeaponSeedData->WeaponData)
 		return;
 	
-	CurrentWeaponData = DefaultWeaponData;
+	CurrentWeaponSeedData = DefaultWeaponSeedData;
 	
-	if (!CurrentWeaponData || !PlayerHUDRef)
+	if (!CurrentWeaponSeedData->WeaponData || !PlayerHUDRef)
 		return;
 	
-	PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponData->WeaponIcon);
+	PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponSeedData->WeaponData->WeaponIcon);
 }
 
 void APrototype2Character::InitWeaponMesh()
@@ -1228,10 +1247,10 @@ void APrototype2Character::InitWeaponMesh()
 	if (!AttackAreaIndicatorMesh)
 		return;
 
-	if (!DefaultWeaponData)
+	if (!DefaultWeaponSeedData)
 		return;
 
-	AttackAreaIndicatorMesh->SetStaticMesh(DefaultWeaponData->AOEIndicatorMesh);
+	AttackAreaIndicatorMesh->SetStaticMesh(DefaultWeaponSeedData->WeaponData->AOEIndicatorMesh);
 }
 
 void APrototype2Character::InitPlayerHUD()
@@ -1456,7 +1475,7 @@ void APrototype2Character::Server_ChargeAttack_Implementation()
 	{
 		if (HeldItem)
 		{
-			Server_DropItem();
+			DropItem();
 		}
 		
 		bIsChargingAttack = true;
@@ -1483,8 +1502,8 @@ void APrototype2Character::Server_ReleaseAttack_Implementation()
 	Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));//FName("WeaponHeldSocket"));
 	
 	// Set the radius of the sphere for attack
-	int32 AttackSphereRadius = CurrentWeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponData->AOEMultiplier;
-	if (CurrentWeaponData != DefaultWeaponData)
+	int32 AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
+	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
 	{
 		// VFX
 		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
@@ -1566,13 +1585,6 @@ void APrototype2Character::Server_DropItem_Implementation()
 		return;
 	
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-		
-	// Set HUD image
-	if (PlayerHUDRef)
-	{
-		PlayerHUDRef->ClearPickupUI();
-		PlayerHUDRef->SetHUDInteractText("");
-	}
 	
 	if (Weapon)
 	{
@@ -1598,7 +1610,7 @@ void APrototype2Character::Multi_DropItem_Implementation()
 		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	
 		// So that CheckForInteractables() can see it again
-		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 
 		if (auto SSComponent = HeldItem->SSComponent)
 		{
@@ -1619,7 +1631,7 @@ void APrototype2Character::Multi_DropItem_Implementation()
 	UpdateCharacterSpeed(bIsHoldingGold);
 }
 
-void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item)
+void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, EPickupActor _PickupType)
 {
 	if (HeldItem)
 	{
@@ -1633,7 +1645,8 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item)
 		Multi_DropItem();
 	}
 
-	Multi_PickupItem(_Item);
+	Multi_PickupItem(_Item, _PickupType);
+	
 }
 
 void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
@@ -1646,7 +1659,7 @@ void APrototype2Character::Server_DropWeapon_Implementation()
 	Multi_DropWeapon();
 }
 
-void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
+void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item, EPickupActor _PickupType)
 {
 	if (!_Item)
 	{
@@ -1664,13 +1677,13 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
 	_Item->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 
 	// Attach plant/seed ot the HeldItemSocket, and change weapon mesh to the one passed in
-	switch (_Item->PickupActor)
+	switch (_PickupType)
 	{
 	case EPickupActor::PlantActor:
 		{
 			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-			HeldItem = _Item;	
-			if (HeldItem->ItemComponent->bGold)
+			HeldItem = _Item;
+			if (_Item->ItemComponent->bGold)
 			{
 				bIsHoldingGold = true;
 			}
@@ -1678,8 +1691,10 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
 		}
 	case EPickupActor::WeaponActor:
 		{
-			Weapon->DestroyComponent();
-			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->WeaponData->WeaponComponent))
+			// Replace weapon with new one
+			if (Weapon)
+				Weapon->DestroyComponent();
+			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->SeedData->WeaponData->WeaponComponent))
 			{
 				NewWeapon->RegisterComponent();
 				NewWeapon->CreationMethod = EComponentCreationMethod::Instance;
@@ -1688,51 +1703,44 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item)
 			}
 			
 			// Set the new weapons mesh to our WeaponMesh
-			WeaponMesh->SetStaticMesh(_Item->WeaponData->WeaponMesh);
+			WeaponMesh->SetStaticMesh(_Item->SeedData->BabyMesh);
 			
-			CurrentWeaponData = _Item->WeaponData;
-			WeaponCurrentDurability = CurrentWeaponData->Durability;
+			CurrentWeaponSeedData = _Item->SeedData;
+			WeaponCurrentDurability = CurrentWeaponSeedData->WeaponData->Durability;
 			Multi_SocketItem_Implementation(WeaponMesh, FName("Base-HumanWeapon"));
-			AttackAreaIndicatorMesh->SetStaticMesh(_Item->WeaponData->AOEIndicatorMesh);
+			AttackAreaIndicatorMesh->SetStaticMesh(_Item->SeedData->WeaponData->AOEIndicatorMesh);
 
-			CurrentWeaponAnimation = _Item->WeaponData->WeaponAnimationType;
-			break;
-		}
-	case EPickupActor::SeedActor:
-		{
-			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-			HeldItem = _Item;
-			break;
-		}
-	case EPickupActor::FertilizerActor:
-		{
-			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
-			HeldItem = _Item;
+			CurrentWeaponAnimation = _Item->SeedData->WeaponData->WeaponAnimationType;
+			_Item->Destroy();
 			break;
 		}
 	default:
-		break;
+		{
+			_Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+			HeldItem = _Item;
+			break;
+		}
 	}
-	
+
 	UpdateCharacterSpeed(bIsHoldingGold);
 }
 
 void APrototype2Character::Multi_DropWeapon_Implementation()
 {
-	CurrentWeaponData = DefaultWeaponData;
+	CurrentWeaponSeedData = DefaultWeaponSeedData;
 	if (!Weapon)
 		return;
 	Weapon->DestroyComponent();
-	if (UWeapon* NewWeapon = NewObject<UWeapon>(this, CurrentWeaponData->WeaponComponent))
+	if (UWeapon* NewWeapon = NewObject<UWeapon>(this, CurrentWeaponSeedData->WeaponData->WeaponComponent))
 	{
 		NewWeapon->RegisterComponent();
 		NewWeapon->CreationMethod = EComponentCreationMethod::Instance;
 					
 		Weapon = NewWeapon;
 	}
-	WeaponMesh->SetStaticMesh(DefaultWeaponData->WeaponMesh);
-	AttackAreaIndicatorMesh->SetStaticMesh(CurrentWeaponData->AOEIndicatorMesh);
-	CurrentWeaponAnimation = CurrentWeaponData->WeaponAnimationType;
+	WeaponMesh->SetStaticMesh(DefaultWeaponSeedData->BabyMesh);
+	AttackAreaIndicatorMesh->SetStaticMesh(CurrentWeaponSeedData->WeaponData->AOEIndicatorMesh);
+	CurrentWeaponAnimation = CurrentWeaponSeedData->WeaponData->WeaponAnimationType;
 	Multi_SetPlayerAimingMovement(false);
 }
 

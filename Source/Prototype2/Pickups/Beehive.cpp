@@ -3,6 +3,7 @@
 #include "Prototype2/Pickups/Beehive.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "WhatTheFlock/Public/Flock.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 void ABeehive::BeginPlay()
 {
@@ -33,8 +34,8 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	}
 	
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(Plant, FVector(0, 0, 0), {});
-	Honey->PlantData = HoneyData;
-	Honey->SetPlantData(Honey->PlantData);
+	Honey->SeedData->PlantData = HoneyData;
+	Honey->SetSeedData(Honey->SeedData, EPickupActor::BeehiveActor);
 	Honey->bGrown = true;
 	Honey->NumberOfNearbyFlowers = NumberOfNearbyFlowers;
 	Honey->Multi_ScalePlant();

@@ -4,6 +4,7 @@
 UENUM()
 enum class EPickupDataType : uint8
 {
+	SeedData,
 	WeaponData,
 	PlantData,
 	BeehiveData,

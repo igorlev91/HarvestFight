@@ -34,10 +34,10 @@ protected:
 	void Multi_DetachComponents_Implementation(FVector _Pos);
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float MaxForceFromPlayerHit{5000};
+	float MaxForceFromPlayerHit{1800};
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float MinForceFromPlayerHit{500};
+	float MinForceFromPlayerHit{1000};
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float ImpactLocationZ{50};

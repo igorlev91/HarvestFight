@@ -16,50 +16,14 @@ UCLASS()
 class PROTOTYPE2_API UPlantData : public UDataAsset
 {
 	GENERATED_BODY()
+	
 public:
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	FName Name;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	EPickupDataType PickupType;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	UStaticMesh* PlantMesh;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	FVector PlantScale = {2.0f, 2.0f, 2.0f};	
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Value")
-	int32 StarValue;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Value")
-	int32 SellValue;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	float GrowTime;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	UMaterialInstance* SeedMaterial;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	TArray<UMaterialInstance*> GoldMaterials;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	int32 GoldMultiplier = 3;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Gold")
-	int32 ChanceOfGold = 5; /* x/100 */
-
 	UPROPERTY(EditDefaultsOnly, Category= "Flower")
-	int32 FlowerValue = 0;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "UI")
-	UTexture2D* SeedIcon;
+	float Multiplier = 1.0f;
 		
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* PlantIcon;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* GoldPlantIcon;
-
 };

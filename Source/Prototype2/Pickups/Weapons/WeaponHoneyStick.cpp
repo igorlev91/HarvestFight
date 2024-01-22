@@ -5,6 +5,7 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/AnimationData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 void UWeaponHoneyStick::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
@@ -59,7 +60,7 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponData);
+					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 
 					bIsOtherPlayerHit = true;
 				}
@@ -80,14 +81,14 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
 		if (_Player->WeaponCurrentDurability <= 0)
 		{
-			_Player->Multi_DropWeapon();
+			_Player->DropWeapon();
 
 			//AttackTrail_NiagaraComponent->Deactivate();
 			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 		}
 	//}
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
+	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
 
 	// Reset all attack variables
 	_Player->ResetAttack();
@@ -99,7 +100,7 @@ void UWeaponHoneyStick::UpdateAOEIndicator(APrototype2Character* _Player)
 	
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponData->AOEMultiplier;	
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
 	FVector DownVector = {_Player->GetActorLocation().X, _Player->GetActorLocation().Y, _Player->GetMesh()->GetComponentLocation().Z};
 
 	_Player->AttackAreaIndicatorMesh->SetWorldLocation(DownVector);

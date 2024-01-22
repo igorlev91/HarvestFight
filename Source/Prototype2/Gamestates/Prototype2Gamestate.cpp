@@ -48,6 +48,8 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	
 	DOREPLIFETIME(APrototype2Gamestate, MaxPlayersOnServer);
 	DOREPLIFETIME(APrototype2Gamestate, FinalConnectionCount);
+
+	DOREPLIFETIME(APrototype2Gamestate, PlayerWinner);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -139,6 +141,11 @@ void APrototype2Gamestate::SetMaxPlayersOnServer(int32 _FinalConnectionCount)
 	MaxPlayersOnServer = _FinalConnectionCount;
 }
 
+void APrototype2Gamestate::SetPlayerWinner(int32 _WinnerID)
+{
+	PlayerWinner = _WinnerID;
+}
+
 int32 APrototype2Gamestate::RegisterPlayer(APrototype2PlayerState* _Player)
 {
 	return Server_Players.Add(_Player);
@@ -192,6 +199,11 @@ int32 APrototype2Gamestate::GetCountdownLengthSeconds()
 int32 APrototype2Gamestate::GetBriefTimesUpLengthSeconds()
 {
 	return BriefTimesUpEndGameLengthSeconds;
+}
+
+int32 APrototype2Gamestate::GetPlayerWinner()
+{
+	return PlayerWinner;
 }
 
 void APrototype2Gamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)

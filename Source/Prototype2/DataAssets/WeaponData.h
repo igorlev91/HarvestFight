@@ -18,30 +18,13 @@ class PROTOTYPE2_API UWeaponData : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Appearance")
-	FName Name;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	EPickupDataType PickupType;
 
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	EWeaponAnimation WeaponAnimationType;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	UStaticMesh* WeaponMesh;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	USoundCue* AttackAudio;
 	
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	float GrowTime;
-	
-	UPROPERTY(EditDefaultsOnly, Category= "Seed")
-	UMaterialInstance* SeedMaterial;
-
-	UPROPERTY(EditDefaultsOnly, Category= "UI")
-	UTexture2D* SeedIcon;
-		
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* WeaponIcon;
 	

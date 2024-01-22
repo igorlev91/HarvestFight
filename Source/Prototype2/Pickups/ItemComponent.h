@@ -22,9 +22,7 @@ public:
 	void Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp);
 	
 	/* Spawning from PlantData Data Asset */
-	void InitializeSeed(UMaterialInstance* _InMaterial);
-	void InitializePlant(UStaticMesh* _InMesh);
-	void InitializeWeapon(UStaticMesh* _InMesh);
+	void InitializeSeed(TArray<UMaterialInstance*> _InMaterials, UStaticMesh* _InMesh);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DisableCollisionAndAttach();

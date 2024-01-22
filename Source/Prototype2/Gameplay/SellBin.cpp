@@ -10,7 +10,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "Prototype2/DataAssets/PlantData.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_SellCropUI.h"
 
@@ -106,9 +106,9 @@ void ASellBin::FireSellFX(APlant* _Plant, APrototype2Character* _Player)
 				
 				if (auto sellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
 				{
-					if (_Plant->PlantData)
+					if (_Plant->SeedData->PlantData)
 					{
-						sellCropUI->SetCropValue(_Plant->PlantData->SellValue);
+						sellCropUI->SetCropValue(_Plant->SeedData->StarValue * _Plant->SeedData->PlantData->Multiplier);
 					}
 					if (sellCropUI->SellText)
 					{
@@ -210,13 +210,13 @@ void ASellBin::Interact(APrototype2Character* _Player)
 				_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue);
 			}
 
-			int32 PlantSellValue = Plant->PlantData->SellValue * (Plant->NumberOfNearbyFlowers + 1);
+			int32 PlantSellValue = (Plant->SeedData->StarValue * Plant->SeedData->PlantData->Multiplier) * (Plant->NumberOfNearbyFlowers + 1);
 
 			if (Plant->ItemComponent->bGold)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue * Plant->PlantData->GoldMultiplier));
+				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue * Plant->SeedData->GoldMultiplier));
 				//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
-				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue * Plant->PlantData->GoldMultiplier;
+				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue * Plant->SeedData->GoldMultiplier;
 			}
 			else
 			{
@@ -241,6 +241,8 @@ void ASellBin::Interact(APrototype2Character* _Player)
 			}
 			_Player->EnableStencil(false);
 			ItemComponent->Mesh->SetRenderCustomDepth(false);
+			
+			_Player->UpdateCharacterSpeed(false);
 		}
 	}
 }

@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
+#include "Prototype2/DataAssets/SeedData.h"
 
 APlant::APlant()
 {
@@ -93,5 +94,5 @@ void APlant::Tick(float DeltaSeconds)
 
 void APlant::Multi_ScalePlant()
 {
-	ItemComponent->Mesh->SetWorldScale3D(PlantData->PlantScale);
+	ItemComponent->Mesh->SetWorldScale3D(SeedData->BabyScale);
 }

@@ -21,6 +21,14 @@ private:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	void AttachToCurrentWinner();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_AttachToCurrentWinner(USkeletalMeshComponent* _WinnterMesh);
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Gamestate* GameStateRef;
+	
 	UPROPERTY(EditAnywhere, Replicated)
 	class USceneComponent* RootTransformComponent;
 	
@@ -29,4 +37,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UBobTransformComponent* BobTransformComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	float UpdateDelay{3.0f};
+	UPROPERTY(VisibleAnywhere)
+	float UpdateDelayTimer{0.0f};
 };

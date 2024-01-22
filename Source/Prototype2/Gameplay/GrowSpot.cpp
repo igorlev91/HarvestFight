@@ -12,7 +12,7 @@
 #include "RadialPlot.h"
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
-#include "Prototype2/DataAssets/PlantData.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
 AGrowSpot::AGrowSpot()
@@ -136,14 +136,7 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 			{
 				if (_Player->PlayerHUDRef)
 				{
-					if (GrowingItemRef->PickupActor == EPickupActor::WeaponActor)
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->WeaponData->WeaponIcon);
-					}
-					else
-					{
-						_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->PlantData->PlantIcon);
-					}
+					_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->Icon);
 				}
 			}
 		}
@@ -154,10 +147,10 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 
 void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 {
-	if (_SeedToPlant->PlantData->GrowTime > 0)
+	if (_SeedToPlant->SeedData->GrowTime > 0)
 	{
-		GrowTime = _SeedToPlant->PlantData->GrowTime;
-		GrowTimer = _SeedToPlant->PlantData->GrowTime;
+		GrowTime = _SeedToPlant->SeedData->GrowTime;
+		GrowTimer = _SeedToPlant->SeedData->GrowTime;
 	}
 	else
 	{
@@ -165,27 +158,41 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		GrowTime = 1.0f;
 	}
 
-	APickUpItem* NewItem = GetWorld()->SpawnActor<APickUpItem>(PlantPrefab);
-	GrowingActor = NewItem;
-	GrowingItemRef = NewItem;
+	if (_SeedToPlant->SeedData->Type == EPickupDataType::WeaponData)
+	{
+		AGrowableWeapon* NewItem = GetWorld()->SpawnActor<AGrowableWeapon>(WeaponPrefab);
+		GrowingActor = NewItem;
+		GrowingItemRef = NewItem;
+		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData,EPickupActor::WeaponActor);
+	}
+	else
+	{
+		APickUpItem* NewItem = GetWorld()->SpawnActor<APickUpItem>(PlantPrefab);
+		GrowingActor = NewItem;
+		GrowingItemRef = NewItem;
+		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData, EPickupActor::PlantActor);
+	}
 	
 	if (GrowingItemRef)
 	{
-		GrowingItemRef->SetPlantData(_SeedToPlant->PlantData);
-
 		// Init random gold
-		GrowingItemRef->ItemComponent->bGold = false;
-		int32 X = rand() % 100;
-		if (X < GrowingItemRef->PlantData->ChanceOfGold)
-		{
-			MakePlantGold();
-		}
-		
 		if (bIsFertilised)
 		{
 			MakePlantGold();
 			bIsFertilised = false;
+			UpdateMaterial();
 		}
+		else
+		{
+			GrowingItemRef->ItemComponent->bGold = false;
+			int32 X = rand() % 100;
+			//X = 0;
+			if (X < GrowingItemRef->SeedData->ChanceOfGold)
+			{
+				MakePlantGold();
+			}
+		}
+		
 		GrowingItemRef->ItemComponent->Mesh->SetSimulatePhysics(false);
 		GrowingItemRef->ItemComponent->Multi_DisableCollisionAndAttach();
 	}
@@ -202,7 +209,7 @@ void AGrowSpot::BeginPlay()
 	
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	
 	if (PlantReadyComponent)
 	{
@@ -266,9 +273,9 @@ void AGrowSpot::Multi_MakePlantGold_Implementation()
 	if (!GrowingItemRef)
 		return;
 	
-	for (int i = 0; i < GrowingItemRef->PlantData->GoldMaterials.Num(); i++)
+	for (int i = 0; i < GrowingItemRef->SeedData->BabyGoldMaterials.Num(); i++)
 	{
-		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->PlantData->GoldMaterials[i]);
+		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[i]);
 	}
 }
 
@@ -279,12 +286,12 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 		return;
 	}
 
-	if (!_Player->HeldItem->PlantData)
+	if (!_Player->HeldItem->SeedData->PlantData)
 	{
 		return;
 	}
 
-	if (_Player->HeldItem->PlantData->Name.Compare("Mandrake"))
+	if (_Player->HeldItem->SeedData->Name.Compare("Mandrake"))
 	{
 		return;
 	}
@@ -307,7 +314,7 @@ void AGrowSpot::ScalePlantOnTick() const
 	if (!GrowingActor)
 		return;
 		
-	const FVector Scale = FMath::Lerp<FVector>(GrowingItemRef->PlantData->PlantScale, FVector(0.3f, 0.3f, 0.3f) , GrowTimer / GrowTime);
+	const FVector Scale = FMath::Lerp<FVector>(GrowingItemRef->SeedData->BabyScale, FVector(0.3f, 0.3f, 0.3f) , GrowTimer / GrowTime);
 	const FVector Pos = FMath::Lerp<FVector>({GetActorLocation()}, GetActorLocation() + FVector::UpVector, GrowTimer / GrowTime);
 	GrowingItemRef->ItemComponent->Mesh->SetSimulatePhysics(false);
 	GrowingItemRef->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -343,6 +350,21 @@ void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
 	}
 }
 
+void AGrowSpot::UpdateMaterial()
+{
+	Multi_UpdateMaterial();
+}
+
+void AGrowSpot::Multi_UpdateMaterial_Implementation()
+{
+	if (!GoldMaterial || !DefaultMaterial)
+		return;
+	if (bIsFertilised)
+		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
+	else
+		ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
+}
+
 void AGrowSpot::RiseTimelineUpdate(float _Delta)
 {
 	FVector NewLocation = GetActorLocation();
@@ -353,33 +375,30 @@ void AGrowSpot::RiseTimelineUpdate(float _Delta)
 
 void AGrowSpot::Interact(APrototype2Character* _Player)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attempted to interact with the grow spot"));
-
 	if (!_Player->PlayerStateRef)
 		return;
 	
 	switch(GrowSpotState)
-		{
+	{
 		case EGrowSpotState::Empty:
 			{
 				if (!_Player->HeldItem)
 					break;
 				
-				UE_LOG(LogTemp, Warning, TEXT("Interacted with Empty"));
 				if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 				{
 					bIsFertilised = true;
-					_Player->Server_DropItem();
+					UpdateMaterial();
+					_Player->DropItem();
 					_Player->EnableStencil(false);
 					Fertiliser->Destroy();
 					break;
 				}
 				else if (ASeed* Seed = Cast<ASeed>(_Player->HeldItem))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Attempted to plant something!"));
-					if (!_Player->HeldItem->PlantData && !_Player->HeldItem->WeaponData)
+					if (!_Player->HeldItem->SeedData)
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Could not plant seed, no data asset"));
+						UE_LOG(LogTemp, Warning, TEXT("Could not plant seed data asset"));
 						return;
 					}
 					
@@ -393,14 +412,13 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 					//_Player->SocketWeapon(FName("Base-HumanWeapon"));
 
-					_Player->Server_DropItem();
+					_Player->DropItem();
 					_Player->EnableStencil(false);
 				}
 				break;
 			}
 		case EGrowSpotState::Growing:
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Interacted with something growing"));
 				if (!_Player->HeldItem)
 					break;
 				
@@ -411,20 +429,20 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 						MakePlantGold();
 						Fertiliser->Destroy();
 						bIsFertilised = false;
-						_Player->Server_DropItem();
+						UpdateMaterial();
+						_Player->DropItem();
 						_Player->EnableStencil(false);
 					}
 				}
 				else
 				{
-					_Player->Server_DropItem();
+					_Player->DropItem();
 					_Player->EnableStencil(false);
 				}
 				break;
 			}
 		case EGrowSpotState::Grown:
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Attempted to Harvest something!"));
 						
 				if (_Player->HeldItem)
 				{
@@ -436,13 +454,15 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 							Fertiliser->Destroy();
 							FertiliseInteractDelayTimer = FertiliseInteractDelay;
 							bIsFertilised = false;
-							_Player->Server_DropItem();
+							UpdateMaterial();
+							_Player->DropItem();
 							_Player->EnableStencil(false);
+							break;
 						}
 					}
 					else
 					{
-						_Player->Server_DropItem();
+						_Player->DropItem();
 						_Player->EnableStencil(false);
 					}
 				}
@@ -451,12 +471,37 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					MandrakePickupNoise(_Player);
 					// Plant
-					if (APlant* SomePlant = Cast<APlant>(GrowingItemRef))
+
+					switch(GrowingItemRef->SeedData->Type)
 					{
-						SomePlant->bGrown = true;
+					case EPickupDataType::PlantData:
+						{
+							APlant* SomePlant = Cast<APlant>(GrowingItemRef);
+							SomePlant->bGrown = true;
+							_Player->PickupItem(GrowingItemRef, EPickupActor::PlantActor);
+							_Player->EnableStencil(false);
+
+							break;
+						}
+					case EPickupDataType::WeaponData:
+						{
+							AGrowableWeapon* SomeWeapon = Cast<AGrowableWeapon>(GrowingItemRef);
+							SomeWeapon->bGrown = true;
+							_Player->PickupItem(GrowingItemRef, EPickupActor::WeaponActor);
+							_Player->EnableStencil(false);
+							
+							break;
+						}
+					default:
+						{
+							_Player->PickupItem(GrowingItemRef, EPickupActor::Default);
+							_Player->EnableStencil(false);
+							break;
+						}
+
 					}
-					_Player->PickupItem(GrowingItemRef);
-					_Player->EnableStencil(false);
+					
+					
 					ItemComponent->Mesh->SetRenderCustomDepth(false);
 					Multi_SetPlantReadySparkle(false);
 				}

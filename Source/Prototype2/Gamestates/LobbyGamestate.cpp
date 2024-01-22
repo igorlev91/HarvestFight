@@ -254,7 +254,10 @@ void ALobbyGamestate::PickMapToPlay()
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
-			MapChoice = "/Game/Maps/Level_Winter";
+			if (GameMode == 0) // Normal Mode
+				MapChoice = "/Game/Maps/Level_WinterNormal";
+			else // Brawl Mode
+				MapChoice = "/Game/Maps/Level_Winter";
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
 		{
@@ -323,7 +326,10 @@ void ALobbyGamestate::PickMapToPlay()
 							}
 						case 1:
 							{
-								MapChoice = "/Game/Maps/Level_Winter";
+								if (GameMode == 0) // Normal Mode
+									MapChoice = "/Game/Maps/Level_WinterNormal";
+								else // Brawl Mode
+									MapChoice = "/Game/Maps/Level_Winter";
 								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
 								break;
 							}

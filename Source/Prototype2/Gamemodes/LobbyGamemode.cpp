@@ -113,7 +113,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
-					SomePlayerName = IdentityInterface->GetPlayerNickname(*UserId);
+					SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
 					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
 				}
 			}
@@ -126,7 +126,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
 				if (UserId.IsValid())
 				{
-					SomePlayerName = "Player " + FString::FromInt(SomePlayerID);
+					SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
 					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
 				}
 			}

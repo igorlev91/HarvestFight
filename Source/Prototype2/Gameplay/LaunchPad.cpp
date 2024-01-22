@@ -1,5 +1,4 @@
 ﻿
-
 #include "LaunchPad.h"
 
 #include "Components/BoxComponent.h"

@@ -4,13 +4,13 @@
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "Prototype2/Pickups/PickUpItem.h"
 
 USquashAndStretch::USquashAndStretch()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	SetIsReplicated(true);
 }
 
 void USquashAndStretch::BeginPlay()
@@ -140,11 +140,11 @@ void USquashAndStretch::Multi_SquashAndStretch_Implementation(float _ServerCurre
 		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
 		}
 	}
 	
@@ -157,11 +157,11 @@ void USquashAndStretch::Server_SquashAndStretch_Implementation()
 		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
 		}
 	}
 }
@@ -173,11 +173,11 @@ void USquashAndStretch::Multi_BoingUpdate_Implementation(float _Value)
 		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
 		}
 	}
 
@@ -190,11 +190,11 @@ void USquashAndStretch::Server_BoingUpdate_Implementation(float _Value)
 		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->PlantData->PlantScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
 		}
 	}
 }

@@ -1,4 +1,5 @@
 
+
 #include "WeaponAspearagus.h"
 
 #include "AspearagusProjectile.h"
@@ -6,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/AnimationData.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 
 void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
@@ -62,7 +64,7 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponData->AttackAudio);
+	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
 
 	// Reset all attack variables
 	_Player->ResetAttack();
@@ -74,7 +76,7 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
 		
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponData->AOEMultiplier;	
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
 	
 	FVector DownVector = {_Player->GetActorLocation().X, _Player->GetActorLocation().Y, _Player->GetMesh()->GetComponentLocation().Z};
 	DownVector += _Player->GetActorForwardVector() * 10000.0f;
@@ -93,8 +95,8 @@ void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Characte
 	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActorDeferred<AAspearagusProjectile>(AAspearagusProjectile::StaticClass(),ProjectileTransform, _Player);
 	if (NewAspearagusProjectile)
 	{
-		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponData->WeaponMesh,
-												5000.0f, 2.0f, _AttackSphereRadius);
+		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
+												4000.0f, 3.0f, _AttackSphereRadius);
 		NewAspearagusProjectile->SetOwner(_Player);
 		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile, ProjectileTransform);
 		NewAspearagusProjectile->SetReplicates(true);

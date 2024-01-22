@@ -52,7 +52,7 @@ private:
 
 	/* Spawning seed from PlantData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
-	TArray<UPlantData*> PlantDataArray;	
+	TArray<USeedData*> PlantDataArray;	
 	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<ASeed> PlantSeedPrefab;
 	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
@@ -60,9 +60,9 @@ private:
 
 	/* Spawning seed from WeaponData Data Asset */
 	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
-	TArray<UWeaponData*> WeaponDataArray;	
+	TArray<USeedData*> WeaponDataArray;	
 	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
-	TSubclassOf<ASeed> WeaponSeedPrefab;
+	TSubclassOf<class AWeaponSeed> WeaponSeedPrefab;
 
 	UPROPERTY(EditAnywhere, Category = Parachute, meta = (AllowPrivateAccess))
 	UStaticMesh* ParachuteMesh;

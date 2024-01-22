@@ -35,30 +35,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
-	void SetPlantSeedData(UPlantData* _Data);
-	void SetWeaponSeedData(UWeaponData* _Data);
-	
-	/* Called from GrowSpot to give plant a specific data asset and setup static mesh */
-	void SetPlantData(UPlantData* _Data);
-	void SetWeaponData(UWeaponData* _Data);
+	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
 
 	UFUNCTION(Server, Reliable)
-	void Server_SetPlantSeedData(UPlantData* _Data);
-	UFUNCTION(Server, Reliable)
-	void Server_SetWeaponSeedData(UWeaponData* _Data);
-	UFUNCTION(Server, Reliable)
-	void Server_SetPlantData(UPlantData* _Data);
-	UFUNCTION(Server, Reliable)
-	void Server_SetWeaponData(UWeaponData* _Data);
+	void Server_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetPlantSeedData(UPlantData* _Data);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetWeaponSeedData(UWeaponData* _Data);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetPlantData(UPlantData* _Data);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetWeaponData(UWeaponData* _Data);
+	void Multi_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -66,16 +49,14 @@ public:
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;
 
-	UPROPERTY(VisibleAnywhere)
-	UPlantData* PlantData = nullptr;
-	UPROPERTY(VisibleAnywhere)
-	UWeaponData* WeaponData = nullptr;
+	UPROPERTY(EditAnywhere)
+	class USeedData* SeedData{nullptr};
 
 	// Todo: Rename to PickupType when other Enum is replaced
 	UPROPERTY(VisibleAnywhere)
 	EPickupDataType DataAssetPickupType; //to replace pickup type in itemcomponent
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	EPickupActor PickupActor;
 
 protected:

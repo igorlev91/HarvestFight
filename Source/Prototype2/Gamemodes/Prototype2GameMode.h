@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2GameMode.generated.h"
 
@@ -14,6 +15,8 @@ UCLASS(minimalapi)
 class APrototype2GameMode : public AHHGamemodeBase
 {
 	GENERATED_BODY()
+
+	friend ACrown;
 
 	/* Public Variables */
 public:
@@ -41,9 +44,6 @@ protected:
 	void EnableControllerInput(APlayerController* _PlayerController);
 	void DisableControllerInputForAll();
 	void EnableControllerInputForAll();
-
-	void AttachCrownToCurrentWinner();
-
 	void LookOutForGameEnd();
 
 	void TeleportEveryoneToPodium();

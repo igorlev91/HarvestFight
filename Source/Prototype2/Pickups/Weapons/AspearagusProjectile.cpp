@@ -5,6 +5,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 
 
@@ -41,7 +42,27 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 	if (DeathTimer >= 0.0f)
 	{
 		DeathTimer -= DeltaTime;
-		SetActorLocation(GetActorLocation() + GetActorForwardVector() * Speed * DeltaTime);
+
+		// create a collision sphere
+		const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(20.0f);
+
+		// create tarray for catching hit results
+		TArray<FHitResult> OutHits;
+
+		// Set the sweep to stationary
+		const FVector SweepStart = FVector{GetActorLocation().X + 100.0f, GetActorLocation().Y, GetActorLocation().Z};
+		const FVector SweepEnd = SweepStart;
+	
+		// check if something got hit in the sweep
+		const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere);
+
+		if (bHasHitResult)
+		{
+			//Destroy();
+		}
+		else{
+			SetActorLocation(GetActorLocation() + GetActorForwardVector() * Speed * DeltaTime);
+		}
 	}
 	else
 	{
@@ -52,7 +73,7 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 	{
 		CheckForHitPlayers();
 	}
-	
+
 }
 
 void AAspearagusProjectile::CheckForHitPlayers()
@@ -79,7 +100,7 @@ void AAspearagusProjectile::CheckForHitPlayers()
 			{
 				if (HitPlayerCast != OwningPlayer)
 				{
-					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponData);
+					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
 				}
 			}
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))

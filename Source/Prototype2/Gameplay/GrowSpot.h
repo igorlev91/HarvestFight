@@ -84,6 +84,16 @@ protected:
 	//
 	// Fertilisation
 	//
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_UpdateMaterial();
+	void UpdateMaterial();
+
+	UPROPERTY(Replicated, EditAnywhere)
+	UMaterialInstance* DefaultMaterial;
+	
+	UPROPERTY(Replicated, EditAnywhere)
+	UMaterialInstance* GoldMaterial;
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsFertilised;
