@@ -440,6 +440,9 @@ void APrototype2Character::CheckForInteractables()
 {
 	if (!HasIdealRole())
 		return;
+
+	if (InteractTimer > InteractTimerTime / 2.0f)
+		return;
 	
 	TArray<FHitResult> OutHits;
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(InteractRadius * 1.5f);
@@ -463,24 +466,43 @@ void APrototype2Character::CheckForInteractables()
 				InteractableHitResults.Add(HitResult);
 				InteractableActors.Add(HitResult.GetActor());
 			}
-				
 		}
 	}
 
 	TArray<FHitResult> ImportantHitResults;
 	TArray<AActor*> ImportantActors;
+	TArray<FHitResult> ExtraImportantHitResults;
+	TArray<AActor*> ExtraImportantActors;
 	for(int i = 0; i < InteractableActors.Num(); i++)
 	{
-		if (Cast<ASellBin>(InteractableActors[i]) || Cast<AGrowSpot>(InteractableActors[i]) || Cast<AFertiliserSpawner>(InteractableActors[i]))
+		if (AGrowSpot* SomeGrowSpot = Cast<AGrowSpot>(InteractableActors[i]))
+		{
+			if (ABeehive* SomeBeeHive = Cast<ABeehive>(SomeGrowSpot->GrowingItemRef))
+			{
+				ExtraImportantActors.Add(InteractableActors[i]);
+				ExtraImportantHitResults.Add(InteractableHitResults[i]);
+			}
+			else
+			{
+				ImportantActors.Add(InteractableActors[i]);
+				ImportantHitResults.Add(InteractableHitResults[i]);
+			}
+		}
+		else if (Cast<ASellBin>(InteractableActors[i])
+			|| Cast<AFertiliserSpawner>(InteractableActors[i]))
 		{
 			ImportantActors.Add(InteractableActors[i]);
 			ImportantHitResults.Add(InteractableHitResults[i]);
 		}
 	}
-	if (ImportantActors.Num() > 0)
+	
+	if (ExtraImportantActors.Num() > 0)
 	{
-		InteractableActors.Empty();
-		InteractableHitResults.Empty();
+		InteractableActors = ExtraImportantActors;
+		InteractableHitResults = ExtraImportantHitResults;
+	}
+	else if (ImportantActors.Num() > 0)
+	{
 		InteractableActors = ImportantActors;
 		InteractableHitResults = ImportantHitResults;
 	}

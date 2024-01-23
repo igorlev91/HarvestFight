@@ -32,13 +32,10 @@ bool APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 	case EGrowSpotState::Empty:
 		{
 			if (Cast<ASeed>(CastedCharacter->HeldItem))
-			{
 				return true;
-			}
 			if (Cast<AFertiliser>(CastedCharacter->HeldItem) && !bIsFertilised)
-			{
 				return true;
-			}
+			
 			break;
 		}
 	case EGrowSpotState::Growing:
@@ -50,13 +47,22 @@ bool APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 		}
 	case EGrowSpotState::Grown:
 		{
-			if (GrowingItemRef)
+			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
 				return true;
+		
+			if (Cast<ASeed>(CastedCharacter->HeldItem))
+				return false;
+			
+			if (ABeehive* SomeBeehive = Cast<ABeehive>(GrowingActor))
+				return SomeBeehive->IsInteractable(_Player);
+
+			return true;
 		}
 	default:
-		break;
+		{
+			break;
+		}
 	}
-	
 
 	return false;
 }

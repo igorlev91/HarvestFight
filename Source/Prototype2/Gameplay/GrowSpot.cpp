@@ -74,22 +74,14 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 	case EGrowSpotState::Empty:
 		{
 			if (Cast<ASeed>(CastedCharacter->HeldItem))
-			{
 				return true;
-			}
 			if (Cast<AFertiliser>(CastedCharacter->HeldItem) && !bIsFertilised)
-			{
 				return true;
-			}
+			
 			break;
 		}
 	case EGrowSpotState::Growing:
 		{
-			if (GrowingItemRef->SeedData->Type == EPickupDataType::BeehiveData)
-			{
-				return false;
-			}
-				
 			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
 				return true;
 			
@@ -97,40 +89,25 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 		}
 	case EGrowSpotState::Grown:
 		{
-			if (!GrowingItemRef)
-			{
-				break;
-			}
-			switch(GrowingItemRef->SeedData->Type)
-			{
-			case EPickupDataType::BeehiveData:
-				{
-					if (Cast<AFertiliser>(CastedCharacter->HeldItem))
-					{
-						return false;
-					}
-					
-					if (ABeehive* SomeBeehive = Cast<ABeehive>(GrowingItemRef))
-					{
-						if (SomeBeehive->IsInteractable(_Player))
-							return true;
-					}
-					break;
-				}
-			default:
-				{
-					return true;
-				}
-			}
+			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
+				return true;
+		
+			if (Cast<ASeed>(CastedCharacter->HeldItem))
+				return false;
+			
+			if (ABeehive* SomeBeehive = Cast<ABeehive>(GrowingActor))
+				return SomeBeehive->IsInteractable(_Player);
+
+			return true;
 		}
 	default:
-		break;
+		{
+			break;
+		}
 	}
-	
 
 	return false;
 }
-
 void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
@@ -613,14 +590,12 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 	{
 	case EGrowSpotState::Empty:
 		{
-			if (!_Owner->HeldItem)
-				break;
-			
 			if(Cast<ASeed>(_Owner->HeldItem))
 			{
 				_InvokingWidget->SetHUDInteractText("Grow");
 
 				_Owner->EnableStencil(true);
+				return;
 			}
 			else if(Cast<AFertiliser>(_Owner->HeldItem))
 			{
@@ -628,30 +603,20 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 				_InvokingWidget->SetHUDInteractText("Fertilise");
 
 				_Owner->EnableStencil(true);
-			}
-			else
-			{
-				_Owner->EnableStencil(false);
+				return;
 			}
 			break;
 		}
 	case EGrowSpotState::Growing:
 		{
-			if(!_Owner->HeldItem)
-				return;
-			if (GrowingItemRef->SeedData->Type == EPickupDataType::BeehiveData)
-				return;
-			
 			if (Cast<AFertiliser>(_Owner->HeldItem) && !GrowingItemRef->ItemComponent->bGold)
 			{
 				_InvokingWidget->SetHUDInteractText("Fertilise");
 
 				_Owner->EnableStencil(true);
+				return;
 			}
-			else
-			{
-				_Owner->EnableStencil(false);
-			}
+			
 			break;
 		}
 	case EGrowSpotState::Grown:
@@ -660,20 +625,23 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			{
 				// Fert
 				_InvokingWidget->SetHUDInteractText("Fertilise");
+				_Owner->EnableStencil(true);
+				return;
 			}
-			else
+			else if (GrowingItemRef)
 			{
-				// Harvest
 				_InvokingWidget->SetHUDInteractText("Harvest");
+				_Owner->EnableStencil(true);
+				return;
 			}
-			
-			_Owner->EnableStencil(true);
 					
 			break;
 		}
 	default:
 		break;
 	}
+
+	_Owner->EnableStencil(false);
 }
 
 void AGrowSpot::SetBeehive(ABeehive* _Beehive, float _GrowTime)

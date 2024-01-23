@@ -18,6 +18,12 @@ ALobbyGamestate::ALobbyGamestate()
 void ALobbyGamestate::BeginPlay()
 {
 	Super::BeginPlay();
+
+	/* Pre set backup level */
+	if (GameMode == 0) // Normal Mode
+		MapChoice = "/Game/Maps/Level_FF_Large";
+	else // Brawl Mode
+		MapChoice = "/Game/Maps/Level_FF_Brawl";
 }
 
 void ALobbyGamestate::Tick(float _DeltaSeconds)
@@ -51,7 +57,8 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					PickMapToPlay();
+					bShowMapChoice = true; // Show map choice
+					//PickMapToPlay();
 
 					// Countdown between all players choosing map and actually starting
 					
@@ -59,9 +66,21 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 					{
 						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 
+						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
+						if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
+						{
+							bHasAllPlayersVoted = true;
+							if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
+							{
+								MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds; // + 1.0f;
+							}
+						}
+						
 						if (MapChoiceTotalLengthSeconds <= 0)
 						{
 							bIsCountingDown = false;
+
+							PickMapToPlay();
 						
 							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 							{
@@ -244,10 +263,11 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 void ALobbyGamestate::PickMapToPlay()
 {
-	bShowMapChoice = true; // Show map choice
+	//bShowMapChoice = true; // Show map choice
 
-	const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
-	if (TotalVotes == Server_Players.Num() && bMapChosen == false)
+	//const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
+	//if (TotalVotes == Server_Players.Num() && bMapChosen == false)
+	if (bMapChosen == false)
 	{
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
 		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm) // Normal farm gets most votes
@@ -358,10 +378,11 @@ void ALobbyGamestate::PickMapToPlay()
 				}
 			}
 		}
-		if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
-		{
-			MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds + 1.0f;
-		}
+		
+		//if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
+		//{
+		//	MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds + 1.0f;
+		//}
 	}
 }
 

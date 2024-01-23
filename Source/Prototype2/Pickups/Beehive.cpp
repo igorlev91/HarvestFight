@@ -89,8 +89,6 @@ void ABeehive::ClientInteract(APrototype2Character* _Player)
 
 void ABeehive::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
 {
-	if (bIsReadyToCollect)
-		_InvokingWidget->SetHUDInteractText("Harvest");
 }
 
 bool ABeehive::IsInteractable(APrototype2PlayerState* _Player)
