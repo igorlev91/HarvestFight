@@ -28,6 +28,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* WeaponIcon;
 	
+	UPROPERTY(EditDefaultsOnly, Category= "UI")
+	UTexture2D* GoldWeaponIcon;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "Attack")
 	float WeaponReach;
 	
@@ -39,7 +42,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Attack")
 	int32 Durability = 1.0f;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Attack")
+	float GoldDurabilityMultiplier = 1.5f;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "Attack")
 	float Cooldown = 1.0f;
 
@@ -58,6 +64,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
 	UStaticMesh* AOEIndicatorMesh;
 
+	/* 1.1 = 10% bigger, so the actual hit zone is larger than what
+	 * the indicator shows.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
+	float ScaleOfAOELargerThanIndicator = 1.1f;
+	
 	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
 	EDebuff Debuff = EDebuff::None;
 };

@@ -11,59 +11,67 @@
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
+#include "Prototype2/DataAssets/SkinData.h"
 
 void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 	
-	//PlayerImage->SetBrushFromTexture(Texture_CowRed);
+	/* Set gamestate reference */
+	if (auto* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		GameStateReference = GameStateCast;
+	}
 
+	OwningController = Cast<APrototype2PlayerController>(GetOwningPlayer());
 	if (OwningController)
 	{
-		OwningController->SyncPlayerMaterial(IdealDetails);
+		if (OwningController->HasAuthority())
+		{
+			SetCharacterModelFromSelection(NumberOfCharacters);
+			SetCharacterColourFromSelection(NumberOfColours);
+			OwningController->SyncPlayerMaterial(0, IdealDetails);
+			UpdateCharacterImage(OwningController);
+		}
 	}
-	UpdateCharacterImage();
 }
 
-void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
+void UWidget_LobbyCharacterSelection::UpdateCharacterImage(class APrototype2PlayerController* _Owner)
 {
-	if (!OwningController)
+	if (SkinColourData && SkinColourData->PureColours.Num() > (uint8)IdealDetails.Colour)
+	{
+		PlayerColourImage->SetColorAndOpacity(SkinColourData->PureColours[(uint8)IdealDetails.Colour]);
+	}
+	
+	if (!_Owner)
 	{
 		return;
 	}
+
+	ALobbyPlayerState* Player = _Owner->GetPlayerState<ALobbyPlayerState>();
+	if (!Player)
+		return;
 	
 	switch(IdealDetails.Character)
 	{
 	case ECharacters::COW:
 		{
-			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
-			{
-				PlayerImage->SetBrushFromTexture(Player->CowTextures[(int32)Player->Details.Colour]);
-			}
+			PlayerImage->SetBrushFromTexture(Player->CowTextures[(uint8)IdealDetails.Colour]);
 			break;
 		}
 	case ECharacters::CHICKEN:
 		{
-			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
-			{
-				PlayerImage->SetBrushFromTexture(Player->ChickenTextures[(int32)Player->Details.Colour]);
-			}
+			PlayerImage->SetBrushFromTexture(Player->ChickenTextures[(uint8)IdealDetails.Colour]);
 			break;
 		}
 	case ECharacters::DUCK:
 		{
-			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
-			{
-				PlayerImage->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
-			}
+			PlayerImage->SetBrushFromTexture(Player->DuckTextures[(uint8)IdealDetails.Colour]);
 			break;
 		}
 	case ECharacters::PIG:
 		{
-			if (auto* Player = OwningController->GetPlayerState<ALobbyPlayerState>())
-			{
-				PlayerImage->SetBrushFromTexture(Player->PigTextures[(int32)Player->Details.Colour]);
-			}
+			PlayerImage->SetBrushFromTexture(Player->PigTextures[(uint8)IdealDetails.Colour]);
 			break;
 		}
 	default:
@@ -72,73 +80,126 @@ void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 			break;
 		}
 	}
-
-	if (SkinColourData && SkinColourData->PureColours.Num() > (int16)CurrentColourSelection)
-	{
-		PlayerColourImage->SetColorAndOpacity(SkinColourData->PureColours[(int16)CurrentColourSelection]);
-	}
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRight)
 {
-	int16 newColour = (int16)CurrentColourSelection;
-	if (_bIsTowardsRight)
-	{
-		newColour++;
-	}
-	else
-	{
-		newColour--;
-	}
-	if (newColour >= NumberOfColours)
-	{
-		newColour = 0;
-	}
-	else if (newColour < 0)
-	{
-		newColour = NumberOfColours - 1;
-	}
-	CurrentColourSelection = (EColours)newColour;
-	IdealDetails.Colour = CurrentColourSelection;
+	if (!OwningController)
+		return;
 	
-	SetCharacterColourFromSelection(NumberOfColours);
-
-	if (OwningController)
+	for (int16 i = 0; i < NumberOfColours; i++)
 	{
-		OwningController->SyncPlayerMaterial(IdealDetails);
+		int16 newColour = (uint8)IdealDetails.Colour;
+		if (_bIsTowardsRight)
+		{
+			newColour++;
+		}
+		else
+		{
+			newColour--;
+		}
+		if (newColour >= NumberOfColours)
+		{
+			newColour = 0;
+		}
+		else if (newColour < 0)
+		{
+			newColour = NumberOfColours - 1;
+		}
+		IdealDetails.Colour = (EColours)newColour;
+		SetCharacterColourFromSelection(NumberOfColours);
+
+		if (!HasSamePlayerColourAndCharacter())
+			break;
 	}
-	UpdateCharacterImage();
+	
+	OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+	UpdateCharacterImage(OwningController);	
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacter(bool _bIsTowardsRight)
 {
-	int16 NewCharacter = (int16)IdealDetails.Character;
+	if (!OwningController)
+		return;
+
+	auto LobbyPlayerState = OwningController->GetPlayerState<ALobbyPlayerState>();
+	if (!LobbyPlayerState)
+		return;
+
+	if (LobbyPlayerState->Details.Character != IdealDetails.Character ||	LobbyPlayerState->Details.Colour != IdealDetails.Colour)
+		return;
+		
+	int16 newCharacter = (uint8)IdealDetails.Character;
 	if (_bIsTowardsRight)
 	{
-		NewCharacter ++;
+		newCharacter++;
 	}
 	else
 	{
-		NewCharacter --;
+		newCharacter--;
 	}
-	
-	if (NewCharacter > 3)
+	if (newCharacter >= NumberOfCharacters)
 	{
-		NewCharacter = 0;
+		newCharacter = 0;
 	}
-	else if (NewCharacter < 0)
+	else if (newCharacter < 0)
 	{
-		NewCharacter = 3;
+		newCharacter = NumberOfCharacters - 1;
 	}
-	IdealDetails.Character = ECharacters(NewCharacter);
-	
-	CheckForTakenCharacter(_bIsTowardsRight);
+	IdealDetails.Character = (ECharacters)newCharacter;
+		
+	SetCharacterModelFromSelection(NumberOfCharacters);
 
-	if (OwningController)
+	if (!HasSamePlayerColourAndCharacter())
 	{
-		OwningController->SyncPlayerMaterial(IdealDetails);
+		SetCharacterModelFromSelection(NumberOfCharacters);
+		SetCharacterColourFromSelection(NumberOfColours);
+		OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+		UpdateCharacterImage(OwningController);
+		return;
 	}
-	UpdateCharacterImage();
+	else
+	{
+		for (int16 i = 0; i < NumberOfCharacters; i++)
+		{
+			for (int16 j = 0; j < NumberOfColours; j++)
+			{
+				if (!HasSamePlayerColourAndCharacter())
+				{
+					SetCharacterModelFromSelection(NumberOfCharacters);
+					SetCharacterColourFromSelection(NumberOfColours);
+					OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+					UpdateCharacterImage(OwningController);
+					return;
+				}
+				else
+				{
+					ChangeCharacterColour(true);
+				}
+			}
+
+			newCharacter = (uint8)IdealDetails.Character;
+			if (_bIsTowardsRight)
+			{
+				newCharacter++;
+			}
+			else
+			{
+				newCharacter--;
+			}
+			if (newCharacter >= NumberOfCharacters)
+			{
+				newCharacter = 0;
+			}
+			else if (newCharacter < 0)
+			{
+				newCharacter = NumberOfCharacters - 1;
+			}
+			IdealDetails.Character = (ECharacters)newCharacter;
+		
+			SetCharacterModelFromSelection(NumberOfCharacters);
+		}
+	}
 }
 
 void UWidget_LobbyCharacterSelection::CheckForTakenCharacter(bool _bIsTowardsRight)
@@ -175,18 +236,17 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 	if (!SkinColourData)
 		return;
 
-	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) CurrentColourSelection];
+	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];
 
-	switch(CurrentColourSelection)
+	switch(IdealDetails.Colour)
 	{
 	case EColours::RED:
 		{
 			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterColour = SkinColourData->Reds[(int16)IdealDetails.Character];
 
-			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
+			if (SkinColourData->SubReds.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterSubColour = SkinColourData->SubReds[(int16)IdealDetails.Character];
-
 			
 			break;
 		}
@@ -231,22 +291,141 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 			if (SkinColourData->Whites.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterColour = SkinColourData->Whites[(int16)IdealDetails.Character];
 
-			if (SkinColourData->Whites.Num() > (int16)IdealDetails.Character)
+			if (SkinColourData->SubWhites.Num() > (int16)IdealDetails.Character)
 				IdealDetails.CharacterSubColour = SkinColourData->SubWhites[(int16)IdealDetails.Character];
 			break;
 		}
 	}
 }
 
+void UWidget_LobbyCharacterSelection::SetCharacterModelFromSelection(int32 _NumberOfCharacters)
+{
+	if (SkinData->Models.Num() > (int16)IdealDetails.Character)
+		IdealDetails.AnimationData = SkinData->Models[(int16)IdealDetails.Character];
+}
+
 void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+	
+	if (!OwningController)
+		return;
 
-	if (!IsValid(OwningController))
-    {
-		if (auto OwningPlayer = GetOwningPlayer())
+	
+	if (OwningController->HasAuthority())
+		return;
+	
+	if (!HasSamePlayerColourAndCharacter())
+		return;
+
+	for (int16 i = 0; i < NumberOfCharacters; i++)
+	{
+		for (int16 j = 0; j < NumberOfColours; j++)
 		{
-			OwningController = Cast<APrototype2PlayerController>(OwningPlayer);
+			if (!HasSamePlayerColourAndCharacter())
+			{
+				SetCharacterModelFromSelection(NumberOfCharacters);
+				SetCharacterColourFromSelection(NumberOfColours);
+				OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+				UpdateCharacterImage(OwningController);
+				return;
+			}
+			else
+			{
+				ChangeCharacterColour(true);
+			}
 		}
-    }
+
+		int16 newCharacter = (uint8)IdealDetails.Character + 1;
+		if (newCharacter >= NumberOfCharacters)
+		{
+			newCharacter = 0;
+		}
+		else if (newCharacter < 0)
+		{
+			newCharacter = NumberOfCharacters - 1;
+		}
+		IdealDetails.Character = (ECharacters)newCharacter;
+		
+		SetCharacterModelFromSelection(NumberOfCharacters);
+	}
+}
+
+bool UWidget_LobbyCharacterSelection::HasSamePlayerColourAndCharacter()
+{
+	for (int16 i = 0; i < GameStateReference->PlayerArray.Num(); i++)
+	{
+		if (ALobbyPlayerState* SomePlayer = Cast<ALobbyPlayerState>(GameStateReference->PlayerArray[i]))
+		{
+			if (OwningController)
+			{
+				if (OwningController->GetPlayerState<ALobbyPlayerState>() != SomePlayer)
+				{
+					if (SomePlayer->Details.Colour == IdealDetails.Colour && SomePlayer->Details.Character == IdealDetails.Character)
+					{
+						return true;
+					}
+				}
+			}
+			else
+			{
+				if (SomePlayer->Details.Colour == IdealDetails.Colour && SomePlayer->Details.Character == IdealDetails.Character)
+				{
+					return true;
+				}
+			}
+
+		}
+	}
+	
+	return false;
+}
+
+void UWidget_LobbyCharacterSelection::SetOwningController(int32 _PlayerID, APrototype2PlayerController* _Owner)
+{
+	OwningController = _Owner;
+	PlayerID = _PlayerID;
+
+	//if (_Owner->HasAuthority())
+	//	return;
+//
+	//if (!HasSamePlayerColourAndCharacter())
+	//	return;
+	//
+	//for (int16 i = 0; i < NumberOfCharacters; i++)
+	//{
+	//	for (int16 j = 0; j < NumberOfColours; j++)
+	//	{
+	//		if (!HasSamePlayerColourAndCharacter())
+	//		{
+	//			SetCharacterModelFromSelection(NumberOfCharacters);
+	//			SetCharacterColourFromSelection(NumberOfColours);
+	//			_Owner->SyncPlayerMaterial(PlayerID, IdealDetails);
+	//			UpdateCharacterImage(_Owner);
+	//			return;
+	//		}
+	//		else
+	//		{
+	//			ChangeCharacterColour(true);
+	//		}
+	//	}
+//
+	//	int16 newCharacter = (uint8)IdealDetails.Character + 1;
+	//	if (newCharacter >= NumberOfCharacters)
+	//	{
+	//		newCharacter = 0;
+	//	}
+	//	else if (newCharacter < 0)
+	//	{
+	//		newCharacter = NumberOfCharacters - 1;
+	//	}
+	//	IdealDetails.Character = (ECharacters)newCharacter;
+	//	
+	//	SetCharacterModelFromSelection(NumberOfCharacters);
+	//}
+}
+
+void UWidget_LobbyCharacterSelection::SetPlayerID(int32 _PlayerID)
+{
+	PlayerID = _PlayerID;
 }

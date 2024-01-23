@@ -13,10 +13,10 @@ class PROTOTYPE2_API ARadialPlot : public AActor
 public:
 	ARadialPlot();
 	
-	void SetPlayerID(int32 _Id);
-	int32 GetPlayerID() const;
+	void SetPlayerID(FString _Id);
+	FString GetPlayerID() const;
 
-	void SpawnGrowSpots(int32 _Id);
+	void SpawnGrowSpots(FString _PlayerName);
 
 	void UpdateBeehiveFlowers();
 
@@ -48,7 +48,7 @@ protected:
 	TSubclassOf<AGrowSpot> GrowSpotPrefab;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	int32 Player_ID;
+	FString PlayerName;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float PlotSpread {180.0f};
@@ -56,8 +56,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float PlotZHeight {30.0f};
 	
-	UPROPERTY(EditAnywhere)
-	class USquashAndStretch* SSComponent;
+
 
 	bool bDoOnce{true};
 };

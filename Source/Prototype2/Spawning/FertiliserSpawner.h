@@ -39,6 +39,9 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
 
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
+
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<class AFertiliser> FertiliserPrefab;
 
@@ -52,5 +55,8 @@ protected:
 	float SpawnTimer{};
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float SpawnHeight{100.0f};
+	float SpawnZPosition{100.0f};
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	float SpawnXPosition{100.0f};
 };

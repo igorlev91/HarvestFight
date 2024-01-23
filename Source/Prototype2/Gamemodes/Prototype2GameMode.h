@@ -17,6 +17,7 @@ class APrototype2GameMode : public AHHGamemodeBase
 	GENERATED_BODY()
 
 	friend ACrown;
+	friend APrototype2Gamestate;
 
 	/* Public Variables */
 public:

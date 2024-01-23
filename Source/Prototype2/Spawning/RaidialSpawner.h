@@ -38,7 +38,7 @@ public:
 	void SetUp();
 
 	UPROPERTY()
-	TMap<int32, ARadialPlot*> Plots;
+	TMap<FString, ARadialPlot*> Plots;
 	
 	UFUNCTION(BlueprintCallable)
 	void SetupDelayed();

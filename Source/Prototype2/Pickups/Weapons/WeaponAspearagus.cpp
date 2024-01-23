@@ -14,20 +14,20 @@ void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
 {
 	Super::ChargeAttack(_Player);
 
-	_Player->Multi_SetPlayerAimingMovement(true);
+	_Player->Server_SetPlayerAimingMovement(true);
 }
 
 void UWeaponAspearagus::ChargeAttackCancelled(APrototype2Character* _Player)
 {
 	Super::ChargeAttackCancelled(_Player);
-	_Player->Multi_SetPlayerAimingMovement(false);
+	_Player->Server_SetPlayerAimingMovement(false);
 }
 
 void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
 	Super::ReleaseAttack(_bIsFullCharge, _Player);
 
-	_Player->Multi_SetPlayerAimingMovement(false);
+	_Player->Server_SetPlayerAimingMovement(false);
 	
 	if (_bIsFullCharge)
 	{
@@ -45,9 +45,9 @@ void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 	}
 }
 
-void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	Super::ExecuteAttack(_AttackSphereRadius, _Player);
+	Super::ExecuteAttack(_AttackSphereRadius, _Player, _CachedActorLocation, _CachedForwardVector);
 	
 	Server_SpawnProjectile(_Player, _AttackSphereRadius);
 	
@@ -89,6 +89,9 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
 
 void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
 {
+	if (!_Player)
+		return;
+	
 	// Spawn projectile
 	FTransform ProjectileTransform = _Player->GetTransform();
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());

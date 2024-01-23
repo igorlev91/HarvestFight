@@ -5,6 +5,7 @@
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Pickups/Fertiliser.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 AFertiliserSpawner::AFertiliserSpawner()
 {
@@ -12,6 +13,7 @@ AFertiliserSpawner::AFertiliserSpawner()
 	bReplicates = true;
 	InterfaceType = EInterfaceType::FertilizerBin;
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("Item Component"));
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void AFertiliserSpawner::BeginPlay()
@@ -28,6 +30,9 @@ void AFertiliserSpawner::BeginPlay()
 		return;
 	
 	SpawnTimer = SpawnInterval;
+
+	SSComponent->Disable();
+	//SSComponent->SetMeshesToStretch({SpawnedFertiliser->ItemComponent->Mesh},{});
 }
 
 void AFertiliserSpawner::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -58,6 +63,8 @@ void AFertiliserSpawner::Interact(APrototype2Character* _Player)
 		return;
 
 	SpawnTimer = SpawnInterval;
+
+	SSComponent->Disable();
 	
 	_Player->PickupItem(SpawnedFertiliser, EPickupActor::FertilizerActor);
 
@@ -111,6 +118,9 @@ void AFertiliserSpawner::SpawnFertiliser()
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	SpawnedFertiliser->SetActorRelativeLocation({0.0f, 0.0f, SpawnHeight});
+	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
+
+	SSComponent->Enable();
+	SSComponent->SetMeshesToStretch({SpawnedFertiliser->ItemComponent->Mesh},{});
 }
 

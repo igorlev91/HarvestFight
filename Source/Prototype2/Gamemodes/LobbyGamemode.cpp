@@ -47,19 +47,11 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 		
 	GameStateReference->Server_Players.Add(PlayerStateReference);
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
-
-	/* Player positions */
-	// Find all PlayerStarts in the level
-	TArray<AActor*> PlayerStarts;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
 	
 			
 	ALobbyCharacter* Character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter());
 	if (!Character)
 		return;
-			
-	Character->SetPlayerStateRef(PlayerStateReference);
-	Character->SetPlayerState(PlayerStateReference);
 	
 	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 }
@@ -137,40 +129,12 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 			CasterPlayerState->Player_ID = SomePlayerID;
 			CasterPlayerState->PlayerName = SomePlayerName;
 
-            ///* Lobby V3 stuff */
-			//FVector NewPosition{};
-			//switch (i)
-			//{
-			//case 0:
-			//	{
-			//		NewPosition = Player1StartPosition;
-			//		break;
-			//	}
-			//default:
-			//	{
-			//		NewPosition = Player1StartPosition;
-			//		break;
-			//	}
-			//}
-			FVector NewPosition = Player1StartPosition;
-			
-			
-			///* Lobby V2 stuff */
-			//FVector NewPosition = Player1StartPosition + FVector(0, DistanceBetweenPlayers * i, 0);
-					
-			APlayerController* SomeController = CasterPlayerState->GetPlayerController();
-			if (!SomeController)
-				continue;
-
-			ACharacter* SomeCharacter = SomeController->GetCharacter();
-			if (!SomeCharacter)
-				continue;
-
-			ALobbyCharacter* SomeCastedCharacter = Cast<ALobbyCharacter>(SomeCharacter);
-			if (!SomeCastedCharacter)
-				continue;
-					
-			SomeCastedCharacter->SetActorLocation(NewPosition);
+			/* Limit player name if too long and adding ... to the end */
+			if (CasterPlayerState->PlayerName.Len() >= 10)
+			{
+				CasterPlayerState->PlayerName = CasterPlayerState->PlayerName.Left(FMath::Min(CasterPlayerState->PlayerName.Len(), 8));
+				CasterPlayerState->PlayerName = CasterPlayerState->PlayerName + "...";
+			}
 		}
 	}
 }

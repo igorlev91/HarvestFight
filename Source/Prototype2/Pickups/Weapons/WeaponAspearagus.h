@@ -20,7 +20,7 @@ public:
 	virtual void ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player) override;
 	
 	/* Any weapon specific functionality while executing attack*/
-	virtual void ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player) override;
+	virtual void ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector) override;
 	
 	/* How this weapon affects the AOE indicator */
 	virtual void UpdateAOEIndicator(APrototype2Character* _Player) override;

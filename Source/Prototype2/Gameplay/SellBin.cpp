@@ -195,6 +195,11 @@ void ASellBin::MoveUIComponent(float _Dt)
 	}
 }
 
+void ASellBin::Multi_OnItemSold_Implementation(int32 _PlayerID)
+{
+	OnItemSoldDelegate.Broadcast(_PlayerID);
+}
+
 void ASellBin::Interact(APrototype2Character* _Player)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
@@ -215,15 +220,15 @@ void ASellBin::Interact(APrototype2Character* _Player)
 			if (Plant->ItemComponent->bGold)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue * Plant->SeedData->GoldMultiplier));
-				//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
 				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue * Plant->SeedData->GoldMultiplier;
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue));
-				//Cast<APrototype2PlayerState>(player->GetPlayerState())->Coins += plant->ItemComponent->CropValue; // Previous way - increased crop value directly
 				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue;	
 			}
+
+			Multi_OnItemSold(_Player->PlayerStateRef->Player_ID);
 			
 			Cast<APrototype2PlayerState>(_Player->GetPlayerState())->bIsShowingExtraCoins = true; 
 

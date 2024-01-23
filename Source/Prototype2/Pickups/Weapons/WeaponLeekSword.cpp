@@ -26,13 +26,19 @@ void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* 
 	}
 }
 
-void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	Super::ExecuteAttack(_AttackSphereRadius, _Player);
+	_CachedActorLocation = _Player->GetActorLocation();
+	_CachedForwardVector = _Player->GetActorForwardVector();
+	
+	// Scale the actual area of effect to be larger than what the indicator shows 
+	_AttackSphereRadius *= _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
+	
+	Super::ExecuteAttack(_AttackSphereRadius, _Player, _CachedActorLocation, _CachedForwardVector);
 	
 	// Get a vector infront of the character for the attack sphere to spawn at
-	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
-	
+	///const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
+	const FVector InFrontOfPlayer = _CachedActorLocation + (_CachedForwardVector * _AttackSphereRadius) + (_CachedForwardVector * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
 
@@ -50,9 +56,6 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 	// check if something got hit in the sweep
 	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
 
-	// For holding if anyone was hit to degrade weapon later
-	bool bIsOtherPlayerHit = false;
-	
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
@@ -63,8 +66,6 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 				if (HitPlayerCast != _Player)
 				{
 					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
-
-					bIsOtherPlayerHit = true;
 				}
 			}
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
@@ -74,22 +75,19 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 		}
 	}
 
-	// Lower weapon durability
-	//if (bIsOtherPlayerHit)
-	//{
-		_Player->OnExecuteAttackDelegate.Broadcast();
-	
-		_Player->WeaponCurrentDurability--;
-		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
-		
-		if (_Player->WeaponCurrentDurability <= 0)
-		{
-			_Player->DropWeapon();
+	_Player->OnExecuteAttackDelegate.Broadcast();
 
-			//AttackTrail_NiagaraComponent->Deactivate();
-			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
-		}
-	//}
+	_Player->WeaponCurrentDurability--;
+	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
+	
+	if (_Player->WeaponCurrentDurability <= 0)
+	{
+		_Player->DropWeapon();
+
+		//AttackTrail_NiagaraComponent->Deactivate();
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+	}
+	
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
 

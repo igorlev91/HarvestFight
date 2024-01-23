@@ -8,11 +8,14 @@
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Components/WidgetComponent.h"
+#include "Prototype2/Controllers/Prototype2PlayerController.h"
+#include "Prototype2/Widgets/Widget_LobbyPlayerHUDV2.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
 
 void ALobbyCharacter::SetPlayerStateRef(ALobbyPlayerState* _NewLobbyPlayerState)
 {
 	PlayerStateRef = _NewLobbyPlayerState;
+	
 }
 
 void ALobbyCharacter::SetNameWidget(FString _name)
@@ -43,6 +46,39 @@ void ALobbyCharacter::SetNameWidgetPlayerRef()
 	//		}
 	//	}
 	//}
+}
+
+void ALobbyCharacter::Client_InitPlayerHUD_Implementation()
+{
+	InitPlayerHUD();
+}
+
+void ALobbyCharacter::Server_InitPlayerHUD_Implementation()
+{
+	InitPlayerHUD();
+}
+
+void ALobbyCharacter::InitPlayerHUD()
+{
+	if (!IsLocallyControlled())
+		return;
+
+	if (!HasIdealRole())
+		return;
+
+	if (!PlayerHudPrefab)
+		return;
+
+	if (!PlayerStateRef)
+		return;
+
+	APrototype2PlayerController* ThisPlayerController = Cast<APrototype2PlayerController>(GetController());
+	if (!ThisPlayerController)
+		return;
+	
+	PlayerHUDRef = CreateWidget<UWidget_LobbyPlayerHUDV2>(ThisPlayerController, PlayerHudPrefab);
+	PlayerHUDRef->AddToViewport();
+	PlayerHUDRef->SetOwningController(PlayerStateRef->Player_ID, ThisPlayerController);
 }
 
 void ALobbyCharacter::Multi_SetNameWidget_Implementation(const FString& _name)
@@ -80,7 +116,7 @@ ALobbyCharacter::ALobbyCharacter()
 void ALobbyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerStateRef = GetPlayerState<ALobbyPlayerState>();
+	
 	
 	//if (PlayerNameWidgetComponent)
 	//{
@@ -92,6 +128,9 @@ void ALobbyCharacter::BeginPlay()
 	//		}
 	//	}
 	//}
+
+	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	for(auto Material : PlayerMaterials)
 	{
@@ -108,6 +147,8 @@ void ALobbyCharacter::BeginPlay()
 	{
 		GetMesh()->SetVisibility(false);
 	}
+
+
 }
 
 void ALobbyCharacter::Tick(float _DeltaTime)
@@ -117,11 +158,14 @@ void ALobbyCharacter::Tick(float _DeltaTime)
 	if (!PlayerStateRef)
 	{
 		PlayerStateRef = GetPlayerState<ALobbyPlayerState>();
+		InitPlayerHUD();
 	}
+	
 	if (IsValid(PlayerNameWidget) && IsValid(PlayerStateRef))
 	{
 		PlayerNameWidget->SetPlayerRef(PlayerStateRef);
 	}
+
 
 	if (PlayerStateRef)
 	{
@@ -162,15 +206,25 @@ void ALobbyCharacter::Multi_SetCharacterMesh_Implementation()
 
 void ALobbyCharacter::SyncCharacterSkin()
 {
-	if (PlayerMeshes.Num() > (int)PlayerStateRef->Details.Character)
+	if (PlayerStateRef->Details.AnimationData)
 	{
-		GetMesh()->SetSkeletalMeshAsset(PlayerMeshes[(int32)PlayerStateRef->Details.Character]);
+		GetMesh()->SetSkeletalMeshAsset(PlayerStateRef->Details.AnimationData->SkeletalMesh);
+
+		if (TemplatedAnimationBlueprint)
+			GetMesh()->SetAnimInstanceClass(TemplatedAnimationBlueprint);
 	}
+		
 	
 	PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Cow Colour"), PlayerStateRef->Details.CharacterColour);
 	PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Spot Colour"), PlayerStateRef->Details.CharacterSubColour);
 	
 	GetMesh()->SetMaterial(0, PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]);
+}
+
+
+bool ALobbyCharacter::HasIdealRole()
+{
+	return HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy;
 }
 
 

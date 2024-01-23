@@ -154,7 +154,13 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 
 void ALobbyGamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
 {
-	Server_Players[_Player]->Details = _CharacterDetails;
+	for(auto LobbyPlayerState : Server_Players)
+	{
+		if(LobbyPlayerState->Player_ID == _Player)
+		{
+			LobbyPlayerState->Details = _CharacterDetails;
+		}
+	}
 }
 
 void ALobbyGamestate::SetMaxPlayersOnServer(int32 _maxPlayersOnServer)
@@ -247,24 +253,24 @@ void ALobbyGamestate::PickMapToPlay()
 		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_FriendlyFarm";
+				MapChoice = "/Game/Maps/Level_FF_Large";
 			else // Brawl Mode
-				MapChoice = "/Game/Maps/Level_Main";
+				MapChoice = "/Game/Maps/Level_FF_Brawl";
 			
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_WinterNormal";
+				MapChoice = "/Game/Maps/Level_Winter_Large";
 			else // Brawl Mode
-				MapChoice = "/Game/Maps/Level_Winter";
+				MapChoice = "/Game/Maps/Level_Winter_Brawl";
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_HoneyNormal";
+				MapChoice = "/Game/Maps/Level_Honey_Large";
 			else // Brawl Mode
-				MapChoice = "/Game/Maps/Level_Honey";
+				MapChoice = "/Game/Maps/Level_Honey_Brawl";
 		}
 		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm) // floating islands farm gets most votes
 			{
@@ -318,27 +324,27 @@ void ALobbyGamestate::PickMapToPlay()
 						case 0:
 							{
 								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_FriendlyFarm";
+									MapChoice = "/Game/Maps/Level_FF_Large";
 								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_Main";
+									MapChoice = "/Game/Maps/Level_FF_Brawl";
 								UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
 								break;
 							}
 						case 1:
 							{
 								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_WinterNormal";
+									MapChoice = "/Game/Maps/Level_Winter_Large";
 								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_Winter";
+									MapChoice = "/Game/Maps/Level_Winter_Brawl";
 								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
 								break;
 							}
 						case 2:
 							{
 								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_HoneyNormal";
+									MapChoice = "/Game/Maps/Level_Honey_Large";
 								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_Honey";
+									MapChoice = "/Game/Maps/Level_Honey_Brawl";
 								UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
 								break;
 							}

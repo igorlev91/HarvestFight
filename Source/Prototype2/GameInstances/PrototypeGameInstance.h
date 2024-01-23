@@ -50,6 +50,9 @@ public:
 	ECharacters Character{ECharacters::COW};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UAnimationData* AnimationData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EColours Colour{EColours::RED};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -59,7 +62,7 @@ public:
 	FVector4 CharacterSubColour{175.0f/255.0f,90.0f/255.0f,90.0f/255.0f,1.000000};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector4 PureToneColour{1,0,0,1};
+	FVector4 PureToneColour{0.571125,0.031896,0.016807,1};
 };
 
 UCLASS()

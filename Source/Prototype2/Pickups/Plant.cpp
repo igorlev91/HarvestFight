@@ -12,6 +12,7 @@
 APlant::APlant()
 {
 	bReplicates = true;
+	PrimaryActorTick.bCanEverTick = true;
 
 	InterfaceType = EInterfaceType::Default;
 

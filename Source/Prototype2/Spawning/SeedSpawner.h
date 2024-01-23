@@ -34,14 +34,9 @@ protected:
 	 * @param _DeltaTime 
 	 * @param _MaxSeeds 
 	 */
-	void SpawnPlantSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
-	/**
-	 * @brief Manages the spawning of the weapon seeds
-	 * @param _SpawnedSeeds 
-	 * @param _DeltaTime 
-	 * @param _MaxSeeds 
-	 */
-	void SpawnWeaponSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
+	void SpawnSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 public:
 	
 	virtual void Tick(float _DeltaTime) override;
@@ -56,14 +51,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<ASeed> PlantSeedPrefab;
 	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
-	TSubclassOf<ASeed> BeehiveBoxPrefab;
-
-	/* Spawning seed from WeaponData Data Asset */
-	UPROPERTY(EditAnywhere, Category = Seeds, meta = (AllowPrivateAccess))
-	TArray<USeedData*> WeaponDataArray;	
-	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
 	TSubclassOf<class AWeaponSeed> WeaponSeedPrefab;
-
+	UPROPERTY(EditDefaultsOnly, Category = Seeds, meta = (AllowPrivateAccess))
+	TSubclassOf<ASeed> BeehiveBoxPrefab;
+	UPROPERTY(Replicated, VisibleAnywhere)
+	TArray<AActor*> SpawnedSeeds;
 	UPROPERTY(EditAnywhere, Category = Parachute, meta = (AllowPrivateAccess))
 	UStaticMesh* ParachuteMesh;
 	
@@ -88,14 +80,4 @@ private:
 	float MinSpawnRadius{100.0f};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
 	float MaxSpawnRadius{800.0f};
-	
-	float WeaponSpawnTimer{};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	int32 WeaponMaxSeedPackets{3};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	float WeaponAverageSpawnTime{2.0f};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	float WeaponMinSpawnRadius{100.0f};
-	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
-	float WeaponMaxSpawnRadius{800.0f};
 };

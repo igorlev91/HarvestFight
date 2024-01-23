@@ -17,44 +17,48 @@ class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UWidget_LobbyPlayerHUD
 
 	void UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget);
 	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
-	
+
 	/* Public Variables */
 public:
+
+	UFUNCTION()
+	void SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
+	
 	/* Brawl Mode Map Choice Widget*/
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_MapChoice* WBP_MapChoiceBrawl;
+
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_LobbyCharacterSelection* WBP_LobbyCharacterSelection;
 	
 	/* Icon rings */
 	UPROPERTY(EditAnywhere)
 	UTexture2D* RingTexture{};
 
-	/* Background images for player overlays */
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* LeftBoxBackgroundImage;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UImage* RightBoxBackgroundImage;
-
-	/* Array of all rings */
+	/* Array of all overlays */
 	UPROPERTY(VisibleAnywhere)
-	TArray<class UHorizontalBox*> PlayerHorizontalBoxes;
+	TArray<class UOverlay*> Overlays;
 	
-	/* Player Overlays */
+	/* Player Icons */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player1HorizontalBox;
+	UOverlay* OverlayPlayer1;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player2HorizontalBox;
+	UOverlay* OverlayPlayer2;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player3HorizontalBox;
+	UOverlay* OverlayPlayer3;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player4HorizontalBox;
+	UOverlay* OverlayPlayer4;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player5HorizontalBox;
+	UOverlay* OverlayPlayer5;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UHorizontalBox* Player6HorizontalBox;
+	UOverlay* OverlayPlayer6;
 	
 	/* Array of all icons */
 	UPROPERTY(VisibleAnywhere)
-	TArray<UImage*> Icons;
+	TArray<class UImage*> Icons;
 	
 	/* Player Icons */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -87,6 +91,24 @@ public:
 	UImage* P5Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UImage* P6Ring;
+
+	/* Array of all rings */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UImage*> Backgrounds;
+	
+	/* Player rings */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P1Background;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P2Background;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P3Background;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P4Background;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P5Background;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* P6Background;
 
 	/* Array of all rings */
 	UPROPERTY(VisibleAnywhere)

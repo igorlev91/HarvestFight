@@ -50,6 +50,14 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	Icons.Add(P5Icon);
 	Icons.Add(P6Icon);
 
+	// Add player names to array
+	PlayerNames.Add(P1Name);
+	PlayerNames.Add(P2Name);
+	PlayerNames.Add(P3Name);
+	PlayerNames.Add(P4Name);
+	PlayerNames.Add(P5Name);
+	PlayerNames.Add(P6Name);
+
 	/* Add Crowns to array*/
 	Crowns.Add(P1Crown);
 	Crowns.Add(P2Crown);
@@ -441,6 +449,13 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 			{
 				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
 			}
+
+			/* Set Player Names */
+			if (PlayerNames.Num() > i)
+			{
+				PlayerNames[i]->SetText(FText::FromString(Player->PlayerName));
+				PlayerNames[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
+			}
 			
 			/* Set Crown visibility */
 			if (Crowns.Num() > i)
@@ -524,3 +539,4 @@ void UWidget_PlayerHUD::UpdateEmphasizers(float _DeltaTime)
 		}
 	}
 }
+

@@ -101,71 +101,71 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* Minutes;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Seconds;
+	UTextBlock* Seconds;
 
 	/* Solo Player Games */
 	/* Player UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player1Coins;
+	UTextBlock* Player1Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player1ExtraCoins;
+	UTextBlock* Player1ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player2Coins;
+	UTextBlock* Player2Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player2ExtraCoins;
+	UTextBlock* Player2ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player3Coins;
+	UTextBlock* Player3Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player3ExtraCoins;
+	UTextBlock* Player3ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player4Coins;
+	UTextBlock* Player4Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player4ExtraCoins;
+	UTextBlock* Player4ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player5Coins;
+	UTextBlock* Player5Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player5ExtraCoins;
+	UTextBlock* Player5ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player6Coins;
+	UTextBlock* Player6Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Player6ExtraCoins;
+	UTextBlock* Player6ExtraCoins;
 
 	/* Player Icons */
 	UPROPERTY(EditAnywhere)
-	TArray<class UTexture2D*> PlayerIcons{{}, {}, {}, {}, {}, {}};
+	TArray<UTexture2D*> PlayerIcons{{}, {}, {}, {}, {}, {}};
 	
 	/* Array of all icons */
 	UPROPERTY(VisibleAnywhere)
 	TArray<UImage*> Icons;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P1Icon;
+	UImage* P1Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P2Icon;
+	UImage* P2Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P3Icon;
+	UImage* P3Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P4Icon;
+	UImage* P4Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P5Icon;
+	UImage* P5Icon;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P6Icon;
+	UImage* P6Icon;
 
 	/* Icon rings */
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* RingTexture{};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P1Ring;
+	UImage* P1Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P2Ring;
+	UImage* P2Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P3Ring;
+	UImage* P3Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P4Ring;
+	UImage* P4Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P5Ring;
+	UImage* P5Ring;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* P6Ring;
+	UImage* P6Ring;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<UImage*> Rings;
@@ -174,17 +174,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UOverlay* TopOverlayUI;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer1;
+	UOverlay* OverlayPlayer1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer2;
+	UOverlay* OverlayPlayer2;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer3;
+	UOverlay* OverlayPlayer3;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer4;
+	UOverlay* OverlayPlayer4;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer5;
+	UOverlay* OverlayPlayer5;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayPlayer6;
+	UOverlay* OverlayPlayer6;
+
+	/* Array of all icons */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UTextBlock*> PlayerNames;
+	
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P1Name;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P2Name;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P3Name;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P4Name;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P5Name;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* P6Name;
 
 	/* Array of all rings */
 	UPROPERTY(VisibleAnywhere)
@@ -207,31 +224,31 @@ public:
 	/* Team games */
 	/* Team UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Team1Coins;
+	UTextBlock* Team1Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Team1ExtraCoins;
+	UTextBlock* Team1ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Team2Coins;
+	UTextBlock* Team2Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* Team2ExtraCoins;
+	UTextBlock* Team2ExtraCoins;
 
 	/* Team overlays */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayTeam1;
+	UOverlay* OverlayTeam1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UOverlay* OverlayTeam2;
+	UOverlay* OverlayTeam2;
 	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* PickupImage;
+	UImage* PickupImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UOverlay* OverlayPickup;
+	UOverlay* OverlayPickup;
 
 	IInteractInterface* lastInteract{};
 
 	// Weapon UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UImage* WeaponImage;
+	UImage* WeaponImage;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	//UTexture2D* LeekWeaponTexture;
@@ -281,9 +298,9 @@ public:
 	
 	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
-	class UTextBlock* InteractionText; 
+	UTextBlock* InteractionText; 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UImage* InteractionButtonImage;
+	UImage* InteractionButtonImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UHorizontalBox* InteractionUI;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -300,5 +317,4 @@ public:
 	float interactionButtonTimer{};
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UWidget_StartAndEndMenu* StartAndEndMenu;
-	
 };

@@ -33,10 +33,10 @@ void UItemComponent::BeginPlay()
 	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
 
-	if(GetOwner()->HasAuthority())
-	{
-		//Mesh->SetSimulatePhysics(true);
-	}
+	//if(GetOwner()->HasAuthority())
+	//{
+	//	//Mesh->SetSimulatePhysics(true);
+	//}
 
 	Mesh->SetRenderCustomDepth(false);
 }

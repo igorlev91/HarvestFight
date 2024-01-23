@@ -62,6 +62,9 @@ protected:
 	TArray<class UStaticMeshComponent*> StaticMeshes{};
 	UPROPERTY( meta = (AllowPrivateAccess))
 	TArray<class USkeletalMeshComponent*> SkeletalMeshes{};
+
+	UPROPERTY(meta = (AllowPrivateAccess))
+	TArray<FVector> StaticStartScales{};
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	FVector SSAxis{1,1,-1};

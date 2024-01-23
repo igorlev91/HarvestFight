@@ -1,4 +1,4 @@
-=
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -37,4 +37,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ACrown> KingCrown;
+
+	/* Game modifier values */
+	UPROPERTY(EditDefaultsOnly)
+	int32 GameTimeShort;
+	UPROPERTY(EditDefaultsOnly)
+	int32 GameTimeMedium;
+	UPROPERTY(EditDefaultsOnly)
+	int32 GameTimeLong;
 };

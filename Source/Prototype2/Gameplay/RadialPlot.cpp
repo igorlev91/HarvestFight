@@ -14,7 +14,7 @@ ARadialPlot::ARadialPlot()
 	bReplicates = true;
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
-	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+
 }
 
 void ARadialPlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,28 +64,29 @@ void ARadialPlot::BeginPlay()
 	
 	PlotSign = GetWorld()->SpawnActor<APlotSign>(PlotSignPrefab);
 
+
 }
 
-void ARadialPlot::SetPlayerID(int32 _Id)
+void ARadialPlot::SetPlayerID(FString _PlayerName)
 {
-	Player_ID = _Id;
+	PlayerName = _PlayerName;
 	
-	SpawnGrowSpots(_Id);
+	SpawnGrowSpots(_PlayerName);
 	
 	for(auto growSpot : GrowSpots)
 	{
-		growSpot->OwningPlayerID = _Id;
+		growSpot->OwningPlayerName = _PlayerName;
 	}
 	
 	if (HasAuthority())
 	{
 		if (auto Gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 		{
-			if (Gamestate->Server_Players.Num() > _Id)
+			for(auto Player : Gamestate->Server_Players)
 			{
-				if (auto PlayerOwner = Gamestate->Server_Players[_Id])
+				if (Player->PlayerName == _PlayerName)
 				{
-					Multi_SetPlotMaterial(PlayerOwner);
+					Multi_SetPlotMaterial(Player);
 				}
 			}
 		}
@@ -97,12 +98,12 @@ void ARadialPlot::SetPlayerID(int32 _Id)
 	//}
 }
 
-int32 ARadialPlot::GetPlayerID() const
+FString ARadialPlot::GetPlayerID() const
 {
-	return Player_ID;
+	return PlayerName;
 }
 
-void ARadialPlot::SpawnGrowSpots(int32 _Id)
+void ARadialPlot::SpawnGrowSpots(FString _PlayerName)
 {
 	if (HasAuthority())
 	{
@@ -123,18 +124,21 @@ void ARadialPlot::SpawnGrowSpots(int32 _Id)
 				newPlot->RadialPlot = this;
 				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
-				newPlot->OwningPlayerID = _Id;
+				newPlot->OwningPlayerName = _PlayerName;
 				GrowSpots.Add(newPlot);
 			}
 		}
 
-		if (auto Gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		if (HasAuthority())
 		{
-			if (Gamestate->Server_Players.Num() > _Id)
+			if (auto Gamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 			{
-				if (auto PlayerOwner = Gamestate->Server_Players[_Id])
+				for(auto Player : Gamestate->Server_Players)
 				{
-					Multi_SetPlotMaterial(PlayerOwner);
+					if (Player->PlayerName == _PlayerName)
+					{
+						Multi_SetPlotMaterial(Player);
+					}
 				}
 			}
 		}
@@ -143,27 +147,28 @@ void ARadialPlot::SpawnGrowSpots(int32 _Id)
 
 void ARadialPlot::UpdateBeehiveFlowers()
 {
-	if (GrowSpots.IsEmpty())
+	if (GrowSpots.Num() > 0)
 		return;
 	
-	std::vector<ABeehive*> BeehiveVector;
-	for (int i = 0; i < GrowSpots.Num(); i++)
+	TArray<ABeehive*> BeehiveVector;
+	for (int32 i = 0; i < GrowSpots.Num(); i++)
 	{
 		if (GrowSpots[i]->Beehive)
 		{
-			BeehiveVector.insert(BeehiveVector.begin(), GrowSpots[i]->Beehive);
+			BeehiveVector.Add(GrowSpots[i]->Beehive);
 			GrowSpots[i]->Beehive->NumberOfNearbyFlowers = 0;
 		}
 	}
 
-	for (int i = 0; i < GrowSpots.Num(); i++)
+	for (int32 i = 0; i < GrowSpots.Num(); i++)
 	{
-		if (GrowSpots[i]->GrowingItemRef &&
-			GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::FlowerData)
+		if (BeehiveVector.Num() > 0 && GrowSpots[i]->GrowingItemRef &&
+			(GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::FlowerData
+			|| GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::PlantData))
 		{
-			for (int j = 0; j < BeehiveVector.size(); j++)
+			for (ABeehive* Behive : BeehiveVector)
 			{
-				BeehiveVector.at(j)->NumberOfNearbyFlowers += GrowSpots[i]->GrowingItemRef->SeedData->StarValue * GrowSpots[i]->GrowingItemRef->SeedData->PlantData->Multiplier;
+				Behive->NumberOfNearbyFlowers++;
 			}
 		}
 	}

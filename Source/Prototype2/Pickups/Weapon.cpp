@@ -2,6 +2,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "PickUpItem.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
@@ -37,7 +38,7 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
 }
 
-void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
 }
 

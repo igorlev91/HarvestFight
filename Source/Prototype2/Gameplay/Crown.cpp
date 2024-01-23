@@ -1,4 +1,5 @@
 
+
 #include "Crown.h"
 
 #include "BobTransformComponent.h"
@@ -42,7 +43,7 @@ void ACrown::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	SetActorRelativeRotation({-90.0f, 0.0f, 0.0f});
+	SetActorRelativeRotation({-70.0f, -20.0f, 0.0f});
 	
 	if (!HasAuthority())
 		return;
@@ -68,7 +69,7 @@ void ACrown::AttachToCurrentWinner()
 
 	ACharacter* WinningPlayerCharacter{nullptr};
 	APrototype2PlayerState* WinningPlayer {nullptr};
-	int32 WinnerID{};
+	
 	for(int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
 	{
 		APlayerController* PlayerController = GameStateRef->PlayerArray[i].Get()->GetPlayerController();
@@ -79,20 +80,31 @@ void ACrown::AttachToCurrentWinner()
 		if (!Character)
 			continue;
 
-		if (i == 0)
+		//if (i == 0)
+		//{
+		//	WinningPlayerCharacter = Character;
+		//	WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]);
+		//	WinnerID = i;
+		//	continue;
+		//}
+		//else if (auto CastedPlayerState = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]))
+		//{
+		//	if (CastedPlayerState->Coins > WinningPlayer->Coins)
+		//	{
+		//		WinningPlayerCharacter = Character;
+		//		WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i].Get());
+		//		WinnerID = i;
+		//	}
+		//}
+		
+		if (auto Player = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]))
 		{
-			WinningPlayerCharacter = Character;
-			WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]);
-			WinnerID = i;
-			continue;
-		}
-		else if (auto CastedPlayerState = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]))
-		{
-			if (CastedPlayerState->Coins > WinningPlayer->Coins)
+			if (Player->Coins > GameStateRef->GetWinningScore())
 			{
 				WinningPlayerCharacter = Character;
-				WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i].Get());
-				WinnerID = i;
+				WinningPlayer = Player;
+				GameStateRef->SetPlayerWinner(i);
+				GameStateRef->SetWinningScore(Player->Coins);
 			}
 		}
 	}
@@ -111,14 +123,22 @@ void ACrown::AttachToCurrentWinner()
 			SetActorRelativeLocation({6.000000,-3.000000,2.330000});
 			SetActorRelativeScale3D({0.1f, 0.1f, 0.1f});
 
-			/* Set winner in gamestate */
-			if (WinnerID)
-				GameStateRef->SetPlayerWinner(WinnerID);
+			Server_OnWinnerTakesTheCrown(WinningPlayer->Player_ID);
 		}
 	}
 }
 
-void ACrown::Multi_AttachToCurrentWinner_Implementation(USkeletalMeshComponent* _WinnterMesh)
+void ACrown::Server_OnWinnerTakesTheCrown_Implementation(int32 _PlayerID)
+{
+	Multi_OnWinnerTakesTheCrown(_PlayerID);
+}
+
+void ACrown::Multi_OnWinnerTakesTheCrown_Implementation(int32 _PlayerID)
+{
+	OnWinnerTakesTheCrownDelegate.Broadcast(_PlayerID);
+}
+
+void ACrown::Multi_AttachToCurrentWinner_Implementation(USkeletalMeshComponent* _WinterMesh)
 {
 	
 }

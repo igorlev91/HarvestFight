@@ -13,6 +13,9 @@ class PROTOTYPE2_API UAnimationData : public UDataAsset
 public:
 	UPROPERTY(EditDefaultsOnly)
 	USkeletalMesh* SkeletalMesh;
+
+	UPROPERTY(EditDefaultsOnly)
+	UClass* TemplatedAnimationBlueprint;
 		
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UAnimSequence* Idle;
@@ -40,6 +43,18 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UAnimSequence* SprintWithWeapon;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UAnimMontage* FallOnButtAndGetBackUp;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
+	UAnimMontage* Launch;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
+	UAnimMontage* Apex;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
+	UAnimMontage* Falling;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Punching" )
 	UAnimSequence* ChargingPunchingAttack;

@@ -1,6 +1,8 @@
 
 
 #include "Widget_LobbyPlayerHUDV2.h"
+
+#include "Widget_LobbyCharacterSelection.h"
 #include "Widget_MapChoice.h"
 #include "Components/Button.h"
 #include "Components/HorizontalBox.h"
@@ -26,6 +28,14 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 
 	/* Set map choice to hidden */
 	WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Hidden);
+
+	/* Add rings to array */
+    Overlays.Add(OverlayPlayer1);
+    Overlays.Add(OverlayPlayer2);
+    Overlays.Add(OverlayPlayer3);
+    Overlays.Add(OverlayPlayer4);
+    Overlays.Add(OverlayPlayer5);
+    Overlays.Add(OverlayPlayer6);
 	
 	/* Add rings to array */
 	Rings.Add(P1Ring);
@@ -34,6 +44,14 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	Rings.Add(P4Ring);
 	Rings.Add(P5Ring);
 	Rings.Add(P6Ring);
+
+	/* Add backgrounds to array */
+	Backgrounds.Add(P1Background);
+	Backgrounds.Add(P2Background);
+	Backgrounds.Add(P3Background);
+	Backgrounds.Add(P4Background);
+	Backgrounds.Add(P5Background);
+	Backgrounds.Add(P6Background);
 
 	// Add icons to array
 	Icons.Add(P1Icon);
@@ -51,14 +69,6 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	Names.Add(P5Name);
 	Names.Add(P6Name);
 
-	/* Add Player overlays names to array*/
-	PlayerHorizontalBoxes.Add(Player1HorizontalBox);
-	PlayerHorizontalBoxes.Add(Player2HorizontalBox);
-	PlayerHorizontalBoxes.Add(Player3HorizontalBox);
-	PlayerHorizontalBoxes.Add(Player4HorizontalBox);
-	PlayerHorizontalBoxes.Add(Player5HorizontalBox);
-	PlayerHorizontalBoxes.Add(Player6HorizontalBox);
-
 	/* Add ready images to array */
 	ReadyImages.Add(P1ReadyImage);
 	ReadyImages.Add(P2ReadyImage);
@@ -66,8 +76,7 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	ReadyImages.Add(P4ReadyImage);
 	ReadyImages.Add(P5ReadyImage);
 	ReadyImages.Add(P6ReadyImage);
-
-	LeftBoxBackgroundImage->SetVisibility(ESlateVisibility::Visible);
+	
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -79,14 +88,11 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 		return;
 	}
 	
-	/* Make all player horizontal boxes hidden on start of frame */
-	for (int i = 1; i < 6; i++)
+	/* Make all player overlays hidden on start of frame */
+	for (int i = 1; i < Overlays.Num(); i++)
 	{
-		PlayerHorizontalBoxes[i]->SetVisibility(ESlateVisibility::Hidden);
+		Overlays[i]->SetVisibility(ESlateVisibility::Hidden);
 	}
-
-	/* Make player overlay backgrounds hidden on start of frame */
-	RightBoxBackgroundImage->SetVisibility(ESlateVisibility::Hidden);
 	
 	for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 	{
@@ -96,6 +102,16 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 			if (Rings.Num() > i)
 			{
 				Rings[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
+			}
+
+			/* Set ring colours to player colour */
+			if (Backgrounds.Num() > i)
+			{
+				Backgrounds[i]->SetColorAndOpacity(FLinearColor(
+					Player->Details.PureToneColour.X,
+					Player->Details.PureToneColour.Y,
+					Player->Details.PureToneColour.Z,
+					0.7f));
 			}
 
 			/* Set player icons to correct image based on character and colour */
@@ -135,22 +151,16 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 			if (Names.Num() > i)
 			{
 				Names[i]->SetText(FText::FromString(FString(Player->PlayerName)));
-				Names[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
 			}
 
-			/* Turn on second background depending on number of players */
-			if (i > 2)
-			{
-				RightBoxBackgroundImage->SetVisibility(ESlateVisibility::Visible);
-			}
-			
+			/* Turn on overlays */
 			/* Showing player overlays on HUD as they join lobby */
-			if (PlayerHorizontalBoxes.Num() > i)
+			if (Overlays.Num() > i)
 			{
 				/* Make individual overlay visible */
-				PlayerHorizontalBoxes[i]->SetVisibility(ESlateVisibility::Visible);
+				Overlays[i]->SetVisibility(ESlateVisibility::Visible);
 			}
-
+			
 			/* Showing player overlays on HUD as they join lobby */
 			if (ReadyImages.Num() > i)
 			{
@@ -230,4 +240,15 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoic
 	{
 		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
+}
+
+void UWidget_LobbyPlayerHUDV2::SetOwningController(int32 _PlayerID,APrototype2PlayerController* _Owner)
+{
+	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
+}
+
+void UWidget_LobbyPlayerHUDV2::Client_SetOwningController_Implementation(int32 _PlayerID,
+	APrototype2PlayerController* _Owner)
+{
+	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
 }

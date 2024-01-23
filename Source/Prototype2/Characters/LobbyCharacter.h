@@ -18,6 +18,12 @@ public:
 	void SetPlayerStateRef(class ALobbyPlayerState* _NewLobbyPlayerState);
 	void SetNameWidget(FString _name);
 	void SetNameWidgetPlayerRef();
+
+	UFUNCTION(Client, Reliable)
+	void Client_InitPlayerHUD();
+	UFUNCTION(Server, Reliable)
+	void Server_InitPlayerHUD();
+	void InitPlayerHUD();
 	
 	/* Protected Functions */
 protected:
@@ -38,15 +44,28 @@ protected:
 	void Multi_SetCharacterMesh_Implementation();
 
 	void SyncCharacterSkin();
+	
+	UFUNCTION()
+	bool HasIdealRole();
 
 	/* Public Variables */
 public:
+
+	/* Need reference to the AnimBP to be set dynamically after updating skeletal mesh */
+	UPROPERTY(EditAnywhere)
+	UClass* TemplatedAnimationBlueprint;
 	
 	/* Protected Variables */
 protected:
 	//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	class ALobbyPlayerState* PlayerStateRef;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidget_LobbyPlayerHUDV2* PlayerHUDRef;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UWidget_LobbyPlayerHUDV2> PlayerHudPrefab;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TArray<USkeletalMesh*> PlayerMeshes;

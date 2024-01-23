@@ -104,12 +104,13 @@ protected:
 
 	UFUNCTION()
 	void ClearInteractionText();
-
 	
 	UFUNCTION()
 	void HandleAttackChargeBehavior(float _DeltaSeconds);
 	UFUNCTION()
 	void UpdatePlayerHUD();
+	UFUNCTION()
+	void UpdateWeaponMeshSkin();
 	UFUNCTION()
 	void UpdateParticleSystems();
 	UFUNCTION()
@@ -142,6 +143,13 @@ public:
 	/////////////////////////////////////////////////////////////////////
 
 public:
+	/* Delegates */
+	
+	/* Delegate for telling the animation blueprint when charge is cancelled*/
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFallOnButt);
+	UPROPERTY(BlueprintAssignable)
+	FOnFallOnButt OnFallOnButtDelegate;
+	
 	/* Delegate for telling the animation blueprint when charge is cancelled*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChargeCancelled);
 	UPROPERTY(BlueprintAssignable)
@@ -151,9 +159,32 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExecuteAttack);
 	UPROPERTY(BlueprintAssignable)
 	FOnExecuteAttack OnExecuteAttackDelegate;
-
+	
+	/* Delegate for telling the Player Hud widget when player tried to sprint but it wasn't available */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFailedToSprint);
+	UPROPERTY(BlueprintAssignable)
+	FOnFailedToSprint OnFailedToSprintDelegate;
+	
+	/* Delegate for telling the Player Hud widget when player tried to sprint but it wasn't available */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSprintReady);
+	UPROPERTY(BlueprintAssignable)
+	FOnSprintReady OnSprintReadyDelegate;
+	
+	/* Delegate for telling the Player Hud widget when player picks an item up */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPickUpItem);
+	UPROPERTY(BlueprintAssignable)
+	FOnPickUpItem OnPickUpItemDelegate;
+	
+	/* Delegate for telling the Player Hud widget when player picks a weapon up */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPickupWeapon);
+	UPROPERTY(BlueprintAssignable)
+	FOnPickupWeapon OnPickUpWeaponDelegate;
+	
 	UFUNCTION(BlueprintPure)
 	bool GetIsPunching () { return DefaultWeaponSeedData == CurrentWeaponSeedData; }
+
+	UFUNCTION(BlueprintPure)
+	bool GetIsWeaponGold();
 	
 	/* Update's character speed according to bIsHoldingGold */
 	UFUNCTION()
@@ -228,9 +259,7 @@ public:
 	void SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
 	UFUNCTION(Server, Unreliable)
 	void Server_SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SetCharacterSpeed(float _WalkSpeed, float _SprintSpeed, float _BaseAnimationRateScale);
-
+	
 	/* Getters for walkspeed and ratescale for debuff component */
 	float GetWalkSpeed(){ return WalkSpeed; }
 	float GetWalkRateScale() { return WalkRateScale; }
@@ -239,6 +268,10 @@ public:
 	void DropItem();
 	
 	/* Public Variables */
+
+	/* Need reference to the AnimBP to be set dynamically after updating skeletal mesh */
+	//UPROPERTY(EditAnywhere)
+	//UClass* TemplatedAnimationBlueprint;
 	
 	/* Camera used for end of the game */
 	UPROPERTY(VisibleAnywhere)
@@ -293,7 +326,15 @@ public:
 	/* The Amount of charge the player currently has */
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	float AttackChargeAmount;
-
+	
+	/* The Amount of charge the player currently has */
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	float AutoAttackTimer;
+	
+	/* The Amount of charge the player currently has */
+	UPROPERTY()
+	float AutoAttackDuration = 2.0f;
+	
 	/* Sprint */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float CanSprintTime = 5.0f;
@@ -316,9 +357,13 @@ public:
 	AActor* ClosestInteractableActor;
 
 	/* Bool for checking if player is holding gold to slow them down */
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, Category="Gold")
 	bool bIsHoldingGold;
-
+	
+	/* Bool for checking if player is holding gold weapon */
+	UPROPERTY(Replicated, VisibleAnywhere, Category="Gold")
+	bool bIsHoldingGoldWeapon = false;
+	
 	/* Varaibles needed for Decal component */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USceneComponent* DecalArmSceneComponent;
@@ -357,13 +402,13 @@ public:
 	UAnimationData* AnimationData;
 	
 	/* The current weapon data to use data from */
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, EditDefaultsOnly, meta = (AllowPrivateAccess))
 	class USeedData* CurrentWeaponSeedData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* WeaponMesh;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	EWeaponAnimation CurrentWeaponAnimation{};
 
 	/* Used to stop player input moving the player */
@@ -375,6 +420,8 @@ public:
 protected:
 	/* Protected Functions */
 
+	void UpdateCanSprintUI();
+	
 	void InitCharacterMovementComponent();
 	void InitCameraStuff();
 	void InitMeshAndCapsule();
@@ -382,7 +429,7 @@ protected:
 	void InitMiscComponents();
 
 	/* Execute Attack */
-	void ExecuteAttack(float _AttackSphereRadius);
+	void ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector);
 	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
@@ -398,6 +445,12 @@ protected:
 
 	void SyncCharacterColourWithPlayerState();
 
+	/* Checks whether player is falling, and when they've landed */
+	void CheckForFalling(float _DeltaTime);
+
+	/* When player has landed after falling */
+	void LandAfterfalling();
+	
 	/* Protected variables */
 	
 	/** Camera boom positioning the camera behind the character */
@@ -451,15 +504,7 @@ private:
 	/* Sprint */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SprintAction;
-
-	/* Animation */
-	UPROPERTY(EditAnywhere, Category = Animation, meta = (AllowPrivateAccess))
-	class UAnimMontage* PickupMontage;
-	UPROPERTY(EditAnywhere, Category = Animation, meta = (AllowPrivateAccess))
-	class UAnimMontage* ExecuteAttackMontage;
-	UPROPERTY(EditAnywhere, Category = Animation, meta = (AllowPrivateAccess))
-	class UAnimMontage* ExecuteAttackMontage_LongerWindUp;
-	
+		
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float InteractRadius = 150.0f;
@@ -469,6 +514,12 @@ private:
 	float InteractTimerTime = 1.0f;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimer{};
+
+	/* Invincible timer - how long the player can't be hit after being hit*/
+	UPROPERTY(EditDefaultsOnly)
+	float InvincibilityTimer = 0.0f;
+	UPROPERTY(EditDefaultsOnly)
+	float InvincibilityDuration = 0.5f;
 	
 	/* Attack timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
@@ -510,7 +561,10 @@ private:
 	/* Stops updating character speed on tick */
 	UPROPERTY(Replicated)
 	bool bHasSprintingStopped = false;
-
+	/* Allows telling the player HUD one time that sprint is ready*/
+	UPROPERTY(Replicated)
+	bool bHasNotifiedCanSprint = false;
+	
 	/* Rate scales for adjusting animation speed */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
 	float WalkRateScale = 1.5f;
@@ -541,24 +595,45 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstanceDynamic*> PlayerMaterialsDynamic{};
 
+	UPROPERTY(Replicated)
+	float FallTimer;
+	UPROPERTY(EditDefaultsOnly)
+	float FallTimerThreshold = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<UAnimationData*> AllAnimationDatas;
+
+	
 public: /* Pubic Networking */
+		
+	/* Client RPC for picking up items */
+	UFUNCTION(Client, Reliable)
+	void Client_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 	
 	/* RPC for picking up items */
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
+	/* Client RPC for dropping items */
+	UFUNCTION(Client, Reliable)
+	void Client_DropItem();
+	
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem();
 
 	/* RPC for socketing item, used for weapon */
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void Server_SocketItem(UStaticMeshComponent* _Object, FName _Socket);
 
 	/* Multicast for socketing items, used for weapon*/
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SocketItem(UStaticMeshComponent* _Object, FName _Socket);
 
+	/* Client RPC for dropping a weapon */
+	UFUNCTION(Client, Reliable)
+	void Client_DropWeapon();
+	
 	/* RPC for dropping a weapon */
 	UFUNCTION(Server, Reliable)
 	void Server_DropWeapon();
@@ -567,9 +642,11 @@ public: /* Pubic Networking */
 	 * @brief Chargeattack sets bIsChargingAttack to true,
 	 * Drops item if holding one, and sockets weapon to attacking socket
 	 */
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void Server_ChargeAttack();
-	
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerAimingMovement(bool _bIsAiming);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
 
@@ -579,8 +656,8 @@ public: /* Pubic Networking */
 	void Multi_CancelChargeAttack();
 	
 	/* RPC for when attack key is released */
-	UFUNCTION(Server, Unreliable)
-	void Server_ReleaseAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseAttack(FVector _CachedActorLocation, FVector _CachedForwardVector);
 
 	/* Multicast for when attack key is released */
 	UFUNCTION(NetMulticast, Unreliable)

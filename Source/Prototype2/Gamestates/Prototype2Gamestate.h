@@ -17,6 +17,7 @@ public:
 	void SetFinalConnectionCount(int32 _FinalConnectionCount);
 	void SetMaxPlayersOnServer(int32 _FinalConnectionCount);
 	void SetPlayerWinner(int32 _WinnerID);
+	void SetWinningScore(int32 _WinningScore);
 	int32 RegisterPlayer(class APrototype2PlayerState* _Player);
 	void UnRegisterPlayer(class APrototype2PlayerState* _Player);
 	int32 GetCurrentConnectionCount();
@@ -24,13 +25,16 @@ public:
 	bool HasGameStarted();
 	bool IsGameReadyForVote();
 	int32 GetMatchLengthMinutes();
+	void SetMatchLengthMinutes(int32 _Minutes);
 	int32 GetMatchLengthSeconds();
 	int32 GetCountdownLengthMinutes();
 	int32 GetCountdownLengthSeconds();
 	int32 GetBriefTimesUpLengthSeconds();
 	int32 GetPlayerWinner();
+	int32 GetWinningScore();
 	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 	void PupeteerCharactersForEndGame();
+	void SetGameTime();
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
@@ -44,14 +48,14 @@ private:
 	void TickMatchTimer(float _DeltaSeconds);
 	void TickEndGameTimer(float _DeltaSeconds);
 
-private:
+public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bIsCountingDown{};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
 	
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	int32 MatchLengthMinutes{1};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 MatchLengthMinutes{-1};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float MatchLengthSeconds{0};
 
@@ -85,5 +89,10 @@ private:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 PlayerWinner{-1};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 WinningScore{0};
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	class APrototype2GameMode* GameModeRef{};
 };

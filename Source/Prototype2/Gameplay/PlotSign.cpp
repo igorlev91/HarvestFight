@@ -7,6 +7,7 @@
 #include "Prototype2/Widgets/Widget_PlayerHUD.h"
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 APlotSign::APlotSign()
 {
@@ -14,6 +15,7 @@ APlotSign::APlotSign()
 	bReplicates = true;
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void APlotSign::BeginPlay()
@@ -23,6 +25,12 @@ void APlotSign::BeginPlay()
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	if (!HasAuthority())
+		return;
+	
+	SSComponent->SetMeshesToStretch({ItemComponent->Mesh},{});
+	SSComponent->Enable();
 }
 
 void APlotSign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -57,7 +65,7 @@ void APlotSign::Interact(APrototype2Character* _Player)
 		return;
 
 	bHasBeenClaimed = true;
-	RadialPlot->SpawnGrowSpots(_Player->GetPlayerState<APrototype2PlayerState>()->Player_ID);
+	RadialPlot->SpawnGrowSpots(_Player->GetPlayerState<APrototype2PlayerState>()->PlayerName);
 	_Player->SetClaimedPlot(RadialPlot);
 }
 

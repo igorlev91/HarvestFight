@@ -1,4 +1,5 @@
 
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -14,6 +15,10 @@ class PROTOTYPE2_API ACrown : public AActor
 public:
 	class UStaticMeshComponent* GetMesh();
 	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, int32, _PlayerID);
+	UPROPERTY(BlueprintAssignable)
+	FOnWinnerTakesTheCrown 	OnWinnerTakesTheCrownDelegate;
+;
 private:
 	ACrown();
 	virtual void BeginPlay() override;
@@ -24,7 +29,7 @@ protected:
 	void AttachToCurrentWinner();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AttachToCurrentWinner(USkeletalMeshComponent* _WinnterMesh);
+	void Multi_AttachToCurrentWinner(USkeletalMeshComponent* _WinterMesh);
 
 	UPROPERTY(VisibleAnywhere)
 	class APrototype2Gamestate* GameStateRef;
@@ -42,4 +47,9 @@ protected:
 	float UpdateDelay{3.0f};
 	UPROPERTY(VisibleAnywhere)
 	float UpdateDelayTimer{0.0f};
+
+	UFUNCTION(Server, Reliable)
+	void Server_OnWinnerTakesTheCrown(int32 _PlayerID);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnWinnerTakesTheCrown(int32 _PlayerID);
 };

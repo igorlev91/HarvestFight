@@ -22,7 +22,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void CheckForHitPlayers();
-
+	bool CheckForHitObstacle();
 	void InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed, float _LifeTime, float _AttackSphereRadius);
 	
 	float AttackSphereRadius;

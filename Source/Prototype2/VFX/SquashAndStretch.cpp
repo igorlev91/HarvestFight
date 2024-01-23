@@ -29,7 +29,7 @@ void USquashAndStretch::BeginPlay()
 			}
 		}
 		
-		FindMeshesToStretch();
+		//FindMeshesToStretch();
 
 		// Check
 		if (BoingCurve)
@@ -52,7 +52,7 @@ void USquashAndStretch::TickComponent(float _DeltaTime, ELevelTick _TickType, FA
 		if (bDoOnce)
 		{
 			bDoOnce = false;
-			FindMeshesToStretch();
+			//FindMeshesToStretch();
 		}
 		
 		BoingTimeline.TickTimeline(_DeltaTime);
@@ -125,7 +125,7 @@ void USquashAndStretch::FindMeshesToStretch()
 
 void USquashAndStretch::SquashAndStretch()
 {
-	//Server_SquashAndStretch();
+	Server_SquashAndStretch();
 }
 
 void USquashAndStretch::OnBoingUpdate(float _Value)
@@ -135,33 +135,30 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 
 void USquashAndStretch::Multi_SquashAndStretch_Implementation(float _ServerCurrentTime)
 {
-	if (OwningPickupItem)
+	if (StaticStartScales.Num() == StaticMeshes.Num())
 	{
-		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(StaticStartScales[i] + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * SquashMag));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(StaticStartScales[i] + (SSAxis * FMath::Sin(_ServerCurrentTime * SquashSpeed) * SquashMag));
 		}
 	}
-	
 }
 
 void USquashAndStretch::Server_SquashAndStretch_Implementation()
 {
-	if (OwningPickupItem)
+	if (StaticStartScales.Num() == StaticMeshes.Num())
 	{
-		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
-			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
+			StaticMeshes[i]->SetWorldScale3D(StaticStartScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
 		}
 		for(int32 i = 0; i < SkeletalMeshes.Num(); i++)
 		{
-			SkeletalMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * 0.2f));
+			SkeletalMeshes[i]->SetWorldScale3D(StaticStartScales[i] + (SSAxis * FMath::Sin(GetWorld()->GetTimeSeconds() * SquashSpeed) * SquashMag));
 		}
 	}
 }
@@ -170,7 +167,6 @@ void USquashAndStretch::Multi_BoingUpdate_Implementation(float _Value)
 {
 	if (OwningPickupItem)
 	{
-		
 		for(int32 i = 0; i < StaticMeshes.Num(); i++)
 		{
 			StaticMeshes[i]->SetWorldScale3D(OwningPickupItem->SeedData->BabyScale + (SSAxis * FMath::Sin(2 * PI * _Value) * 0.2f));
@@ -203,13 +199,18 @@ void USquashAndStretch::Server_SetMeshesToStretch_Implementation(const TArray<cl
 {
 	StaticMeshes.Empty();
 	SkeletalMeshes.Empty();
+	StaticStartScales.Empty();
 	StaticMeshes = _Statics;
 	SkeletalMeshes = _Skeletons;
+	for(auto Mesh : StaticMeshes)
+	{
+		StaticStartScales.Add(Mesh->GetComponentScale());
+	}
+
 }
 
 void USquashAndStretch::Server_Boing_Implementation()
 {
-	
 	BoingTimeline.PlayFromStart();
 }
 

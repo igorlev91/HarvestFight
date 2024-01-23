@@ -31,6 +31,7 @@ public:
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
 	void PlantASeed(ASeed* _SeedToPlant);
+	void DestroyPlant();
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -51,7 +52,7 @@ public:
 	APickUpItem* GrowingItemRef{};
 	
 	UPROPERTY(Replicated, EditAnywhere)
-	int32 OwningPlayerID{};
+	FString OwningPlayerName{};
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;

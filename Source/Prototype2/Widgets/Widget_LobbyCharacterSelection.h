@@ -23,7 +23,7 @@ public:
 	
 	/* Updates the UI character image based on the selected character */
 	UFUNCTION(BlueprintCallable)
-	void UpdateCharacterImage();
+	void UpdateCharacterImage(class APrototype2PlayerController* _Owner);
 
 	/**
 	 * @brief Changes the character colour
@@ -48,11 +48,23 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCharacterColourFromSelection(int32 _NumberOfColors);
+
+	UFUNCTION(BlueprintCallable)
+	void SetCharacterModelFromSelection(int32 _NumberOfCharacters);
+
+	UFUNCTION()
+	bool HasSamePlayerColourAndCharacter();
+
+	UFUNCTION()
+	void SetOwningController(int32 _PlayerID, class APrototype2PlayerController* _Owner);
+
+	UFUNCTION()
+	void SetPlayerID(int32 _PlayerID);
 	
 	/* Public Variables */
 public:
 	UPROPERTY()
-	class APrototype2Gamestate* GameStateRef;
+	class ALobbyGamestate* GameStateReference;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PlayerImage;
@@ -63,15 +75,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails IdealDetails{};
 
-	UPROPERTY(VisibleAnywhere)
-	EColours CurrentColourSelection{};
-
 	UPROPERTY(EditAnywhere)
 	int32 NumberOfColours{8};
 
 	UPROPERTY(EditAnywhere)
+	int32 NumberOfCharacters{4};
+
+	UPROPERTY(EditAnywhere)
 	UColourData* SkinColourData{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	class USkinData* SkinData{nullptr};
 	
 	UPROPERTY(VisibleAnywhere)
 	class APrototype2PlayerController* OwningController{nullptr};
+
+	/* Private Variables */
+	bool HasChosenNewColour{false};
+
+	UPROPERTY()
+	int32 PlayerID{-1};
 };

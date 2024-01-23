@@ -141,21 +141,17 @@ void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(
 //	GetCharacter()->GetMesh()->SetMaterial(0, MaterialInstance);
 //}
 
-void APrototype2PlayerController::SyncPlayerMaterial(FCharacterDetails _CharacterDetails)
+void APrototype2PlayerController::SyncPlayerMaterial(int32 _PlayerID, FCharacterDetails _CharacterDetails)
 {
-	int32 PlayerID{};
+	UpdateCharacterMaterial(_PlayerID, _CharacterDetails);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Update Player %s Skin (%s)"), *FString::FromInt(_PlayerID), *_CharacterDetails.CharacterColour.ToString());
+	
+
+
 	auto LobbyPlayerState = GetPlayerState<ALobbyPlayerState>();
 	auto GamePlayerState = GetPlayerState<APrototype2PlayerState>();
 	
-	if (LobbyPlayerState)
-		PlayerID = LobbyPlayerState->Player_ID;
-	else if (GamePlayerState)
-		PlayerID = GamePlayerState->Player_ID;
-	
-	UE_LOG(LogTemp, Warning, TEXT("Update Player %s Skin (%s)"), *FString::FromInt(PlayerID), *_CharacterDetails.CharacterColour.ToString());
-	
-	UpdateCharacterMaterial(PlayerID, _CharacterDetails);
-
 	FString Name{};
 	IOnlineIdentityPtr IdentityInterface = IOnlineSubsystem::Get()->GetIdentityInterface();
 	if (!IdentityInterface.IsValid())

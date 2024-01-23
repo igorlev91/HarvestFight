@@ -9,6 +9,7 @@
 void UWeaponPunching::ChargeAttack(APrototype2Character* _Player)
 {
 	Super::ChargeAttack(_Player);
+	
 }
 
 void UWeaponPunching::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
@@ -31,12 +32,18 @@ void UWeaponPunching::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _
 	}
 }
 
-void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player)
+void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	Super::ExecuteAttack(_AttackSphereRadius, _Player);
+	_CachedActorLocation = _Player->GetActorLocation();
+	_CachedForwardVector = _Player->GetActorForwardVector();
+	
+	// Scale the actual area of effect to be larger than what the indicator shows 
+	_AttackSphereRadius *= _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
+	
+	Super::ExecuteAttack(_AttackSphereRadius, _Player, _Player->GetActorLocation(), _Player->GetActorForwardVector());
 	
 	// Get a vector infront of the character for the attack sphere to spawn at
-	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
+	const FVector InFrontOfPlayer = _CachedActorLocation + (_CachedForwardVector * _AttackSphereRadius) + (_CachedForwardVector * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
 	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
@@ -55,9 +62,16 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	// check if something got hit in the sweep
 	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
 
-	// For holding if anyone was hit to degrade weapon later
-	bool bIsOtherPlayerHit = false;
+	// Debug draw the sphere of actual attack
+	// DrawDebugSphere(GetWorld(), SweepStart, _AttackSphereRadius, 50, FColor::Green, false, 10.0f);
 	
+	// Sprint punch functionality
+	float ChargeAmount = _Player->AttackChargeAmount;	
+	if (_Player->IsSprinting())
+	{
+		ChargeAmount *= 2;
+	}
+		
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
@@ -67,9 +81,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
-
-					bIsOtherPlayerHit = true;
+					HitPlayerCast->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 				}
 			}
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
@@ -79,21 +91,9 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 		}
 	}
 
-	// Lower weapon durability
-	//if (bIsOtherPlayerHit)
-	//{
-
-		_Player->WeaponCurrentDurability--;
-		_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
-		
-		if (_Player->WeaponCurrentDurability <= 0)
-		{
-			_Player->DropWeapon();
-
-			//AttackTrail_NiagaraComponent->Deactivate();
-			_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
-		}
-	//}
+	// make UI pop out
+	_Player->OnExecuteAttackDelegate.Broadcast();
+	
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
 

@@ -3,8 +3,11 @@
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
+#include "Prototype2/Gamemodes/Prototype2GameMode.h"
 #include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
+#include "Prototype2/DataAssets/DataAssetWorldOverride.h"
+#include "Prototype2/DataAssets/WorldOverrideData.h"
 
 APrototype2Gamestate::APrototype2Gamestate()
 {
@@ -14,15 +17,24 @@ APrototype2Gamestate::APrototype2Gamestate()
 void APrototype2Gamestate::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (GameModeRef)
+		return;
+	
+	AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
+	GameModeRef = Cast<APrototype2GameMode>(GameMode);
 }
 
 void APrototype2Gamestate::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
+	//SetGameTime();
+	
 	TickCountdownTimer(DeltaSeconds);
 	TickMatchTimer(DeltaSeconds);
 	TickEndGameTimer(DeltaSeconds);
+
+	
 }
 
 void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -50,6 +62,7 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, FinalConnectionCount);
 
 	DOREPLIFETIME(APrototype2Gamestate, PlayerWinner);
+	DOREPLIFETIME(APrototype2Gamestate, WinningScore);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -66,8 +79,6 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 			{
 				CountdownLengthMinutes--;
 				CountdownLengthSeconds = 60;
-
-				
 			}
 			
 			if (CountdownLengthSeconds <= 0 && CountdownLengthMinutes <= 0)
@@ -146,6 +157,11 @@ void APrototype2Gamestate::SetPlayerWinner(int32 _WinnerID)
 	PlayerWinner = _WinnerID;
 }
 
+void APrototype2Gamestate::SetWinningScore(int32 _WinningScore)
+{
+	WinningScore = _WinningScore;
+}
+
 int32 APrototype2Gamestate::RegisterPlayer(APrototype2PlayerState* _Player)
 {
 	return Server_Players.Add(_Player);
@@ -181,6 +197,11 @@ int32 APrototype2Gamestate::GetMatchLengthMinutes()
 	return MatchLengthMinutes;
 }
 
+void APrototype2Gamestate::SetMatchLengthMinutes(int32 _Minutes)
+{
+	MatchLengthMinutes = _Minutes;
+}
+
 int32 APrototype2Gamestate::GetMatchLengthSeconds()
 {
 	return MatchLengthSeconds;
@@ -204,6 +225,11 @@ int32 APrototype2Gamestate::GetBriefTimesUpLengthSeconds()
 int32 APrototype2Gamestate::GetPlayerWinner()
 {
 	return PlayerWinner;
+}
+
+int32 APrototype2Gamestate::GetWinningScore()
+{
+	return WinningScore;
 }
 
 void APrototype2Gamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
@@ -251,5 +277,92 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 			}
 		}
 	}
+}
+
+void APrototype2Gamestate::SetGameTime()
+{
+	if (!HasAuthority())
+		return;
+
+	//if (GameModeRef)
+	//	return;
+
+	//if (MatchLengthMinutes != -1)
+	//	return;
+	
+	
+	//if (!GameMode)
+	//	return;
+
+	
+	if (!GameModeRef)
+		return;
+	
+	int MatchLengthModifier = 1;
+	if (auto Subsystem = IOnlineSubsystem::Get())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Found Subsystem"));
+		IOnlineSessionPtr IdentityInterface = Subsystem->GetSessionInterface();
+		if (IdentityInterface.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Found IdentityInterface"));
+			IOnlineSessionPtr Session = IOnlineSubsystem::Get()->GetSessionInterface(); // Get a reference to the online session interface
+			//FOnlineSessionSettings* Session = IdentityInterface->GetSessionSettings(NAME_GameSession);
+
+			if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[0]))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Found player state"));
+				//FName GameSession = FName(*FString::Printf(TEXT("Number%d"), CastedPlayerState->SessionName));
+
+				FNamedOnlineSession* NamedSession = Session->GetNamedSession(CastedPlayerState->SessionName);
+
+				if (Session)
+					UE_LOG(LogTemp, Warning, TEXT("Found Session"));
+			
+				if (NamedSession)
+				{
+					//Session->GetSessionSettings(NAME_GameSession)
+					UE_LOG(LogTemp, Warning, TEXT("Found Named session"));
+					// Get the session settings.
+					//FOnlineSessionSettings SessionSettings = Session->SessionSettings;
+				
+					// Now you can access various settings including extra settings.
+					int GameTime;
+					if (NamedSession->SessionSettings.Get(FName("GameTime"), GameTime))
+					{
+						MatchLengthModifier = GameTime;
+						UE_LOG(LogTemp, Warning, TEXT("Found gametime"));
+
+						/* Set match length */
+						switch (MatchLengthModifier)
+						{
+						case 0:
+							{
+								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeShort;
+								break;
+							}
+						case 1:
+							{
+								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeMedium;
+								break;
+							}
+						case 2:
+							{
+								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeLong;
+								break;
+							}
+						default:
+							{
+								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeMedium;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	
 }
 

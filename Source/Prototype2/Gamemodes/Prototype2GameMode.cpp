@@ -422,7 +422,7 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 						{
 							if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(Plot))
 							{
-								if (RadialPlot->GetPlayerID() == Player->Player_ID)
+								if (RadialPlot->GetPlayerID() == Player->PlayerName)
 								{
 									FVector SpawnPoint = RadialPlot->GetActorLocation();
 									SpawnPoint.Z = PlayerStartingZPosition;

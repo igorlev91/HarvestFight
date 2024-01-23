@@ -21,6 +21,10 @@ public:
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
+	UPROPERTY(BlueprintAssignable)
+	FOnItemSold OnItemSoldDelegate;
+	
 protected:
 	ASellBin();
 	virtual void BeginPlay() override;
@@ -39,7 +43,10 @@ protected:
 	void Multi_FireParticleSystem_Implementation();
 	void HideParticleSystem();
 	void MoveUIComponent(float _Dt);
-
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnItemSold(int32 _PlayerID);
+	
 protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UItemComponent* ItemComponent;

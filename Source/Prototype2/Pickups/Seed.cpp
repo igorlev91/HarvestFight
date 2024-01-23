@@ -39,6 +39,7 @@ void ASeed::BeginPlay()
 	SpawnRotation = GetActorRotation();
 	SpawnTime = GetWorld()->GetTimeSeconds();
 	ItemComponent->Mesh->SetSimulatePhysics(false);
+	
 }
 
 void ASeed::Tick(float _DeltaSeconds)
@@ -131,7 +132,7 @@ void ASeed::HandleParachuteMovement()
 		return;
 	}
 	
-	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+	if (HasAuthority())
 	{
 		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
 		{
@@ -145,6 +146,7 @@ void ASeed::HandleParachuteMovement()
 		{
 			Multi_ToggleParachuteVisibility(false);
 			bHasLanded = true;
+			ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -20.0});
 		}
 	}
 }

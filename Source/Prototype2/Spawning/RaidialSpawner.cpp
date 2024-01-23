@@ -79,26 +79,29 @@ void ARaidialSpawner::SetUp()
 
 		// Spawn and align center plot
 
-		ARadialPlot* Plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
-		Plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-		Plot->SetActorRelativeLocation(ObjectSpawnPosition);
-		Plot->SetPlayerID(Index);
+		if (auto GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		{
+			ARadialPlot* Plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
+			Plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+			Plot->SetActorRelativeLocation(ObjectSpawnPosition);
+			Plot->SetPlayerID(GameState->Server_Players[Index]->PlayerName);
 		
 
-		FVector SourceLocation = Plot->GetActorLocation();
-		FVector Direction = OwningLocation - SourceLocation;
-		Direction.Z = 0.0f;
-		FRotator DesiredRotation = FRotationMatrix::MakeFromX(Direction).Rotator();
-		float RotationAngle = DesiredRotation.Yaw;
-		Plot->SetActorRotation({Plot->GetActorRotation().Pitch, RotationAngle, Plot->GetActorRotation().Roll});
+			FVector SourceLocation = Plot->GetActorLocation();
+			FVector Direction = OwningLocation - SourceLocation;
+			Direction.Z = 0.0f;
+			FRotator DesiredRotation = FRotationMatrix::MakeFromX(Direction).Rotator();
+			float RotationAngle = DesiredRotation.Yaw;
+			Plot->SetActorRotation({Plot->GetActorRotation().Pitch, RotationAngle, Plot->GetActorRotation().Roll});
 
-		Plots.Add(Index, Plot);
+			Plots.Add(GameState->Server_Players[Index]->PlayerName, Plot);
+		}
 	}
 }
 
 void ARaidialSpawner::SetupDelayed()
 {
-	for (const TPair<int32, ARadialPlot*>& Pair : Plots)
+	for (const TPair<FString, ARadialPlot*>& Pair : Plots)
 	{
 		Pair.Value->SetPlayerID(Pair.Key);		
 	}

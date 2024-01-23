@@ -28,6 +28,9 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
+
+	UPROPERTY(EditAnywhere)
+	class USquashAndStretch* SSComponent;
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bHasBeenClaimed{};

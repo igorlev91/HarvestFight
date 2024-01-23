@@ -59,7 +59,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_UpdateCharacterMaterial(int32 _Player, FCharacterDetails _Details);
 	
-	void SyncPlayerMaterial(FCharacterDetails _CharacterDetails);
+	void SyncPlayerMaterial(int32 _PlayerID, FCharacterDetails _CharacterDetails);
 
 	UFUNCTION(Server, Reliable)
 	void Server_UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails, const FString& _PlayerName);

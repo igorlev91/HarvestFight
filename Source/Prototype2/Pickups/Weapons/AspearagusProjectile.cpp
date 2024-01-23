@@ -43,25 +43,13 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 	{
 		DeathTimer -= DeltaTime;
 
-		// create a collision sphere
-		const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(20.0f);
-
-		// create tarray for catching hit results
-		TArray<FHitResult> OutHits;
-
-		// Set the sweep to stationary
-		const FVector SweepStart = FVector{GetActorLocation().X + 100.0f, GetActorLocation().Y, GetActorLocation().Z};
-		const FVector SweepEnd = SweepStart;
-	
-		// check if something got hit in the sweep
-		const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere);
-
-		if (bHasHitResult)
+		if (!CheckForHitObstacle())
 		{
-			//Destroy();
-		}
-		else{
 			SetActorLocation(GetActorLocation() + GetActorForwardVector() * Speed * DeltaTime);
+		}
+		else
+		{
+
 		}
 	}
 	else
@@ -77,7 +65,7 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 }
 
 void AAspearagusProjectile::CheckForHitPlayers()
-{
+{	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
 
@@ -111,14 +99,31 @@ void AAspearagusProjectile::CheckForHitPlayers()
 	}
 }
 
+bool AAspearagusProjectile::CheckForHitObstacle()
+{
+	// create a collision sphere
+	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(30.0f);
+
+	// create tarray for catching hit results
+	TArray<FHitResult> OutHits;
+
+	
+	// Set the sweep to stationary
+	const FVector SweepStart = AspearagusMesh->GetSocketLocation("AspearagusHead");
+	const FVector SweepEnd = SweepStart;
+	
+	// check if something got hit in the sweep
+	return GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere);
+}
+
 void AAspearagusProjectile::InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed,
-	float _LifeTime, float _AttackSphereRadius)
+                                                 float _LifeTime, float _AttackSphereRadius)
 {
 	OwningPlayer = _Player;
 	AspearagusMesh->SetStaticMesh(_Mesh);
 	Speed = _Speed;
 	DeathTimer = _LifeTime;
-	AttackSphereRadius = _AttackSphereRadius;
+	AttackSphereRadius = _AttackSphereRadius * OwningPlayer->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
 	ChargeAmount = _Player->AttackChargeAmount;
 }
 
