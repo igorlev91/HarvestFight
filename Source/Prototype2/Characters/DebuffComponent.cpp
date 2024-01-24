@@ -25,12 +25,15 @@ void UDebuffComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UDebuffComponent, DazeRandomDirection);
 	DOREPLIFETIME(UDebuffComponent, PunchCounterDropOffTimer);
 	DOREPLIFETIME(UDebuffComponent, PunchCounter);
+	DOREPLIFETIME(UDebuffComponent, CurrentDebuff);
 }
 
 // Called when the game starts
 void UDebuffComponent::BeginPlay()
 {
-	Super::BeginPlay();	
+	Super::BeginPlay();
+
+	
 
 	PunchCounterDropOffTimer = PunchCounterDropOff;
 }
@@ -42,12 +45,25 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (PunchCounter > 0)
+	if (Player->HasAuthority())
 	{
-		PunchCounterDropOffTimer -= DeltaTime;
-		
-		UpdatePunchCounter();
+		if (PunchCounter > 0)
+		{
+			PunchCounterDropOffTimer -= DeltaTime;
+			if (PunchCounterDropOffTimer <= 0)
+				UpdatePunchCounter();
+		}
+
+		if (DebuffDuration > 0)
+		{
+			DebuffDuration -= DeltaTime;
+			if (DebuffDuration <= 0)
+				RemoveDebuff();
+		}
 	}
+
+	if (!Player)
+		return;
 
 	if (CurrentDebuff == EDebuff::None)
 		return;
@@ -65,9 +81,8 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			Server_Daze();
 		}		
 	}
-	
-	DebuffDuration -= DeltaTime;
-	RemoveDebuff();
+
+
 }
 
 void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
@@ -187,24 +202,16 @@ void UDebuffComponent::Punch()
 
 void UDebuffComponent::UpdatePunchCounter()
 {
-	if (PunchCounterDropOffTimer < 0.0f)
+	PunchCounterDropOffTimer = PunchCounterDropOff;
+	PunchCounter--;
+	if (PunchCounter < 0)
 	{
-		PunchCounterDropOffTimer = PunchCounterDropOff;
-		PunchCounter--;
-		if (PunchCounter < 0)
-		{
-			PunchCounter = 0;
-		}
+		PunchCounter = 0;
 	}
 }
 
 void UDebuffComponent::RemoveDebuff()
 {
-	if (DebuffDuration > 0.0f)
-		return;
-
-	// Reset VFX if needed
-
 	// Allow movement again
 	Player->bAllowMovementFromInput = true;
 	Player->SetCharacterSpeed(Player->GetWalkSpeed(), Player->GetWalkSpeed(), Player->GetWalkRateScale());

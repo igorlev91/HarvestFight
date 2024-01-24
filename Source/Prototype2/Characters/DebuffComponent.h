@@ -46,7 +46,8 @@ public:
 
 	/* Called until the debuff duration wears off*/
 	void RemoveDebuff();
-	
+
+	UPROPERTY(Replicated)
 	EDebuff CurrentDebuff = EDebuff::None;
 protected:
 	/* Called when the game starts*/

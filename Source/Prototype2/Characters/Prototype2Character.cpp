@@ -356,6 +356,12 @@ void APrototype2Character::Server_CountdownTimers_Implementation(float _DeltaSec
 void APrototype2Character::ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
 	Server_SetPlayerAimingMovement(true);
+	Server_ExecuteAttack(_AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
+}
+
+void APrototype2Character::Server_ExecuteAttack_Implementation(float _AttackSphereRadius, FVector _CachedActorLocation,
+	FVector _CachedForwardVector)
+{
 	Weapon->ExecuteAttack(_AttackSphereRadius, this, _CachedActorLocation, _CachedForwardVector);
 }
 
@@ -1432,18 +1438,13 @@ bool APrototype2Character::GetIsWeaponGold()
 
 void APrototype2Character::UpdateCharacterSpeed(bool _HoldingGold)
 {
-	if (!HasIdealRole())
-		return;
 	
 	if (!DebuffComponent)
 		return;
 	
-	if (DebuffComponent->CurrentDebuff != EDebuff::None)
-		return;
-	
 	if (_HoldingGold)
 	{
-		UKismetSystemLibrary::PrintString(GetWorld(), "GOLD SPEED ACTIVATED");
+		UE_LOG(LogTemp, Warning, TEXT("GOLD SPEED ACTIVATED"));
 		SetCharacterSpeed(GoldPlantSpeed, WalkSpeed, GoldSlowRateScale);
 	}
 	else
@@ -1602,7 +1603,7 @@ void APrototype2Character::Server_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_Sprint_Implementation()
 {
-	if (CanSprintTimer <= 0.0f && DebuffComponent->CurrentDebuff == EDebuff::None)
+	if (CanSprintTimer <= 0 && DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer <= 0)
 	{
 		// Can sprint while charging with fists
 		if (CurrentWeaponSeedData != DefaultWeaponSeedData && bIsChargingAttack)

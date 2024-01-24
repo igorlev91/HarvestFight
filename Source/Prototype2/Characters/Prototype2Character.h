@@ -430,6 +430,8 @@ protected:
 
 	/* Execute Attack */
 	void ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector);
+	UFUNCTION(Server, Reliable)
+	void Server_ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector);
 	
 	/* Create a sphere collider which calculates nearest item */
 	void CheckForInteractables();
