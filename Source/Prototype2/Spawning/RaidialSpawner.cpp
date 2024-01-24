@@ -84,7 +84,7 @@ void ARaidialSpawner::SetUp()
 			ARadialPlot* Plot = GetWorld()->SpawnActor<ARadialPlot>(PlotPrefab);
 			Plot->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
 			Plot->SetActorRelativeLocation(ObjectSpawnPosition);
-			Plot->SetPlayerID(GameState->Server_Players[Index]->PlayerName);
+			Plot->SetPlayerID(GameState->Server_Players[Index]->Details.Colour);
 		
 
 			FVector SourceLocation = Plot->GetActorLocation();
@@ -94,14 +94,14 @@ void ARaidialSpawner::SetUp()
 			float RotationAngle = DesiredRotation.Yaw;
 			Plot->SetActorRotation({Plot->GetActorRotation().Pitch, RotationAngle, Plot->GetActorRotation().Roll});
 
-			Plots.Add(GameState->Server_Players[Index]->PlayerName, Plot);
+			Plots.Add(GameState->Server_Players[Index]->Details.Colour, Plot);
 		}
 	}
 }
 
 void ARaidialSpawner::SetupDelayed()
 {
-	for (const TPair<FString, ARadialPlot*>& Pair : Plots)
+	for (const TPair<EColours, ARadialPlot*>& Pair : Plots)
 	{
 		Pair.Value->SetPlayerID(Pair.Key);		
 	}

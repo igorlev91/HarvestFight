@@ -29,6 +29,10 @@ void AFertiliser::Interact(APrototype2Character* _Player)
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 }
 
+void AFertiliser::HoldInteract(APrototype2Character* _Player)
+{
+}
+
 void AFertiliser::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);

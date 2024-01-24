@@ -48,13 +48,13 @@ public:
 	UAnimMontage* FallOnButtAndGetBackUp;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
-	UAnimMontage* Launch;
+	UAnimSequence* Launch;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
-	UAnimMontage* Apex;
+	UAnimSequence* Apex;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
-	UAnimMontage* Falling;
+	UAnimSequence* Falling;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Punching" )
 	UAnimSequence* ChargingPunchingAttack;

@@ -51,7 +51,9 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	
 	Server_SpawnProjectile(_Player, _AttackSphereRadius);
 	
-	_Player->OnExecuteAttackDelegate.Broadcast();
+	// make UI pop out
+	//_Player->OnExecuteAttackDelegate.Broadcast();
+	BroadcastAttackToHUD(_Player);
 
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);

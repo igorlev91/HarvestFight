@@ -24,6 +24,11 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_InitPlayerHUD();
 	void InitPlayerHUD();
+
+	UFUNCTION()
+	void SetIdealDetails(FCharacterDetails _IdealDetails);
+	UFUNCTION(Client, Reliable)
+	void Client_SetIdealDetails(FCharacterDetails _IdealDetails);
 	
 	/* Protected Functions */
 protected:

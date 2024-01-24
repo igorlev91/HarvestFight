@@ -45,6 +45,10 @@ void APlant::Interact(APrototype2Character* _Player)
 	SSComponent->Disable();
 }
 
+void APlant::HoldInteract(APrototype2Character* _Player)
+{
+}
+
 void APlant::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);

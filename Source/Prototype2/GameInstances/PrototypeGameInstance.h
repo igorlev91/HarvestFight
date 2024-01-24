@@ -37,7 +37,8 @@ enum class EColours : uint8
 	PURPLE= 4,
 	ORANGE= 5,
 	BLACK= 6,
-	WHITE= 7
+	WHITE= 7,
+	MAXCOLOURS=8
 };
 
 USTRUCT(BlueprintType)
@@ -84,4 +85,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FCharacterDetails> FinalPlayerDetails{};
+
+	UPROPERTY(VisibleAnywhere)
+	bool bTeams{};
 };

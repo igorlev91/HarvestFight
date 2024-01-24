@@ -26,6 +26,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
+
+	UFUNCTION()
+	void InitTeams();
 	
 	/* Brawl Mode Map Choice Widget*/
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -33,6 +36,17 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_LobbyCharacterSelection* WBP_LobbyCharacterSelection;
+
+	// teams
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTeams{};
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget)) 
+	class UTextBlock* TeamAText;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget)) 
+	UTextBlock* TeamBText;
+
+	UPROPERTY(EditAnywhere)
+	class UColourData* ColourData;
 	
 	/* Icon rings */
 	UPROPERTY(EditAnywhere)

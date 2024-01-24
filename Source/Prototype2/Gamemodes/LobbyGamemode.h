@@ -5,6 +5,7 @@
 #include "HHGamemode.h"
 #include "GameFramework/GameModeBase.h"
 #include "Prototype2/InteractInterface.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "LobbyGamemode.generated.h"
 
 UCLASS()
@@ -15,12 +16,21 @@ class PROTOTYPE2_API ALobbyGamemode : public AHHGamemodeBase
 public:
 	/* Constructor */
 	ALobbyGamemode();
+
+	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
 
 	UPROPERTY(EditAnywhere)
 	TArray<USkeletalMesh*> PlayerMeshes;
+
+	//
+	UPROPERTY(EditAnywhere)
+	class UColourData* SkinColourData{nullptr};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTeams{};
 private:
 	/* Called after logging in */
 	virtual void PostLogin(APlayerController* _NewPlayer) override;
@@ -33,6 +43,7 @@ private:
 
 	void UpdateAllPlayerInfo(class ALobbyGamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
 
+	FCharacterDetails CreateDetailsFromColourEnum(EColours _Colour);
 private:
 	/* For holding all the costumes */
 

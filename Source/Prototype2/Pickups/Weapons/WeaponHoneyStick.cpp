@@ -6,6 +6,7 @@
 #include "Prototype2/DataAssets/AnimationData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Gameplay/GrowSpot.h"
 
 void UWeaponHoneyStick::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
@@ -57,23 +58,30 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
-		for (auto& HitResult : OutHits)
+		for (auto HitResult : OutHits)
 		{
-			if (auto* HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
+			if (auto HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
 			{
 				if (HitPlayerCast != _Player)
 				{
 					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 				}
 			}
-			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
+			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
 				HitSellBinCast->GetHit(_Player->AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
 			}
+
+			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
+			{
+				GrowSpot->DegradeConcrete();
+			}
 		}
 	}
-
-	_Player->OnExecuteAttackDelegate.Broadcast();
+	
+	// make UI pop out
+	//_Player->OnExecuteAttackDelegate.Broadcast();
+	BroadcastAttackToHUD(_Player);
 
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);

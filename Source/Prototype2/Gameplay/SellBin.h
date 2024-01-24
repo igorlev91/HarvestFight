@@ -17,6 +17,7 @@ class PROTOTYPE2_API ASellBin : public AActor, public IInteractInterface
 	
 public:	
 	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
@@ -31,6 +32,9 @@ protected:
 	virtual void Tick(float _DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	
 	UFUNCTION(Server, Reliable)
 	void Server_FireParticleSystem();
 	void Server_FireParticleSystem_Implementation();

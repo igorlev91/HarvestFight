@@ -55,9 +55,9 @@ void ABeehive::Interact(APrototype2Character* _Player)
 		{
 			if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
 			{
-				if (NearbyFlower->SeedData->Type == EPickupDataType::FlowerData)
+				if (NearbyFlower->SeedData->BabyType == EPickupDataType::FlowerData)
 				{
-					NumberOfNearbyFlowers += NearbyFlower->SeedData->StarValue;
+					NumberOfNearbyFlowers += NearbyFlower->SeedData->BabyStarValue;
 				}
 			}
 		}

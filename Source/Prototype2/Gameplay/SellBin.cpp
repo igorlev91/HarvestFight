@@ -13,6 +13,7 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_SellCropUI.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
 
 ASellBin::ASellBin()
 {
@@ -50,6 +51,13 @@ void ASellBin::BeginPlay()
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	// Assign OnTouch Delegate
+	ItemComponent->Mesh->SetNotifyRigidBodyCollision(true);
+	ItemComponent->Mesh->SetGenerateOverlapEvents(true);
+	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASellBin::OnPlayerTouchSellBin);
+
+	
 }
 
 void ASellBin::Tick(float DeltaTime)
@@ -59,8 +67,6 @@ void ASellBin::Tick(float DeltaTime)
 	//ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	
 	MoveUIComponent(DeltaTime);
-	
-	
 }
 
 bool ASellBin::IsInteractable(APrototype2PlayerState* _Player)
@@ -108,7 +114,7 @@ void ASellBin::FireSellFX(APlant* _Plant, APrototype2Character* _Player)
 				{
 					if (_Plant->SeedData->PlantData)
 					{
-						sellCropUI->SetCropValue(_Plant->SeedData->StarValue * _Plant->SeedData->PlantData->Multiplier);
+						sellCropUI->SetCropValue(_Plant->SeedData->BabyStarValue * _Plant->SeedData->PlantData->Multiplier);
 					}
 					if (sellCropUI->SellText)
 					{
@@ -159,6 +165,11 @@ void ASellBin::HideParticleSystem()
 
 void ASellBin::ClientInteract(APrototype2Character* _Player)
 {
+	// Force Bump Into SellBin
+	////////
+	return;
+	////////
+	
 	if (_Player->HeldItem)
 	{
 		if (auto Plant = Cast<APlant>(_Player->HeldItem))
@@ -175,6 +186,57 @@ void ASellBin::ClientInteract(APrototype2Character* _Player)
 void ASellBin::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}
+
+void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!OtherActor)
+		return;
+	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
+	if (!SomePlayer)
+		return;
+	APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameStateCast)
+		return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
+	if (SomePlayer->HeldItem)
+	{
+		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
+		{
+			FireSellFX(Plant, SomePlayer);
+			
+			bWidgetVisible = true;
+
+			if (SomePlayer->PlayerHUDRef)
+				SomePlayer->PlayerHUDRef->ClearPickupUI();
+			
+			// Audio
+			if (SomePlayer->SellCue)
+			{
+				SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue);
+			}
+
+			SomePlayer->PlayerStateRef->AddCoins(Plant);
+
+			// Reset player speed incase of gold plant
+			SomePlayer->bIsHoldingGold = false;
+			
+			// Destroy the crop the player is holding
+			SomePlayer->HeldItem->Destroy();
+			SomePlayer->HeldItem = nullptr;
+
+			if (SomePlayer->PlayerHUDRef)
+			{
+				SomePlayer->PlayerHUDRef->ClearPickupUI();
+				SomePlayer->PlayerHUDRef->SetHUDInteractText("");
+			}
+			SomePlayer->EnableStencil(false);
+			ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+			SomePlayer->RefreshCurrentMaxSpeed();
+		}
+	}
 }
 
 void ASellBin::MoveUIComponent(float _Dt)
@@ -202,6 +264,15 @@ void ASellBin::Multi_OnItemSold_Implementation(int32 _PlayerID)
 
 void ASellBin::Interact(APrototype2Character* _Player)
 {
+	// Force Bump Into SellBin
+	////////
+	return;
+	////////
+	
+	APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameStateCast)
+		return;
+	
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
 	if (_Player->HeldItem)
 	{
@@ -215,22 +286,7 @@ void ASellBin::Interact(APrototype2Character* _Player)
 				_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue);
 			}
 
-			int32 PlantSellValue = (Plant->SeedData->StarValue * Plant->SeedData->PlantData->Multiplier) * (Plant->NumberOfNearbyFlowers + 1);
-
-			if (Plant->ItemComponent->bGold)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue * Plant->SeedData->GoldMultiplier));
-				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue * Plant->SeedData->GoldMultiplier;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Gimmi %s gold"), *FString::FromInt(PlantSellValue));
-				Cast<APrototype2PlayerState>(_Player->GetPlayerState())->ExtraCoins = PlantSellValue;	
-			}
-
-			Multi_OnItemSold(_Player->PlayerStateRef->Player_ID);
-			
-			Cast<APrototype2PlayerState>(_Player->GetPlayerState())->bIsShowingExtraCoins = true; 
+			_Player->PlayerStateRef->AddCoins(Plant);
 
 			// Reset player speed incase of gold plant
 			_Player->bIsHoldingGold = false;
@@ -246,10 +302,14 @@ void ASellBin::Interact(APrototype2Character* _Player)
 			}
 			_Player->EnableStencil(false);
 			ItemComponent->Mesh->SetRenderCustomDepth(false);
-			
-			_Player->UpdateCharacterSpeed(false);
+
+			_Player->RefreshCurrentMaxSpeed();
 		}
 	}
+}
+
+void ASellBin::HoldInteract(APrototype2Character* _Player)
+{
 }
 
 void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
@@ -258,7 +318,7 @@ void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProtot
 	{
 		if (HeldItem->PickupActor == EPickupActor::PlantActor)
 		{
-			_InvokingWidget->SetHUDInteractText("Sell");
+			_InvokingWidget->SetHUDInteractText("");
 
 			ItemComponent->Mesh->SetRenderCustomDepth(true);
 		}

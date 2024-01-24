@@ -17,6 +17,10 @@ void UWeapon::Interact(APrototype2Character* _Player)
 {
 }
 
+void UWeapon::HoldInteract(APrototype2Character* _Player)
+{
+}
+
 void UWeapon::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
 {
 }
@@ -44,6 +48,11 @@ void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Pl
 
 void UWeapon::UpdateAOEIndicator(APrototype2Character* _Player)
 {
+}
+
+void UWeapon::BroadcastAttackToHUD_Implementation(APrototype2Character* _Player)
+{
+	_Player->OnExecuteAttackDelegate.Broadcast();
 }
 
 

@@ -42,6 +42,10 @@ class PROTOTYPE2_API IInteractInterface
 public:
 	virtual void Interact(APrototype2Character* _Player) = 0;
 	virtual void ClientInteract(APrototype2Character* _Player){};
+
+	// For hold functionality
+	virtual void HoldInteract(APrototype2Character* _Player) = 0;
+	
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) = 0;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) = 0;
 	EInterfaceType InterfaceType = EInterfaceType::Default;

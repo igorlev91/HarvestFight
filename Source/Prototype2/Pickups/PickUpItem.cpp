@@ -37,14 +37,19 @@ void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 void APickUpItem::Multi_SetSeedData_Implementation(USeedData* _Data, EPickupActor _PickupType)
 {
 	SeedData = _Data;
-	DataAssetPickupType = _Data->Type;
+	DataAssetPickupType = _Data->BabyType;
 	PickupActor = _PickupType;
 
 	switch(_PickupType)
 	{
 	case EPickupActor::SeedActor:
 		{
-			ItemComponent->InitializeSeed(_Data->Materials, _Data->Mesh);
+			ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
+			break;
+		}
+	case EPickupActor::FertilizerActor:
+		{
+			ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
 			break;
 		}
 	default:

@@ -66,6 +66,10 @@ void ASeed::Interact(APrototype2Character* _Player)
 	SSComponent->Disable();
 }
 
+void ASeed::HoldInteract(APrototype2Character* _Player)
+{
+}
+
 void ASeed::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);

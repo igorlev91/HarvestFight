@@ -38,13 +38,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ChangeCharacter(bool _bIsTowardsRight);
-	
-	/**
-	 * @brief Checks through other players to see if current character skin is taken
-	 * @param _bIsTowardsRight 
-	 */
-	UFUNCTION(BlueprintCallable)
-	void CheckForTakenCharacter(bool _bIsTowardsRight);
 
 	UFUNCTION(BlueprintCallable)
 	void SetCharacterColourFromSelection(int32 _NumberOfColors);
@@ -53,13 +46,18 @@ public:
 	void SetCharacterModelFromSelection(int32 _NumberOfCharacters);
 
 	UFUNCTION()
-	bool HasSamePlayerColourAndCharacter();
+	bool HasSamePlayerColour();
 
 	UFUNCTION()
 	void SetOwningController(int32 _PlayerID, class APrototype2PlayerController* _Owner);
 
 	UFUNCTION()
 	void SetPlayerID(int32 _PlayerID);
+
+	UFUNCTION()
+	int32 GetNumberOfRedPlayers();
+	UFUNCTION()
+	int32 GetNumberOfBluePlayers();
 	
 	/* Public Variables */
 public:
@@ -71,12 +69,17 @@ public:
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* PlayerColourImage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UButton* Button_LeftColour;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UButton* Button_RightColour;
+
+	UPROPERTY()
+	bool bTeams{};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails IdealDetails{};
-
-	UPROPERTY(EditAnywhere)
-	int32 NumberOfColours{8};
 
 	UPROPERTY(EditAnywhere)
 	int32 NumberOfCharacters{4};
@@ -92,6 +95,7 @@ public:
 
 	/* Private Variables */
 	bool HasChosenNewColour{false};
+	bool HasBeenAssignedTeamColour{};
 
 	UPROPERTY()
 	int32 PlayerID{-1};

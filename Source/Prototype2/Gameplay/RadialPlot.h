@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "RadialPlot.generated.h"
 
 class APrototype2PlayerState;
@@ -13,10 +14,10 @@ class PROTOTYPE2_API ARadialPlot : public AActor
 public:
 	ARadialPlot();
 	
-	void SetPlayerID(FString _Id);
-	FString GetPlayerID() const;
+	void SetPlayerID(EColours _Id);
+	EColours GetPlayerID() const;
 
-	void SpawnGrowSpots(FString _PlayerName);
+	void SpawnGrowSpots(EColours _PlayerColour);
 
 	void UpdateBeehiveFlowers();
 
@@ -48,7 +49,7 @@ protected:
 	TSubclassOf<AGrowSpot> GrowSpotPrefab;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	FString PlayerName;
+	EColours PlayerColour;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float PlotSpread {180.0f};

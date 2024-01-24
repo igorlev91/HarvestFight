@@ -67,15 +67,15 @@ void ARadialPlot::BeginPlay()
 
 }
 
-void ARadialPlot::SetPlayerID(FString _PlayerName)
+void ARadialPlot::SetPlayerID(EColours _PlayerName)
 {
-	PlayerName = _PlayerName;
+	PlayerColour = _PlayerName;
 	
 	SpawnGrowSpots(_PlayerName);
 	
 	for(auto growSpot : GrowSpots)
 	{
-		growSpot->OwningPlayerName = _PlayerName;
+		growSpot->OwningPlayerColor = _PlayerName;
 	}
 	
 	if (HasAuthority())
@@ -84,7 +84,7 @@ void ARadialPlot::SetPlayerID(FString _PlayerName)
 		{
 			for(auto Player : Gamestate->Server_Players)
 			{
-				if (Player->PlayerName == _PlayerName)
+				if (Player->Details.Colour == _PlayerName)
 				{
 					Multi_SetPlotMaterial(Player);
 				}
@@ -98,12 +98,12 @@ void ARadialPlot::SetPlayerID(FString _PlayerName)
 	//}
 }
 
-FString ARadialPlot::GetPlayerID() const
+EColours ARadialPlot::GetPlayerID() const
 {
-	return PlayerName;
+	return PlayerColour;
 }
 
-void ARadialPlot::SpawnGrowSpots(FString _PlayerName)
+void ARadialPlot::SpawnGrowSpots(EColours _PlayerColour)
 {
 	if (HasAuthority())
 	{
@@ -124,7 +124,7 @@ void ARadialPlot::SpawnGrowSpots(FString _PlayerName)
 				newPlot->RadialPlot = this;
 				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
-				newPlot->OwningPlayerName = _PlayerName;
+				newPlot->OwningPlayerColor = _PlayerColour;
 				GrowSpots.Add(newPlot);
 			}
 		}
@@ -135,7 +135,7 @@ void ARadialPlot::SpawnGrowSpots(FString _PlayerName)
 			{
 				for(auto Player : Gamestate->Server_Players)
 				{
-					if (Player->PlayerName == _PlayerName)
+					if (Player->Details.Colour == _PlayerColour)
 					{
 						Multi_SetPlotMaterial(Player);
 					}
@@ -163,8 +163,8 @@ void ARadialPlot::UpdateBeehiveFlowers()
 	for (int32 i = 0; i < GrowSpots.Num(); i++)
 	{
 		if (BeehiveVector.Num() > 0 && GrowSpots[i]->GrowingItemRef &&
-			(GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::FlowerData
-			|| GrowSpots[i]->GrowingItemRef->SeedData->Type == EPickupDataType::PlantData))
+			(GrowSpots[i]->GrowingItemRef->SeedData->BabyType == EPickupDataType::FlowerData
+			|| GrowSpots[i]->GrowingItemRef->SeedData->BabyType == EPickupDataType::PlantData))
 		{
 			for (ABeehive* Behive : BeehiveVector)
 			{

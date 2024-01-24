@@ -47,14 +47,12 @@ void APrototype2GameMode::BeginPlay()
 		GameStateRef = Gamestate;
 		Gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
 	}
-	
-
 }
 
 void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
-	
+
 	if (!HasAuthority())
 		return;
 
@@ -73,6 +71,8 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	GameStateReference->Server_Players.Add(PlayerStateReference);
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 	GameStateReference->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 			
 	APrototype2Character* Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
 	if (!Character)
@@ -84,6 +84,33 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	
 	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 	TeleportToPreGameArena(Character);
+
+	if (bTeams || (GameStateReference->Server_Players.Num() <= 1 && GameInstance->bTeams))
+	{
+		TArray<EColours> ScannedColours{};
+		for(auto PlayerState : GameStateReference->Server_Players)
+		{
+			ScannedColours.Add(PlayerState->Details.Colour);
+		}
+		if (ScannedColours.Num() >= 2)
+		{
+			GameStateReference->TeamOneColour = ScannedColours[0];
+			GameStateReference->TeamTwoColour = ScannedColours[1];
+		}
+		
+		if (PlayerStateReference->Details.Colour == GameStateReference->TeamOneColour)
+		{
+			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+			return;
+		}
+		else if (PlayerStateReference->Details.Colour == GameStateReference->TeamTwoColour)
+		{
+			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
+			return;
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("Player %s Is On Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+	}
 }
 
 void APrototype2GameMode::Logout(AController* _Exiting)
@@ -292,82 +319,84 @@ void APrototype2GameMode::TeleportEveryoneToPodium()
 			}
 		}
 	}
-	if (EndGamePodium)
+	if (!EndGamePodium)
 	{
-		FTransform defautTransform{};
-		defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
-
-
-		APrototype2Character* CurrentCharacter{nullptr};
-		// Tp Everyone
-		if (Server_Characters.Num() > 0 && EndGamePodium)
-		{
-			CurrentCharacter = Server_Characters[0].Get();
-			if (!CurrentCharacter)
-				return;
+		return;
+	}
+		
+	FTransform defautTransform{};
+	defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
+		
+	APrototype2Character* CurrentCharacter{nullptr};
+	
+	// Tp Everyone
+	if (Server_Characters.Num() > 0 && EndGamePodium)
+	{
+		CurrentCharacter = Server_Characters[0].Get();
+		if (!CurrentCharacter)
+			return;
 			
-			if (bP1win == true)
-			{
-				//player1->AttachToComponent(endGamePodium->P1WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(0)->GetComponentLocation(), EndGamePodium->GetWinPosition(0)->GetComponentRotation());
-			}
-			else
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(0)->GetComponentLocation(), EndGamePodium->GetLossPosition(0)->GetComponentRotation());
-				//player1->AttachToComponent(endGamePodium->P1LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
+		if (bP1win == true)
+		{
+			//player1->AttachToComponent(endGamePodium->P1WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(0)->GetComponentLocation(), EndGamePodium->GetWinPosition(0)->GetComponentRotation());
+		}
+		else
+		{
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(0)->GetComponentLocation(), EndGamePodium->GetLossPosition(0)->GetComponentRotation());
+			//player1->AttachToComponent(endGamePodium->P1LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+	}
+		
+	if (Server_Characters.Num() > 1 && EndGamePodium)
+	{
+		CurrentCharacter = Server_Characters[1].Get();
+		if (!CurrentCharacter)
+			return;
+		
+		if (bP2win == true)
+		{
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(1)->GetComponentLocation(), EndGamePodium->GetWinPosition(1)->GetComponentRotation());
+			//player2->AttachToComponent(endGamePodium->P2WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+		else
+		{
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(1)->GetComponentLocation(), EndGamePodium->GetLossPosition(1)->GetComponentRotation());
+			//player2->AttachToComponent(endGamePodium->P2LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		}
 		
-		if (Server_Characters.Num() > 1 && EndGamePodium)
+	}
+	if (Server_Characters.Num() > 2 && EndGamePodium)
+	{
+		CurrentCharacter = Server_Characters[2].Get();
+		if (!CurrentCharacter)
+			return;
+		if (bP3win == true)
 		{
-			CurrentCharacter = Server_Characters[1].Get();
-			if (!CurrentCharacter)
-				return;
-			
-			if (bP2win == true)
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(1)->GetComponentLocation(), EndGamePodium->GetWinPosition(1)->GetComponentRotation());
-				//player2->AttachToComponent(endGamePodium->P2WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
-			else
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(1)->GetComponentLocation(), EndGamePodium->GetLossPosition(1)->GetComponentRotation());
-				//player2->AttachToComponent(endGamePodium->P2LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
-			
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(2)->GetComponentLocation(), EndGamePodium->GetWinPosition(2)->GetComponentRotation());
+			//player3->AttachToComponent(endGamePodium->P3WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		}
-		if (Server_Characters.Num() > 2 && EndGamePodium)
+		else
 		{
-			CurrentCharacter = Server_Characters[2].Get();
-			if (!CurrentCharacter)
-				return;
-			if (bP3win == true)
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(2)->GetComponentLocation(), EndGamePodium->GetWinPosition(2)->GetComponentRotation());
-				//player3->AttachToComponent(endGamePodium->P3WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
-			else
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(2)->GetComponentLocation(), EndGamePodium->GetLossPosition(2)->GetComponentRotation());
-				//player3->AttachToComponent(endGamePodium->P3LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
-			
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(2)->GetComponentLocation(), EndGamePodium->GetLossPosition(2)->GetComponentRotation());
+			//player3->AttachToComponent(endGamePodium->P3LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		}
-		if (Server_Characters.Num() > 3 && EndGamePodium)
+		
+	}
+	if (Server_Characters.Num() > 3 && EndGamePodium)
+	{
+		CurrentCharacter = Server_Characters[3].Get();
+		if (!CurrentCharacter)
+			return;
+		if (bP4win == true)
 		{
-			CurrentCharacter = Server_Characters[3].Get();
-			if (!CurrentCharacter)
-				return;
-			if (bP4win == true)
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(3)->GetComponentLocation(), EndGamePodium->GetWinPosition(3)->GetComponentRotation());
-				//player4->AttachToComponent(endGamePodium->P4WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
-			else
-			{
-				CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(3)->GetComponentLocation(), EndGamePodium->GetLossPosition(3)->GetComponentRotation());
-				//player4->AttachToComponent(endGamePodium->P4LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			}
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(3)->GetComponentLocation(), EndGamePodium->GetWinPosition(3)->GetComponentRotation());
+			//player4->AttachToComponent(endGamePodium->P4WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+		else
+		{
+			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(3)->GetComponentLocation(), EndGamePodium->GetLossPosition(3)->GetComponentRotation());
+			//player4->AttachToComponent(endGamePodium->P4LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		}
 	}
 }
@@ -387,7 +416,6 @@ void APrototype2GameMode::Multi_AssignCharacterSkin_Implementation(APrototype2Pl
 		return;
 			
 	int32 CharacterSelection = (int32)_gameInstanceReference->FinalPlayerDetails[_NewName].Character;
-	SomeCastedCharacter->AnimationData = AnimationDatas[CharacterSelection];
 
 	SomeCastedCharacter->GetMesh()->SetSkeletalMesh(AnimationDatas[CharacterSelection]->SkeletalMesh);
 	SomeCastedCharacter->GetMesh()->SetMaterial(0, PlayerMaterials[CharacterSelection]);
@@ -422,7 +450,7 @@ void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
 						{
 							if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(Plot))
 							{
-								if (RadialPlot->GetPlayerID() == Player->PlayerName)
+								if (RadialPlot->GetPlayerID() == Player->Details.Colour)
 								{
 									FVector SpawnPoint = RadialPlot->GetActorLocation();
 									SpawnPoint.Z = PlayerStartingZPosition;
@@ -522,6 +550,13 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 		
 		CasterPlayerState->Player_ID = SomePlayerID;
 		CasterPlayerState->PlayerName = SomePlayerName;
+
+		/* Limit player name if too long and adding ... to the end */
+		if (CasterPlayerState->PlayerName.Len() >= 10)
+		{
+			CasterPlayerState->PlayerName = CasterPlayerState->PlayerName.Left(FMath::Min(CasterPlayerState->PlayerName.Len(), 8));
+			CasterPlayerState->PlayerName = CasterPlayerState->PlayerName + "...";
+		}
 	}
 }
 

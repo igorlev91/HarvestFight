@@ -10,6 +10,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "RadialPlot.h"
+#include "Prototype2/DataAssets/FertiliserData.h"
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/DataAssets/SeedData.h"
@@ -30,6 +31,10 @@ AGrowSpot::AGrowSpot()
 	PlantReadyComponent->bAutoActivate = false;
 
 	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	HitBox->SetupAttachment(RootComponent);
+	HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -45,16 +50,17 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, FertiliseInteractDelayTimer);
 	DOREPLIFETIME(AGrowSpot, GrowingActor);
 	DOREPLIFETIME(AGrowSpot, GrowingItemRef);
-	DOREPLIFETIME(AGrowSpot, DefaultMaterial);
-	DOREPLIFETIME(AGrowSpot, GoldMaterial);
+	DOREPLIFETIME(AGrowSpot, OwningPlayerColor);
+	DOREPLIFETIME(AGrowSpot, ConcretedHealth);
+	DOREPLIFETIME(AGrowSpot, ConcretedDamageTimer);
 }
 
 bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 {
-	if (!_Player)
+	if (ConcretedHealth > 0)
 		return false;
 	
-	if (_Player->PlayerName != OwningPlayerName)
+	if (!_Player)
 		return false;
 
 	APlayerController* Controller = _Player->GetPlayerController();
@@ -69,29 +75,88 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 	if (!CastedCharacter)
 		return false;
 
+	//
+	if (CastedCharacter->HeldItem &&
+	CastedCharacter->HeldItem->SeedData &&
+	CastedCharacter->HeldItem->SeedData->FertiliserData &&
+	CastedCharacter->HeldItem->SeedData->FertiliserData->bConcrete &&
+	_Player->Details.Colour == OwningPlayerColor)
+	{
+		return false;
+	}
+	
+	if (CastedCharacter->HeldItem &&
+		CastedCharacter->HeldItem->SeedData &&
+		CastedCharacter->HeldItem->SeedData->FertiliserData &&
+		!bIsFertilised &&
+		CastedCharacter->HeldItem->SeedData->FertiliserData->bConcrete)
+	{
+		return true;
+	}
+	
+	if (_Player->Details.Colour != OwningPlayerColor)
+		return false;
+	
+	return IsInteractable_Unprotected(_Player);
+}
+
+bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete)
+{
+	if (_LookOutForConcrete && ConcretedHealth > 0)
+		return false;
+	
+	if (!_Player)
+		return false;
+
+	APlayerController* Controller = _Player->GetPlayerController();
+	if (!Controller)
+		return false;
+
+	ACharacter* Character = Controller->GetCharacter();
+	if (!Character)
+		return false;
+
+	APrototype2Character* CastedCharacter = Cast<APrototype2Character>(Character);
+	if (!CastedCharacter)
+		return false;
+	
 	switch(GrowSpotState)
 	{
 	case EGrowSpotState::Empty:
 		{
 			if (Cast<ASeed>(CastedCharacter->HeldItem))
 				return true;
-			if (Cast<AFertiliser>(CastedCharacter->HeldItem) && !bIsFertilised)
-				return true;
+			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
+			{
+				if (!bIsFertilised)
+					return true;
+				else
+					return false;
+			}
 			
 			break;
 		}
 	case EGrowSpotState::Growing:
 		{
 			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
-				return true;
+			{
+				if (!bIsFertilised)
+					return true;
+				else
+					return false;
+			}
 			
 			break;
 		}
 	case EGrowSpotState::Grown:
 		{
 			if (Cast<AFertiliser>(CastedCharacter->HeldItem))
-				return true;
-		
+			{
+				if (!bIsFertilised)
+					return true;
+				else
+					return false;
+			}
 			if (Cast<ASeed>(CastedCharacter->HeldItem))
 				return false;
 			
@@ -108,6 +173,7 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 
 	return false;
 }
+
 void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
@@ -138,6 +204,8 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 		{
 			if (_Player->PlayerHUDRef)
 				_Player->PlayerHUDRef->ClearPickupUI();
+
+
 		}
 	default:
 		break;
@@ -146,10 +214,10 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 
 void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 {
-	if (_SeedToPlant->SeedData->GrowTime > 0)
+	if (_SeedToPlant->SeedData->BabyGrowTime > 0)
 	{
-		GrowTime = _SeedToPlant->SeedData->GrowTime;
-		GrowTimer = _SeedToPlant->SeedData->GrowTime;
+		GrowTime = _SeedToPlant->SeedData->BabyGrowTime;
+		GrowTimer = _SeedToPlant->SeedData->BabyGrowTime;
 	}
 	else
 	{
@@ -157,14 +225,14 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		GrowTime = 1.0f;
 	}
 
-	if (_SeedToPlant->SeedData->Type == EPickupDataType::WeaponData)
+	if (_SeedToPlant->SeedData->BabyType == EPickupDataType::WeaponData)
 	{
 		AGrowableWeapon* NewItem = GetWorld()->SpawnActor<AGrowableWeapon>(WeaponPrefab);
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
 		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData,EPickupActor::WeaponActor);
 	}
-	else if (_SeedToPlant->SeedData->Type == EPickupDataType::BeehiveData)
+	else if (_SeedToPlant->SeedData->BabyType == EPickupDataType::BeehiveData)
 	{
 		ABeehive* NewItem = GetWorld()->SpawnActor<ABeehive>(BeehivePrefab);
 		GrowingActor = NewItem;
@@ -180,29 +248,25 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData, EPickupActor::PlantActor);
 	}
 	
-	if (GrowingItemRef)
+	// Init random gold
+	if (bIsFertilised)
 	{
-		// Init random gold
-		if (bIsFertilised && _SeedToPlant->SeedData->Type != EPickupDataType::BeehiveData)
-		{
-			MakePlantGold();
-			bIsFertilised = false;
-			UpdateMaterial();
-		}
-		else if (_SeedToPlant->SeedData->Type != EPickupDataType::BeehiveData)
-		{
-			GrowingItemRef->ItemComponent->bGold = false;
-			int32 X = rand() % 100;
-			//X = 0;
-			if (X < GrowingItemRef->SeedData->ChanceOfGold)
-			{
-				MakePlantGold();
-			}
-		}
-		
-		GrowingItemRef->ItemComponent->Mesh->SetSimulatePhysics(false);
-		GrowingItemRef->ItemComponent->Multi_DisableCollisionAndAttach();
+		MakePlantGold();
 	}
+	else if (_SeedToPlant->SeedData->BabyType != EPickupDataType::BeehiveData)
+	{
+		GrowingItemRef->ItemComponent->bGold = false;
+		int32 X = rand() % 100;
+		//X = 0;
+		if (X < GrowingItemRef->SeedData->ChanceOfGold)
+		{
+			bIsFertilised = true;
+			MakePlantGold();
+		}
+	}
+		
+	GrowingItemRef->ItemComponent->Mesh->SetSimulatePhysics(false);
+	GrowingItemRef->ItemComponent->Multi_DisableCollisionAndAttach();
 	
 	_SeedToPlant->Destroy();
 	
@@ -222,6 +286,41 @@ void AGrowSpot::DestroyPlant()
 	
 }
 
+void AGrowSpot::DegradeConcrete()
+{
+	if (HasAuthority())
+	{
+		if (ConcretedHealth > 0 && ConcretedDamageTimer <= 0)
+		{
+			ConcretedDamageTimer = ConcretedDamageInterval;
+			ConcretedHealth--;
+			if (ConcretedHealth <= 0)
+			{
+				ConcretedHealth = 0;
+				Multi_BrakePlantConcrete();
+			}
+		}
+	}
+	else
+	{
+			Server_DegradeConcrete();
+	}
+}
+
+void AGrowSpot::Server_DegradeConcrete_Implementation()
+{
+	if (ConcretedHealth > 0 && ConcretedDamageTimer <= 0)
+	{
+		ConcretedDamageTimer = ConcretedDamageInterval;
+		ConcretedHealth--;
+		if (ConcretedHealth <= 0)
+		{
+			ConcretedHealth = 0;
+			Multi_BrakePlantConcrete();
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void AGrowSpot::BeginPlay()
 {
@@ -230,6 +329,8 @@ void AGrowSpot::BeginPlay()
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	HitBox->SetupAttachment(ItemComponent->Mesh);
 	
 	if (PlantReadyComponent)
 	{
@@ -239,6 +340,8 @@ void AGrowSpot::BeginPlay()
 	// Server only below
 	if (!HasAuthority())
 		return;
+
+	ConcretedDamageTimer = ConcretedDamageInterval;
 	
 	if (RiseCurve)
 	{
@@ -262,7 +365,7 @@ void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
 	{
 		ScalePlantOnTick();
 
-		if (GrowTimer > 0)
+		if (GrowTimer > 0 && ConcretedHealth <= 0)
 		{
 			GrowTimer -= _DeltaTime;
 
@@ -300,16 +403,24 @@ void AGrowSpot::Tick(float _DeltaTime)
 
 	RiseTimeline.TickTimeline(_DeltaTime);
 	GrowPlantOnTick(_DeltaTime);
+
+	if (ConcretedDamageTimer > 0)
+	{
+		ConcretedDamageTimer -= _DeltaTime;
+	}
 }
 
 void AGrowSpot::Multi_MakePlantGold_Implementation()
 {
 	if (!GrowingItemRef)
 		return;
-	
-	for (int i = 0; i < GrowingItemRef->SeedData->BabyGoldMaterials.Num(); i++)
+
+	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
 	{
-		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[i]);
+		if (GrowingItemRef->SeedData->BabyGoldMaterials.Num() > i)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[i]);
+		else if (GrowingItemRef->SeedData->BabyGoldMaterials.Num() > 0)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[0]);
 	}
 }
 
@@ -364,6 +475,34 @@ void AGrowSpot::MakePlantGold()
 	
 	GrowingItemRef->ItemComponent->bGold = true;
 	Multi_MakePlantGold();
+	UpdateMaterial();
+}
+
+void AGrowSpot::Multi_MakePlantConcrete_Implementation()
+{
+	if (!GrowingItemRef)
+		return;
+	
+	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
+	{
+		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, ConcreteMaterial);
+	}
+}
+
+void AGrowSpot::Multi_BrakePlantConcrete_Implementation()
+{
+	ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
+	
+	if (!GrowingItemRef)
+		return;
+	
+	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
+	{
+		if (GrowingItemRef->SeedData->BabyMaterials.Num() > i)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyMaterials[i]);
+		else if (GrowingItemRef->SeedData->BabyMaterials.Num() > 0)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyMaterials[0]);
+	}
 }
 
 void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
@@ -391,11 +530,11 @@ void AGrowSpot::UpdateMaterial()
 
 void AGrowSpot::Multi_UpdateMaterial_Implementation()
 {
-	if (!GoldMaterial || !DefaultMaterial)
-		return;
-	if (bIsFertilised)
+	if (ConcretedHealth > 0 && ConcreteMaterial)
+		ItemComponent->Mesh->SetMaterial(0, ConcreteMaterial);
+	else if (bIsFertilised && GoldMaterial)
 		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
-	else
+	else if (DefaultMaterial)
 		ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
 }
 
@@ -418,36 +557,66 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			{
 				if (!_Player->HeldItem)
 					break;
-				
-				if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+
+				switch(_Player->HeldItem->PickupActor)
 				{
-					bIsFertilised = true;
-					UpdateMaterial();
-					_Player->DropItem();
-					_Player->EnableStencil(false);
-					Fertiliser->Destroy();
-					break;
-				}
-				else if (ASeed* Seed = Cast<ASeed>(_Player->HeldItem))
-				{
-					if (!_Player->HeldItem->SeedData)
+				case EPickupActor::SeedActor:
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Could not plant seed data asset"));
+						if (!_Player->HeldItem->SeedData)
+						{
+							UE_LOG(LogTemp, Warning, TEXT("Could not plant seed data asset"));
+							return;
+						}
+					
+						// Audio
+						if (_Player->PlantCue)
+						{
+							_Player->PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
+						}
+
+						if (ASeed* Seed = Cast<ASeed>(_Player->HeldItem))
+						{
+							PlantASeed(Seed);
+
+							_Player->PlayerStateRef->AddCoins(Seed->SeedData->BabyStarValue);
+						}
+
+						//_Player->SocketWeapon(FName("Base-HumanWeapon"));
+
+						_Player->DropItem();
+						_Player->EnableStencil(false);
+						break;
+					}
+				case EPickupActor::FertilizerActor:
+					{
+						if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+						{
+							if (auto FertData = Fertiliser->SeedData->FertiliserData)
+							{
+								if (FertData->bConcrete)
+								{
+									FertiliseInteractDelayTimer = FertiliseInteractDelay;
+									ConcretedHealth = 3;
+									Multi_MakePlantConcrete();
+								}
+								else
+								{
+									FertiliseInteractDelayTimer = FertiliseInteractDelay;
+									ConcretedHealth = 0;
+									bIsFertilised = true;
+								}
+							}
+
+							UpdateMaterial();
+							Fertiliser->Destroy();
+							_Player->DropItem();
+							_Player->EnableStencil(false);
+						}
+						
 						return;
 					}
-					
-					// Audio
-					if (_Player->PlantCue)
-					{
-						_Player->PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
-					}
-
-					PlantASeed(Seed);
-
-					//_Player->SocketWeapon(FName("Base-HumanWeapon"));
-
-					_Player->DropItem();
-					_Player->EnableStencil(false);
+				default:
+					break;
 				}
 				break;
 			}
@@ -456,66 +625,114 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				if (!_Player->HeldItem)
 					break;
 				
-				if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+				switch(_Player->HeldItem->PickupActor)
 				{
-					if (GrowingItemRef->SeedData->Type == EPickupDataType::BeehiveData)
-						break;
-					
-					if (!GrowingItemRef->ItemComponent->bGold)
+				case EPickupActor::FertilizerActor:
 					{
-						MakePlantGold();
-						Fertiliser->Destroy();
-						bIsFertilised = false;
-						UpdateMaterial();
+						if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+						{
+							if (auto FertData = Fertiliser->SeedData->FertiliserData)
+							{
+								if (FertData->bConcrete)
+								{
+									FertiliseInteractDelayTimer = FertiliseInteractDelay;
+									ConcretedHealth = 3;
+									Multi_MakePlantConcrete();
+								}
+								else
+								{
+									if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+									{
+										break;
+									}
+									else
+									{
+										bIsFertilised = true;
+										FertiliseInteractDelayTimer = FertiliseInteractDelay;
+										MakePlantGold();
+									}
+								}
+							}
+
+							UpdateMaterial();
+							Fertiliser->Destroy();
+							_Player->DropItem();
+							_Player->EnableStencil(false);
+						}
+						return;
+					}
+				default:
+					{
 						_Player->DropItem();
 						_Player->EnableStencil(false);
+						break;
 					}
 				}
-				else
-				{
-					_Player->DropItem();
-					_Player->EnableStencil(false);
-				}
+				
 				break;
 			}
 		case EGrowSpotState::Grown:
 			{
 				if (_Player->HeldItem)
 				{
-					if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+					switch(_Player->HeldItem->PickupActor)
 					{
-						if (GrowingItemRef->SeedData->Type == EPickupDataType::BeehiveData)
+					case EPickupActor::FertilizerActor:
 						{
-							_Player->DropItem();
-							_Player->EnableStencil(false);
+							if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+							{
+								if (auto FertData = Fertiliser->SeedData->FertiliserData)
+								{
+									if (FertData->bConcrete)
+									{
+										FertiliseInteractDelayTimer = FertiliseInteractDelay;
+										ConcretedHealth = 3;
+										Multi_MakePlantConcrete();
+									}
+									else
+									{
+										if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+										{
+											break;
+										}
+										else
+										{
+											FertiliseInteractDelayTimer = FertiliseInteractDelay;
+											bIsFertilised = true;
+											MakePlantGold();
+										}
+									}
+								}
+
+								UpdateMaterial();
+								Fertiliser->Destroy();
+								_Player->DropItem();
+								_Player->EnableStencil(false);
+							}
+							return;
 						}
-						else if (!GrowingItemRef->ItemComponent->bGold)
+					default:
 						{
-							MakePlantGold();
-							Fertiliser->Destroy();
-							FertiliseInteractDelayTimer = FertiliseInteractDelay;
-							bIsFertilised = false;
-							UpdateMaterial();
 							_Player->DropItem();
 							_Player->EnableStencil(false);
 							break;
 						}
 					}
-					else
-					{
-						_Player->DropItem();
-						_Player->EnableStencil(false);
-					}
 				}
 
+				bIsFertilised = false;
+				UpdateMaterial();
+
+				// Pickup Item
 				if (GrowingItemRef && FertiliseInteractDelayTimer <= 0)
 				{
+					
 					// causes crash atm
 					//MandrakePickupNoise(_Player);
 					
 					// Plant
 
-					switch(GrowingItemRef->SeedData->Type)
+					switch(GrowingItemRef->SeedData->BabyType)
 					{
 					case EPickupDataType::PlantData:
 						{
@@ -575,10 +792,15 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				GrowSpotState = EGrowSpotState::Empty;
 				GrowingItemRef = nullptr;
 				GrowingActor = nullptr;
+
 			}
 		default:
 			break;
 		}
+}
+
+void AGrowSpot::HoldInteract(APrototype2Character* _Player)
+{
 }
 
 void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID)

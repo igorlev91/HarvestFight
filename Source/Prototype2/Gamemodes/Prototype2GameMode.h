@@ -29,6 +29,25 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<USkeletalMesh*> PlayerMeshes;
 
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTeams{};
+
+	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
+	class ASellBin* SellBinRef;
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class AEndGamePodium* EndGamePodium{};
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class APreGameArena* PreGameArena{};
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class ADataAssetWorldOverride* DataAssetWorldOverride{};
+	
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	class ACrown* KingCrown{};
+	
 	/* Protected Functions */
 protected:
 	APrototype2GameMode();
@@ -65,6 +84,8 @@ protected:
 	void UpdateAllPlayerInfo(class APrototype2Gamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
 
 	void TeleportToPreGameArena(APrototype2Character* _Player);
+
+
 	/* Protected Variables */
 protected:
 	bool bHasGameFinishedLocal{};
@@ -74,8 +95,7 @@ protected:
 	UPROPERTY(Replicated)
 	float AutomaticCrownCheckTimer{};
 	
-	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
-	class ASellBin* SellBinRef;
+
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess)) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
@@ -86,17 +106,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<ASellBin> SellBinPrefab;
 	
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class AEndGamePodium* EndGamePodium{};
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class APreGameArena* PreGameArena{};
-
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class ADataAssetWorldOverride* DataAssetWorldOverride{};
-	
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class ACrown* KingCrown{};
 
 	/* Player start positions */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")

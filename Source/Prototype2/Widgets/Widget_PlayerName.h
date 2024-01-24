@@ -22,9 +22,9 @@ public:
 	
 	/* Public Variables*/
 public:
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UTextBlock* PlayerName; // Name for player
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class APlayerState* OwningPlayer{nullptr};
 };

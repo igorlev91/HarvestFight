@@ -21,6 +21,7 @@ public:
 
 	/* Interaction functions */
 	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
@@ -36,6 +37,12 @@ protected:
 
 	/* Protected Variables */
 protected:
+	UPROPERTY(EditAnywhere)
+	int32 ChanceOfConcrete_Inverse{3};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<class USeedData*> FertiliserDatas;
+	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
 

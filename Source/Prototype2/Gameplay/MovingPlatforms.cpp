@@ -2,14 +2,25 @@
 
 #include "Prototype2/Gameplay/MovingPlatforms.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values
 AMovingPlatforms::AMovingPlatforms()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+	if(GetOwner())
+	{
+		GetOwner()->SetRootComponent(Mesh);
+	}
 
+	Mesh->SetRenderCustomDepth(false);
+	Mesh->CustomDepthStencilValue = 1;
+
+	bReplicates = true;
+    AActor::SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -47,6 +58,12 @@ void AMovingPlatforms::Tick(float DeltaTime)
 	{
 		Rotate(DeltaTime);
 	}
+}
+
+void AMovingPlatforms::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMovingPlatforms, Mesh);
 }
 
 void AMovingPlatforms::MovePlatform()

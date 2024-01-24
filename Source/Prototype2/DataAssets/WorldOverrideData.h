@@ -15,10 +15,10 @@ class PROTOTYPE2_API UWorldOverrideData : public UDataAsset
 
 public:
 	UPROPERTY(EditDefaultsOnly)
-	TArray<UPlantData*> Plants;
+	TArray<class USeedData*> PlantSeeds;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<UWeaponData*> Weapons;
+	TArray<class USeedData*> WeaponSeeds;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UStaticMesh* SignPostMesh;

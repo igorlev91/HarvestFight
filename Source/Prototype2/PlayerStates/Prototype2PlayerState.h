@@ -8,6 +8,7 @@
 UCLASS()
 class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 {
+	
 	GENERATED_BODY()
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
@@ -16,6 +17,9 @@ class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 	virtual void Tick(float _DeltaSeconds) override;
 
 public:
+	void AddCoins(int32 _amount);
+	void AddCoins(class APlant* _SomePlant);
+	
 	void GrabSkinFromGameInstance();
 
 	void UpdateCharacterMaterial(FCharacterDetails _Details);
@@ -28,7 +32,12 @@ public:
 	void Multi_GrabSkinFromGameInstance(FCharacterDetails _Details);
 	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
+	void Multi_OnAddCoins();
 public:
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
+	UPROPERTY(BlueprintAssignable)
+	FOnItemSold OnItemSoldDelegate;
+	
 	bool bSkinSet{};
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -39,6 +48,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FString PlayerName{};
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Gamestate* Gamestate;
 
 	// Showing coins that are being added to total
 	UPROPERTY(Replicated, EditAnywhere)

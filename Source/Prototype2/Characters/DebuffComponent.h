@@ -24,16 +24,18 @@ public:
 
 	/* Called by GetHit() functions, applies whatever debuff passed in */
 	void ApplyDebuff(EDebuff _DebuffType, float _Duration);
-
+	UFUNCTION(Server, Reliable)
+	void Server_ApplyDebuff(EDebuff _DebuffType, float _Duration);
+	
 	/* Functionality for the stun debuff */
 	void Stun();
 	UFUNCTION(Server, Reliable)
-	void Server_Stun();
+	void Server_UpdateStun();
 
 	/* Functionality for the daze debuff*/
 	void Daze();
 	UFUNCTION(Server, Reliable)
-	void Server_Daze();
+	void Server_UpdateDaze();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Daze();
 
@@ -46,7 +48,15 @@ public:
 
 	/* Called until the debuff duration wears off*/
 	void RemoveDebuff();
-
+	
+	/* Called until the debuff duration wears off*/
+	UFUNCTION(Server, Reliable)
+	void Server_RemoveDebuff();
+	
+	/* RPC for decrementing the timers */
+	UFUNCTION(Server, Reliable)
+	void Server_DecrementTimers(float _DeltaTime);
+	
 	UPROPERTY(Replicated)
 	EDebuff CurrentDebuff = EDebuff::None;
 protected:
@@ -70,7 +80,7 @@ private:
 	UPROPERTY(Replicated)
 	float DazeRandomDirection = 0.0f;
 
-	float PunchCounterDropOff = 2.0f;
+	float PunchCounterDropOff = 2.5f;
 	UPROPERTY(Replicated)
 	float PunchCounterDropOffTimer;
 	UPROPERTY(Replicated)

@@ -103,7 +103,7 @@ void ASeedSpawner::SpawnSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, f
 				return;
 			}
 
-			EPickupDataType PlantDataType = PlantDataArray[RandomIndex]->Type;
+			EPickupDataType PlantDataType = PlantDataArray[RandomIndex]->BabyType;
 
 			if (PlantDataType == EPickupDataType::PlantData && PlantSeedPrefab || PlantDataType == EPickupDataType::FlowerData && PlantSeedPrefab)
 			{
@@ -155,15 +155,22 @@ void ASeedSpawner::Tick(float _DeltaTime)
 
 	if (!HasAuthority())
 		return;
-	
 
+	TArray<int32> DeadSeeds{};
+	
 	SpawnSeedsOnTick(_DeltaTime);
-	for(auto Seed : SpawnedSeeds)
+
+	for(int i = 0; i < SpawnedSeeds.Num(); i++)
 	{
-		if (!IsValid(Seed))
+		if (!IsValid(SpawnedSeeds[i]))
 		{
-			SpawnedSeeds.Remove(Seed);
+			DeadSeeds.Add(i);
 		}
+	}
+
+	for (int32 index : DeadSeeds)
+	{
+		SpawnedSeeds.RemoveAt(index);
 	}
 }
 

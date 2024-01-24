@@ -79,83 +79,95 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	InteractionUI->SetVisibility(ESlateVisibility::Hidden);
 	InteractionText->SetVisibility(ESlateVisibility::Visible);
 	interactionButtonTimer = interactionButtonMaxTime;
-	
-	/* Set number of UI shown on screen */
-	if (GameStateReference->GetFinalConnectionCount() <= 4)
+
+	/* Non team UI */
+	if (GameStateReference->bTeams == false)
 	{
-		// Probably dont need to set visibility at start, but just in case
-		OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
-			
-		if (GameStateReference->GetFinalConnectionCount() <= 3)
+		/* Set number of UI shown on screen */
+		if (GameStateReference->GetFinalConnectionCount() <= 4)
 		{
-			OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
-
-			if (GameStateReference->GetFinalConnectionCount() <= 2)
+			// Probably dont need to set visibility at start, but just in case
+			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
+				
+			if (GameStateReference->GetFinalConnectionCount() <= 3)
 			{
-				OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
-					
-				if (GameStateReference->GetFinalConnectionCount() == 2)
-				{
-					OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+				OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
 
-				}
-				else if (GameStateReference->GetFinalConnectionCount() == 1)
+				if (GameStateReference->GetFinalConnectionCount() <= 2)
 				{
-					OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
+					OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
+						
+					if (GameStateReference->GetFinalConnectionCount() == 2)
+					{
+						OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+
+					}
+					else if (GameStateReference->GetFinalConnectionCount() == 1)
+					{
+						OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
+					}
+					OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+				
+					UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
+					overlaySlot->SetPadding(FMargin(0,0,0,0));
 				}
-				OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-			
-				UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
-				overlaySlot->SetPadding(FMargin(0,0,0,0));
 			}
 		}
-	}
 
-	// Set positions of slots for 1 - 4 players
-	if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
-	{
-		UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-		OverlaySlot->SetPadding(FMargin(0,0,650,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-		OverlaySlot->SetPadding(FMargin(0,0,300,0));
-	}
-	else
-	{
-		UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-		OverlaySlot->SetPadding(FMargin(0,0,400,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-		OverlaySlot->SetPadding(FMargin(400,0,0,0));
-	}
-	
-	/* Change UI positions if more than 4 players*/
-	if (GameStateReference->GetFinalConnectionCount() > 4)
-	{
-		/* Turn all UI icons on (make visible */
-		OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer5->SetVisibility(ESlateVisibility::Visible);
-		OverlayPlayer6->SetVisibility(ESlateVisibility::Visible);
+		// Set positions of slots for 1 - 4 players
+		if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
+		{
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+			OverlaySlot->SetPadding(FMargin(0,0,650,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+			OverlaySlot->SetPadding(FMargin(0,0,300,0));
+		}
+		else
+		{
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+			OverlaySlot->SetPadding(FMargin(0,0,400,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+			OverlaySlot->SetPadding(FMargin(400,0,0,0));
+		}
+		
+		/* Change UI positions if more than 4 players*/
+		if (GameStateReference->GetFinalConnectionCount() > 4)
+		{
+			/* Turn all UI icons on (make visible */
+			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer5->SetVisibility(ESlateVisibility::Visible);
+			
+			if (GameStateReference->GetFinalConnectionCount() > 4)
+				OverlayPlayer6->SetVisibility(ESlateVisibility::Visible);
 
-		/* Set positions of overlay UI (images and scores) for 4+ players
-		 * GetSlots()[2] not showing as that is the game timer
-		 */
-		UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Player 1 UI
-		OverlaySlot->SetPadding(FMargin(0,0,780,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Player 2 UI
-		OverlaySlot->SetPadding(FMargin(0,0,500,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[3]); // Player 3 UI
-		OverlaySlot->SetPadding(FMargin(0,0,220,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[4]); // Player 4 UI
-		OverlaySlot->SetPadding(FMargin(220,0,0,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[5]); // Player 5 UI
-		OverlaySlot->SetPadding(FMargin(500,0,0,0));
-		OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[6]); // Player 6 UI
-		OverlaySlot->SetPadding(FMargin(780,0,0,0));
+			/* Set positions of overlay UI (images and scores) for 4+ players
+			 * GetSlots()[2] not showing as that is the game timer
+			 */
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Player 1 UI
+			OverlaySlot->SetPadding(FMargin(0,0,780,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Player 2 UI
+			OverlaySlot->SetPadding(FMargin(0,0,510,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[3]); // Player 3 UI
+			OverlaySlot->SetPadding(FMargin(0,0,230,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[4]); // Player 4 UI
+			OverlaySlot->SetPadding(FMargin(230,0,0,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[5]); // Player 5 UI
+			OverlaySlot->SetPadding(FMargin(510,0,0,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[6]); // Player 6 UI
+			OverlaySlot->SetPadding(FMargin(780,0,0,0));
+		}
+	}
+	else /* Teams UI */
+	{
+		TeamsOverlay->SetVisibility(ESlateVisibility::Visible);
+		T1Ring->SetColorAndOpacity(FLinearColor(0.571125, 0.031896, 0.016807, 1)); // Red Team
+		T2Ring->SetColorAndOpacity(FLinearColor(0.004391, 0.102242, 0.637597, 1)); // Blue Team
 	}
 }
 
@@ -188,140 +200,157 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			StartAndEndMenu->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
 		
-		// Updating points/coins
-		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+		/* Non team UI */
+		if (GameStateReference->bTeams == false)
 		{
-			if (auto Player = GameStateReference->Server_Players[i])
+			// Updating points/coins
+			for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 			{
-				auto Coins = Player->Coins;
-				auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
-				auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
-				
-				//UE_LOG(LogTemp, Warning, TEXT("Player [%s] ID = %s"), *FString::FromInt(i), *FString::FromInt(player->Player_ID));
-				
-				switch(i)
+				if (auto Player = GameStateReference->Server_Players[i])
 				{
-				case 0:
+					auto Coins = Player->Coins;
+					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
+					auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
+				
+					//UE_LOG(LogTemp, Warning, TEXT("Player [%s] ID = %s"), *FString::FromInt(i), *FString::FromInt(player->Player_ID));
+				
+					switch(i)
 					{
-						Player1Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
+					case 0:
 						{
-							FString plus = "+";
-							FString combined = plus + ExtraCoins;
-							Player1ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							Player1Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Player1ExtraCoins->SetVisibility(ESlateVisibility::Visible);
 							
-							Player1ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+								Player1ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Player1ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
+						
+							break;
 						}
-						else
+					case 1:
 						{
-							Player1ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-						}
+							Player2Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Player2ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							
+								Player2ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Player2ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
 
-						break;
-					}
-				case 1:
-					{
-						Player2Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
+							break;
+						}
+					case 2:
 						{
-							FString plus = "+";
-							FString combined = plus + ExtraCoins;
-							Player2ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							Player3Coins->SetText(FText::FromString(FString::FromInt(Coins)));  // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Player3ExtraCoins->SetVisibility(ESlateVisibility::Visible);
 							
-							Player2ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-						}
-						else
-						{
-							Player2ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-						}
+								Player3ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Player3ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
 
-						break;
-					}
-				case 2:
-					{
-						Player3Coins->SetText(FText::FromString(FString::FromInt(Coins)));  // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
+							break;
+						}
+					case 3:
 						{
-							FString plus = "+";
-							FString combined = plus + ExtraCoins;
-							Player3ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							Player4Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Player4ExtraCoins->SetVisibility(ESlateVisibility::Visible);
 							
-							Player3ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-						}
-						else
-						{
-							Player3ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-						}
+								Player4ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Player4ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
 
-						break;
-					}
-				case 3:
-					{
-						Player4Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
+							break;
+						}
+					case 4:
 						{
-							FString plus = "+";
-							FString combined = plus + ExtraCoins;
-							Player4ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							Player5Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString Plus = "+";
+								FString Combined = Plus + ExtraCoins;
+								Player5ExtraCoins->SetVisibility(ESlateVisibility::Visible);
 							
-							Player4ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-						}
-						else
-						{
-							Player4ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-						}
+								Player5ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
+							}
+							else
+							{
+								Player5ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
 
-						break;
-					}
-				case 4:
-					{
-						Player5Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
+							break;
+						}
+					case 5:
 						{
-							FString Plus = "+";
-							FString Combined = Plus + ExtraCoins;
-							Player5ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							Player6Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
+							// Showing coin increase
+							if (bIsShowingExtraCoins == true)
+							{
+								FString Plus = "+";
+								FString Combined = Plus + ExtraCoins;
+								Player6ExtraCoins->SetVisibility(ESlateVisibility::Visible);
 							
-							Player5ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
+								Player6ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
+							}
+							else
+							{
+								Player6ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							}
+							break;
+							;
 						}
-						else
+					default:
 						{
-							Player5ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
+							break;
 						}
-
-						break;
-					}
-				case 5:
-					{
-						Player6Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-						// Showing coin increase
-						if (bIsShowingExtraCoins == true)
-						{
-							FString Plus = "+";
-							FString Combined = Plus + ExtraCoins;
-							Player6ExtraCoins->SetVisibility(ESlateVisibility::Visible);
-							
-							Player6ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
-						}
-						else
-						{
-							Player6ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-						}
-						break;
-;
-					}
-				default:
-					{
-						break;
 					}
 				}
 			}
 		}
+		else
+		{
+			// Updating points/coins
+			for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+			{
+				if (auto Player = GameStateReference->Server_Players[i])
+				{
+					
+					
+				}
+			}
+		}
+		
 		if (GameStateReference->IsGameReadyForVote())
 		{
 			EnableEndgameMenu();
@@ -453,6 +482,15 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 			{
 				PlayerNames[i]->SetText(FText::FromString(Player->PlayerName));
 				PlayerNames[i]->SetColorAndOpacity((FLinearColor)(Player->Details.PureToneColour));
+
+				if (bHasChangedBlackTextOutlineColour == false)
+				{
+					if (Player->Details.Colour == EColours::BLACK)
+					{
+						PlayerIDToChangeOutline = Player->Player_ID;
+						bHasChangedBlackTextOutlineColour = true;
+					}
+				}
 			}
 			
 			/* Set Crown visibility */
@@ -463,6 +501,8 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 				else
 					Crowns[i]->SetVisibility(ESlateVisibility::Hidden);
 			}
+
+			
 
 			/* Set player icons to correct image based on character and colour */
 			if (Icons.Num() > i)

@@ -76,7 +76,6 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	ReadyImages.Add(P4ReadyImage);
 	ReadyImages.Add(P5ReadyImage);
 	ReadyImages.Add(P6ReadyImage);
-	
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -87,6 +86,8 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	{
 		return;
 	}
+
+	InitTeams();
 	
 	/* Make all player overlays hidden on start of frame */
 	for (int i = 1; i < Overlays.Num(); i++)
@@ -247,8 +248,27 @@ void UWidget_LobbyPlayerHUDV2::SetOwningController(int32 _PlayerID,APrototype2Pl
 	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
 }
 
+void UWidget_LobbyPlayerHUDV2::InitTeams()
+{
+	if (bTeams && !WBP_LobbyCharacterSelection->bTeams)
+	{
+		TeamAText->SetVisibility(ESlateVisibility::Visible);
+		TeamBText->SetVisibility(ESlateVisibility::Visible);
+		
+		WBP_LobbyCharacterSelection->Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
+		WBP_LobbyCharacterSelection->Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
+		
+		WBP_LobbyCharacterSelection->bTeams = bTeams;
+		if (ColourData)
+		{
+			TeamAText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]);
+			TeamBText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]);
+		}
+	}
+}
+
 void UWidget_LobbyPlayerHUDV2::Client_SetOwningController_Implementation(int32 _PlayerID,
-	APrototype2PlayerController* _Owner)
+                                                                         APrototype2PlayerController* _Owner)
 {
 	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
 }

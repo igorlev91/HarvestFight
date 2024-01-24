@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Gameplay/GrowSpot.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 
 
@@ -82,9 +83,9 @@ void AAspearagusProjectile::CheckForHitPlayers()
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
-		for (auto& HitResult : OutHits)
+		for (auto HitResult : OutHits)
 		{
-			if (auto* HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
+			if (auto HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
 			{
 				if (HitPlayerCast != OwningPlayer)
 				{
@@ -94,6 +95,11 @@ void AAspearagusProjectile::CheckForHitPlayers()
 			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
 				HitSellBinCast->GetHit(1, OwningPlayer->MaxAttackCharge, GetActorLocation());
+			}
+
+			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
+			{
+				GrowSpot->DegradeConcrete();
 			}
 		}
 	}

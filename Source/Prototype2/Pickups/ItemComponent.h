@@ -35,6 +35,6 @@ public:
 	UPROPERTY(Replicated, EditAnywhere)
 	UStaticMeshComponent* Mesh;
 	
-	UPROPERTY(Replicated , EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bGold{};
 };

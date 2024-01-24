@@ -27,11 +27,41 @@ void UWidget_EndgameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 void UWidget_EndgameMenu::UpdateWinnerText()
 {
-	/* Calculating highest score */
-	int WinningScore{-1};
-	if (GameStateReference)
+	if (!GameStateReference)
+		return;
+
+	if (GameStateReference->bTeams)
 	{
-		// Check remaining players
+		int32 RedTeamCoins{};
+		int32 BlueTeamCoins{};
+		bool RedTeamWon{};
+		bool Draw{};
+		for(auto PlayerState : GameStateReference->PlayerArray)
+		{
+			if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+			{
+				if (CastedPlayerstate->Details.Colour == EColours::RED)
+				{
+					RedTeamCoins += CastedPlayerstate->Coins;
+				}
+				else if (CastedPlayerstate->Details.Colour == EColours::BLUE)
+				{
+					BlueTeamCoins += CastedPlayerstate->Coins;
+				}
+			}
+		}
+
+		if (RedTeamCoins == BlueTeamCoins)
+			TextGameWinner->SetText(FText::FromString("DRAW!"));
+		else if (RedTeamCoins > BlueTeamCoins)
+			TextGameWinner->SetText(FText::FromString("RED TEAM WINS!"));
+		else
+			TextGameWinner->SetText(FText::FromString("BLUE TEAM WINS!"));
+	}
+	else
+	{
+		/* Calculating highest score */
+		int WinningScore{-1};
 		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 		{
 			if (auto Player = GameStateReference->Server_Players[i])
@@ -42,12 +72,9 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 				}
 			}
 		}
-	}
 
-	/* Check if only one player has won, or multiple (draw) */
-	int32 WinnerCounter = 0;
-	if (GameStateReference)
-	{
+		/* Check if only one player has won, or multiple (draw) */
+		int32 WinnerCounter = 0;
 		/* Loop through players and see if they have same score as winning score */
 		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 		{
@@ -59,12 +86,11 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 				}
 			}
 		}
-	}
 
-	/* Update text to say Draw */
-	if (WinnerCounter > 1)
-		TextGameWinner->SetText(FText::FromString("DRAW!"));
-	
+		/* Update text to say Draw */
+		if (WinnerCounter > 1)
+			TextGameWinner->SetText(FText::FromString("DRAW!"));
+	}
 }
 
 void UWidget_EndgameMenu::EnableEndgameMenu()

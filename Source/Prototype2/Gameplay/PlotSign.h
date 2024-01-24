@@ -21,11 +21,14 @@ public:
 	
 public:	
 	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
-	
+
 protected:
+	void ClaimPlot(APrototype2Character* _Player);
+	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
 
@@ -34,4 +37,7 @@ protected:
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bHasBeenClaimed{};
+
+	float HoldInteractTotalDuration = 1.0f;
+	float HoldInteractTimer;
 };

@@ -1,3 +1,5 @@
+
+
 #include "Prototype2Gamestate.h"
 
 #include "Net/UnrealNetwork.h"
@@ -12,6 +14,8 @@
 APrototype2Gamestate::APrototype2Gamestate()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	
 }
 
 void APrototype2Gamestate::BeginPlay()
@@ -33,8 +37,6 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 	TickCountdownTimer(DeltaSeconds);
 	TickMatchTimer(DeltaSeconds);
 	TickEndGameTimer(DeltaSeconds);
-
-	
 }
 
 void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -43,6 +45,7 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	
 	DOREPLIFETIME(APrototype2Gamestate, MatchLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, MatchLengthSeconds);
+	DOREPLIFETIME(APrototype2Gamestate, bIsLastMinute);
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthMinutes);
 	DOREPLIFETIME(APrototype2Gamestate, CountdownLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, bGameHasStarted);
@@ -63,6 +66,13 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME(APrototype2Gamestate, PlayerWinner);
 	DOREPLIFETIME(APrototype2Gamestate, WinningScore);
+
+	DOREPLIFETIME(APrototype2Gamestate, SellMultiplier);
+
+	DOREPLIFETIME(APrototype2Gamestate, TeamOneColour);
+	DOREPLIFETIME(APrototype2Gamestate, TeamTwoColour);
+	DOREPLIFETIME(APrototype2Gamestate, Server_TeamOne);
+	DOREPLIFETIME(APrototype2Gamestate, Server_TeamTwo);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -105,6 +115,14 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 			{
 				bHasGameFinished = true;
 				PupeteerCharactersForEndGame();
+			}
+
+			/* Set final minute settings */
+			if (MatchLengthMinutes <= 1 && MatchLengthSeconds <= 0 && bIsLastMinute == false)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Final minute of gameplay"));
+				bIsLastMinute = true;
+				SellMultiplier = 2;
 			}
 		}
 		else
@@ -232,6 +250,16 @@ int32 APrototype2Gamestate::GetWinningScore()
 	return WinningScore;
 }
 
+int32 APrototype2Gamestate::GetSellMultiplier()
+{
+	return SellMultiplier;
+}
+
+void APrototype2Gamestate::SetSellMultiplier(int32 _Multiplier)
+{
+	SellMultiplier = _Multiplier;
+}
+
 void APrototype2Gamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
 {
 	Server_Players[_Player]->Details = _CharacterDetails;
@@ -241,37 +269,85 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 {
 	AActor* EndGamePodiumActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
 	AEndGamePodium* EndGamePodiumActorCasted = Cast<AEndGamePodium>(EndGamePodiumActor);
-	
-	int32 WinningPlayer{};
-	int32 HighestCoins{};
-		
-	for(auto PlayerState : PlayerArray)
+
+	if (bTeams)
 	{
-		if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+		int32 RedTeamCoins{};
+		int32 BlueTeamCoins{};
+		bool RedTeamWon{};
+		for(auto PlayerState : PlayerArray)
 		{
-			if (CastedPlayerstate->Coins > HighestCoins)
+			if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
 			{
-				HighestCoins = CastedPlayerstate->Coins;
+				if (CastedPlayerstate->Details.Colour == EColours::RED)
+				{
+					RedTeamCoins += CastedPlayerstate->Coins;
+				}
+				else if (CastedPlayerstate->Details.Colour == EColours::BLUE)
+				{
+					BlueTeamCoins += CastedPlayerstate->Coins;
+				}
+			}
+		}
+		RedTeamWon = RedTeamCoins > BlueTeamCoins;
+
+		if (EndGamePodiumActorCasted)
+		{
+			for(int32 i = 0; i < PlayerArray.Num(); i++)
+			{
+				if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[i]))
+				{
+					if (APrototype2Character* CastedPlayerCharacter = Cast<APrototype2Character>(CastedPlayerState->GetPlayerController()->GetCharacter()))
+					{
+						if (RedTeamWon && CastedPlayerState->Details.Colour == EColours::RED)
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(i)->GetComponentTransform());
+						else if (!RedTeamWon && CastedPlayerState->Details.Colour == EColours::BLUE)
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(i)->GetComponentTransform());
+						else
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetLossPosition(i)->GetComponentTransform());
+					
+						if (auto ControllerCast = Cast<APrototype2PlayerController>(CastedPlayerState->GetPlayerController()))
+						{
+							ControllerCast->SetViewTarget_Networked(EndGamePodiumActorCasted->EndGameCamera);
+						}
+					}
+				}
 			}
 		}
 	}
-
-	if (EndGamePodiumActorCasted)
+	else
 	{
-		for(int32 i = 0; i < PlayerArray.Num(); i++)
+		int32 WinningPlayer{};
+		int32 HighestCoins{};
+		
+		for(auto PlayerState : PlayerArray)
 		{
-			if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[i]))
+			if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
 			{
-				if (APrototype2Character* CastedPlayerCharacter = Cast<APrototype2Character>(CastedPlayerState->GetPlayerController()->GetCharacter()))
+				if (CastedPlayerstate->Coins > HighestCoins)
 				{
-					if (HighestCoins > 0 && CastedPlayerState->Coins == HighestCoins)
-						CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(WinningPlayer)->GetComponentTransform());
-					else
-						CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetLossPosition(i)->GetComponentTransform());
-					
-					if (auto ControllerCast = Cast<APrototype2PlayerController>(CastedPlayerState->GetPlayerController()))
+					HighestCoins = CastedPlayerstate->Coins;
+				}
+			}
+		}
+
+		if (EndGamePodiumActorCasted)
+		{
+			for(int32 i = 0; i < PlayerArray.Num(); i++)
+			{
+				if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[i]))
+				{
+					if (APrototype2Character* CastedPlayerCharacter = Cast<APrototype2Character>(CastedPlayerState->GetPlayerController()->GetCharacter()))
 					{
-						ControllerCast->SetViewTarget_Networked(EndGamePodiumActorCasted->EndGameCamera);
+						if (HighestCoins > 0 && CastedPlayerState->Coins == HighestCoins)
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(WinningPlayer)->GetComponentTransform());
+						else
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetLossPosition(i)->GetComponentTransform());
+					
+						if (auto ControllerCast = Cast<APrototype2PlayerController>(CastedPlayerState->GetPlayerController()))
+						{
+							ControllerCast->SetViewTarget_Networked(EndGamePodiumActorCasted->EndGameCamera);
+						}
 					}
 				}
 			}
@@ -290,15 +366,13 @@ void APrototype2Gamestate::SetGameTime()
 	//if (MatchLengthMinutes != -1)
 	//	return;
 	
-	
 	//if (!GameMode)
 	//	return;
-
 	
 	if (!GameModeRef)
 		return;
 	
-	int MatchLengthModifier = 1;
+	
 	if (auto Subsystem = IOnlineSubsystem::Get())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Found Subsystem"));
@@ -327,10 +401,10 @@ void APrototype2Gamestate::SetGameTime()
 					//FOnlineSessionSettings SessionSettings = Session->SessionSettings;
 				
 					// Now you can access various settings including extra settings.
-					int GameTime;
+					int32 GameTime;
 					if (NamedSession->SessionSettings.Get(FName("GameTime"), GameTime))
 					{
-						MatchLengthModifier = GameTime;
+						int32 MatchLengthModifier = GameTime;
 						UE_LOG(LogTemp, Warning, TEXT("Found gametime"));
 
 						/* Set match length */
@@ -362,7 +436,5 @@ void APrototype2Gamestate::SetGameTime()
 			}
 		}
 	}
-
-	
 }
 

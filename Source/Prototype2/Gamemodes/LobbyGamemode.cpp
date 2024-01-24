@@ -6,6 +6,7 @@
 #include "Prototype2/Characters/LobbyCharacter.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
@@ -26,6 +27,12 @@ ALobbyGamemode::ALobbyGamemode()
 
 }
 
+void ALobbyGamemode::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
@@ -44,14 +51,40 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!GameInstance)
 		return;
-		
-	GameStateReference->Server_Players.Add(PlayerStateReference);
+
+
+	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
+
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 	
-			
-	ALobbyCharacter* Character = Cast<ALobbyCharacter>(_NewPlayer->GetCharacter());
-	if (!Character)
-		return;
+	if (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
+	{
+		FCharacterDetails TeamAssociatedDefaultDetails{};
+		switch(GameStateReference->Server_Players.Num() % 2)
+		{
+		case 0:
+			{
+				TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamOneColour);
+				PlayerStateReference->Details = TeamAssociatedDefaultDetails;
+				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+				
+				break;
+			}
+		case 1:
+			{
+				TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamTwoColour);
+				PlayerStateReference->Details = TeamAssociatedDefaultDetails;
+				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
+				
+				break;
+			}
+		default:
+			break;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Player %s Joined Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+	}
+
+	GameStateReference->Server_Players.Add(PlayerStateReference);
 	
 	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 }
@@ -76,6 +109,8 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 		return;
 
 	LobbyGamestate->Server_Players.Remove(PlayerStateReference);
+	LobbyGamestate->Server_TeamOne.Remove(PlayerStateReference);
+	LobbyGamestate->Server_TeamTwo.Remove(PlayerStateReference);
 	
 	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
 	{
@@ -106,7 +141,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 				if (UserId.IsValid())
 				{
 					SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
-					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
+					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString()) = _GameStateReference->Server_Players[i]->Details;
 				}
 			}
 		}
@@ -119,7 +154,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 				if (UserId.IsValid())
 				{
 					SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
-					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString());
+					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString()) = _GameStateReference->Server_Players[i]->Details;
 				}
 			}
 		}
@@ -137,6 +172,74 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 			}
 		}
 	}
+}
+
+FCharacterDetails ALobbyGamemode::CreateDetailsFromColourEnum(EColours _Colour)
+{
+	FCharacterDetails IdealDetails{};
+	IdealDetails.Colour = _Colour;
+	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];
+
+	switch(_Colour)
+	{
+	case EColours::RED:
+		{
+			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterColour = SkinColourData->Reds[(int16)IdealDetails.Character];
+
+			if (SkinColourData->SubReds.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterSubColour = SkinColourData->SubReds[(int16)IdealDetails.Character];
+			
+			break;
+		}
+	case EColours::BLUE:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Blue;
+			IdealDetails.CharacterSubColour = SkinColourData->SubBlue;
+			break;
+		}
+	case EColours::GREEN:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Green;
+			IdealDetails.CharacterSubColour = SkinColourData->SubGreen;
+			break;
+		}
+	case EColours::YELLOW:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Yellow;
+			IdealDetails.CharacterSubColour = SkinColourData->SubYellow;
+			break;
+		}
+	case EColours::PURPLE:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Purple;
+			IdealDetails.CharacterSubColour = SkinColourData->SubPurple;
+			break;
+		}
+	case EColours::ORANGE:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Orange;
+			IdealDetails.CharacterSubColour = SkinColourData->SubOrange;
+			break;
+		}
+	case EColours::BLACK:
+		{
+			IdealDetails.CharacterColour = SkinColourData->Black;
+			IdealDetails.CharacterSubColour = SkinColourData->SubBlack;
+			break;
+		}
+	default:
+		{
+			if (SkinColourData->Whites.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterColour = SkinColourData->Whites[(int16)IdealDetails.Character];
+
+			if (SkinColourData->SubWhites.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterSubColour = SkinColourData->SubWhites[(int16)IdealDetails.Character];
+			break;
+		}
+	}
+
+	return IdealDetails;
 }
 
 

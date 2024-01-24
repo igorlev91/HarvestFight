@@ -5,6 +5,7 @@
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/DataAssets/AnimationData.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Gameplay/GrowSpot.h"
 
 void UWeaponPunching::ChargeAttack(APrototype2Character* _Player)
 {
@@ -75,24 +76,30 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	if (bHasHitResult)
 	{
 		// Check if the hits were players or sell bin
-		for (auto& HitResult : OutHits)
+		for (auto HitResult : OutHits)
 		{
-			if (auto* HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
+			if (auto HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
 			{
 				if (HitPlayerCast != _Player)
 				{
 					HitPlayerCast->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 				}
 			}
-			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
+			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
 				HitSellBinCast->GetHit(_Player->AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+			}
+
+			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
+			{
+				GrowSpot->DegradeConcrete();
 			}
 		}
 	}
 
 	// make UI pop out
-	_Player->OnExecuteAttackDelegate.Broadcast();
+	//_Player->OnExecuteAttackDelegate.Broadcast();
+	BroadcastAttackToHUD(_Player);
 	
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);

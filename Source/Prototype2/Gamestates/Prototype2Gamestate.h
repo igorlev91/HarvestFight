@@ -1,3 +1,5 @@
+
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -19,7 +21,7 @@ public:
 	void SetPlayerWinner(int32 _WinnerID);
 	void SetWinningScore(int32 _WinningScore);
 	int32 RegisterPlayer(class APrototype2PlayerState* _Player);
-	void UnRegisterPlayer(class APrototype2PlayerState* _Player);
+	void UnRegisterPlayer(APrototype2PlayerState* _Player);
 	int32 GetCurrentConnectionCount();
 	bool HasGameFinished();
 	bool HasGameStarted();
@@ -35,9 +37,24 @@ public:
 	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 	void PupeteerCharactersForEndGame();
 	void SetGameTime();
+	int32 GetSellMultiplier();
+	void SetSellMultiplier(int32 _Multiplier);
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTeams{};
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	EColours TeamOneColour;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	EColours TeamTwoColour;
+	
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<class APrototype2PlayerState>> Server_TeamOne;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<class APrototype2PlayerState>> Server_TeamTwo;
 	
 private:
 	virtual void BeginPlay() override;
@@ -55,9 +72,11 @@ public:
 	bool bPreviousServerTravel{};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	int32 MatchLengthMinutes{-1};
+	int32 MatchLengthMinutes{5};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	float MatchLengthSeconds{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool bIsLastMinute{false};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 CountdownLengthMinutes{0};
@@ -95,4 +114,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	class APrototype2GameMode* GameModeRef{};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 SellMultiplier{1};
 };

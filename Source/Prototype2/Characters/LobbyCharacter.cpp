@@ -9,6 +9,7 @@
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Components/WidgetComponent.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
+#include "Prototype2/Widgets/Widget_LobbyCharacterSelection.h"
 #include "Prototype2/Widgets/Widget_LobbyPlayerHUDV2.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
 
@@ -79,6 +80,35 @@ void ALobbyCharacter::InitPlayerHUD()
 	PlayerHUDRef = CreateWidget<UWidget_LobbyPlayerHUDV2>(ThisPlayerController, PlayerHudPrefab);
 	PlayerHUDRef->AddToViewport();
 	PlayerHUDRef->SetOwningController(PlayerStateRef->Player_ID, ThisPlayerController);
+}
+
+void ALobbyCharacter::SetIdealDetails(FCharacterDetails _IdealDetails)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Attempted to set ideal details"));
+	if (PlayerHUDRef)
+	{
+		if (auto CharacterSelectionWidget = PlayerHUDRef->WBP_LobbyCharacterSelection)
+		{
+			CharacterSelectionWidget->IdealDetails = _IdealDetails;
+			CharacterSelectionWidget->SetCharacterModelFromSelection(4);
+			CharacterSelectionWidget->SetCharacterColourFromSelection((int32)EColours::MAXCOLOURS);
+			if (auto PlayerController = Cast<APrototype2PlayerController>(GetLocalViewingPlayerController()))
+				CharacterSelectionWidget->UpdateCharacterImage(PlayerController);
+
+			if (auto GameState = UGameplayStatics::GetGameState(GetWorld()))
+			{
+				if (auto CastedGameState = Cast<ALobbyGamestate>(GameState))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Player %s Ideal Details Set. Team: %s"), *FString::FromInt(CastedGameState->Server_Players.Num()), *FString::FromInt((int)PlayerStateRef->Details.Colour));
+				}
+			}
+		}
+	}
+}
+
+void ALobbyCharacter::Client_SetIdealDetails_Implementation(FCharacterDetails _IdealDetails)
+{
+	SetIdealDetails(_IdealDetails);
 }
 
 void ALobbyCharacter::Multi_SetNameWidget_Implementation(const FString& _name)

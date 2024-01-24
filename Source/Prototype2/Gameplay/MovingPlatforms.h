@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Prototype2/Pickups/ItemComponent.h"
 #include "MovingPlatforms.generated.h"
 
 USTRUCT()
@@ -36,6 +35,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void MovePlatform();
 
@@ -46,8 +46,8 @@ public:
 
 	void SineWave(float DeltaTime);
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	UItemComponent* ItemComponent;
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
+	UStaticMeshComponent* Mesh;
 
 private:
 

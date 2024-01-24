@@ -32,12 +32,8 @@ void UDebuffComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UDebuffComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	
-
 	PunchCounterDropOffTimer = PunchCounterDropOff;
 }
-
 
 // Called every frame
 void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -47,19 +43,7 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (Player->HasAuthority())
 	{
-		if (PunchCounter > 0)
-		{
-			PunchCounterDropOffTimer -= DeltaTime;
-			if (PunchCounterDropOffTimer <= 0)
-				UpdatePunchCounter();
-		}
-
-		if (DebuffDuration > 0)
-		{
-			DebuffDuration -= DeltaTime;
-			if (DebuffDuration <= 0)
-				RemoveDebuff();
-		}
+		Server_DecrementTimers(DeltaTime);
 	}
 
 	if (!Player)
@@ -71,28 +55,24 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	if (CurrentDebuff == EDebuff::Stun)
 	{
 		// Continually interrupt player beng able to interact and attack
-		Server_Stun();
+		Server_UpdateStun();
 	}
 
 	if (CurrentDebuff == EDebuff::Daze)
 	{
-		if (Player->HasIdealRole() && Player->Controller)
-		{
-			Server_Daze();
-		}		
+		Server_UpdateDaze();
 	}
-
-
 }
 
 void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
 {
+	Server_ApplyDebuff(_DebuffType, _Duration);
+}
+
+void UDebuffComponent::Server_ApplyDebuff_Implementation(EDebuff _DebuffType, float _Duration)
+{
 	if (_DebuffType == EDebuff::None)
 		return;
-
-	// Make sure there are no current debuffs
-	DebuffDuration = -1.0f;
-	RemoveDebuff();
 	
 	DebuffDuration = _Duration;
 	CurrentDebuff = _DebuffType;
@@ -119,6 +99,10 @@ void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
 			Punch();
 			break;
 		}
+	case EDebuff::None:
+		{
+			break;
+		}
 	}
 }
 
@@ -130,7 +114,7 @@ void UDebuffComponent::Stun()
 	Player->bAllowMovementFromInput = false;
 }
 
-void UDebuffComponent::Server_Stun_Implementation()
+void UDebuffComponent::Server_UpdateStun_Implementation()
 {
 	Player->ResetAttack();
 }
@@ -140,7 +124,7 @@ void UDebuffComponent::Daze()
 	// Trigger debuff VFX
 	
 	// Slightly slow player and apply ratescale
-	Player->SetCharacterSpeed(DazeSpeed, DazeSpeed, DazeAnimationRateScale);
+	Player->CurrentMaxWalkSpeed = DazeSpeed;
 	
 	// Stop player movement from input
 	Player->bAllowMovementFromInput = false;
@@ -148,12 +132,7 @@ void UDebuffComponent::Daze()
 	DazeRandomDirection = FMath::RandRange(0,1000);
 }
 
-void UDebuffComponent::Server_Daze_Implementation()
-{
-	Multi_Daze();
-}
-
-void UDebuffComponent::Multi_Daze_Implementation()
+void UDebuffComponent::Server_UpdateDaze_Implementation()
 {
 	// Update direction of dizzy vector
 	// Apply the dizzy vector to player movement
@@ -174,13 +153,18 @@ void UDebuffComponent::Multi_Daze_Implementation()
 	// add movement 
 	Player->AddMovementInput(ForwardDirection, FMath::Sin(DebuffDuration + DazeRandomDirection * 7));
 	Player->AddMovementInput(RightDirection, FMath::Sin(DebuffDuration + DazeRandomDirection));
+	
+	//Multi_Daze();
+}
+
+void UDebuffComponent::Multi_Daze_Implementation()
+{
 }
 
 void UDebuffComponent::Slow()
 {
-	// Trigger debuff VFX
-	//Server_SetCharacterSpeed(SlowSpeed, SlowAnimationRateScale);
-	Player->SetCharacterSpeed(SlowSpeed, SlowSpeed, SlowAnimationRateScale);
+	// Trigger debuff VFX/
+	Player->CurrentMaxWalkSpeed = SlowSpeed;
 }
 
 void UDebuffComponent::Punch()
@@ -193,8 +177,10 @@ void UDebuffComponent::Punch()
 		PunchCounter = 0;
 		PunchCounterDropOffTimer = PunchCounterDropOff;
 
-		// Stun 
-		ApplyDebuff(EDebuff::Stun, 2.0f);
+		// Stun for 2s
+		CurrentDebuff = EDebuff::Stun;		
+		Player->bAllowMovementFromInput = false;
+		DebuffDuration = 2.0f;
 		
 		UKismetSystemLibrary::PrintString(GetWorld(), "Player Stunned!");
 	}
@@ -212,11 +198,34 @@ void UDebuffComponent::UpdatePunchCounter()
 
 void UDebuffComponent::RemoveDebuff()
 {
+	Server_RemoveDebuff();
+	
+	Player->RefreshCurrentMaxSpeed();
+}
+
+void UDebuffComponent::Server_RemoveDebuff_Implementation()
+{
 	// Allow movement again
 	Player->bAllowMovementFromInput = true;
-	Player->SetCharacterSpeed(Player->GetWalkSpeed(), Player->GetWalkSpeed(), Player->GetWalkRateScale());
 
 	// Reset this bufftype
 	CurrentDebuff = EDebuff::None;
+}
+
+void UDebuffComponent::Server_DecrementTimers_Implementation(float _DeltaTime)
+{
+	if (PunchCounter > 0)
+	{
+		PunchCounterDropOffTimer -= _DeltaTime;
+		if (PunchCounterDropOffTimer <= 0)
+			UpdatePunchCounter();
+	}
+
+	if (DebuffDuration > 0)
+	{
+		DebuffDuration -= _DeltaTime;
+		if (DebuffDuration <= 0)
+			RemoveDebuff();
+	}
 }
 

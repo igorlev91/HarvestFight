@@ -187,7 +187,7 @@ public:
 	UOverlay* OverlayPlayer6;
 
 	/* Array of all icons */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<UTextBlock*> PlayerNames;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -226,17 +226,33 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team1Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UTextBlock* Team1ExtraCoins;
+	UTextBlock* Team1ExtraCoinsP1;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* Team1ExtraCoinsP2;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* Team1ExtraCoinsP3;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team2Coins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	UTextBlock* Team2ExtraCoins;
+	UTextBlock* Team2ExtraCoinsP1;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* Team2ExtraCoinsP2;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* Team2ExtraCoinsP3;
 
 	/* Team overlays */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UOverlay* TeamsOverlay;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UOverlay* OverlayTeam1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UOverlay* OverlayTeam2;
+
+	/* Team rings/colours */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* T1Ring;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UImage* T2Ring;
 	
 	// Pickup UI
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -249,6 +265,8 @@ public:
 	// Weapon UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* WeaponImage;
+
+	
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	//UTexture2D* LeekWeaponTexture;
@@ -317,4 +335,10 @@ public:
 	float interactionButtonTimer{};
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	class UWidget_StartAndEndMenu* StartAndEndMenu;
+
+	/* Changing player name background HUD if black text */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
+	bool bHasChangedBlackTextOutlineColour{false};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
+	int32 PlayerIDToChangeOutline{};
 };

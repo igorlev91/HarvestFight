@@ -27,6 +27,7 @@ class PROTOTYPE2_API ALobbyGamestate : public AGameStateBase
 	/* Public Functions */
 public:
 	ALobbyGamestate();
+	
 
 	void UpdateCharacterMaterial(int32 _Player,FCharacterDetails _Details);
 
@@ -60,8 +61,24 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class ALobbyPlayerState>> Server_Players;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	bool bTeams{};
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	EColours TeamOneColour;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	EColours TeamTwoColour;
+	
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamOne;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamTwo;
+
+
+	
 	/* Private Functions */
 private:
+	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 	virtual void Tick(float _DeltaSeconds) override;
 
@@ -70,6 +87,7 @@ private:
 	/* Picks a random map to play for the list of those maps most voted for */
 	void PickMapToPlay();
 
+	void TickTimers(float _DeltaSeconds);
 	/* Private Variables */
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))

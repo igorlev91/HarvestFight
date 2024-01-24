@@ -9,6 +9,7 @@ enum class EPickupDataType : uint8
 	PlantData,
 	BeehiveData,
 	FlowerData,
+	FertiliserData
 };
 
 /* Enum for choosing the correct attack animations */

@@ -53,20 +53,18 @@ UStaticMeshComponent* APlotSign::GetMesh()
 
 void APlotSign::Interact(APrototype2Character* _Player)
 {
-	if (bHasBeenClaimed)
-		return;
-	
-	AActor* Parent = GetAttachParentActor();
-	if (!Parent)
-		return;
+	ClaimPlot(_Player);
+}
 
-	ARadialPlot* RadialPlot = Cast<ARadialPlot>(Parent);
-	if (!RadialPlot)
-		return;
-
-	bHasBeenClaimed = true;
-	RadialPlot->SpawnGrowSpots(_Player->GetPlayerState<APrototype2PlayerState>()->PlayerName);
-	_Player->SetClaimedPlot(RadialPlot);
+void APlotSign::HoldInteract(APrototype2Character* _Player)
+{
+	return;
+	UKismetSystemLibrary::PrintString(GetWorld(), "ClaimingPlot!");
+	HoldInteractTimer += GetWorld()->DeltaTimeSeconds;
+	if (HoldInteractTimer >= HoldInteractTotalDuration)
+	{
+		ClaimPlot(_Player);
+	}
 }
 
 void APlotSign::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
@@ -100,5 +98,23 @@ bool APlotSign::IsInteractable(APrototype2PlayerState* _Player)
 void APlotSign::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
+}
+
+void APlotSign::ClaimPlot(APrototype2Character* _Player)
+{
+	if (bHasBeenClaimed)
+		return;
+	
+	AActor* Parent = GetAttachParentActor();
+	if (!Parent)
+		return;
+
+	ARadialPlot* RadialPlot = Cast<ARadialPlot>(Parent);
+	if (!RadialPlot)
+		return;
+
+	bHasBeenClaimed = true;
+	RadialPlot->SpawnGrowSpots(_Player->GetPlayerState<APrototype2PlayerState>()->Details.Colour);
+	_Player->SetClaimedPlot(RadialPlot);
 }
 

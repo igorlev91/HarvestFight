@@ -71,8 +71,13 @@ void AFertiliserSpawner::Interact(APrototype2Character* _Player)
 	SpawnedFertiliser = nullptr;
 }
 
+void AFertiliserSpawner::HoldInteract(APrototype2Character* _Player)
+{
+	
+}
+
 void AFertiliserSpawner::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
-	int _PlayerID)
+                                               int _PlayerID)
 {
 	_InvokingWidget->SetHUDInteractText("Gather");
 }
@@ -117,6 +122,11 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
+	if (FertiliserDatas.Num() > 1)
+	{
+		USeedData* FertiliserData = rand() % ChanceOfConcrete_Inverse == 0 ? FertiliserDatas[1] : FertiliserDatas[0];
+		SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+	}
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
 

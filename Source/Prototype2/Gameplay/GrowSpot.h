@@ -8,6 +8,7 @@
 #include "NiagaraComponent.h"
 #include "RadialPlot.h"
 #include "Components/TimelineComponent.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Pickups/Beehive.h"
 #include "GrowSpot.generated.h"
 
@@ -26,12 +27,18 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float _DeltaTime) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	bool IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void Interact(APrototype2Character* _Player) override;
+	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
 	void PlantASeed(ASeed* _SeedToPlant);
 	void DestroyPlant();
+
+	void DegradeConcrete();
+	UFUNCTION(Server, Reliable)
+	void Server_DegradeConcrete();
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -53,6 +60,8 @@ public:
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	FString OwningPlayerName{};
+	UPROPERTY(Replicated, EditAnywhere)
+	EColours OwningPlayerColor{};
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;
@@ -64,6 +73,12 @@ protected:
 	float GrowTime{10};
 	UPROPERTY(Replicated, EditAnywhere)
 	float GrowTimer{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	int32 ConcretedHealth{};
+	UPROPERTY(EditAnywhere)
+	float ConcretedDamageInterval{0.2f};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	float ConcretedDamageTimer{};
 
 	UFUNCTION()
 	void RiseTimelineUpdate(float _Delta);
@@ -78,6 +93,10 @@ protected:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantGold();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_MakePlantConcrete();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_BrakePlantConcrete();
 	void SetPlantReadySparkle(bool _bIsActive);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SetPlantReadySparkle(bool _bIsActive);
@@ -90,11 +109,16 @@ protected:
 	void Multi_UpdateMaterial();
 	void UpdateMaterial();
 
-	UPROPERTY(Replicated, EditAnywhere)
+
+
+	UPROPERTY(EditAnywhere)
 	UMaterialInstance* DefaultMaterial;
 	
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(EditAnywhere)
 	UMaterialInstance* GoldMaterial;
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInstance* ConcreteMaterial;
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsFertilised;
@@ -104,6 +128,9 @@ protected:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float FertiliseInteractDelayTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	class UBoxComponent* HitBox{nullptr};
 
 	//
 	//	SFX
@@ -134,4 +161,5 @@ protected:
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGrowableWeapon> WeaponPrefab;
+	
 };

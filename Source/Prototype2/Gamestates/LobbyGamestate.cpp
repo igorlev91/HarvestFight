@@ -4,6 +4,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/LobbyCharacter.h"
+#include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Widgets/Widget_IngameMenu.h"
@@ -15,6 +16,25 @@ ALobbyGamestate::ALobbyGamestate()
 	bNetLoadOnClient = true;
 }
 
+
+void ALobbyGamestate::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (HasAuthority())
+	{
+		int RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+		TeamOneColour = (EColours)RandomColour;
+	
+		do
+		{
+			RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+		}
+		while ((EColours)RandomColour == TeamOneColour);
+		TeamTwoColour = (EColours)RandomColour;
+	}
+}
+
 void ALobbyGamestate::BeginPlay()
 {
 	Super::BeginPlay();
@@ -24,100 +44,15 @@ void ALobbyGamestate::BeginPlay()
 		MapChoice = "/Game/Maps/Level_FF_Large";
 	else // Brawl Mode
 		MapChoice = "/Game/Maps/Level_FF_Brawl";
+
+
 }
 
 void ALobbyGamestate::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 	
-	if (HasAuthority())
-	{
-		if (bPreviousServerTravel != bShouldServerTravel)
-		{
-			bPreviousServerTravel = bShouldServerTravel;
-
-			if (bShouldServerTravel)
-			{
-				if (LobbyLengthSeconds > 0 || LobbyLengthMinutes > 0)
-				{
-					bIsCountingDown = true;
-				}
-				bPreviousServerTravel = false;
-				bShouldServerTravel = false;
-			}
-		}
-
-		if (bIsCountingDown)
-		{
-			if (LobbyLengthSeconds > 0)
-			{
-				LobbyLengthSeconds -= _DeltaSeconds;
-			}
-			else
-			{
-				if (LobbyLengthMinutes <= 0)
-				{
-					bShowMapChoice = true; // Show map choice
-					//PickMapToPlay();
-
-					// Countdown between all players choosing map and actually starting
-					
-					if (MapChoiceTotalLengthSeconds > 0)
-					{
-						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
-
-						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
-						if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
-						{
-							bHasAllPlayersVoted = true;
-							if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
-							{
-								MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds; // + 1.0f;
-							}
-						}
-						
-						if (MapChoiceTotalLengthSeconds <= 0)
-						{
-							bIsCountingDown = false;
-
-							PickMapToPlay();
-						
-							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
-							{
-								GameInstance->FinalConnectionCount = Server_Players.Num();
-
-								for(auto Player : Server_Players)
-								{
-									FString SomePlayerName{"UNASSIGNED"};
-									if (auto NullSubsystem = IOnlineSubsystem::Get())
-									{
-										IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
-										if (IdentityInterface.IsValid())
-										{
-											TSharedPtr<const FUniqueNetId> UserId = Player->GetUniqueId().GetUniqueNetId();
-											if (UserId.IsValid())
-											{
-												SomePlayerName = UserId->ToString();
-											}
-										}
-									}
-									GameInstance->FinalPlayerDetails.Add(SomePlayerName, Player->Details);
-								}
-							}
-							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
-							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
-						}
-					}
-					
-				}
-				else
-				{
-					LobbyLengthMinutes--;
-					LobbyLengthSeconds = 60;
-				}
-			}
-		}
-	}
+	TickTimers(_DeltaSeconds);
 }
 
 void ALobbyGamestate::SetIsReady(int32 _Player, bool _bIsReady)
@@ -259,6 +194,12 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 	DOREPLIFETIME(ALobbyGamestate, GameMode);
+
+	DOREPLIFETIME(ALobbyGamestate, Server_TeamOne);
+	DOREPLIFETIME(ALobbyGamestate, Server_TeamTwo);
+	DOREPLIFETIME(ALobbyGamestate, TeamOneColour);
+	DOREPLIFETIME(ALobbyGamestate, TeamTwoColour);
+	DOREPLIFETIME(ALobbyGamestate, bHasAllPlayersVoted);
 }
 
 void ALobbyGamestate::PickMapToPlay()
@@ -281,7 +222,7 @@ void ALobbyGamestate::PickMapToPlay()
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_Winter_Large";
+				MapChoice = "/Game/Maps/Level_Winter_LargeV2";
 			else // Brawl Mode
 				MapChoice = "/Game/Maps/Level_Winter_Brawl";
 		}
@@ -383,6 +324,98 @@ void ALobbyGamestate::PickMapToPlay()
 		//{
 		//	MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds + 1.0f;
 		//}
+	}
+}
+
+void ALobbyGamestate::TickTimers(float _DeltaSeconds)
+{
+	if (HasAuthority())
+	{
+		if (bPreviousServerTravel != bShouldServerTravel)
+		{
+			bPreviousServerTravel = bShouldServerTravel;
+
+			if (bShouldServerTravel)
+			{
+				if (LobbyLengthSeconds > 0 || LobbyLengthMinutes > 0)
+				{
+					bIsCountingDown = true;
+				}
+				bPreviousServerTravel = false;
+				bShouldServerTravel = false;
+			}
+		}
+
+		if (bIsCountingDown)
+		{
+			if (LobbyLengthSeconds > 0)
+			{
+				LobbyLengthSeconds -= _DeltaSeconds;
+			}
+			else
+			{
+				if (LobbyLengthMinutes <= 0)
+				{
+					bShowMapChoice = true; // Show map choice
+					//PickMapToPlay();
+
+					// Countdown between all players choosing map and actually starting
+					
+					if (MapChoiceTotalLengthSeconds > 0)
+					{
+						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
+
+						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
+						if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
+						{
+							bHasAllPlayersVoted = true;
+							if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
+							{
+								MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds; // + 1.0f;
+							}
+						}
+						
+						if (MapChoiceTotalLengthSeconds <= 0)
+						{
+							bIsCountingDown = false;
+
+							PickMapToPlay();
+						
+							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+							{
+								GameInstance->FinalConnectionCount = Server_Players.Num();
+
+								for(auto Player : Server_Players)
+								{
+									FString SomePlayerName{"UNASSIGNED"};
+									if (auto NullSubsystem = IOnlineSubsystem::Get())
+									{
+										IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
+										if (IdentityInterface.IsValid())
+										{
+											TSharedPtr<const FUniqueNetId> UserId = Player->GetUniqueId().GetUniqueNetId();
+											if (UserId.IsValid())
+											{
+												SomePlayerName = UserId->ToString();
+											}
+										}
+									}
+									GameInstance->FinalPlayerDetails.Add(SomePlayerName, Player->Details);
+								}
+							}
+							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
+							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+						}
+					}
+					
+				}
+				else
+				{
+					LobbyLengthMinutes--;
+					LobbyLengthSeconds = 60;
+				}
+			}
+		}
 	}
 }
 
