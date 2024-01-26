@@ -37,7 +37,8 @@ protected:
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bHasBeenClaimed{};
-
+		
 	float HoldInteractTotalDuration = 1.0f;
-	float HoldInteractTimer;
+	float HoldInteractTimer = 0.0f;
+	APrototype2Character* CurrentPlayerClaimingPlot = nullptr;
 };

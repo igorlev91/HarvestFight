@@ -35,6 +35,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Cancel Button")
 	class UButton* CancelButton;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class ALobbyGamestate* GameStateReference;
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

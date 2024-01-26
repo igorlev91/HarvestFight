@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Gamestate.generated.h"
 
 UCLASS()
@@ -43,7 +44,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	bool bTeams{};
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
@@ -55,6 +56,12 @@ public:
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_TeamOne;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_TeamTwo;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	int32 Team1Points{0};
+	
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	int32 Team2Points{0};
 	
 private:
 	virtual void BeginPlay() override;
@@ -64,6 +71,7 @@ private:
 	void TickCountdownTimer(float _DeltaSeconds);
 	void TickMatchTimer(float _DeltaSeconds);
 	void TickEndGameTimer(float _DeltaSeconds);
+	void UpdateTeamsScores();
 
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
@@ -118,3 +126,5 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 SellMultiplier{1};
 };
+
+

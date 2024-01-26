@@ -7,6 +7,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2GameMode.generated.h"
@@ -40,7 +41,10 @@ public:
 	class AEndGamePodium* EndGamePodium{};
 
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
-	class APreGameArena* PreGameArena{};
+	TArray<class APreGameArena*> PreGameArenas{};
+
+	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	APreGameArena* DefaultPreGameArena{};
 
 	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
 	class ADataAssetWorldOverride* DataAssetWorldOverride{};
@@ -82,20 +86,47 @@ protected:
 	void Multi_PupeteerPlayerCharactersForEndGame(APrototype2Character* _Target);
 
 	void UpdateAllPlayerInfo(class APrototype2Gamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
+	
+	void SpawnTeamsPreGameArena();
+	void TeleportHostToPreGameArena();
+	void TeleportHostToTeamsPreGameArena();
+	void ColourTeamsPreGameArenas();
 
 	void TeleportToPreGameArena(APrototype2Character* _Player);
+	void TeleportUnteleportedPlayersToPreGameArena_Teams();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Server_SetMeshColour();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPreGameArenaMeshColour();
+	UFUNCTION(Client, Reliable)
+	void Client_SetPreGameArenaMeshColour();
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UMaterialInstanceDynamic* PGONewDynamicMaterial;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UMaterialInstanceDynamic* PGTNewDynamicMaterial;
 
 	/* Protected Variables */
 protected:
+	UPROPERTY(VisibleAnywhere)
+	bool bHasSetTeamsColours{};
+	UPROPERTY(VisibleAnywhere)
+	bool bHostHasTpdToPreGameArena{};
+	UPROPERTY(VisibleAnywhere)
+	bool bHostHasTpdToTeamsPreGameArena{};
+	UPROPERTY(VisibleAnywhere)
+	bool bPreGameArenasAdjustedForTeams{};
+	
 	bool bHasGameFinishedLocal{};
 	bool bTpHasHappened{};
 	UPROPERTY(EditAnywhere)
 	float AutomaticCrownCheckFrequency{1.0f};
 	UPROPERTY(Replicated)
 	float AutomaticCrownCheckTimer{};
-	
 
+
+	TArray<bool> PlayersTpdToPreGameArena_Teams{};
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess)) 
 	class APrototype2Gamestate* GameStateRef{nullptr};
@@ -106,7 +137,8 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<ASellBin> SellBinPrefab;
 	
-
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	TSubclassOf<APreGameArena> PreGameArenaPrefab;
 
 	/* Player start positions */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess), Category="Player Start Position")
@@ -122,6 +154,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	TArray<TObjectPtr<APrototype2PlayerState>> Server_PlayerStates;
+
+	UPROPERTY(EditAnywhere)
+	UColourData* ColourData;
 };
 
 

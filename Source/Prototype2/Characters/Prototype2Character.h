@@ -30,6 +30,7 @@ enum class EParticleSystems : uint8
 	Sweat,
 	AttackTrail,
 	Attack,
+	Dizzy,
 	Test,
 
 	END
@@ -202,6 +203,10 @@ public:
 	/* Used to stop player input moving the player */
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bAllowMovementFromInput = true;
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bIsHoldingInteract = false;
+
 	
 protected:
 	/** Called for movement input */
@@ -231,6 +236,9 @@ protected:
 
 	/* For holding interact functionality*/
 	void HoldInteract();
+	
+	/* For the releasing of holding interact functionality*/
+	void ReleaseHoldInteract();
 	
 	/* UI */
 	void OpenIngameMenu();
@@ -265,7 +273,22 @@ public:
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem();
+	
+	/* For holding interact functionality*/
+	UFUNCTION(Server, Reliable)
+	void Server_HoldInteract();
+	
+	/* For the releasing of holding interact functionality*/
+	UFUNCTION(Server, Reliable)
+	void Server_ReleaseHoldInteract();
 
+	/* Delegate for claiming plot on hold interact */
+	UFUNCTION(Client, Reliable)
+	void Client_OnClaimingPlot(float _CurrentClaimTime, float _TotalClaimDuration);
+	/* Delegate for claiming plot on hold interact */
+	UFUNCTION(Client, Reliable)
+	void Client_OnStoppedClaimingPlot();
+	
 	/* Currently held item */
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
@@ -342,10 +365,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_ChargeAttack();
 
+	void SetPlayerAimingMovement(bool _bIsAiming);
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerAimingMovement(bool _bIsAiming);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
 
 	UFUNCTION(Server, Unreliable)
 	void Server_CancelChargeAttack();
@@ -366,6 +388,15 @@ public:
 
 	/* Called from ExecuteAttack() in UWeapon derived class to reset attack variables */
 	void ResetAttack();
+
+	UPROPERTY(Replicated)
+	bool bShouldWeaponFlashRed;
+	UPROPERTY(Replicated)
+	float WeaponFlashTimer;
+	float WeaponFlashDuration = 0.2f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* FlashRedMaterial;
 	
 	/* Weapon Mesh */
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -444,10 +475,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
 	/* Sprint */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CanSprintTime = 5.0f;
-	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
-	float CanSprintTimer{};
 	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
 	bool bSprinting{false};
 
@@ -493,13 +520,20 @@ protected:
 
 	/* Speed for when player is sprinting */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float SprintSpeed = 750.0f;
+	float SprintSpeed = 1000.0f;
 	/* How long the player sprints for */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTime = 2.0f;
 	/* Timer for handling sprint */
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTimer{};
+
+	/* Delay before sprint regens*/
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	float DelayedSprintRegenTimer{};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	float DelayedSprintRegenTotalDuration = 0.5f;
+	
 	/* Allows telling the player HUD one time that sprint is ready*/
 	UPROPERTY(Replicated)
 	bool bHasNotifiedCanSprint = false;
@@ -553,15 +587,15 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPickupWeapon OnPickUpWeaponDelegate;
 			
-	///* Delegate for telling HUD when this player started claiming a plot */
-	//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStartedClaimingPlot, float, TotalClaimTime);
-	//UPROPERTY(BlueprintAssignable)
-	//FOnStartedClaimingPlot OnStartedClaimingPlotDelegate;
-//
-	///* Delegate for telling HUD when this player failed claiming a plot */
-	//DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFailedClaimingPlot);
-	//UPROPERTY(BlueprintAssignable)
-	//FOnFailedClaimingPlot OnFailedClaimingPlotDelegate;
+	/* Delegate for telling HUD when this player started claiming a plot */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnClaimingPlot, float, CurrentClaimTime, float, TotalClaimTime);
+	UPROPERTY(BlueprintAssignable)
+	FOnClaimingPlot OnClaimingPlotDelegate;
+
+	/* Delegate for telling HUD when this player failed claiming a plot */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFailedClaimingPlot);
+	UPROPERTY(BlueprintAssignable)
+	FOnFailedClaimingPlot OnStoppedClaimingPlotDelegate;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Getters 												 ///
@@ -781,6 +815,8 @@ private:
 	class UInputAction* InteractAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* HoldInteractAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReleaseHoldInteractAction;
 	/* Sprint */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SprintAction;

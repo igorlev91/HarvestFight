@@ -22,12 +22,13 @@
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Widgets/SOverlay.h"
 #include "Layout/Margin.h"
+#include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 
 void UWidget_PlayerHUD::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
+	
 	/* Get gamestate and set to reference variable */
 	if (auto* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
@@ -165,9 +166,15 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	}
 	else /* Teams UI */
 	{
+		/* Turn all UI icons on (make visible */
+		OverlayPlayer1->SetVisibility(ESlateVisibility::Hidden);
+		OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
+		OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
+		OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
+		OverlayPlayer5->SetVisibility(ESlateVisibility::Hidden);
+		OverlayPlayer5->SetVisibility(ESlateVisibility::Hidden);
+		
 		TeamsOverlay->SetVisibility(ESlateVisibility::Visible);
-		T1Ring->SetColorAndOpacity(FLinearColor(0.571125, 0.031896, 0.016807, 1)); // Red Team
-		T2Ring->SetColorAndOpacity(FLinearColor(0.004391, 0.102242, 0.637597, 1)); // Blue Team
 	}
 }
 
@@ -177,6 +184,14 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	
 	if (GameStateReference)
 	{
+		/* Set UI colours for teams */
+		if (ColourData && GameStateReference->bTeams)
+		{
+			T1Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]); // Red Team
+			T2Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]); // Blue Team
+		}
+
+		/* Game timers related */
 		Minutes->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMatchLengthMinutes())));
 		//Seconds->SetText(FText::FromString(FString::FromInt(GameStateRef->MatchLengthSeconds)));
 		
@@ -340,12 +355,78 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		}
 		else
 		{
-			// Updating points/coins
-			for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+			/* Team 1 points */
+			if (GameStateReference->Server_TeamOne.Num() == 0)
+				return;
+
+			Team1Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team1Points))); // Updating team 1 points
+			Team2Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team2Points))); // Updating team 2 points
+			
+			for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
 			{
-				if (auto Player = GameStateReference->Server_Players[i])
+				if (auto Player = GameStateReference->Server_TeamOne[i])
 				{
-					
+					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
+					auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
+				
+					switch(i)
+					{
+					case 0:
+						{
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = "plus" + ExtraCoins;
+								Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Visible);
+							
+								Team1ExtraCoinsP1->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Hidden);
+							}
+						
+							break;
+						}
+					case 1:
+						{
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Visible);
+							
+								Team1ExtraCoinsP2->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Hidden);
+							}
+
+							break;
+						}
+					case 2:
+						{
+							if (bIsShowingExtraCoins == true)
+							{
+								FString plus = "+";
+								FString combined = plus + ExtraCoins;
+								Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Visible);
+							
+								Team1ExtraCoinsP3->SetText(FText::FromString(combined)); // Set player extra score
+							}
+							else
+							{
+								Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Hidden);
+							}
+
+							break;
+						}
+					default:
+						{
+							break;
+						}
+					}
 					
 				}
 			}

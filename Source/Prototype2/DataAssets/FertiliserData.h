@@ -18,4 +18,7 @@ class PROTOTYPE2_API UFertiliserData : public UDataAsset
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Fertiliser Type")
 	bool bConcrete;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Fertiliser Spawning")
+	int32 MaxSpawnedAtAnyGivenTime;
 };

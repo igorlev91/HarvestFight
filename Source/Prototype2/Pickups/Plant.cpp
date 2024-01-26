@@ -6,6 +6,7 @@
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/DataAssets/SeedData.h"
 
@@ -32,17 +33,12 @@ void APlant::Interact(APrototype2Character* _Player)
 	{
 		return;
 	}
-	
-	ItemComponent->Interact(_Player, this);
 
-	_Player->EnableStencil(false);
-	if (_Player->PlayerHUDRef)
-	{
-		_Player->PlayerHUDRef->SetHUDInteractText("");
-	}
-	ItemComponent->Mesh->SetRenderCustomDepth(false);
-	
-	SSComponent->Disable();
+	WiltingDelayTimer = 0;
+	ItemComponent->Interact(_Player, this);
+	Multi_SetWilt(false);
+
+
 }
 
 void APlant::HoldInteract(APrototype2Character* _Player)
@@ -51,12 +47,14 @@ void APlant::HoldInteract(APrototype2Character* _Player)
 
 void APlant::ClientInteract(APrototype2Character* _Player)
 {
-	IInteractInterface::ClientInteract(_Player);
-
-	//if (bGrown)
-	//{
-	//	_Player->UpdateDecalDirection(true, true);
-	//}
+	_Player->EnableStencil(false);
+	if (_Player->PlayerHUDRef)
+	{
+		_Player->PlayerHUDRef->SetHUDInteractText("");
+	}
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+	
+	SSComponent->Boing();
 }
 
 void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
@@ -94,10 +92,50 @@ bool APlant::IsInteractable(APrototype2PlayerState* _Player)
 void APlant::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	Multi_Wilt(DeltaSeconds);
+}
+
+void APlant::Server_Drop()
+{
+	Super::Server_Drop();
+	Multi_SetWilt(true);
+}
+
+void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APlant, WiltingDelayTimer)
+	DOREPLIFETIME(APlant, WiltTime)
+	DOREPLIFETIME(APlant, bShouldWilt)
+}
+
+void APlant::Multi_Wilt(float DeltaTime)
+{
+	if (!bShouldWilt)
+		return;
 	
+	WiltingDelayTimer += DeltaTime;
+	
+	if (WiltingDelayTimer < WiltingWaitTime)
+	{
+		return;
+	}
+	
+	WiltTime -= DeltaTime;
+
+	if (WiltTime <= 0)
+	{
+		this->Destroy();
+	}
 }
 
 void APlant::Multi_ScalePlant()
 {
 	ItemComponent->Mesh->SetWorldScale3D(SeedData->BabyScale);
+}
+
+void APlant::Multi_SetWilt(bool _bShouldWilt)
+{
+	bShouldWilt = _bShouldWilt;
 }

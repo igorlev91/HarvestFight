@@ -14,8 +14,6 @@
 APrototype2Gamestate::APrototype2Gamestate()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	
 }
 
 void APrototype2Gamestate::BeginPlay()
@@ -37,6 +35,8 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 	TickCountdownTimer(DeltaSeconds);
 	TickMatchTimer(DeltaSeconds);
 	TickEndGameTimer(DeltaSeconds);
+
+	UpdateTeamsScores();
 }
 
 void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -73,6 +73,11 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, TeamTwoColour);
 	DOREPLIFETIME(APrototype2Gamestate, Server_TeamOne);
 	DOREPLIFETIME(APrototype2Gamestate, Server_TeamTwo);
+
+	DOREPLIFETIME(APrototype2Gamestate, bTeams);
+
+	DOREPLIFETIME(APrototype2Gamestate, Team1Points);
+	DOREPLIFETIME(APrototype2Gamestate, Team2Points);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -436,5 +441,34 @@ void APrototype2Gamestate::SetGameTime()
 			}
 		}
 	}
+}
+
+void APrototype2Gamestate::UpdateTeamsScores()
+{
+	if (!bTeams)
+		return;
+
+	/* Update team 1 points */
+	int32 Team1PointsTally = 0;
+	for (int i = 0; i < Server_TeamOne.Num(); i++)
+	{
+		if (auto Player = Server_TeamOne[i])
+		{
+			Team1PointsTally += Player->Coins;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("T1Tally: %d"), Team1PointsTally);
+	}
+	Team1Points = Team1PointsTally;
+
+	/* Update team 2 points */
+	int32 Team2PointsTally = 0;
+	for (int i = 0; i < Server_TeamTwo.Num(); i++)
+	{
+		if (auto Player = Server_TeamTwo[i])
+		{
+			Team2PointsTally += Player->Coins;
+		}
+	}
+	Team2Points = Team2PointsTally;
 }
 

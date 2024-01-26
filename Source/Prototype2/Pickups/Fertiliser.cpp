@@ -4,6 +4,7 @@
 #include "Fertiliser.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 AFertiliser::AFertiliser()
 {
@@ -15,18 +16,18 @@ void AFertiliser::BeginPlay()
 	Super::BeginPlay();
 	PickupActor = EPickupActor::FertilizerActor;
 	SetReplicatingMovement(true);
+
+	if (SeedData)
+		SetActorScale3D(SeedData->BabyScale);
+
+	ItemComponent->SetStencilEnabled(false);
 }
 
 void AFertiliser::Interact(APrototype2Character* _Player)
 {
 	ItemComponent->Interact(_Player, this);
 
-	_Player->EnableStencil(false);
-	if (_Player->PlayerHUDRef)
-	{
-		_Player->PlayerHUDRef->SetHUDInteractText("");
-	}
-	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
 }
 
 void AFertiliser::HoldInteract(APrototype2Character* _Player)
@@ -35,7 +36,15 @@ void AFertiliser::HoldInteract(APrototype2Character* _Player)
 
 void AFertiliser::ClientInteract(APrototype2Character* _Player)
 {
-	IInteractInterface::ClientInteract(_Player);
+	_Player->EnableStencil(false);
+	
+	if (_Player->PlayerHUDRef)
+	{
+		_Player->PlayerHUDRef->SetHUDInteractText("");
+	}
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+	SSComponent->Boing();
 }
 
 void AFertiliser::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)

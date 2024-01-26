@@ -8,7 +8,9 @@
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
@@ -76,6 +78,8 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	ReadyImages.Add(P4ReadyImage);
 	ReadyImages.Add(P5ReadyImage);
 	ReadyImages.Add(P6ReadyImage);
+
+	
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -88,6 +92,10 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	}
 
 	InitTeams();
+	UpdateTeams();
+
+	//UE_LOG(LogTemp, Warning, TEXT("Team 1 size: %d"), GameStateReference->Server_TeamOne.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("Team 2 size: %d"), GameStateReference->Server_TeamTwo.Num());
 	
 	/* Make all player overlays hidden on start of frame */
 	for (int i = 1; i < Overlays.Num(); i++)
@@ -264,7 +272,134 @@ void UWidget_LobbyPlayerHUDV2::InitTeams()
 			TeamAText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]);
 			TeamBText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]);
 		}
+
+		if (Overlays.Num() > 0)
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				Overlays[i]->RemoveFromParent();
+				VerticalBoxLeft->InvalidateLayoutAndVolatility();
+				VerticalBoxRight->InvalidateLayoutAndVolatility();
+			}
+		}
 	}
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateTeams()
+{
+	if (!bTeams)
+		return;
+	
+	for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
+	{
+		if (auto Player = GameStateReference->Server_TeamOne[i])
+		{
+			switch (Player->Player_ID)
+			{
+			case 0:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer1))
+						VerticalBoxLeft->AddChild(OverlayPlayer1);
+					break;
+				}
+			case 1:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer2))
+						VerticalBoxLeft->AddChild(OverlayPlayer2);
+					break;
+				}
+			case 2:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer3))
+						VerticalBoxLeft->AddChild(OverlayPlayer3);
+					break;
+				}
+			case 3:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer4))
+						VerticalBoxLeft->AddChild(OverlayPlayer4);
+					break;
+				}
+			case 4:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer5))
+						VerticalBoxLeft->AddChild(OverlayPlayer5);
+					break;
+				}
+			case 5:
+				{
+					if (!VerticalBoxLeft->HasChild(OverlayPlayer6))
+						VerticalBoxLeft->AddChild(OverlayPlayer6);
+					break;
+				}
+			case 6:
+				{
+					// Do nothing
+					break;
+				}
+			}
+			
+		}
+	}
+	VerticalBoxLeft->InvalidateLayoutAndVolatility();
+
+	for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
+	{
+		if (auto Player = GameStateReference->Server_TeamTwo[i])
+		{
+			switch (Player->Player_ID)
+			{
+			case 0:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer1))
+					{
+						VerticalBoxRight->AddChild(OverlayPlayer1);
+					}
+					break;
+				}
+			case 1:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer2))
+					{
+						VerticalBoxRight->AddChild(OverlayPlayer2);
+					}
+					break;
+				}
+			case 2:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer3))
+					{
+						VerticalBoxRight->AddChild(OverlayPlayer3);
+					}
+					break;
+				}
+			case 3:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer4))
+						VerticalBoxRight->AddChild(OverlayPlayer4);
+					break;
+				}
+			case 4:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer5))
+						VerticalBoxRight->AddChild(OverlayPlayer5);
+					break;
+				}
+			case 5:
+				{
+					if (!VerticalBoxRight->HasChild(OverlayPlayer6))
+						VerticalBoxRight->AddChild(OverlayPlayer6);
+					break;
+				}
+			case 6:
+				{
+					// Do nothing
+					break;
+				}
+			}
+		}
+	}
+	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 
 void UWidget_LobbyPlayerHUDV2::Client_SetOwningController_Implementation(int32 _PlayerID,

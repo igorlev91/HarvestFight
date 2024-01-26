@@ -15,9 +15,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UStaticMeshComponent* Mesh{nullptr};
+	
+protected:
+
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	class APlayerStart* PlayerStart{nullptr};

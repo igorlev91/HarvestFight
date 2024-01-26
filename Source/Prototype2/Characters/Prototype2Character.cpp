@@ -94,10 +94,13 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
 	DOREPLIFETIME(APrototype2Character, WeaponMesh);
 	DOREPLIFETIME(APrototype2Character, SprintTimer);
-	DOREPLIFETIME(APrototype2Character, CanSprintTimer);
 	DOREPLIFETIME(APrototype2Character, bSprinting);
 	DOREPLIFETIME(APrototype2Character, bCanSprint);
 	DOREPLIFETIME(APrototype2Character, CurrentMaxWalkSpeed);
+	DOREPLIFETIME(APrototype2Character, bIsHoldingInteract);
+	DOREPLIFETIME(APrototype2Character, DelayedSprintRegenTimer);
+	DOREPLIFETIME(APrototype2Character, WeaponFlashTimer);
+	DOREPLIFETIME(APrototype2Character, bShouldWeaponFlashRed);
 	
 	// Niagara Components
 	DOREPLIFETIME(APrototype2Character, Dizzy_NiagaraComponent);
@@ -182,6 +185,7 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APrototype2Character::Interact);
 		// Hold Interact
 		EnhancedInputComponent->BindAction(HoldInteractAction, ETriggerEvent::Ongoing, this, &APrototype2Character::HoldInteract);
+		EnhancedInputComponent->BindAction(ReleaseHoldInteractAction, ETriggerEvent::Triggered, this, &APrototype2Character::ReleaseHoldInteract);
 		
 		// UI
 		EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Triggered, this, &APrototype2Character::OpenIngameMenu);
@@ -212,8 +216,6 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 
 	UpdateParticleSystems();
 
-	//UpdateDecalAngle(); todo we using this?
-
 	UpdatePlayerNames();
 
 	TickTimers(_DeltaSeconds);
@@ -226,9 +228,9 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 void APrototype2Character::Move(const FInputActionValue& _Value)
 {
 	const FVector2D MovementVector = _Value.Get<FVector2D>();
-	if (!Controller || !bAllowMovementFromInput)
+	if (!Controller || !bAllowMovementFromInput || bIsHoldingInteract)
 		return;
-
+	
 	// find out which way is forward
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -269,6 +271,10 @@ void APrototype2Character::Sprint()
 		OnFailedToSprintDelegate.Broadcast();
 		return;
 	}
+
+	// Fixes crash when trying to sprint while slowed with debuff
+	if (!DebuffComponent)
+		return;
 	
 	// If no debuff or sprint is at least 1/5th full
 	if (DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > (SprintTime / 5.0f))
@@ -302,6 +308,9 @@ void APrototype2Character::Jump()
 
 void APrototype2Character::ChargeAttack()
 {
+	if (bIsHoldingInteract)
+		return;
+	
 	Server_ChargeAttack();
 }
 
@@ -318,9 +327,6 @@ void APrototype2Character::ReleaseAttack()
 
 void APrototype2Character::Interact()
 {
-	if (!HasIdealRole())
-		return;
-	
 	if (bIsChargingAttack)
 		return;
 
@@ -331,26 +337,11 @@ void APrototype2Character::Interact()
 		ClosestInteractableItem->ClientInteract(this);
 	
 	Server_Interact();
-
-	EnableStencil(false);
-	ClosestInteractableActor = nullptr;
-	ClosestInteractableItem = nullptr;
 	Server_RefreshCurrentMaxSpeed();
 }
 
 void APrototype2Character::Server_Interact_Implementation()
 {
-	if (ClosestInteractableActor)
-	{
-		if (auto SomeComponent = ClosestInteractableActor->GetComponentByClass(USquashAndStretch::StaticClass()))
-		{
-			if (auto SSComponent = Cast<USquashAndStretch>(SomeComponent))
-			{
-				SSComponent->Boing();
-			}
-		}
-	}
-	
 	if (ClosestInteractableItem)
 	{
 		InteractTimer = InteractTimerTime;
@@ -369,13 +360,25 @@ void APrototype2Character::Server_Interact_Implementation()
 			}
 		}
 	}
+
+	ClosestInteractableActor = nullptr;
+	ClosestInteractableItem = nullptr;
 }
 
 void APrototype2Character::HoldInteract()
 {
-	if (!HasIdealRole())
-		return;
+	// This will get set in the items interact function
+	if (bIsHoldingInteract)
+		Server_HoldInteract();
+}
 
+void APrototype2Character::ReleaseHoldInteract()
+{
+	Server_ReleaseHoldInteract();
+}
+
+void APrototype2Character::Server_HoldInteract_Implementation()
+{
 	if (ClosestInteractableItem)
 		ClosestInteractableItem->HoldInteract(this);	
 }
@@ -428,7 +431,14 @@ void APrototype2Character::CheckForInteractables()
 		return;
 
 	if (InteractTimer > InteractTimerTime / 2.0f || bIsChargingAttack)
+	{
+		EnableStencil(false);
+		if (ClosestInteractableItem)
+			ClosestInteractableItem->OnClientWalkAway(this);
+		ClosestInteractableActor = nullptr;
+		ClosestInteractableItem = nullptr;
 		return;
+	}
 	
 	TArray<FHitResult> OutHits;
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(InteractRadius * 1.5f);
@@ -436,6 +446,8 @@ void APrototype2Character::CheckForInteractables()
 	if (!HasFoundCloseActor)
 	{
 		EnableStencil(false);
+		if (ClosestInteractableItem)
+			ClosestInteractableItem->OnClientWalkAway(this);
 		ClosestInteractableActor = nullptr;
 		ClosestInteractableItem = nullptr;
 		return;
@@ -499,6 +511,8 @@ void APrototype2Character::CheckForInteractables()
 	if (!NearestActor)
 	{
 		EnableStencil(false);
+		if (ClosestInteractableItem)
+			ClosestInteractableItem->OnClientWalkAway(this);
 		ClosestInteractableItem = nullptr;
 		ClosestInteractableActor = nullptr;
 		return;
@@ -508,6 +522,8 @@ void APrototype2Character::CheckForInteractables()
 		if (ClosestInteractableActor && ClosestInteractableActor != NearestActor)
 		{
 			EnableStencil(false);
+			if (ClosestInteractableItem)
+				ClosestInteractableItem->OnClientWalkAway(this);
 		}
 		ClosestInteractableActor = NearestActor;
 		ClosestInteractableItem = Cast<IInteractInterface>(NearestActor);
@@ -515,23 +531,35 @@ void APrototype2Character::CheckForInteractables()
 	}
 
 	EnableStencil(false);
+	if (ClosestInteractableItem)
+		ClosestInteractableItem->OnClientWalkAway(this);
 	ClosestInteractableItem = nullptr;
 	ClosestInteractableActor = nullptr;
 }
 
 void APrototype2Character::EnableStencil(bool _bIsOn)
 {
+	if (HeldItem)
+	{
+		HeldItem->ItemComponent->Mesh->SetRenderCustomDepth(_bIsOn);
+	}
+	
 	if (!ClosestInteractableActor)
 	{
 		return;
 	}
-	
-	if (auto CastedComponent = ClosestInteractableActor->GetComponentByClass(UItemComponent::StaticClass()))
+
+	if (HeldItem)
 	{
-		if (auto CastedItemComponent = Cast<UItemComponent>(CastedComponent))
-		{
-			CastedItemComponent->Mesh->SetRenderCustomDepth(_bIsOn);
-		}
+		HeldItem->ItemComponent->Mesh->SetRenderCustomDepth(false);
+	}
+
+	// Swet all meshes
+	TArray<UItemComponent*> AllItemComponents{};
+	ClosestInteractableActor->GetComponents<UItemComponent>(AllItemComponents, true);
+	for (int i = 0; i < AllItemComponents.Num(); i++)
+	{
+		AllItemComponents[i]->Mesh->SetRenderCustomDepth(_bIsOn);
 	}
 	
 }
@@ -540,6 +568,9 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 {
 	// Can't pickup for short duration
 	InteractTimer = InteractTimerTime;
+
+	// cancel any holding interact functionionality
+	bIsHoldingInteract = false;
 	
 	// Invincible after getting hit
 	if (InvincibilityTimer > 0.0f)
@@ -688,7 +719,7 @@ void APrototype2Character::InitNiagraComponents()
 {
 	// Niagara Components
 	Dizzy_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Dizzy Component"));
-	Dizzy_NiagaraComponent->SetupAttachment(GetMesh(), FName("Base-HumanHead"));
+	Dizzy_NiagaraComponent->SetupAttachment(GetCapsuleComponent());
 	WalkPoof_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("WalkPoof Component"));
 	WalkPoof_NiagaraComponent->SetupAttachment(RootComponent);
 	SprintPoof_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SprintPoof Component"));
@@ -901,6 +932,11 @@ void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArr
 				Attack_NiagaraComponent->Activate(true);
 				break;
 			}
+		case EParticleSystems::Dizzy:
+			{
+				Dizzy_NiagaraComponent->Activate();
+				break;
+			}
 		case EParticleSystems::Test:
 			{
 				//Test_NiagraComponent->Activate();
@@ -938,6 +974,11 @@ void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArr
 		case EParticleSystems::Attack:
 			{
 				Attack_NiagaraComponent->Deactivate();
+				break;
+			}
+		case EParticleSystems::Dizzy:
+			{
+				Dizzy_NiagaraComponent->Deactivate();
 				break;
 			}
 		case EParticleSystems::Test:
@@ -994,6 +1035,21 @@ bool APrototype2Character::HasClaimedPlot()
 void APrototype2Character::SetClaimedPlot(ARadialPlot* _Plot)
 {
 	ClaimedPlot = _Plot;
+}
+
+void APrototype2Character::Client_OnStoppedClaimingPlot_Implementation()
+{
+	OnStoppedClaimingPlotDelegate.Broadcast();
+}
+
+void APrototype2Character::Client_OnClaimingPlot_Implementation(float _CurrentClaimTime, float _TotalClaimDuration)
+{
+	OnClaimingPlotDelegate.Broadcast(_CurrentClaimTime, _TotalClaimDuration);
+}
+
+void APrototype2Character::Server_ReleaseHoldInteract_Implementation()
+{
+	bIsHoldingInteract = false;
 }
 
 bool APrototype2Character::IsSprinting()
@@ -1084,9 +1140,8 @@ void APrototype2Character::DropWeapon()
 	Server_DropWeapon();
 }
 
-void APrototype2Character::Multi_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
 {
-	// Allows rotation while stationary
 	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
 	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
@@ -1108,6 +1163,9 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 {
 	if (PlayerHUDRef)
 		PlayerHUDRef->SetHUDInteractText("");
+
+	if (HeldItem)
+		HeldItem->Client_Pickup();
 	
 	// Set the HUD UI pickup icon depending on seed/plant/weapon
 	switch (_PickupType)
@@ -1176,6 +1234,10 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 
 void APrototype2Character::Client_DropItem_Implementation()
 {
+	if (HeldItem)
+	{
+		HeldItem->Client_Drop();
+	}
 	// clear pickup UI and text
 	if (PlayerHUDRef)
 	{
@@ -1223,10 +1285,12 @@ void APrototype2Character::ResetAttack()
 		InteractTimer = InteractTimerTime;
 
 		bCanAttack = true;
+
+		SetPlayerAimingMovement(false);
 	}
 
 
-	Server_SetPlayerAimingMovement(false);
+	//Server_SetPlayerAimingMovement(false);
 }
 
 void APrototype2Character::Server_RefreshCurrentMaxSpeed_Implementation()
@@ -1292,6 +1356,7 @@ void APrototype2Character::Server_EndSprint_Implementation()
 {
 	bSprinting = false;
 	bHasNotifiedCanSprint = false;
+	DelayedSprintRegenTimer = 0.0f;
 }
 
 void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
@@ -1511,7 +1576,7 @@ void APrototype2Character::UpdatePlayerHUD()
 	if (!PlayerHUDRef)
 		return;
 
-	PlayerHUDRef->SetPlayerSprintTimer(CanSprintTimer);
+	PlayerHUDRef->SetPlayerSprintTimer(SprintTimer);
 
 	if(!HeldItem && !Weapon)
 	{
@@ -1522,8 +1587,15 @@ void APrototype2Character::UpdatePlayerHUD()
 void APrototype2Character::UpdateWeaponMeshSkin()
 {
 	WeaponMesh->SetStaticMesh(CurrentWeaponSeedData->BabyMesh);
-
-	if (bIsHoldingGoldWeapon)
+	
+	if (bShouldWeaponFlashRed)
+	{
+		for (int i = 0; i < CurrentWeaponSeedData->BabyMaterials.Num(); i++)
+		{
+			WeaponMesh->SetMaterial(i, FlashRedMaterial);
+		}
+	}
+	else if (bIsHoldingGoldWeapon)
 	{
 		for (int i = 0; i < CurrentWeaponSeedData->BabyGoldMaterials.Num(); i++)
 		{
@@ -1592,7 +1664,12 @@ void APrototype2Character::TickTimers(float _DeltaSeconds)
 		DeltaDecrement(InteractTimer, _DeltaSeconds);
 		DeltaDecrement(AttackTimer, _DeltaSeconds);
 		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
-
+		DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
+		if (WeaponFlashTimer < 0.0f)
+		{
+			bShouldWeaponFlashRed = false;
+			WeaponFlashTimer = WeaponFlashDuration;
+		}
 
 		DecrementSprintAndCheckFortFinish(_DeltaSeconds);
 	}
@@ -1604,10 +1681,6 @@ void APrototype2Character::DecrementSprintAndCheckFortFinish(float _DeltaSeconds
 	
 	if (bSprinting)
 	{
-		if (CanSprintTimer > 0)
-		{
-			CanSprintTimer -= chargingWithWeapon ? _DeltaSeconds * 3 : _DeltaSeconds;
-		}
 		if (SprintTimer > 0)
 		{
 			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 3 : _DeltaSeconds;
@@ -1627,7 +1700,14 @@ void APrototype2Character::DecrementSprintAndCheckFortFinish(float _DeltaSeconds
 	{
 		if (SprintTimer < SprintTime)
 		{
-			SprintTimer += _DeltaSeconds;
+			if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
+			{
+				DelayedSprintRegenTimer += _DeltaSeconds;
+			}
+			else
+			{
+				SprintTimer += _DeltaSeconds * 0.75f;
+			}
 		}
 		else
 		{
@@ -1635,11 +1715,6 @@ void APrototype2Character::DecrementSprintAndCheckFortFinish(float _DeltaSeconds
 
 			bHasNotifiedCanSprint = true;
 			bCanSprint = true;
-		}
-		
-		if (CanSprintTimer < CanSprintTime)
-		{
-			CanSprintTimer += _DeltaSeconds;
 		}
 	}
 }
@@ -1822,6 +1897,8 @@ void APrototype2Character::Server_DropItem_Implementation()
 	
 	if (!HeldItem->ItemComponent->Mesh)
 		return;
+	
+	HeldItem->Server_Drop();
 
 	PlaySoundAtLocation(GetActorLocation(), DropCue);
 	
@@ -1833,10 +1910,11 @@ void APrototype2Character::Server_DropItem_Implementation()
 
 	Multi_DropItem();
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-	if (auto SSComponent = HeldItem->SSComponent)
-	{
-		SSComponent->Boing();
-	}
+	
+	//if (auto SSComponent = HeldItem->SSComponent)
+	//{
+	//	SSComponent->Boing();
+	//}
 	if (HeldItem->ItemComponent->bGold)
 	{
 		bIsHoldingGold = false;

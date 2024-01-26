@@ -11,6 +11,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/DataAssets/SellBinData.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_SellCropUI.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
@@ -20,7 +21,7 @@ ASellBin::ASellBin()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
-	bReplicates = true;
+	
 	// Sell UI
 	//SellAmountWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("SellAmountWidgetComponent"));
 	//SellAmountWidgetComponent->SetupAttachment(RootComponent);
@@ -40,24 +41,27 @@ void ASellBin::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetReplicateMovement(true);
-	
 	InterfaceType = EInterfaceType::SellBin;
 
 	// Sell UI related
 	StartPosition = FVector(0, 0, 0);// SellAmountWidgetComponent->GetComponentLocation(); // Set UI start location variable
 	MovingTimer = MovingTime; // Set starting timer to equal max time
 
-	ItemComponent->Mesh->SetSimulatePhysics(false);
+	ItemComponent->Mesh->SetMobility(EComponentMobility::Movable);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
-	// Assign OnTouch Delegate
-	ItemComponent->Mesh->SetNotifyRigidBodyCollision(true);
-	ItemComponent->Mesh->SetGenerateOverlapEvents(true);
-	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASellBin::OnPlayerTouchSellBin);
-
 	
+	ItemComponent->Mesh->SetNotifyRigidBodyCollision(true);
+	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASellBin::OnPlayerTouchSellBin);
+	ItemComponent->Mesh->SetIsReplicated(true);
+	
+	if (SellBinData)
+	{
+		ItemComponent->Mesh->SetWorldScale3D(SellBinData->DesiredScale);
+	}
+	
+	SSComponent->SetMeshToStretch(ItemComponent->Mesh);
 }
 
 void ASellBin::Tick(float DeltaTime)
@@ -66,7 +70,7 @@ void ASellBin::Tick(float DeltaTime)
 	
 	//ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	
-	MoveUIComponent(DeltaTime);
+	//MoveUIComponent(DeltaTime);
 }
 
 bool ASellBin::IsInteractable(APrototype2PlayerState* _Player)
@@ -190,6 +194,9 @@ void ASellBin::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
 void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (!OtherActor->HasNetOwner())
+		return;
+	
 	if (!OtherActor)
 		return;
 	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
@@ -204,37 +211,30 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	{
 		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 		{
-			FireSellFX(Plant, SomePlayer);
-			
-			bWidgetVisible = true;
-
-			if (SomePlayer->PlayerHUDRef)
-				SomePlayer->PlayerHUDRef->ClearPickupUI();
+			Client_OnPlayerSell(SomePlayer);
 			
 			// Audio
-			if (SomePlayer->SellCue)
+			if (HasAuthority())
 			{
-				SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue);
-			}
+				SSComponent->Boing();
+				
+				if (SomePlayer->SellCue)
+				{
+					SomePlayer->Multi_PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+				}
+				
+				SomePlayer->PlayerStateRef->AddCoins(Plant);
 
-			SomePlayer->PlayerStateRef->AddCoins(Plant);
-
-			// Reset player speed incase of gold plant
-			SomePlayer->bIsHoldingGold = false;
+				// Reset player speed incase of gold plant
+				SomePlayer->bIsHoldingGold = false;
 			
-			// Destroy the crop the player is holding
-			SomePlayer->HeldItem->Destroy();
-			SomePlayer->HeldItem = nullptr;
-
-			if (SomePlayer->PlayerHUDRef)
-			{
-				SomePlayer->PlayerHUDRef->ClearPickupUI();
-				SomePlayer->PlayerHUDRef->SetHUDInteractText("");
+				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
+				
+				// Destroy the crop the player is holding
+				SomePlayer->HeldItem->Destroy();
+				SomePlayer->HeldItem = nullptr;
+				SomePlayer->RefreshCurrentMaxSpeed();
 			}
-			SomePlayer->EnableStencil(false);
-			ItemComponent->Mesh->SetRenderCustomDepth(false);
-
-			SomePlayer->RefreshCurrentMaxSpeed();
 		}
 	}
 }
@@ -257,9 +257,43 @@ void ASellBin::MoveUIComponent(float _Dt)
 	}
 }
 
-void ASellBin::Multi_OnItemSold_Implementation(int32 _PlayerID)
+void ASellBin::Client_Boing_Implementation()
 {
-	OnItemSoldDelegate.Broadcast(_PlayerID);
+	SSComponent->Boing();
+}
+
+void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player, APlant* _Plant)
+{
+	if (_Player->SellCue)
+	{
+		_Player->Multi_PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
+	}
+				
+	_Player->PlayerStateRef->AddCoins(_Plant);
+
+	// Reset player speed incase of gold plant
+	_Player->bIsHoldingGold = false;
+			
+	_Player->Multi_SocketItem(_Player->WeaponMesh, FName("Base-HumanWeapon"));
+				
+	// Destroy the crop the player is holding
+	_Player->HeldItem->Destroy();
+	_Player->HeldItem = nullptr;
+	_Player->RefreshCurrentMaxSpeed();
+}
+
+void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
+{
+	if (_Player->PlayerHUDRef)
+		_Player->PlayerHUDRef->ClearPickupUI();
+	
+	ItemComponent->SetStencilEnabled(false);
+	OnItemSoldDelegate.Broadcast(_Player->PlayerStateRef->Player_ID);
+}
+
+void ASellBin::Multi_OnPlayerSell_Implementation(APrototype2Character* _Player)
+{
+	
 }
 
 void ASellBin::Interact(APrototype2Character* _Player)

@@ -25,23 +25,44 @@ public:
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
+	virtual void OnClientWalkAway(APrototype2Character* _Player) override;
 
+	UFUNCTION()
+	bool HasSpawnedFruit();
 	/* Public Variables */
 public:	
 	class UStaticMeshComponent* GetMesh();
+
+		
+	UPROPERTY(EditAnywhere)
+	TArray<class USeedData*> FertiliserDatas;
+
+	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
+	class AFertiliser* SpawnedFertiliser{};
 
 	/* Protected Functions */
 protected:
 	void GenerateFertiliserOnTimer(float _DeltaTime);
 	void SpawnFertiliser();
 
+	void CheckForTooManyFertiliserBags();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SetGhostMaterial(AFertiliser* _Fertiliser);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_SetFertilizerMaterial(AFertiliser* _Fertiliser);
 	/* Protected Variables */
 protected:
 	UPROPERTY(EditAnywhere)
-	int32 ChanceOfConcrete_Inverse{3};
+	class UMaterialInstance* GhostMaterial{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bBagCountReachedMax{};
 	
 	UPROPERTY(EditAnywhere)
-	TArray<class USeedData*> FertiliserDatas;
+	UStaticMeshComponent* ChickenMesh{};
+	
+	UPROPERTY(EditAnywhere)
+	int32 ChanceOfConcrete_Inverse{3};
+
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;
@@ -52,8 +73,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<class AFertiliser> FertiliserPrefab;
 
-	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
-	class AFertiliser* SpawnedFertiliser{};
+
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float SpawnInterval{10.0f};

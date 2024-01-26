@@ -362,3 +362,15 @@ int32 UWidget_LobbyCharacterSelection::GetNumberOfBluePlayers()
 	UE_LOG(LogTemp, Warning, TEXT("Number Of Blue Players: %s"), *FString::FromInt(Count));
 	return Count;
 }
+
+void UWidget_LobbyCharacterSelection::UpdateTeamsCharacterColourFromSelection(int32 _NumberOfColors)
+{
+	IdealDetails.Colour = (EColours)_NumberOfColors;
+	SetCharacterColourFromSelection(_NumberOfColors);
+	
+	if (!OwningController)
+		return;
+	
+	OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+	UpdateCharacterImage(OwningController);	
+}

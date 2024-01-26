@@ -222,6 +222,9 @@ public:
 	UImage* P6Crown;
 
 	/* Team games */
+	UPROPERTY(EditAnywhere)
+	class UColourData* ColourData;
+	
 	/* Team UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team1Coins;
@@ -249,9 +252,9 @@ public:
 	UOverlay* OverlayTeam2;
 
 	/* Team rings/colours */
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* T1Ring;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* T2Ring;
 	
 	// Pickup UI
@@ -265,9 +268,7 @@ public:
 	// Weapon UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* WeaponImage;
-
 	
-
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	//UTexture2D* LeekWeaponTexture;
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite)

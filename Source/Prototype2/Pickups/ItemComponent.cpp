@@ -15,30 +15,32 @@ UItemComponent::UItemComponent()
 
 	Mesh->SetRenderCustomDepth(false);
 	Mesh->CustomDepthStencilValue = 1;
-	Mesh->SetIsReplicated(true);
 }
 
 void UItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (!bDoBeginPlay)
-	{
-		return;
-	}
 	
-	Mesh->SetCollisionProfileName("Ragdoll");
-	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
-	Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
-
-	//if(GetOwner()->HasAuthority())
+	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	
+	//if (!bDoBeginPlay)
 	//{
-	//	//Mesh->SetSimulatePhysics(true);
+	//	return;
 	//}
-
-	Mesh->SetRenderCustomDepth(false);
+	//
+	//Mesh->SetCollisionProfileName("Ragdoll");
+	//Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	//Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	//Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	//Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+//
+	////if(GetOwner()->HasAuthority())
+	////{
+	////	//Mesh->SetSimulatePhysics(true);
+	////}
+//
+	//Mesh->SetRenderCustomDepth(false);
 }
 
 void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActorComponentTickFunction* _ThisTickFunction)
@@ -55,7 +57,6 @@ void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemP
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UItemComponent, Mesh);
 	DOREPLIFETIME(UItemComponent, bGold);
 	DOREPLIFETIME(UItemComponent, bDoBeginPlay);
 }
@@ -70,6 +71,11 @@ void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, USt
 	{
 		Mesh->SetMaterial(i, _InMaterials[i]);
 	}
+}
+
+void UItemComponent::SetStencilEnabled(bool _StencilEnabled)
+{
+	Mesh->SetRenderCustomDepth(_StencilEnabled);
 }
 
 void UItemComponent::Multi_DisableCollisionAndAttach_Implementation()

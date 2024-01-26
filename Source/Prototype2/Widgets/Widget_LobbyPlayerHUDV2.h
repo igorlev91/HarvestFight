@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Widget_LobbyPlayerHUD.h"
+#include "Components/SizeBox.h"
+#include "Components/VerticalBox.h"
+#include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Widget_LobbyPlayerHUDV2.generated.h"
 
 UCLASS()
@@ -29,12 +32,15 @@ public:
 
 	UFUNCTION()
 	void InitTeams();
+
+	UFUNCTION()
+	void UpdateTeams();
 	
 	/* Brawl Mode Map Choice Widget*/
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UWidget_MapChoice* WBP_MapChoiceBrawl;
 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	class UWidget_LobbyCharacterSelection* WBP_LobbyCharacterSelection;
 
 	// teams
@@ -52,22 +58,28 @@ public:
 	UPROPERTY(EditAnywhere)
 	UTexture2D* RingTexture{};
 
+	/* Vertical Boxes - holding players overlays */
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UVerticalBox* VerticalBoxLeft;
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UVerticalBox* VerticalBoxRight;
+	
 	/* Array of all overlays */
 	UPROPERTY(VisibleAnywhere)
 	TArray<class UOverlay*> Overlays;
 	
 	/* Player Icons */
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer3;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer4;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer5;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UOverlay* OverlayPlayer6;
 	
 	/* Array of all icons */

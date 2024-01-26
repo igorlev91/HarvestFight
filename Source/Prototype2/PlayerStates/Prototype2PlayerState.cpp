@@ -64,7 +64,7 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 {
 	bIsShowingExtraCoins = true;
-	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier) * Gamestate->SellMultiplier;
+	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1)) * Gamestate->SellMultiplier;
 	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->SeedData->GoldMultiplier : PlantSellValue;
 	Multi_OnAddCoins();
 }
@@ -91,6 +91,11 @@ void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(FChar
 	Details = _Details;
 	UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character: %s"), *FString::FromInt((int32)_Details.Character));
 	//UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character Colour: %s"), *FString::FromInt((int32)_Colour));
+}
+
+void APrototype2PlayerState::Client_OnAddCoins_Implementation()
+{
+	OnItemSoldDelegate.Broadcast(Player_ID);
 }
 
 void APrototype2PlayerState::Multi_OnAddCoins()

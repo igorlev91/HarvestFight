@@ -42,8 +42,12 @@ void ALobbyGamestate::BeginPlay()
 	/* Pre set backup level */
 	if (GameMode == 0) // Normal Mode
 		MapChoice = "/Game/Maps/Level_FF_Large";
-	else // Brawl Mode
+	else if (GameMode == 1) // Brawl Mode
 		MapChoice = "/Game/Maps/Level_FF_Brawl";
+	else if (GameMode == 2) // Blitz Mode
+		MapChoice = "/Game/Maps/Level_FF_Blitz";
+	else if (GameMode == 3) // Blitz Mode
+		MapChoice = "/Game/Maps/Level_FF_Chaos";
 
 
 }
@@ -53,6 +57,8 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 	Super::Tick(_DeltaSeconds);
 	
 	TickTimers(_DeltaSeconds);
+
+	UpdateTeams();
 }
 
 void ALobbyGamestate::SetIsReady(int32 _Player, bool _bIsReady)
@@ -215,23 +221,29 @@ void ALobbyGamestate::PickMapToPlay()
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = "/Game/Maps/Level_FF_Large";
-			else // Brawl Mode
+			else if (GameMode == 1) // Brawl Mode
 				MapChoice = "/Game/Maps/Level_FF_Brawl";
+			else if (GameMode == 2) // Blitz Mode
+				MapChoice = "/Game/Maps/Level_FF_Blitz";
 			
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = "/Game/Maps/Level_Winter_LargeV2";
-			else // Brawl Mode
+			else if (GameMode == 1)// Brawl Mode
 				MapChoice = "/Game/Maps/Level_Winter_Brawl";
+			else if (GameMode == 2) // Blitz Mode
+				MapChoice = "/Game/Maps/Level_Winter_Blitz";
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = "/Game/Maps/Level_Honey_Large";
-			else // Brawl Mode
+			else if (GameMode == 1) // Brawl Mode
 				MapChoice = "/Game/Maps/Level_Honey_Brawl";
+			else if (GameMode == 2) // Blitz Mode
+				MapChoice = "/Game/Maps/Level_Honey_Blitz";
 		}
 		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm) // floating islands farm gets most votes
 			{
@@ -356,13 +368,18 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					bShowMapChoice = true; // Show map choice
+					if (GameMode != 3) // Only show map choice if not a chaos map
+						bShowMapChoice = true; // Show map choice
+
 					//PickMapToPlay();
 
 					// Countdown between all players choosing map and actually starting
 					
 					if (MapChoiceTotalLengthSeconds > 0)
 					{
+						if (GameMode == 3) // Turn map choice value to 0 if on chaos (since no map choice)
+							MapChoiceTotalLengthSeconds = 0; 
+						
 						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 
 						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
@@ -379,7 +396,11 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 						{
 							bIsCountingDown = false;
 
-							PickMapToPlay();
+							/* Map selection unless chaos */
+							if (GameMode == 3)
+								MapChoice = "/Game/Maps/Level_FF_Chaos";
+							else
+								PickMapToPlay();
 						
 							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 							{
@@ -413,6 +434,45 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 				{
 					LobbyLengthMinutes--;
 					LobbyLengthSeconds = 60;
+				}
+			}
+		}
+	}
+}
+
+void ALobbyGamestate::UpdateTeams()
+{
+	if (!bTeams)
+		return;
+
+	/* Team 1 */
+	if (Server_TeamOne.Num() > 0)
+	{
+		for (int i = 0; i < Server_TeamOne.Num(); i++)
+		{
+			if (auto Player = Server_TeamOne[i])
+			{
+				if (Player->Details.Colour == TeamTwoColour)
+				{
+					Server_TeamTwo.Add(Player);
+					Server_TeamOne.RemoveAt(i);
+					i--;
+				}
+			}
+		}
+	}
+	/* Team 2 */
+	if (Server_TeamTwo.Num() > 0)
+	{
+		for (int i = 0; i < Server_TeamTwo.Num(); i++)
+		{
+			if (auto Player = Server_TeamTwo[i])
+			{
+				if (Player->Details.Colour == TeamOneColour)
+				{
+					Server_TeamOne.Add(Player);
+					Server_TeamTwo.RemoveAt(i);
+					i--;
 				}
 			}
 		}

@@ -124,6 +124,7 @@ void ARadialPlot::SpawnGrowSpots(EColours _PlayerColour)
 				newPlot->RadialPlot = this;
 				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
+				newPlot->SetActorRotation(PlotSign->GetActorRotation());
 				newPlot->OwningPlayerColor = _PlayerColour;
 				GrowSpots.Add(newPlot);
 			}

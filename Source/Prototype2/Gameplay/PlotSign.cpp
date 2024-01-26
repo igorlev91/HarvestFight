@@ -26,11 +26,10 @@ void APlotSign::BeginPlay()
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
-	if (!HasAuthority())
-		return;
-	
-	SSComponent->SetMeshesToStretch({ItemComponent->Mesh},{});
 	SSComponent->Enable();
+	
+	if (HasAuthority())
+		SSComponent->SetMeshToStretch({ItemComponent->Mesh});
 }
 
 void APlotSign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -44,6 +43,17 @@ void APlotSign::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (CurrentPlayerClaimingPlot)
+	{
+		if (CurrentPlayerClaimingPlot->bIsHoldingInteract == false)
+		{
+			// Talk to HUD through delegates
+			CurrentPlayerClaimingPlot->Client_OnStoppedClaimingPlot();
+			
+			UKismetSystemLibrary::PrintString(GetWorld(), "STOPPED CLAIMING PLOT!");
+			CurrentPlayerClaimingPlot = nullptr;
+		}
+	}
 }
 
 UStaticMeshComponent* APlotSign::GetMesh()
@@ -53,17 +63,32 @@ UStaticMeshComponent* APlotSign::GetMesh()
 
 void APlotSign::Interact(APrototype2Character* _Player)
 {
-	ClaimPlot(_Player);
+	if (bHasBeenClaimed)
+		return;
+
+	if (CurrentPlayerClaimingPlot)
+		return;
+	
+	// anything that needs to happen once
+	_Player->bIsHoldingInteract = true;
+	CurrentPlayerClaimingPlot = _Player;
+	HoldInteractTimer = 0.0f;
 }
 
 void APlotSign::HoldInteract(APrototype2Character* _Player)
 {
+	if (!_Player->bIsHoldingInteract)
 	return;
-	UKismetSystemLibrary::PrintString(GetWorld(), "ClaimingPlot!");
+	
 	HoldInteractTimer += GetWorld()->DeltaTimeSeconds;
+
+	// Talk to HUD through delegates
+	_Player->Client_OnClaimingPlot(HoldInteractTimer, HoldInteractTotalDuration);
+	
 	if (HoldInteractTimer >= HoldInteractTotalDuration)
 	{
 		ClaimPlot(_Player);
+		_Player->bIsHoldingInteract = false;
 	}
 }
 
@@ -102,9 +127,6 @@ void APlotSign::ClientInteract(APrototype2Character* _Player)
 
 void APlotSign::ClaimPlot(APrototype2Character* _Player)
 {
-	if (bHasBeenClaimed)
-		return;
-	
 	AActor* Parent = GetAttachParentActor();
 	if (!Parent)
 		return;

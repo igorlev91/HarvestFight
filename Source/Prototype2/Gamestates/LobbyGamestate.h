@@ -88,6 +88,9 @@ private:
 	void PickMapToPlay();
 
 	void TickTimers(float _DeltaSeconds);
+
+	void UpdateTeams();
+	
 	/* Private Variables */
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))

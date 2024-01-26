@@ -9,6 +9,7 @@
 #include "WhatTheFlock/Public/Flock.h"
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/GrowSpot.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 ABeehive::ABeehive()
 {
@@ -85,6 +86,7 @@ void ABeehive::Interact(APrototype2Character* _Player)
 
 void ABeehive::ClientInteract(APrototype2Character* _Player)
 {
+	SSComponent->Boing();
 }
 
 void ABeehive::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
@@ -108,6 +110,9 @@ void ABeehive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void ABeehive::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (TimeTillCollect > 0)
+		ItemComponent->Mesh->SetWorldScale3D(FMath::Lerp(SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
 
 	if (!HasAuthority())
 		return;
@@ -141,7 +146,7 @@ void ABeehive::Tick(float DeltaSeconds)
 		}
 	}
 
-	ItemComponent->Mesh->SetRelativeScale3D(FMath::Lerp(FVector::One() * SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
+
 }
 
 void ABeehive::Multi_DestroyBees_Implementation()

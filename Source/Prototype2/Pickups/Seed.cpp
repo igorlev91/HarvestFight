@@ -39,7 +39,12 @@ void ASeed::BeginPlay()
 	SpawnRotation = GetActorRotation();
 	SpawnTime = GetWorld()->GetTimeSeconds();
 	ItemComponent->Mesh->SetSimulatePhysics(false);
-	
+
+	if (SeedData)
+	{
+		if (SeedData->BabyType == EPickupDataType::BeehiveData)
+			ItemComponent->Mesh->SetWorldScale3D({2.0f,2.0f,2.0f});
+	}
 }
 
 void ASeed::Tick(float _DeltaSeconds)
@@ -56,14 +61,7 @@ void ASeed::Interact(APrototype2Character* _Player)
 {
 	ItemComponent->Interact(_Player, this);
 	
-	_Player->EnableStencil(false);
-	if (_Player->PlayerHUDRef)
-	{
-		_Player->PlayerHUDRef->SetHUDInteractText("");
-	}
-	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Disable();
 }
 
 void ASeed::HoldInteract(APrototype2Character* _Player)
@@ -74,7 +72,14 @@ void ASeed::ClientInteract(APrototype2Character* _Player)
 {
 	IInteractInterface::ClientInteract(_Player);
 
-	//_Player->UpdateDecalDirection(true, false);
+	_Player->EnableStencil(false);
+	if (_Player->PlayerHUDRef)
+	{
+		_Player->PlayerHUDRef->SetHUDInteractText("");
+	}
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+	SSComponent->Boing();
 }
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)

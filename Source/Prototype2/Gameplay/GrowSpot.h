@@ -39,6 +39,9 @@ public:
 	void DegradeConcrete();
 	UFUNCTION(Server, Reliable)
 	void Server_DegradeConcrete();
+
+	UPROPERTY(EditAnywhere)
+	class UGrowSpotData* GrowSpotData;
 	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -66,6 +69,11 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;
 
+	/* Variables for stealing */
+	APrototype2Character* CurrentPlayerStealing = nullptr;
+	float HoldInteractTotalDuration = 5.0f;
+	float HoldInteractTimer = 0.0f;
+	
 protected:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
@@ -75,6 +83,8 @@ protected:
 	float GrowTimer{};
 	UPROPERTY(Replicated, VisibleAnywhere)
 	int32 ConcretedHealth{};
+	UPROPERTY(EditAnywhere)
+	int32 ConcreteTotalHealth{5};
 	UPROPERTY(EditAnywhere)
 	float ConcretedDamageInterval{0.2f};
 	UPROPERTY(Replicated, VisibleAnywhere)

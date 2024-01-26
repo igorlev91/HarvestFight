@@ -32,6 +32,9 @@ public:
 	void Multi_GrabSkinFromGameInstance(FCharacterDetails _Details);
 	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
+	UFUNCTION(Client, Unreliable)
+	void Client_OnAddCoins();
+	
 	void Multi_OnAddCoins();
 public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);

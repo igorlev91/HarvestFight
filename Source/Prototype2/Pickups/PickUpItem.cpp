@@ -29,6 +29,20 @@ void APickUpItem::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void APickUpItem::Client_Pickup()
+{
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+	SSComponent->Boing();
+}
+
+void APickUpItem::Client_Drop()
+{
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+	SSComponent->Boing();
+}
+
 void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 {
 	Server_SetSeedData(_Data,_PickupType);

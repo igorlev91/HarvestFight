@@ -58,10 +58,13 @@ public:
 	int32 GetNumberOfRedPlayers();
 	UFUNCTION()
 	int32 GetNumberOfBluePlayers();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateTeamsCharacterColourFromSelection(int32 _NumberOfColors);
 	
 	/* Public Variables */
 public:
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class ALobbyGamestate* GameStateReference;
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -90,7 +93,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	class USkinData* SkinData{nullptr};
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class APrototype2PlayerController* OwningController{nullptr};
 
 	/* Private Variables */

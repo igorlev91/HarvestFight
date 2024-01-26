@@ -25,6 +25,9 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
 	UPROPERTY(BlueprintAssignable)
 	FOnItemSold OnItemSoldDelegate;
+
+	UPROPERTY(EditAnywhere)
+	class USellBinData* SellBinData;
 	
 protected:
 	ASellBin();
@@ -48,10 +51,17 @@ protected:
 	void HideParticleSystem();
 	void MoveUIComponent(float _Dt);
 	
+	UFUNCTION(Client, Reliable)
+	void Client_OnPlayerSell(APrototype2Character* _Player);
+	UFUNCTION(Server, Reliable)
+	void Server_OnPlayerSell(APrototype2Character* _Player, APlant* _Plant);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_OnItemSold(int32 _PlayerID);
-	
+	void Multi_OnPlayerSell(APrototype2Character* _Player);
+	UFUNCTION(Client, Reliable)
+	void Client_Boing();
 protected:
+
+	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UItemComponent* ItemComponent;
 	

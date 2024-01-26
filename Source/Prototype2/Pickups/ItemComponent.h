@@ -26,13 +26,16 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DisableCollisionAndAttach();
+
+	UFUNCTION()
+	void SetStencilEnabled(bool _StencilEnabled);
 	
 public:
 
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bDoBeginPlay = true;;
 	
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
 	
 	UPROPERTY(Replicated, EditAnywhere)

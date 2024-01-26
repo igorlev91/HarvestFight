@@ -37,9 +37,6 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
 
-	if (!HasAuthority())
-		return;
-
 	auto PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>();
 	if (!PlayerStateReference)
 		return;
@@ -59,27 +56,13 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	
 	if (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
 	{
-		FCharacterDetails TeamAssociatedDefaultDetails{};
-		switch(GameStateReference->Server_Players.Num() % 2)
+		if (GameStateReference->Server_TeamOne.Num() <= GameStateReference->Server_TeamTwo.Num())
 		{
-		case 0:
-			{
-				TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamOneColour);
-				PlayerStateReference->Details = TeamAssociatedDefaultDetails;
-				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
-				
-				break;
-			}
-		case 1:
-			{
-				TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamTwoColour);
-				PlayerStateReference->Details = TeamAssociatedDefaultDetails;
-				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
-				
-				break;
-			}
-		default:
-			break;
+			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+		}
+		else
+		{
+			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Player %s Joined Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
 	}
@@ -92,9 +75,6 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 void ALobbyGamemode::Logout(AController* _Exiting)
 {
 	Super::Logout(_Exiting);
-	
-	if (!HasAuthority())
-		return;
 
 	ALobbyPlayerState* PlayerStateReference = _Exiting->GetPlayerState<ALobbyPlayerState>();
 	if (!PlayerStateReference)

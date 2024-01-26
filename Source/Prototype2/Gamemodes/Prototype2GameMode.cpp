@@ -2,6 +2,7 @@
 
 #include "Prototype2GameMode.h"
 
+#include "NavigationSystem.h"
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
@@ -47,6 +48,22 @@ void APrototype2GameMode::BeginPlay()
 		GameStateRef = Gamestate;
 		Gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
 	}
+
+	if (HasAuthority())
+	{
+		FVector SpawnPos{0.0f, 0.0f, 900.0f};
+		FRotator Rotation{};
+		FActorSpawnParameters SpawnParams{};
+		DefaultPreGameArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, SpawnPos, Rotation, SpawnParams);
+		DefaultPreGameArena->SetReplicates(true);
+		DefaultPreGameArena->SetReplicateMovement(true);
+		for(int i = 0; i < DefaultPreGameArena->Mesh->GetNumMaterials(); i++)
+		{
+			auto PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(DefaultPreGameArena->Mesh->GetMaterial(i), this);
+			PlotSignMaterialDynamic->SetVectorParameterValue(FName("ColourTint"), FVector4{0.126924, 1.0, 0.479413, 1.0});
+			DefaultPreGameArena->Mesh->SetMaterial(i, PlotSignMaterialDynamic);
+		}
+	}
 }
 
 void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
@@ -55,7 +72,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 
 	if (!HasAuthority())
 		return;
-
+	
 	APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>();
 	if (!PlayerStateReference)
 		return;
@@ -80,12 +97,16 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 			
 	Character->PlayerStateRef = PlayerStateReference;
 	Character->SetPlayerState(PlayerStateReference);
-	Character->SetOwner(_NewPlayer);
 	
 	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 	TeleportToPreGameArena(Character);
 
-	if (bTeams || (GameStateReference->Server_Players.Num() <= 1 && GameInstance->bTeams))
+	if (GameStateReference->Server_Players.Num() == 1)
+	{
+		GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+		return;
+	}
+	if (bTeams)
 	{
 		TArray<EColours> ScannedColours{};
 		for(auto PlayerState : GameStateReference->Server_Players)
@@ -116,7 +137,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 void APrototype2GameMode::Logout(AController* _Exiting)
 {
 	Super::Logout(_Exiting);
-	
+
 	if (!HasAuthority())
 		return;
 
@@ -145,6 +166,9 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 
+	if (!HasAuthority())
+		return;
+
 	if (!EndGamePodium)
 	{
 		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
@@ -153,21 +177,13 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 			EndGamePodium = Cast<AEndGamePodium>(NewActor);
 		}
 	}
-
+	
 	if (!SellBinRef)
 	{
 		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
 		if (NewActor)
 		{
 			SellBinRef = Cast<ASellBin>(NewActor);
-		}
-	}
-
-	if (!PreGameArena)
-	{
-		if (AActor* PreGameActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass()))
-		{
-			PreGameArena = Cast<APreGameArena>(PreGameActor);
 		}
 	}
 	
@@ -195,6 +211,13 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 	{
 		AutomaticCrownCheckTimer -= _DeltaSeconds;
 	}
+
+	// Teams functionality
+	SpawnTeamsPreGameArena();
+	TeleportHostToPreGameArena();
+	TeleportHostToTeamsPreGameArena();
+	ColourTeamsPreGameArenas();
+	TeleportUnteleportedPlayersToPreGameArena_Teams();
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* _PlayerController)
@@ -274,10 +297,14 @@ void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APrototype2GameMode, EndGamePodium);
 	DOREPLIFETIME(APrototype2GameMode, SellBinRef);
-	DOREPLIFETIME(APrototype2GameMode, PreGameArena);
+	DOREPLIFETIME(APrototype2GameMode, PreGameArenas);
 	DOREPLIFETIME(APrototype2GameMode, KingCrown);
 	DOREPLIFETIME(APrototype2GameMode, DataAssetWorldOverride);
 	DOREPLIFETIME(APrototype2GameMode, AutomaticCrownCheckTimer);
+	//
+	DOREPLIFETIME(APrototype2GameMode, DefaultPreGameArena);
+	DOREPLIFETIME(APrototype2GameMode, PGONewDynamicMaterial);
+	DOREPLIFETIME(APrototype2GameMode, PGTNewDynamicMaterial);
 }
 
 void APrototype2GameMode::TeleportEveryoneToPodium()
@@ -560,13 +587,180 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 	}
 }
 
-void APrototype2GameMode::TeleportToPreGameArena(APrototype2Character* _Player)
+void APrototype2GameMode::SpawnTeamsPreGameArena()
 {
-	AActor* PreGameArenaActor = UGameplayStatics::GetActorOfClass(GetWorld(), APreGameArena::StaticClass());
-	if (!PreGameArenaActor)
+	if (bTeams && !bPreGameArenasAdjustedForTeams && PreGameArenaPrefab)
+	{
+		DefaultPreGameArena->Destroy();
+
+		FNavLocation Result{};
+		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			if (NavSys->GetRandomPointInNavigableRadius({0.0f,0.0f,300.0f}, 1000, Result))
+			{
+				APreGameArena* TeamAArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {Result.Location.X, -Result.Location.Y, 1000.0f}, FRotator{}, {});
+				TeamAArena->SetReplicates(true);
+				TeamAArena->SetReplicateMovement(true);
+				PreGameArenas.Add(TeamAArena);
+			}
+		}
+	
+		APreGameArena* TeamBArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {-Result.Location.X, Result.Location.Y, 1000.0f}, FRotator{}, {});
+		TeamBArena->SetReplicates(true);
+		TeamBArena->SetReplicateMovement(true);
+		PreGameArenas.Add(TeamBArena);
+
+		bPreGameArenasAdjustedForTeams = true;
+	}
+}
+
+void APrototype2GameMode::TeleportToPreGameArena(APrototype2Character* _Player)
+{ 
+	GameStateRef = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameStateRef)
+		return;
+	if (GameStateRef->PlayerArray.Num() <= 1)
+	{
+		UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->SetActorLocation({0.0f, 0.0f, 1100.0f});
+	}
+	else
+	{
+		if (_Player && DefaultPreGameArena)
+			_Player->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+	}
+
+	PlayersTpdToPreGameArena_Teams.Add(false);
+}
+
+void APrototype2GameMode::TeleportUnteleportedPlayersToPreGameArena_Teams()
+{
+	if (!bTeams)
+		return;
+	
+	if (GameStateRef->TeamOneColour == EColours::RED && GameStateRef->TeamTwoColour == EColours::RED)
 		return;
 
-	_Player->SetActorLocation(PreGameArenaActor->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+	if (PreGameArenas.Num() < 2)
+		return;
+	
+	for (int i = 0; i < PlayersTpdToPreGameArena_Teams.Num(); i++)
+	{
+		if (PlayersTpdToPreGameArena_Teams[i] == false)
+		{
+			APrototype2Character* _Player = Cast<APrototype2Character>(GameStateRef->Server_Players[i]->GetPlayerController()->GetCharacter());
+			if (!_Player)
+				continue;
+			
+			if (PreGameArenas.Num() > 1)
+			{
+				if (GameStateRef->Server_Players[i]->Details.Colour == GameStateRef->TeamOneColour)
+				{
+					_Player->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+					PlayersTpdToPreGameArena_Teams[i] = true;
+				}
+				else if (GameStateRef->Server_Players[i]->Details.Colour == GameStateRef->TeamTwoColour)
+				{
+					_Player->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+					PlayersTpdToPreGameArena_Teams[i] = true;
+				}
+			}
+		}
+	}
+}
+
+void APrototype2GameMode::Multi_SetPreGameArenaMeshColour_Implementation()
+{
+	Client_SetPreGameArenaMeshColour();
+}
+
+void APrototype2GameMode::TeleportHostToPreGameArena()
+{
+	if (!bPreGameArenasAdjustedForTeams)
+		return;
+	
+	if (!bHostHasTpdToPreGameArena)
+	{
+		APrototype2Character* ServerCharacter = Cast<APrototype2Character>(GameStateRef->Server_Players[0]->GetPlayerController()->GetCharacter());
+		if (PreGameArenas.Num() > 1)
+		{
+			if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamOneColour)
+				ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+			else
+				ServerCharacter->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+		}
+		else if (DefaultPreGameArena)
+		{
+			ServerCharacter->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+		}
+
+		bHostHasTpdToPreGameArena = true;
+	}
+}
+
+void APrototype2GameMode::TeleportHostToTeamsPreGameArena()
+{
+	if (!bPreGameArenasAdjustedForTeams)
+		return;
+	
+	if (!bHostHasTpdToPreGameArena)
+		return;
+	
+	if (!bHostHasTpdToTeamsPreGameArena && bTeams && PreGameArenas.Num() > 1 && IsValid(PreGameArenas[1]))
+	{
+		APrototype2Character* ServerCharacter = Cast<APrototype2Character>(GameStateRef->Server_Players[0]->GetPlayerController()->GetCharacter());
+
+		if (ServerCharacter)
+		{
+			if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamOneColour)
+				ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+			else if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamTwoColour)
+				ServerCharacter->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+			else
+				ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+
+			
+			bHostHasTpdToTeamsPreGameArena = true;
+		}
+	}
+}
+
+void APrototype2GameMode::ColourTeamsPreGameArenas()
+{
+	if (!bPreGameArenasAdjustedForTeams)
+		return;
+	
+	if (!bHostHasTpdToPreGameArena)
+		return;
+
+	if (!bHostHasTpdToTeamsPreGameArena)
+		return;
+	
+	if (!bHasSetTeamsColours && ColourData)
+	{
+		if ((!PGTNewDynamicMaterial || !PGONewDynamicMaterial) && (GameStateRef->TeamTwoColour != EColours::RED && GameStateRef->TeamOneColour != EColours::RED))
+		{
+			PGONewDynamicMaterial = UMaterialInstanceDynamic::Create(PreGameArenas[0]->Mesh->GetMaterial(0), this);
+			PGONewDynamicMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8)GameStateRef->TeamOneColour]);
+			PGTNewDynamicMaterial = UMaterialInstanceDynamic::Create(PreGameArenas[1]->Mesh->GetMaterial(0), this);
+			PGTNewDynamicMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8)GameStateRef->TeamTwoColour]);
+
+			PreGameArenas[0]->Mesh->SetMaterial(0, PGONewDynamicMaterial);
+			PreGameArenas[1]->Mesh->SetMaterial(0, PGTNewDynamicMaterial);
+			
+			Multi_SetPreGameArenaMeshColour();
+		}
+	}
+}
+
+void APrototype2GameMode::Server_SetMeshColour_Implementation()
+{
+
+}
+
+void APrototype2GameMode::Client_SetPreGameArenaMeshColour_Implementation()
+{
+	PreGameArenas[0]->Mesh->SetMaterial(0, PGONewDynamicMaterial);
+	PreGameArenas[1]->Mesh->SetMaterial(0, PGTNewDynamicMaterial);
 }
 
 

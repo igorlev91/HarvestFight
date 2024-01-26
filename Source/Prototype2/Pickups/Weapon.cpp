@@ -44,6 +44,8 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 
 void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
+	_Player->WeaponFlashTimer = _Player->WeaponFlashDuration;
+	_Player->bShouldWeaponFlashRed = true;
 }
 
 void UWeapon::UpdateAOEIndicator(APrototype2Character* _Player)

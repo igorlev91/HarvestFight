@@ -14,20 +14,20 @@ void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
 {
 	Super::ChargeAttack(_Player);
 
-	_Player->Server_SetPlayerAimingMovement(true);
+	_Player->SetPlayerAimingMovement(true);
 }
 
 void UWeaponAspearagus::ChargeAttackCancelled(APrototype2Character* _Player)
 {
 	Super::ChargeAttackCancelled(_Player);
-	_Player->Server_SetPlayerAimingMovement(false);
+	_Player->SetPlayerAimingMovement(false);
 }
 
 void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
 	Super::ReleaseAttack(_bIsFullCharge, _Player);
 
-	_Player->Server_SetPlayerAimingMovement(false);
+	_Player->SetPlayerAimingMovement(false);
 	
 	if (_bIsFullCharge)
 	{

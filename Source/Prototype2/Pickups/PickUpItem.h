@@ -34,6 +34,11 @@ public:
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void Client_Pickup();
+	
+	virtual void Client_Drop();
+	virtual void Server_Drop() {}
+
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
 	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
 

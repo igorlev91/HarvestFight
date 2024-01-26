@@ -13,7 +13,6 @@ APreGameArena::APreGameArena()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
-	Mesh->SetMobility(EComponentMobility::Static);
 
 	bReplicates = true;
 }

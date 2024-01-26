@@ -22,7 +22,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool IsReady{};
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	int32 Player_ID{};
 
 	UPROPERTY(Replicated, VisibleAnywhere)
