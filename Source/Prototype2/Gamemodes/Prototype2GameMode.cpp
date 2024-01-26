@@ -52,11 +52,12 @@ void APrototype2GameMode::BeginPlay()
 	if (HasAuthority())
 	{
 		FVector SpawnPos{0.0f, 0.0f, 900.0f};
-		FRotator Rotation{};
+		FRotator Rotation{0.0f, 45.0f, 0.0f};
 		FActorSpawnParameters SpawnParams{};
 		DefaultPreGameArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, SpawnPos, Rotation, SpawnParams);
 		DefaultPreGameArena->SetReplicates(true);
 		DefaultPreGameArena->SetReplicateMovement(true);
+		DefaultPreGameArena->SetActorRotation(Rotation);
 		for(int i = 0; i < DefaultPreGameArena->Mesh->GetNumMaterials(); i++)
 		{
 			auto PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(DefaultPreGameArena->Mesh->GetMaterial(i), this);
@@ -593,21 +594,24 @@ void APrototype2GameMode::SpawnTeamsPreGameArena()
 	{
 		DefaultPreGameArena->Destroy();
 
+		FRotator Rotation{0.0f, 45.0f, 0.0f};
 		FNavLocation Result{};
 		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
 		{
-			if (NavSys->GetRandomPointInNavigableRadius({0.0f,0.0f,300.0f}, 1000, Result))
+			if (NavSys->GetRandomPointInNavigableRadius({0.0f,0.0f,300.0f}, 1300, Result))
 			{
-				APreGameArena* TeamAArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {Result.Location.X, -Result.Location.Y, 1000.0f}, FRotator{}, {});
+				APreGameArena* TeamAArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {Result.Location.X, -Result.Location.Y, 1000.0f}, Rotation, {});
 				TeamAArena->SetReplicates(true);
 				TeamAArena->SetReplicateMovement(true);
+				TeamAArena->SetActorRotation(Rotation);
 				PreGameArenas.Add(TeamAArena);
 			}
 		}
 	
-		APreGameArena* TeamBArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {-Result.Location.X, Result.Location.Y, 1000.0f}, FRotator{}, {});
+		APreGameArena* TeamBArena = GetWorld()->SpawnActor<APreGameArena>(PreGameArenaPrefab, {-Result.Location.X, Result.Location.Y, 1000.0f}, Rotation, {});
 		TeamBArena->SetReplicates(true);
 		TeamBArena->SetReplicateMovement(true);
+		TeamBArena->SetActorRotation(Rotation);
 		PreGameArenas.Add(TeamBArena);
 
 		bPreGameArenasAdjustedForTeams = true;

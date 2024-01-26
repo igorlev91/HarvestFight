@@ -14,6 +14,7 @@ APreGameArena::APreGameArena()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 
+
 	bReplicates = true;
 }
 
@@ -21,10 +22,15 @@ void APreGameArena::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	Mesh->SetIsReplicated(true);
+	SetReplicateMovement(true);
 
 	if (!HasAuthority())
 		return;
+
+	FRotator Rotation{0.0f, 45.0f, 0.0f};
+	SetActorRotation(Rotation);
+	Mesh->SetWorldRotation(Rotation);
 	
 	GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
 }

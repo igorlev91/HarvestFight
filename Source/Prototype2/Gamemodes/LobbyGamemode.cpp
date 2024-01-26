@@ -53,15 +53,19 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
-	
+	FCharacterDetails TeamAssociatedDefaultDetails{};
 	if (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
 	{
 		if (GameStateReference->Server_TeamOne.Num() <= GameStateReference->Server_TeamTwo.Num())
 		{
+			TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamOneColour);
+			PlayerStateReference->Details = TeamAssociatedDefaultDetails;
 			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
 		}
 		else
 		{
+			TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamTwoColour);
+			PlayerStateReference->Details = TeamAssociatedDefaultDetails;
 			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Player %s Joined Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
