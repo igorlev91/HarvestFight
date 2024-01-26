@@ -9,37 +9,8 @@
 UWeapon::UWeapon()
 {
 	//Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	InterfaceType = EInterfaceType::Weapon;
+	
 	SetIsReplicatedByDefault(true);
-}
-
-void UWeapon::Interact(APrototype2Character* _Player)
-{
-}
-
-void UWeapon::HoldInteract(APrototype2Character* _Player)
-{
-}
-
-void UWeapon::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
-{
-}
-
-bool UWeapon::IsInteractable(APrototype2PlayerState* _Player)
-{
-	return false;
-}
-
-void UWeapon::ChargeAttack(APrototype2Character* _Player)
-{
-}
-
-void UWeapon::ChargeAttackCancelled(APrototype2Character* _Player)
-{
-}
-
-void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
-{
 }
 
 void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
@@ -48,13 +19,10 @@ void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Pl
 	_Player->bShouldWeaponFlashRed = true;
 }
 
-void UWeapon::UpdateAOEIndicator(APrototype2Character* _Player)
+void UWeapon::Client_BroadcastAttackToHUD_Implementation(APrototype2Character* _Player)
 {
-}
-
-void UWeapon::BroadcastAttackToHUD_Implementation(APrototype2Character* _Player)
-{
-	_Player->OnExecuteAttackDelegate.Broadcast();
+	if (_Player)
+		_Player->OnExecuteAttackDelegate.Broadcast();
 }
 
 

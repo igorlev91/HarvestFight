@@ -54,19 +54,13 @@ APrototype2Character::APrototype2Character()
 {
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	// Set size for collision capsule
-		
-	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
 	InitCharacterMovementComponent();
-
 	InitCameraStuff();
-	
 	InitNiagraComponents();
-
 	InitMiscComponents();
 }
 
@@ -115,50 +109,31 @@ void APrototype2Character::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
-	PlayerController = Cast<APrototype2PlayerController>(Controller);
-	GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
-
-	if (PlayerController)
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-			UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMin = -100.0f; // lowest point looking up
-			UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 100.0f; // Highest point looking down
-		}
-	}
-
-	InitAudioComponents();
-
-	InitPlayerHUD();
-
-	// Set start position - for decal arrow
-	StartPosition = GetActorLocation();
 	
+	AssignHelperReferences();
+	InitInputMappingContext();
+	InitAudioComponents();
+	InitPlayerHUD();
 	InitDecals();
+	InitMeshAndCapsule();
+	InitWeapon();
+	InitShippingBin();
 
-	for(UMaterialInstance* Material : PlayerMaterials)
-	{
-		PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,this));
-	}
 }
 
 void APrototype2Character::DelayedBeginPlay()
 {
 	if (!PlayerStateRef)
-	{
 		PlayerStateRef = GetPlayerState<APrototype2PlayerState>();
-		if (HasAuthority())
+
+	if (PlayerMaterialsDynamic.Num() <= 0)
+	{
+		for(UMaterialInstance* Material : PlayerMaterials)
 		{
-			AutoAttackTimer = AutoAttackDuration;
-			bCanAttack = true;
+			PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,this));
 		}
 	}
-	
-	InitShippingBin();
 	InitPlayerNameWidgetComponent();
-	InitWeapon();
 	SyncCharacterColourWithPlayerState();
 }
 
@@ -195,33 +170,46 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 	}
 }
 
+void APrototype2Character::AssignHelperReferences()
+{
+	PlayerController = Cast<APrototype2PlayerController>(Controller);
+	GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+}
+
+void APrototype2Character::InitInputMappingContext()
+{
+	if (PlayerController)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMin = -100.0f; // lowest point looking up
+			UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 100.0f; // Highest point looking down
+		}
+	}
+}
+
 void APrototype2Character::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 	DelayedBeginPlay();
 	
+	TickTimers(_DeltaSeconds);
+	UpdateParticleSystems();
+	
 	ClearInteractionText();
-	
-	CheckForFloorSurface();
-
-	CheckForFalling(_DeltaSeconds);
-	
-	HandleAttackChargeBehavior(_DeltaSeconds);
-	
 	CheckForInteractables();
 	
-	UpdatePlayerHUD();
-
+	CheckForFloorSurface();
+	CheckForFalling(_DeltaSeconds);
+	
 	UpdateWeaponMeshSkin();
-
-	UpdateParticleSystems();
+	HandleAttackChargeBehavior(_DeltaSeconds);
 
 	UpdatePlayerNames();
-
-	TickTimers(_DeltaSeconds);
-		
+	UpdatePlayerHUD();
+	
 	ToggleParticleSystems();
-
 	UpdateSpeed();
 }
 
@@ -308,10 +296,35 @@ void APrototype2Character::Jump()
 
 void APrototype2Character::ChargeAttack()
 {
-	if (bIsHoldingInteract)
+	if (!Weapon)
 		return;
 	
-	Server_ChargeAttack();
+	if (bIsHoldingInteract)
+		return;
+
+	if (bIsChargingAttack)
+		return;
+
+	DropItem();
+	
+	if (AttackTimer <= 0.0f)
+	{
+		Weapon->Client_ChargeAttack(this);
+		
+		if (HasAuthority())
+		{
+			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("Base-HumanWeapon"));
+			
+			bIsChargingAttack = true;
+			Weapon->ChargeAttack(this);
+		}
+		else
+		{
+			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			Server_ChargeAttack();
+		}
+
+	}
 }
 
 void APrototype2Character::CancelChargeAttack()
@@ -321,7 +334,24 @@ void APrototype2Character::CancelChargeAttack()
 
 void APrototype2Character::ReleaseAttack()
 {
-	Server_SetPlayerAimingMovement(false);
+	
+	if (!Weapon)
+		return;
+
+	if (!bIsChargingAttack || !bCanAttack)
+		return;
+
+	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
+	{
+		// VFX
+		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+	}
+
+	if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
+	{
+		SetPlayerAimingMovement(false);
+	}
+	
 	Server_ReleaseAttack(GetActorLocation(), GetActorForwardVector());
 }
 
@@ -418,11 +448,40 @@ void APrototype2Character::Server_SetCharacterSpeed_Implementation(float _NewCur
 
 void APrototype2Character::DropItem()
 {
-	Client_DropItem();
-	
-	Server_DropItem();
-
-	Server_RefreshCurrentMaxSpeed();
+	if (HeldItem)
+	{
+		// Local Stuff
+		if (PlayerHUDRef)
+		{
+			PlayerHUDRef->ClearPickupUI();
+			PlayerHUDRef->SetHUDInteractText("");
+		}
+		HeldItem->Client_Drop();
+		
+		if (HasAuthority())
+		{
+			// Server_DropItem
+			if (DropCue)
+				PlaySoundAtLocation(GetActorLocation(), DropCue);
+			if (WeaponMesh)
+				Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			
+			Multi_DropItem();
+			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+			
+			if (HeldItem->ItemComponent->bGold)
+			{
+				bIsHoldingGold = false;
+			}
+			HeldItem = nullptr;
+			//
+		}
+		else
+		{
+			Server_DropItem();
+		}
+		RefreshCurrentMaxSpeed();
+	}
 }
 
 void APrototype2Character::CheckForInteractables()
@@ -608,10 +667,7 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	GetCharacterMovement()->Launch(KnockAway);
 	
 	// Drop item
-	if (HeldItem)
-	{
-		DropItem();
-	}
+	DropItem();
 
 	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
 
@@ -707,12 +763,14 @@ void APrototype2Character::InitCameraStuff()
 
 void APrototype2Character::InitMeshAndCapsule()
 {
-	// Set collisions
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	
+	// Set collisions
+	GetMesh()->SetIsReplicated(true);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
 void APrototype2Character::InitNiagraComponents()
@@ -1125,8 +1183,10 @@ void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector _Dest
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _Montage)
 {
-	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
-	Server_PlayNetworkMontage(_Montage);
+	if (HasAuthority())
+		Multi_PlayNetworkMontage(_Montage);
+	else
+		Server_PlayNetworkMontage(_Montage);
 }
 
 UCameraComponent* APrototype2Character::ReturnFollowCamera()
@@ -1143,7 +1203,14 @@ void APrototype2Character::DropWeapon()
 void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
 {
 	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
-	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+	//GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+	bAllowMovementFromInput = !_bIsAiming;
+}
+
+void APrototype2Character::Client_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+{
+	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
+	//GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
 }
 
@@ -1266,7 +1333,40 @@ void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _b
 
 void APrototype2Character::RefreshCurrentMaxSpeed()
 {
-	Server_RefreshCurrentMaxSpeed();
+	if (HasAuthority())
+	{
+		if (DebuffComponent->CurrentDebuff != EDebuff::None)
+		{
+			return;
+		}
+
+		if (bIsHoldingGold)
+		{
+			if (bSprinting)
+			{
+				CurrentMaxWalkSpeed = WalkSpeed;
+				DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+				ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+				return;
+			}
+			CurrentMaxWalkSpeed = GoldPlantSpeed;
+			DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+			return;
+		}
+		if (bSprinting)
+		{
+			CurrentMaxWalkSpeed = SprintSpeed;
+			DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+			ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+			return;
+		}
+		CurrentMaxWalkSpeed = WalkSpeed;
+		DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+	}
+	else
+	{
+		Server_RefreshCurrentMaxSpeed();
+	}
 }
 
 void APrototype2Character::ResetAttack()
@@ -1288,18 +1388,14 @@ void APrototype2Character::ResetAttack()
 
 		SetPlayerAimingMovement(false);
 	}
-
-
-	//Server_SetPlayerAimingMovement(false);
+	else
+	{
+		Server_SetPlayerAimingMovement(false);
+	}
 }
 
 void APrototype2Character::Server_RefreshCurrentMaxSpeed_Implementation()
 {
-	if (!HasAuthority())
-	{
-		return;
-	}
-	
 	if (DebuffComponent->CurrentDebuff != EDebuff::None)
 	{
 		return;
@@ -1442,29 +1538,12 @@ void APrototype2Character::InitAudioComponents()
 
 void APrototype2Character::InitWeapon()
 {
-	if (PlayerHUDRef)
+	if (HasAuthority())
 	{
-		PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponSeedData->WeaponData->WeaponIcon);
+		AutoAttackTimer = AutoAttackDuration;
+		bCanAttack = true;
 	}
-	//InitWeaponMesh();
 }
-
-void APrototype2Character::InitWeaponMesh()
-{
-	if (!WeaponMesh)
-		return;
-
-	WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("Base-HumanWeapon"));
-	
-	if (!AttackAreaIndicatorMesh)
-		return;
-
-	if (!DefaultWeaponSeedData)
-		return;
-
-	AttackAreaIndicatorMesh->SetStaticMesh(DefaultWeaponSeedData->WeaponData->AOEIndicatorMesh);
-}
-
 void APrototype2Character::InitPlayerHUD()
 {
 	if (PlayerHUDRef)
@@ -1476,11 +1555,13 @@ void APrototype2Character::InitPlayerHUD()
 	if (!PlayerHudPrefab)
 		return;
 	
-	if (!HasIdealRole())
+	if (!HasNetOwner())
 		return;
 	
 	PlayerHUDRef = CreateWidget<UWidget_PlayerHUD>(PlayerController, PlayerHudPrefab);
 	PlayerHUDRef->AddToViewport();
+
+	PlayerHUDRef->WeaponImage->SetBrushFromTexture(CurrentWeaponSeedData->WeaponData->WeaponIcon);
 }
 
 void APrototype2Character::InitShippingBin()
@@ -1731,7 +1812,6 @@ void APrototype2Character::Multi_SyncCharacterColour_Implementation()
 
 void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage* _Montage)
 {
-	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
 	Multi_PlayNetworkMontage(_Montage);
 }
 
@@ -1785,31 +1865,12 @@ void APrototype2Character::Multi_Client_AddHUD_Implementation()
 
 void APrototype2Character::Server_ChargeAttack_Implementation()
 {
-	if (AttackTimer <= 0.0f)
-	{
-		if (HeldItem)
-		{
-			DropItem();
-		}
-		
-		bIsChargingAttack = true;
-
-		if (Weapon)
-		{
-			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-		}
-		Weapon->ChargeAttack(this);
-	}
+	bIsChargingAttack = true;
+	Weapon->ChargeAttack(this);
 }
 
 void APrototype2Character::Server_ReleaseAttack_Implementation(FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	// Create a sphere collider, check if player hit, call player hit	
-	if (!bIsChargingAttack || !bCanAttack)
-	{
-		return;
-	}
-	
 	bCanAttack = false;
 	
 	// Socket Weapon back to held
@@ -1817,20 +1878,21 @@ void APrototype2Character::Server_ReleaseAttack_Implementation(FVector _CachedAc
 	
 	// Set the radius of the sphere for attack
 	int32 AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
-	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
-	{
-		// VFX
-		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
-	}
 	
 	// If attack button is clicked without being held
-	if (AttackChargeAmount < MaxAttackCharge)//InstantAttackThreshold)
+	if (AttackChargeAmount < MaxAttackCharge) // InstantAttackThreshold
 	{
 		Weapon->ReleaseAttack(false, this);
 		
 		// Delayed attack
 		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([this, AttackSphereRadius, _CachedActorLocation, _CachedForwardVector] { ExecuteAttack(AttackSphereRadius, _CachedActorLocation, _CachedForwardVector); }), InstantAttackDelay, false);	
+		GetWorld()->GetTimerManager().SetTimer(Handle,
+			FTimerDelegate::CreateLambda(
+				[this, AttackSphereRadius, _CachedActorLocation, _CachedForwardVector]
+				{
+					Client_SetPlayerAimingMovement(false);
+					ExecuteAttack(AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
+				}), InstantAttackDelay, false);	
 	}
 	else
 	{
@@ -1886,35 +1948,15 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_DropItem_Implementation()
 {
-	if (!HasIdealRole())
-		return;
-
-	if (!HeldItem)
-		return;
-	
-	if (!HeldItem->ItemComponent)
-		return;
-	
-	if (!HeldItem->ItemComponent->Mesh)
-		return;
-	
-	HeldItem->Server_Drop();
-
-	PlaySoundAtLocation(GetActorLocation(), DropCue);
-	
-	if (Weapon)
-	{
+	// Server_DropItem
+	if (DropCue)
+		PlaySoundAtLocation(GetActorLocation(), DropCue);
+	if (WeaponMesh)
 		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	}
-
-
+			
 	Multi_DropItem();
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-	
-	//if (auto SSComponent = HeldItem->SSComponent)
-	//{
-	//	SSComponent->Boing();
-	//}
+			
 	if (HeldItem->ItemComponent->bGold)
 	{
 		bIsHoldingGold = false;
@@ -1925,16 +1967,16 @@ void APrototype2Character::Server_DropItem_Implementation()
 void APrototype2Character::Multi_DropItem_Implementation()
 {
 	// Drop into world
-	if(HeldItem)
-	{
-		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		HeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
-		
-		HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	if (!HeldItem)
+		return;
 	
-		// So that CheckForInteractables() can see it again
-		HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
-	}
+	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
+		
+	HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
+	// So that CheckForInteractables() can see it again
+	HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, EPickupActor _PickupType)
@@ -2009,7 +2051,11 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 
 void APrototype2Character::Server_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
 {
-	Multi_SocketItem(_Object, _Socket);
+	_Object->SetSimulatePhysics(false);
+	_Object->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	_Object->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	
+	_Object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_Socket));
 }
 
 void APrototype2Character::Server_DropWeapon_Implementation()

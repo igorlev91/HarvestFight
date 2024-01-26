@@ -30,6 +30,9 @@ protected:
 	UFUNCTION()
 	void OnBoingUpdate(float _Value);
 
+	UFUNCTION()
+	void OnBoingFinish();
+	
 	UFUNCTION(Server, Unreliable)
 	void Server_Enable();
 
@@ -81,18 +84,15 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float BoingSquashMag{0.3f};
 
-	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
-	class UTimelineComponent* BoingTimeline{nullptr};
-	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
-	FOnTimelineFloat OnTimelineCallback{};
-
+	UPROPERTY(VisibleAnywhere)
+	FTimeline BoingTimeline;
+	
 	UPROPERTY()
 	AActor* ThisOwner{nullptr};
 	
-	UPROPERTY()
-	TEnumAsByte<ETimelineDirection::Type> BoingTimelineDirection;
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	class UCurveFloat* BoingCurve{};
 
 	UPROPERTY(meta = (AllowPrivateAccess))

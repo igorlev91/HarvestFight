@@ -19,12 +19,17 @@ USquashAndStretch::USquashAndStretch()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
+	static ConstructorHelpers::FObjectFinder<UCurveFloat> LinearCurveClass(TEXT("/Game/Curves/LinearCurve.LinearCurve"));
+	if (LinearCurveClass.Succeeded())
+	{
+		BoingCurve = LinearCurveClass.Object;
+	}
 }
 
 void USquashAndStretch::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	ThisOwner = GetOwner();
 
 	TArray<UActorComponent*> FoundComponent{};
@@ -41,22 +46,18 @@ void USquashAndStretch::BeginPlay()
 		OwningFertiliserSpawner = SomeFertilizerSpawner;
 	
 	FindMeshesToStretch();
-	
+
+	//
 	if (BoingCurve)
 	{
-		BoingTimeline = NewObject<UTimelineComponent>(GetOuter(), UTimelineComponent::StaticClass(), TEXT("Boing Timeline"));
-		BoingTimeline->SetNetAddressable();    // This component has a stable name that can be referenced for replication
-		BoingTimeline->SetPropertySetObject(GetOuter()); // Set which object the timeline should drive properties on
-		BoingTimeline->SetDirectionPropertyName(FName("BoingTimelineDirection"));
-		BoingTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
-		BoingTimeline->SetPlaybackPosition(0.0f, true);
-		OnTimelineCallback.BindDynamic(this, &USquashAndStretch::OnBoingUpdate );
-		
-		BoingTimeline->AddInterpFloat(BoingCurve, OnTimelineCallback);
-		BoingTimeline->SetTimelineLength(1.0f / BoingSpeed);
-		
-		BoingTimeline->SetPlayRate(BoingSpeed);
-		BoingTimeline->RegisterComponent();
+		FOnTimelineFloat TimelineCallback;
+		TimelineCallback.BindUFunction(this, FName("OnBoingUpdate"));
+		BoingTimeline.AddInterpFloat(BoingCurve, TimelineCallback);
+		BoingTimeline.SetPlayRate(BoingSpeed);
+
+		FOnTimelineEventStatic TimelineFinishedCallback;
+		TimelineFinishedCallback.BindUFunction(this, FName("OnBoingFinish"));
+		BoingTimeline.SetTimelineFinishedFunc(TimelineFinishedCallback);
 	}
 }
 
@@ -65,43 +66,31 @@ void USquashAndStretch::TickComponent(float _DeltaTime, ELevelTick _TickType, FA
 {
 	Super::TickComponent(_DeltaTime, _TickType, _ThisTickFunction);
 	
-	if (BoingTimeline)
-		BoingTimeline->TickComponent(_DeltaTime, ELevelTick::LEVELTICK_TimeOnly, nullptr);
+	BoingTimeline.TickTimeline(_DeltaTime);
 }
 
 void USquashAndStretch::Enable()
 {
-	if (BoingTimeline)
+	if (!BoingTimeline.IsPlaying())
 	{
-		if (!BoingTimeline->IsPlaying())
-		{
-			BoingTimeline->SetLooping(true);
-			BoingTimeline->SetTimelineLength(1.0f);
-			BoingTimeline->Play();
-		}
+		BoingTimeline.SetLooping(true);
+		BoingTimeline.Play();
 	}
 }
 
 void USquashAndStretch::Disable()
 {
-	if (BoingTimeline && BoingTimeline->IsPlaying())
+	if (BoingTimeline.IsPlaying())
 	{
-		BoingTimeline->Stop();
-		BoingTimeline->SetLooping(false);
-		BoingTimeline->SetNewTime(0.0f);
-		BoingTimeline->SetTimelineLength(1.0f);
+		BoingTimeline.Stop();
+		BoingTimeline.SetLooping(false);
 	}
 }
 
 void USquashAndStretch::Boing()
 {
-	if (BoingTimeline)
-	{
-		BoingTimeline->SetLooping(false);
-		BoingTimeline->SetNewTime(0.0f);
-		BoingTimeline->SetTimelineLength(1.0f);
-		BoingTimeline->Play();
-	}
+	BoingTimeline.SetLooping(false);
+	BoingTimeline.Play();
 }
 
 void USquashAndStretch::SetMeshesToStretch(TArray<UStaticMeshComponent*> _Statics)
@@ -113,7 +102,8 @@ void USquashAndStretch::SetMeshesToStretch(TArray<UStaticMeshComponent*> _Static
 void USquashAndStretch::SetMeshToStretch(UStaticMeshComponent* _StaticMesh)
 {
 	OwningItem = nullptr;
-	Server_SetMeshToStretch(_StaticMesh);
+	StaticMeshes.Empty();
+	StaticMeshes.Add(_StaticMesh);
 }
 
 void USquashAndStretch::FindMeshesToStretch()
@@ -189,6 +179,10 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 	{
 		StaticMeshes[0]->SetWorldScale3D(FVector::One() + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag))); //
 	}
+}
+
+void USquashAndStretch::OnBoingFinish()
+{
 }
 
 void USquashAndStretch::Server_SetMeshToStretch_Implementation(UStaticMeshComponent* _StaticMesh)

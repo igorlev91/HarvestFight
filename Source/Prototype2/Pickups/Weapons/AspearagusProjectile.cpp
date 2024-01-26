@@ -16,20 +16,17 @@ AAspearagusProjectile::AAspearagusProjectile()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+
 	AspearagusMesh = CreateDefaultSubobject<UStaticMeshComponent>("AspearagusMesh");
 	SetRootComponent(AspearagusMesh);
 }
-
-//void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//	DOREPLIFETIME(AAspearagusProjectile, AspearagusMesh);
-//}
 
 // Called when the game starts or when spawned
 void AAspearagusProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	AspearagusMesh->SetVisibility(true);
 	AspearagusMesh->SetSimulatePhysics(false);
 	AspearagusMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AspearagusMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
@@ -39,34 +36,33 @@ void AAspearagusProjectile::BeginPlay()
 void AAspearagusProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (DeathTimer >= 0.0f)
+	
+	if (DeathTimer > 0)
 	{
 		DeathTimer -= DeltaTime;
 
-		if (!CheckForHitObstacle())
+		if (!bHitSomething)
 		{
 			SetActorLocation(GetActorLocation() + GetActorForwardVector() * Speed * DeltaTime);
+			CheckForHitObstacle();
+			CheckForHitPlayers();
 		}
-		else
+
+		if (DeathTimer <= 0)
 		{
-
+			Destroy();
 		}
 	}
-	else
-	{
-		Destroy();
-	}
-	
-	if (OwningPlayer)
-	{
-		CheckForHitPlayers();
-	}
-
 }
 
 void AAspearagusProjectile::CheckForHitPlayers()
-{	
+{
+	if (!OwningPlayer)
+		return;
+
+	if (bHitSomething)
+		return;
+	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
 
@@ -82,6 +78,7 @@ void AAspearagusProjectile::CheckForHitPlayers()
 
 	if (bHasHitResult)
 	{
+
 		// Check if the hits were players or sell bin
 		for (auto HitResult : OutHits)
 		{
@@ -90,16 +87,13 @@ void AAspearagusProjectile::CheckForHitPlayers()
 				if (HitPlayerCast != OwningPlayer)
 				{
 					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
+					Destroy();
 				}
 			}
-			else if (auto* HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
+			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				HitSellBinCast->GetHit(1, OwningPlayer->MaxAttackCharge, GetActorLocation());
-			}
-
-			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
-			{
-				GrowSpot->DegradeConcrete();
+				HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
+				Destroy();
 			}
 		}
 	}
@@ -107,6 +101,9 @@ void AAspearagusProjectile::CheckForHitPlayers()
 
 bool AAspearagusProjectile::CheckForHitObstacle()
 {
+	if (bHitSomething)
+		return true;
+	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(30.0f);
 
@@ -119,11 +116,33 @@ bool AAspearagusProjectile::CheckForHitObstacle()
 	const FVector SweepEnd = SweepStart;
 	
 	// check if something got hit in the sweep
-	return GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere);
+	if (GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Visibility, CollisionSphere))
+	{
+		for (auto HitResult : OutHits)
+		{
+			if (auto HitPlayerCast = Cast<APrototype2Character>(HitResult.GetActor()))
+			{
+				if (HitPlayerCast != OwningPlayer)
+				{
+					bHitSomething = true;
+				}
+			}
+			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
+			{
+				HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
+				Destroy();
+			}
+			else if (!Cast<AGrowSpot>(HitResult.GetActor()))
+			{
+				bHitSomething = true;
+			}
+		}
+	}
+	return bHitSomething;
 }
 
 void AAspearagusProjectile::InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed,
-                                                 float _LifeTime, float _AttackSphereRadius)
+                                                                       float _LifeTime, float _AttackSphereRadius)
 {
 	OwningPlayer = _Player;
 	AspearagusMesh->SetStaticMesh(_Mesh);

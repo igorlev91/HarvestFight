@@ -99,7 +99,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 
 	// make UI pop out
 	//_Player->OnExecuteAttackDelegate.Broadcast();
-	BroadcastAttackToHUD(_Player);
+	Client_BroadcastAttackToHUD(_Player);
 	
 	// Play attack audio
 	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);

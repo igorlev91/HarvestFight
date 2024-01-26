@@ -76,7 +76,11 @@ protected:
 
 	/* Input Component Setup */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-		
+
+	UFUNCTION()
+	void AssignHelperReferences();
+	UFUNCTION()
+	void InitInputMappingContext();
 	UFUNCTION()
 	void InitPlayerNameWidgetComponent();
 	UFUNCTION()
@@ -84,17 +88,20 @@ protected:
 	UFUNCTION()
 	void InitWeapon();
 	UFUNCTION()
-	void InitWeaponMesh();
-	UFUNCTION()
 	void InitPlayerHUD();
 	UFUNCTION()
 	void InitShippingBin();
 	UFUNCTION()
 	void InitDecals();
+	UFUNCTION()
 	void InitCharacterMovementComponent();
+	UFUNCTION()
 	void InitCameraStuff();
+	UFUNCTION()
 	void InitMeshAndCapsule();
+	UFUNCTION()
 	void InitNiagraComponents();
+	UFUNCTION()
 	void InitMiscComponents();
 
 	void SyncCharacterColourWithPlayerState();
@@ -184,7 +191,7 @@ protected:
 	/* Timers on tick */
 	UFUNCTION()
 	void TickTimers(float _DeltaSeconds);
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void Server_CountdownTimers(float _DeltaSeconds);
 	UFUNCTION()
 	void DeltaDecrement(float& _Variable, float& _DeltaSeconds);
@@ -368,10 +375,12 @@ public:
 	void SetPlayerAimingMovement(bool _bIsAiming);
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerAimingMovement(bool _bIsAiming);
+	UFUNCTION(Client, Reliable)
+	void Client_SetPlayerAimingMovement(bool _bIsAiming);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void Server_CancelChargeAttack();
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_CancelChargeAttack();
 
 	/* RPC for when attack key is released */
@@ -379,7 +388,7 @@ public:
 	void Server_ReleaseAttack(FVector _CachedActorLocation, FVector _CachedForwardVector);
 
 	/* Multicast for when attack key is released */
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ReleaseAttack();
 
 	/* Mutlicast for dropping a weapon */

@@ -10,25 +10,30 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 
+void UWeaponAspearagus::Client_ChargeAttack(APrototype2Character* _Player)
+{
+	_Player->SetPlayerAimingMovement(true);
+}
+
 void UWeaponAspearagus::ChargeAttack(APrototype2Character* _Player)
 {
-	Super::ChargeAttack(_Player);
+}
 
-	_Player->SetPlayerAimingMovement(true);
+void UWeaponAspearagus::Client_ChargeAttackCancelled(APrototype2Character* _Player)
+{
 }
 
 void UWeaponAspearagus::ChargeAttackCancelled(APrototype2Character* _Player)
 {
-	Super::ChargeAttackCancelled(_Player);
+}
+
+void UWeaponAspearagus::Client_ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
+{
 	_Player->SetPlayerAimingMovement(false);
 }
 
 void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
-	Super::ReleaseAttack(_bIsFullCharge, _Player);
-
-	_Player->SetPlayerAimingMovement(false);
-	
 	if (_bIsFullCharge)
 	{
 		if (_Player->AnimationData->FullChargePunchingAttack)
@@ -45,15 +50,21 @@ void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 	}
 }
 
+void UWeaponAspearagus::Client_ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,
+	FVector _CachedActorLocation, FVector _CachedForwardVector)
+{
+}
+
 void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
 	Super::ExecuteAttack(_AttackSphereRadius, _Player, _CachedActorLocation, _CachedForwardVector);
+
+	UE_LOG(LogTemp, Warning, TEXT("Spawn Aspearagus Projectile"));
 	
 	Server_SpawnProjectile(_Player, _AttackSphereRadius);
 	
 	// make UI pop out
-	//_Player->OnExecuteAttackDelegate.Broadcast();
-	BroadcastAttackToHUD(_Player);
+	Client_BroadcastAttackToHUD(_Player);
 
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
@@ -66,16 +77,18 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
+	_Player->Multi_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio, nullptr);
 
 	// Reset all attack variables
 	_Player->ResetAttack();
 }
 
+void UWeaponAspearagus::Client_UpdateAOEIndicator(APrototype2Character* _Player)
+{
+}
+
 void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
 {
-	Super::UpdateAOEIndicator(_Player);
-		
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
 	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
@@ -91,25 +104,25 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
 
 void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
 {
-	if (!_Player)
-		return;
+
 	
 	// Spawn projectile
 	FTransform ProjectileTransform = _Player->GetTransform();
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
-	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActorDeferred<AAspearagusProjectile>(AAspearagusProjectile::StaticClass(),ProjectileTransform, _Player);
+	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>(FActorSpawnParameters{});
 	if (NewAspearagusProjectile)
 	{
+		
+		NewAspearagusProjectile->SetActorTransform(ProjectileTransform);
 		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
 												4000.0f, 3.0f, _AttackSphereRadius);
-		NewAspearagusProjectile->SetOwner(_Player);
-		UGameplayStatics::FinishSpawningActor(NewAspearagusProjectile, ProjectileTransform);
-		NewAspearagusProjectile->SetReplicates(true);
-		NewAspearagusProjectile->SetReplicateMovement(true);
 	}
 }
 
 void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
 {
+	if (!_Player)
+		return;
+
 	Multi_SpawnProjectile(_Player, _AttackSphereRadius);
 }

@@ -83,7 +83,7 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 
 	// make UI pop out
 	//_Player->OnExecuteAttackDelegate.Broadcast();
-	BroadcastAttackToHUD(_Player);
+	Client_BroadcastAttackToHUD(_Player);
 	
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
