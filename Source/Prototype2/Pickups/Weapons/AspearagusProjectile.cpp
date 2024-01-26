@@ -64,7 +64,7 @@ void AAspearagusProjectile::CheckForHitPlayers()
 		return;
 	
 	// create a collision sphere
-	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(AttackSphereRadius);
+	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(50.0f);
 
 	// create tarray for catching hit results
 	TArray<FHitResult> OutHits;

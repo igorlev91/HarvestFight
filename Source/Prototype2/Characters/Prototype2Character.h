@@ -375,6 +375,8 @@ public:
 	void SetPlayerAimingMovement(bool _bIsAiming);
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerAimingMovement(bool _bIsAiming);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
 	UFUNCTION(Client, Reliable)
 	void Client_SetPlayerAimingMovement(bool _bIsAiming);
 

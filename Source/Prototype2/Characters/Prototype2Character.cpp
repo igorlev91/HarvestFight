@@ -187,6 +187,8 @@ void APrototype2Character::InitInputMappingContext()
 			UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->ViewPitchMax = 100.0f; // Highest point looking down
 		}
 	}
+
+	//GetCharacterMovement()->SetIsReplicated(true);
 }
 
 void APrototype2Character::Tick(float _DeltaSeconds)
@@ -350,6 +352,21 @@ void APrototype2Character::ReleaseAttack()
 	if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
 	{
 		SetPlayerAimingMovement(false);
+	}
+
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get forward vector
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	
+		// get right vector 
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		// add movement 
+		AddMovementInput(ForwardDirection, 1);
+		AddMovementInput(RightDirection, 0);
 	}
 	
 	Server_ReleaseAttack(GetActorLocation(), GetActorForwardVector());
@@ -1202,15 +1219,25 @@ void APrototype2Character::DropWeapon()
 
 void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
 {
-	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
-	//GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+	bAllowMovementFromInput = !_bIsAiming;
+
+	Server_SetPlayerAimingMovement(_bIsAiming);
+}
+
+void APrototype2Character::Multi_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+{
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
 }
 
 void APrototype2Character::Client_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
 {
-	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
-	//GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
 }
 
@@ -1329,6 +1356,8 @@ void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _b
 	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
 	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
+
+	Multi_SetPlayerAimingMovement(_bIsAiming);
 }
 
 void APrototype2Character::RefreshCurrentMaxSpeed()
@@ -1883,14 +1912,14 @@ void APrototype2Character::Server_ReleaseAttack_Implementation(FVector _CachedAc
 	if (AttackChargeAmount < MaxAttackCharge) // InstantAttackThreshold
 	{
 		Weapon->ReleaseAttack(false, this);
-		
 		// Delayed attack
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(Handle,
 			FTimerDelegate::CreateLambda(
 				[this, AttackSphereRadius, _CachedActorLocation, _CachedForwardVector]
 				{
-					Client_SetPlayerAimingMovement(false);
+					
+					SetPlayerAimingMovement(false);
 					ExecuteAttack(AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
 				}), InstantAttackDelay, false);	
 	}
