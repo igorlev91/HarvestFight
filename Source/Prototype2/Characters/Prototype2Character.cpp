@@ -463,7 +463,7 @@ void APrototype2Character::Server_SetCharacterSpeed_Implementation(float _NewCur
 	CurrentMaxWalkSpeed = _NewCurrentMaxSpeed;
 }
 
-void APrototype2Character::DropItem()
+void APrototype2Character::DropItem(float WhoopsyStrength)
 {
 	if (HeldItem)
 	{
@@ -485,7 +485,7 @@ void APrototype2Character::DropItem()
 			
 			Multi_DropItem();
 			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-			
+			HeldItem->ItemComponent->Mesh->AddImpulse(FVector::UpVector * WhoopsyStrength, NAME_None, true);
 			if (HeldItem->ItemComponent->bGold)
 			{
 				bIsHoldingGold = false;
@@ -495,7 +495,7 @@ void APrototype2Character::DropItem()
 		}
 		else
 		{
-			Server_DropItem();
+			Server_DropItem(WhoopsyStrength);
 		}
 		RefreshCurrentMaxSpeed();
 	}
@@ -684,7 +684,7 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	GetCharacterMovement()->Launch(KnockAway);
 	
 	// Drop item
-	DropItem();
+	DropItem(1000.0f);
 
 	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
 
@@ -1975,7 +1975,7 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 	}*/
 }
 
-void APrototype2Character::Server_DropItem_Implementation()
+void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 {
 	// Server_DropItem
 	if (DropCue)
@@ -1985,6 +1985,7 @@ void APrototype2Character::Server_DropItem_Implementation()
 			
 	Multi_DropItem();
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+	HeldItem->ItemComponent->Mesh->AddImpulse(FVector::UpVector * WhoopsyStrength, NAME_None, true);
 			
 	if (HeldItem->ItemComponent->bGold)
 	{

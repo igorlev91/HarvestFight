@@ -90,7 +90,8 @@ void USquashAndStretch::Disable()
 void USquashAndStretch::Boing()
 {
 	BoingTimeline.SetLooping(false);
-	BoingTimeline.Play();
+	BoingTimeline.SetNewTime(0.0f);
+	BoingTimeline.PlayFromStart();
 }
 
 void USquashAndStretch::SetMeshesToStretch(TArray<UStaticMeshComponent*> _Statics)

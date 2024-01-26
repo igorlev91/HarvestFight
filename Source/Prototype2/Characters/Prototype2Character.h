@@ -260,7 +260,7 @@ public:
 	void PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
 	/* Client side Drop Item function */
-	void DropItem();
+	void DropItem(float WhoopsyStrength = 500.0f);
 
 	bool HasClaimedPlot();
 	void SetClaimedPlot(class ARadialPlot* _Plot);
@@ -279,7 +279,7 @@ public:
 	
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
-	void Server_DropItem();
+	void Server_DropItem(float WhoopsyStrength = 500.0f);
 	
 	/* For holding interact functionality*/
 	UFUNCTION(Server, Reliable)
