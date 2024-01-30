@@ -1,12 +1,16 @@
 
 
-
 #include "HarvestHavocGameUserSettings.h"
 
 
-//UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings()
-//{
-//}
+UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
+{
+	MasterVolume = 0;
+	MusicVolume = 0;
+	AmbienceVolume = 0;
+	SFXVolume = 0;
+	bPlayerStencil = false;
+}
 
 UHarvestHavocGameUserSettings* UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings()
 {
@@ -16,26 +20,13 @@ UHarvestHavocGameUserSettings* UHarvestHavocGameUserSettings::GetHarvestHavocGam
 void UHarvestHavocGameUserSettings::SaveSettings()
 {
 	Super::SaveSettings();
-
-	// Save new variables
-	GConfig->SetInt(TEXT("Audio"), TEXT("MasterVolume"), MasterVolume, GGameUserSettingsIni);
-	GConfig->SetInt(TEXT("Audio"), TEXT("MusicVolume"), MusicVolume, GGameUserSettingsIni);
-	GConfig->SetInt(TEXT("Audio"), TEXT("AmbienceVolume"), AmbienceVolume, GGameUserSettingsIni);
-	GConfig->SetInt(TEXT("Audio"), TEXT("SFXVolume"), SFXVolume, GGameUserSettingsIni);
-	GConfig->SetBool(TEXT("GameSettings"), TEXT("bPlayerStencil"), bPlayerStencil, GGameUserSettingsIni);
-	GConfig->Flush(false, GGameUserSettingsIni);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Saved game user settings"));
 }
 
 void UHarvestHavocGameUserSettings::LoadSettings(bool bForceReload)
 {
 	Super::LoadSettings(bForceReload);
-
-	// Load your new variables
-	MasterVolume = GConfig->GetInt(TEXT("Audio"), TEXT("MasterVolume"), MasterVolume, GGameUserSettingsIni);
-	MusicVolume = GConfig->GetInt(TEXT("Audio"), TEXT("MusicVolume"), MusicVolume, GGameUserSettingsIni);
-	AmbienceVolume = GConfig->GetInt(TEXT("Audio"), TEXT("AmbienceVolume"), AmbienceVolume, GGameUserSettingsIni);
-	SFXVolume = GConfig->GetInt(TEXT("Audio"), TEXT("SFXVolume"), SFXVolume, GGameUserSettingsIni);
-	bPlayerStencil = GConfig->GetBool(TEXT("GameSettings"), TEXT("bPlayerStencil"), bPlayerStencil, GGameUserSettingsIni);
 
 	UE_LOG(LogTemp, Warning, TEXT("Loaded game user settings"));
 }

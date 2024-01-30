@@ -9,44 +9,52 @@
 UCLASS()
 class PROTOTYPE2_API UHarvestHavocGameUserSettings : public UGameUserSettings
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 public:
-	//UHarvestHavocGameUserSettings();
-	
 	UFUNCTION(BlueprintCallable)
 	static UHarvestHavocGameUserSettings* GetHarvestHavocGameUserSettings();
 	
 	virtual void SaveSettings() override;
 	virtual void LoadSettings(bool bForceReload = false) override;
 
+	UFUNCTION(BlueprintCallable)
 	void SetMasterVolume(int32 _Volume);
+	UFUNCTION(BlueprintCallable)
 	void SetMusicVolume(int32 _Volume);
+	UFUNCTION(BlueprintCallable)
 	void SetAmbienceVolume(int32 _Volume);
+	UFUNCTION(BlueprintCallable)
 	void SetSFXVolume(int32 _Volume);
+	UFUNCTION(BlueprintCallable)
 	void SetPlayerStencil(bool _bEnable);
 
-	int32 GetMasterVolume() { return MasterVolume; }
-	int32 GetMusicVolume() { return MusicVolume; }
-	int32 GetAmbienceVolume() { return AmbienceVolume; }
-	int32 GetSFXVolume() { return SFXVolume; }
-	bool GetPlayerStencil() { return bPlayerStencil; }
+	UFUNCTION(BlueprintPure)
+	int32 GetMasterVolume() const { return MasterVolume; }
+	UFUNCTION(BlueprintPure)
+	int32 GetMusicVolume() const { return MusicVolume; }
+	UFUNCTION(BlueprintPure)
+	int32 GetAmbienceVolume() const { return AmbienceVolume; }
+	UFUNCTION(BlueprintPure)
+	int32 GetSFXVolume() const { return SFXVolume; }
+	UFUNCTION(BlueprintPure)
+	bool GetPlayerStencil() const { return bPlayerStencil; }
 
-//protected:
+protected:
 	/* Custom Audio Settings */
-	UPROPERTY(EditAnywhere)
-	int32 MasterVolume{0};
+	UPROPERTY(config, EditAnywhere)
+	int32 MasterVolume;
 	
-	UPROPERTY(EditAnywhere)
-	int32 MusicVolume{0};
+	UPROPERTY(config, EditAnywhere)
+	int32 MusicVolume;
 
-	UPROPERTY(EditAnywhere)
-	int32 AmbienceVolume{0};
+	UPROPERTY(config, EditAnywhere)
+	int32 AmbienceVolume;
 
-	UPROPERTY(EditAnywhere)
-	int32 SFXVolume{0};
+	UPROPERTY(config, EditAnywhere)
+	int32 SFXVolume;
 
 	/* Custom Game Settings */
-	UPROPERTY(EditAnywhere)
-	bool bPlayerStencil{false};
+	UPROPERTY(config, EditAnywhere)
+	bool bPlayerStencil;
 };

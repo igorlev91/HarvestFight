@@ -23,12 +23,7 @@ void UWidget_GameOptions::NativePreConstruct()
 	{
 		GameInstanceReference = GameInstance;
 	}
-
-	//UGameUserSettings* GameUserSettings = GEngine->GetGameUserSettings();
-	//if (GameUserSettings)
-		//HHGameGameUserSettings = Cast<UHarvestHavocGameUserSettings>(GameUserSettings);
-	//else
-		//UE_LOG(LogTemp, Warning, TEXT("Failed to cast HHGameGameUserSettings from game options"));
+	
 	HHGameGameUserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings();
 
 	if (!HHGameGameUserSettings)
@@ -55,8 +50,6 @@ void UWidget_GameOptions::NativePreConstruct()
 	
 	/* Set Game Option settings */
 	PlayerStencil_Control->OptionText->SetText(FText::FromString("Player Coloured Outline"));
-
-
 }
 
 void UWidget_GameOptions::NativeConstruct()
@@ -67,22 +60,19 @@ void UWidget_GameOptions::NativeConstruct()
 	if (HHGameGameUserSettings)
 	{
 		HHGameGameUserSettings->LoadSettings(true);
-		UE_LOG(LogTemp, Warning, TEXT("Master Volume: %d"), HHGameGameUserSettings->GetMasterVolume());
-		UE_LOG(LogTemp, Warning, TEXT("Music Volume: %d"), HHGameGameUserSettings->GetMusicVolume());
-		UE_LOG(LogTemp, Warning, TEXT("Ambience Volume: %d"), HHGameGameUserSettings->GetAmbienceVolume());
-		UE_LOG(LogTemp, Warning, TEXT("SFX Volume: %d"), HHGameGameUserSettings->GetSFXVolume());
+		UE_LOG(LogTemp, Warning, TEXT("Loaded Master Volume: %d"), HHGameGameUserSettings->GetMasterVolume());
+		UE_LOG(LogTemp, Warning, TEXT("Loaded Music Volume: %d"), HHGameGameUserSettings->GetMusicVolume());
+		UE_LOG(LogTemp, Warning, TEXT("Loaded Ambience Volume: %d"), HHGameGameUserSettings->GetAmbienceVolume());
+		UE_LOG(LogTemp, Warning, TEXT("Loaded SFX Volume: %d"), HHGameGameUserSettings->GetSFXVolume());
 
-		UE_LOG(LogTemp, Warning, TEXT("Framerate: %f"), HHGameGameUserSettings->GetFrameRateLimit());
+		UE_LOG(LogTemp, Warning, TEXT("Loaded Framerate: %f"), HHGameGameUserSettings->GetFrameRateLimit());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Did not load"));
+		UE_LOG(LogTemp, Warning, TEXT("Could not load settings"));
 	}
 	UpdateGameInstanceVariables();
 	SetOptionsText();
-	
-	/* Confirm changes */
-	//OnConfirmButtonPressed();
 	
 	/* Graphics control buttons */
 	if (FullScreen_Control)
