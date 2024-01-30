@@ -3,6 +3,12 @@
 
 #include "Prototype2/Gameplay/SkyAlter.h"
 
+#include "Smite.h"
+#include "Kismet/GameplayStatics.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
+#include "Prototype2/Pickups/Plant.h"
+
 // Sets default values
 ASkyAlter::ASkyAlter()
 {
@@ -18,7 +24,7 @@ ASkyAlter::ASkyAlter()
 void ASkyAlter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASkyAlter::OnPlayerTouchAltar);
 }
 
 void ASkyAlter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const
@@ -58,5 +64,52 @@ void ASkyAlter::HoldInteract(APrototype2Character* _Player)
 
 void ASkyAlter::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int32 _PlayerID)
 {
+}
+
+void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!OtherActor->HasNetOwner())
+		return;
+	
+	if (!OtherActor)
+		return;
+	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
+	if (!SomePlayer)
+		return;
+	APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameStateCast)
+		return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Attempted to offer something!"));
+	if (SomePlayer->HeldItem)
+	{
+		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
+		{
+			//Client_OnPlayerSell(SomePlayer);
+			SomePlayer->GetSmite()->IncreaseTime(Plant->SeedData->BabyStarValue * 20);
+			
+			// Audio
+			if (HasAuthority())
+			{
+				//SSComponent->Boing();
+				
+				if (SomePlayer->SellCue)
+				{
+					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+				}
+
+				// Reset player speed incase of gold plant
+				SomePlayer->bIsHoldingGold = false;
+			
+				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
+				
+				// Destroy the crop the player is holding
+				SomePlayer->HeldItem->Destroy();
+				SomePlayer->HeldItem = nullptr;
+				SomePlayer->RefreshCurrentMaxSpeed();
+			}
+		}
+	}
 }
 

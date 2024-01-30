@@ -14,7 +14,7 @@ public:
 
 	void Tick(float DeltaTime);
 
-	static constexpr float TimerStartTime{30};
+	static constexpr float TimerStartTime{90};
 	float Timer{0};
 
 	APrototype2Character* Player{nullptr};
