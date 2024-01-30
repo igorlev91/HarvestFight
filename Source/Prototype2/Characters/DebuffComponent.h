@@ -25,24 +25,17 @@ public:
 	/* Called by GetHit() functions, applies whatever debuff passed in */
 	void ApplyDebuff(EDebuff _DebuffType, float _Duration);
 	
-	/* Functionality for the stun debuff */
-	void Stun();
-	void UpdateStun();
-	
 	/* Functionality for the daze debuff*/
-	void Daze();
-	UFUNCTION(Client, Reliable)
-	void Client_UpdateDaze();
-
-	/* Functionality for the slow debuff*/
-	void Slow();
+	void UpdateDaze();
 
 	/* Functionality for the punch debuff*/
 	void Punch();
-	void UpdatePunchCounter();
+	UFUNCTION(Server, Reliable)
+	void Server_UpdatePunchCounter();
 
 	/* Called until the debuff duration wears off*/
-	void RemoveDebuff();
+	UFUNCTION(Server, Reliable)
+	void Server_RemoveDebuff();
 	
 	void DecrementTimers(float _DeltaTime);
 
@@ -57,8 +50,7 @@ protected:
 
 private:
 	class APrototype2Character* Player;
-
-	UPROPERTY(Replicated)
+	
 	float DebuffDuration;
 
 	UPROPERTY(EditDefaultsOnly, meta=(AllowPrivateAccess))
@@ -73,7 +65,6 @@ private:
 	float DazeRandomDirection = 0.0f;
 
 	float PunchCounterDropOff = 2.5f;
-	UPROPERTY(Replicated)
 	float PunchCounterDropOffTimer;
 	UPROPERTY(Replicated)
 	int PunchCounter = 0;

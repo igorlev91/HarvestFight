@@ -100,7 +100,7 @@ void APlotSign::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProto
 	if (bHasBeenClaimed)
 		return;
 
-	_InvokingWidget->SetHUDInteractText("Claim");
+	_InvokingWidget->SetHUDInteractText("Claim (Hold)");
 	ItemComponent->Mesh->SetRenderCustomDepth(true);
 }
 
@@ -122,7 +122,7 @@ bool APlotSign::IsInteractable(APrototype2PlayerState* _Player)
 
 void APlotSign::ClientInteract(APrototype2Character* _Player)
 {
-	IInteractInterface::ClientInteract(_Player);
+	//IInteractInterface::ClientInteract(_Player);
 }
 
 void APlotSign::ClaimPlot(APrototype2Character* _Player)

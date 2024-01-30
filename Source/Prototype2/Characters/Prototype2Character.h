@@ -84,8 +84,6 @@ protected:
 	UFUNCTION()
 	void InitPlayerNameWidgetComponent();
 	UFUNCTION()
-	void InitAudioComponents();
-	UFUNCTION()
 	void InitWeapon();
 	UFUNCTION()
 	void InitPlayerHUD();
@@ -155,6 +153,9 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 protected:
 	virtual void Tick(float DeltaSeconds) override;
+
+	UFUNCTION()
+	void TogglePlayerStencil();
 	
 	void DelayedBeginPlay();
 
@@ -191,8 +192,6 @@ protected:
 	/* Timers on tick */
 	UFUNCTION()
 	void TickTimers(float _DeltaSeconds);
-	UFUNCTION(Server, Reliable)
-	void Server_CountdownTimers(float _DeltaSeconds);
 	UFUNCTION()
 	void DeltaDecrement(float& _Variable, float& _DeltaSeconds);
 	UFUNCTION()
@@ -399,7 +398,17 @@ public:
 
 	/* Called from ExecuteAttack() in UWeapon derived class to reset attack variables */
 	void ResetAttack();
+	UFUNCTION(Server, Reliable)
+	void Server_ResetAttack();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_BroadcastOvercharge();
 
+	void FollowThroughOnAttack();
+	bool bIsFollowingThroughAttack = false;
+
+	void SetCanAttack(bool _InbCanAttack) { bCanAttack = _InbCanAttack; }
+	
 	UPROPERTY(Replicated)
 	bool bShouldWeaponFlashRed;
 	UPROPERTY(Replicated)
@@ -469,7 +478,7 @@ protected:
 	/* Attack timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float AttackTimerTime = 1.0f;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float AttackTimer{};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InstantAttackDelay = 0.2f;
@@ -607,6 +616,10 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFailedClaimingPlot);
 	UPROPERTY(BlueprintAssignable)
 	FOnFailedClaimingPlot OnStoppedClaimingPlotDelegate;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOverCharge, float, OverChargeAmount, float, TotalOverChargeDuration);
+	UPROPERTY(BlueprintAssignable)
+	FOnOverCharge OnOverChargeDelegate;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Getters 												 ///
@@ -622,7 +635,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsSprinting();
 	
-	/* Getters */
 	UFUNCTION(BlueprintCallable)
 	class USeedData* GetWeaponData() const { return CurrentWeaponSeedData; }
 
@@ -637,7 +649,9 @@ public:
 	
 	UFUNCTION()
 	bool HasIdealRole();
-	
+
+	bool GetHasCrown();
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														VFX		 												 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -673,6 +687,9 @@ public:
 	void Server_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class UVFXComponent* VFXComponent;
 	
 	/* Varaibles needed for Decal component */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -719,17 +736,15 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 
-	/* Charging weapon sound control */
-	UFUNCTION(Server, Unreliable)
-	void Server_ToggleChargeSound(bool _bIsSoundEnabled);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_ToggleChargeSound(bool _bIsSoundEnabled);
-
+	void PlayWeaponSound(USoundCue* _SoundToPlay);
+	UFUNCTION(Server, Reliable)
+	void Server_PlayWeaponSound(USoundCue* _SoundToPlay);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayWeaponSound(USoundCue* _SoundToPlay);
+	
 	/* Audio */
-	UPROPERTY(EditAnywhere, Replicated)
+	UPROPERTY(EditAnywhere)
 	USoundAttenuation* SoundAttenuationSettings;
-	UPROPERTY(EditAnywhere, Replicated)
-	UAudioComponent* ChargeAttackAudioComponent;
 	UPROPERTY(EditAnywhere)
 	USoundCue* ChargeCue;
 	UPROPERTY(EditAnywhere)
@@ -746,7 +761,10 @@ public:
 	USoundCue* GetHitCue;
 	UPROPERTY(EditAnywhere)
 	USoundCue* MandrakeScreamCue;
-	
+
+	/* One audio component for charge/attack/get hit sounds*/
+	UPROPERTY(EditDefaultsOnly)
+	UAudioComponent* WeaponAudioComponent;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///													Animation 													 ///
@@ -849,3 +867,4 @@ protected:
 	float IceFriction{0.1f};
 	
 };
+

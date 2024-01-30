@@ -15,15 +15,26 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetArenaColour();
+	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UStaticMeshComponent* Mesh{nullptr};
-	
-protected:
 
+	UPROPERTY(VisibleAnywhere)
+	class UMaterialInstanceDynamic* TeamsMaterial{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	int32 AssignedTeam{};
+protected:
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	class APlayerStart* PlayerStart{nullptr};
 
 	UPROPERTY()
 	class APrototype2Gamestate* GameState;
+
+	UPROPERTY(EditAnywhere)
+	class UColourData* ColourData;
 };

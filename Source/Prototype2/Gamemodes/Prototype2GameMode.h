@@ -34,22 +34,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTeams{};
 
-	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	class ASellBin* SellBinRef;
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class AEndGamePodium* EndGamePodium{};
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TArray<class APreGameArena*> PreGameArenas{};
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	APreGameArena* DefaultPreGameArena{};
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class ADataAssetWorldOverride* DataAssetWorldOverride{};
 	
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class ACrown* KingCrown{};
 	
 	/* Protected Functions */
@@ -95,20 +95,10 @@ protected:
 	void TeleportToPreGameArena(APrototype2Character* _Player);
 	void TeleportUnteleportedPlayersToPreGameArena_Teams();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Server_SetMeshColour();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetPreGameArenaMeshColour();
-	UFUNCTION(Client, Reliable)
-	void Client_SetPreGameArenaMeshColour();
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UMaterialInstanceDynamic* PGONewDynamicMaterial;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UMaterialInstanceDynamic* PGTNewDynamicMaterial;
-
 	/* Protected Variables */
 protected:
+	void SpawnDefaultPregameArena();
+	
 	UPROPERTY(VisibleAnywhere)
 	bool bHasSetTeamsColours{};
 	UPROPERTY(VisibleAnywhere)
@@ -122,10 +112,10 @@ protected:
 	bool bTpHasHappened{};
 	UPROPERTY(EditAnywhere)
 	float AutomaticCrownCheckFrequency{1.0f};
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	float AutomaticCrownCheckTimer{};
 
-
+	UPROPERTY()
 	TArray<bool> PlayersTpdToPreGameArena_Teams{};
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess)) 

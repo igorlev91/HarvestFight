@@ -306,7 +306,7 @@ void ALobbyGamestate::PickMapToPlay()
 						case 1:
 							{
 								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_Winter_Large";
+									MapChoice = "/Game/Maps/Level_Winter_LargeV2";
 								else // Brawl Mode
 									MapChoice = "/Game/Maps/Level_Winter_Brawl";
 								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));

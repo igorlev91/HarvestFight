@@ -36,6 +36,9 @@ public:
 	void Client_OnAddCoins();
 	
 	void Multi_OnAddCoins();
+
+	bool IsLoosing();
+	bool IsWinning();
 public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
 	UPROPERTY(BlueprintAssignable)

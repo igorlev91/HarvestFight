@@ -60,7 +60,7 @@ public:
 	int32 GetNumberOfBluePlayers();
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateTeamsCharacterColourFromSelection(int32 _NumberOfColors);
+	void UpdateTeamsCharacterColourFromSelection(int32 _Color, int32 _PlayerID);
 	
 	/* Public Variables */
 public:

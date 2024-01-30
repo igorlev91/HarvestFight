@@ -116,22 +116,12 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 	APrototype2Character* CastedCharacter = Cast<APrototype2Character>(Character);
 	if (!CastedCharacter)
 		return false;
-
-	// todo: remove if failed to implement stealing
+	
 	// Check for player stealing
-	if (_Player->Details.Colour != OwningPlayerColor)
+	if (_Player->Details.Colour != OwningPlayerColor
+		&& bIsNormalGrowSpot)
 	{
-		// if spotstate is NOT grown or if player has an item, return false
-		if (GrowSpotState != EGrowSpotState::Grown ||
-			Cast<ASeed>(CastedCharacter->HeldItem))
-		{
-			return false;
-		}
-		// if its a beehive, return false
-		if (ABeehive* SomeBeehive = Cast<ABeehive>(GrowingActor))
-			return false;
-		
-		return true;
+		return Stealing_IsInteractable_Unprotected(CastedCharacter);
 	}
 	
 	switch(GrowSpotState)
@@ -201,13 +191,15 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 
 void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 {
-	if (GrowingItemRef)
-	{
-		GrowingItemRef->Client_Pickup();
-	}
-
 	if (!_Player->PlayerStateRef)
 		return;
+	
+	if (_Player->PlayerStateRef->Details.Colour != OwningPlayerColor
+		&& bIsNormalGrowSpot)
+	{
+		Stealing_ClientInteract(_Player);
+		return;
+	}
 	
 	switch(GrowSpotState)
 	{
@@ -217,7 +209,11 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 			{
 				if (_Player->PlayerHUDRef)
 					_Player->PlayerHUDRef->ClearPickupUI();
-				
+
+				if (GrowingItemRef)
+				{
+					GrowingItemRef->Client_Pickup();
+				}
 			}
 			break;
 		}
@@ -230,10 +226,42 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 		}
 	case EGrowSpotState::Grown:
 		{
+			if (GrowingItemRef)
+			{
+				GrowingItemRef->Client_Pickup();
+			}
 			if (_Player->PlayerHUDRef)
-				_Player->PlayerHUDRef->ClearPickupUI();
+			{
+				if (bIsFertilised)
+				{
+					if (GrowingItemRef->SeedData)
+					{
+						if (GrowingItemRef->SeedData->PlantData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->GoldPlantIcon);
+						}
+						else if (GrowingItemRef->SeedData->WeaponData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->GoldWeaponIcon);
+						}
+					}
+				}
+				else
+				{
+					if (GrowingItemRef->SeedData)
+					{
+						if (GrowingItemRef->SeedData->PlantData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->PlantIcon);
+						}
+						else if (GrowingItemRef->SeedData->WeaponData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->WeaponIcon);
+						}
+					}
+				}
 
-
+			}
 		}
 	default:
 		break;
@@ -257,6 +285,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	{
 		AGrowableWeapon* NewItem = GetWorld()->SpawnActor<AGrowableWeapon>(WeaponPrefab);
 		NewItem->SetActorRotation(FRotator{90.0f, 0.0f, 0.0f});
+		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		NewItem->SetActorLocation(GetActorLocation() - (FVector::UpVector));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
@@ -265,6 +294,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	else if (_SeedToPlant->SeedData->BabyType == EPickupDataType::BeehiveData)
 	{
 		ABeehive* NewItem = GetWorld()->SpawnActor<ABeehive>(BeehivePrefab);
+		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		NewItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 5.0f));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
@@ -274,12 +304,12 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	else
 	{
 		APickUpItem* NewItem = GetWorld()->SpawnActor<APickUpItem>(PlantPrefab);
+		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		NewItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 5.0f));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
 		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData, EPickupActor::PlantActor);
 	}
-
 	
 	GrowingItemRef->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
@@ -369,7 +399,8 @@ void AGrowSpot::BeginPlay()
 		ItemComponent->Mesh->SetWorldScale3D(GrowSpotData->DesiredScale);
 	}
 
-	SSComponent->SetMeshToStretch(ItemComponent->Mesh);
+	if (HasAuthority())
+		SSComponent->SetMeshToStretch(ItemComponent->Mesh);
 	
 	if (ItemComponent->Mesh)
 	{
@@ -608,17 +639,10 @@ void AGrowSpot::RiseTimelineUpdate(float _Delta)
 void AGrowSpot::Interact(APrototype2Character* _Player)
 {
 	// Stealing!!
-	if (_Player->PlayerStateRef->Details.Colour != OwningPlayerColor)
+	if (_Player->PlayerStateRef->Details.Colour != OwningPlayerColor
+		&& bIsNormalGrowSpot)
 	{
-		UKismetSystemLibrary::PrintString(GetWorld(), "THIEF!");
-
-		// Stop multiple players stealing this 
-		if (CurrentPlayerStealing)
-			return;
-		
-		CurrentPlayerStealing = _Player;
-		_Player->bIsHoldingInteract = true;
-		HoldInteractTimer = 0.0f;
+		Stealing_Interact(_Player);
 		return;
 	}
 	
@@ -684,7 +708,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 									bIsFertilised = true;
 								}
 							}
-
+							_Player->PlayerStateRef->AddCoins(5);
 							UpdateMaterial();
 							Fertiliser->Destroy();
 							_Player->DropItem();
@@ -734,7 +758,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 									}
 								}
 							}
-
+							_Player->PlayerStateRef->AddCoins(5);
 							UpdateMaterial();
 							Fertiliser->Destroy();
 							_Player->DropItem();
@@ -787,7 +811,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 										}
 									}
 								}
-
+								_Player->PlayerStateRef->AddCoins(5);
 								UpdateMaterial();
 								Fertiliser->Destroy();
 								_Player->DropItem();
@@ -978,6 +1002,13 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 	//UE_LOG(LogTemp, Warning, TEXT("PlayerID: %s"), *FString::FromInt(_PlayerID))
 	//UE_LOG(LogTemp, Warning, TEXT("GrowSpotID: %s"), *FString::FromInt(Player_ID))
 
+	if (_Owner->PlayerStateRef->Details.Colour != OwningPlayerColor
+		&& bIsNormalGrowSpot)
+	{
+		Stealing_OnDisplayInteractText(_InvokingWidget, _Owner, _PlayerID);
+		return;
+	}
+	
 	switch (GrowSpotState)
 	{
 	case EGrowSpotState::Empty:
@@ -1033,6 +1064,184 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			else if (GrowingItemRef)
 			{
 				_InvokingWidget->SetHUDInteractText("Harvest");
+				_Owner->EnableStencil(true);
+				return;
+			}
+					
+			break;
+		}
+	default:
+		break;
+	}
+
+	_Owner->EnableStencil(false);
+}
+
+bool AGrowSpot::Stealing_IsInteractable_Unprotected(APrototype2Character* _Player)
+{
+	// if spotstate is NOT grown or if player has an item, return false
+	if (GrowSpotState != EGrowSpotState::Grown ||
+		_Player->HeldItem)
+	{
+		return false;
+	}
+	// if its a beehive, return false
+	if (Cast<ABeehive>(GrowingActor))
+		return false;
+
+	return true;
+}
+
+void AGrowSpot::Stealing_ClientInteract(APrototype2Character* _Player)
+{
+	return;
+	switch(GrowSpotState)
+	{
+	case EGrowSpotState::Empty:
+		{
+			if (Cast<ASeed>(_Player->HeldItem))
+			{
+				if (_Player->PlayerHUDRef)
+					_Player->PlayerHUDRef->ClearPickupUI();
+
+				if (GrowingItemRef)
+				{
+					GrowingItemRef->Client_Pickup();
+				}
+			}
+			break;
+		}
+	case EGrowSpotState::Growing:
+		{
+			if (_Player->PlayerHUDRef)
+				_Player->PlayerHUDRef->ClearPickupUI();
+			
+			break;
+		}
+	case EGrowSpotState::Grown:
+		{
+			if (GrowingItemRef)
+			{
+				GrowingItemRef->Client_Pickup();
+			}
+			if (_Player->PlayerHUDRef)
+			{
+				if (bIsFertilised)
+				{
+					if (GrowingItemRef->SeedData)
+					{
+						if (GrowingItemRef->SeedData->PlantData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->GoldPlantIcon);
+						}
+						else if (GrowingItemRef->SeedData->WeaponData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->GoldWeaponIcon);
+						}
+					}
+				}
+				else
+				{
+					if (GrowingItemRef->SeedData)
+					{
+						if (GrowingItemRef->SeedData->PlantData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->PlantIcon);
+						}
+						else if (GrowingItemRef->SeedData->WeaponData)
+						{
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->WeaponIcon);
+						}
+					}
+				}
+
+			}
+		}
+	default:
+		break;
+	}
+}
+
+void AGrowSpot::Stealing_Interact(APrototype2Character* _Player)
+{
+	UKismetSystemLibrary::PrintString(GetWorld(), "THIEF!");
+	if (_Player->HeldItem)
+	{
+		if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
+		{
+			if (auto FertData = Fertiliser->SeedData->FertiliserData)
+			{
+				if (FertData->bConcrete)
+				{
+					FertiliseInteractDelayTimer = FertiliseInteractDelay;
+					bIsFertilised = false;
+					if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
+						ConcretedHealth = ConcreteData->MaxStrength;
+					Multi_MakePlantConcrete();
+				}
+			}
+			_Player->PlayerStateRef->AddCoins(5);
+			UpdateMaterial();
+			Fertiliser->Destroy();
+			_Player->DropItem();
+			_Player->EnableStencil(false);
+			return;
+		}
+	}
+
+	// Stop multiple players stealing this 
+	if (CurrentPlayerStealing)
+		return;
+		
+	CurrentPlayerStealing = _Player;
+	_Player->bIsHoldingInteract = true;
+	HoldInteractTimer = 0.0f;
+}
+
+void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
+	int32 _PlayerID)
+{
+	switch (GrowSpotState)
+	{
+	case EGrowSpotState::Empty:
+		{
+			if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
+			{
+				if (Fertiliser->SeedData->FertiliserData->bConcrete)
+					_InvokingWidget->SetHUDInteractText("Concrete");
+				
+				_Owner->EnableStencil(true);
+				return;
+			}
+			break;
+		}
+	case EGrowSpotState::Growing:
+		{
+			if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
+			{
+				if (Fertiliser->SeedData->FertiliserData->bConcrete)
+					_InvokingWidget->SetHUDInteractText("Concrete");
+
+				_Owner->EnableStencil(true);
+				return;
+			}
+			
+			break;
+		}
+	case EGrowSpotState::Grown:
+		{
+			auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem);
+			if (Fertiliser)
+			{
+				// Fert
+				if (Fertiliser->SeedData->FertiliserData->bConcrete)
+					_InvokingWidget->SetHUDInteractText("Concrete");
+				_Owner->EnableStencil(true);
+				return;
+			}
+			else if (GrowingItemRef)
+			{
+				_InvokingWidget->SetHUDInteractText("Steal (Hold)");
 				_Owner->EnableStencil(true);
 				return;
 			}

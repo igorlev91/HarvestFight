@@ -48,6 +48,7 @@
 #include "Prototype2/Pickups/Weapons/WeaponPunching.h"
 #include "Prototype2/Spawning/FertiliserSpawner.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
+#include "Prototype2/VFX/VFXComponent.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
 
 APrototype2Character::APrototype2Character()
@@ -60,8 +61,9 @@ APrototype2Character::APrototype2Character()
 
 	InitCharacterMovementComponent();
 	InitCameraStuff();
-	InitNiagraComponents();
+	VFXComponent = CreateDefaultSubobject<UVFXComponent>(TEXT("VFX Component"));
 	InitMiscComponents();
+	InitNiagraComponents();
 }
 
 void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -72,10 +74,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, bIsChargingAttack);
 	DOREPLIFETIME(APrototype2Character, AttackChargeAmount);
 	DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
-	DOREPLIFETIME(APrototype2Character, SoundAttenuationSettings);
-	DOREPLIFETIME(APrototype2Character, ChargeAttackAudioComponent);
 	DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
-	DOREPLIFETIME(APrototype2Character, AttackTimer);
 	DOREPLIFETIME(APrototype2Character, InteractTimer);
 	DOREPLIFETIME(APrototype2Character, ClaimedPlot);
 	DOREPLIFETIME(APrototype2Character, DebuffComponent);
@@ -112,13 +111,11 @@ void APrototype2Character::BeginPlay()
 	
 	AssignHelperReferences();
 	InitInputMappingContext();
-	InitAudioComponents();
 	InitPlayerHUD();
 	InitDecals();
 	InitMeshAndCapsule();
 	InitWeapon();
 	InitShippingBin();
-
 }
 
 void APrototype2Character::DelayedBeginPlay()
@@ -208,17 +205,35 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	UpdateWeaponMeshSkin();
 	HandleAttackChargeBehavior(_DeltaSeconds);
 
+	TogglePlayerStencil();
 	UpdatePlayerNames();
 	UpdatePlayerHUD();
+
+	FollowThroughOnAttack();
 	
-	ToggleParticleSystems();
+	//ToggleParticleSystems();
 	UpdateSpeed();
+}
+
+void APrototype2Character::TogglePlayerStencil()
+{
+	if (PlayerStateRef)
+	{
+		if (UPrototypeGameInstance* GameInstance = Cast<UPrototypeGameInstance>(GetGameInstance()))
+		{
+			GetMesh()->SetRenderCustomDepth(GameInstance->bPlayerStentil);
+			GetMesh()->SetCustomDepthStencilValue((uint8_t)PlayerStateRef->Details.Colour + 2);
+		}
+	}
 }
 
 void APrototype2Character::Move(const FInputActionValue& _Value)
 {
 	const FVector2D MovementVector = _Value.Get<FVector2D>();
 	if (!Controller || !bAllowMovementFromInput || bIsHoldingInteract)
+		return;
+
+	if (DebuffComponent->CurrentDebuff == EDebuff::Daze || DebuffComponent->CurrentDebuff == EDebuff::Stun)
 		return;
 	
 	// find out which way is forward
@@ -251,9 +266,9 @@ void APrototype2Character::Sprint()
 	if (!HasIdealRole())
 		return;
 
-	// Stop sprint if charging weapon (punch is ok)
-	if (bIsChargingAttack && CurrentWeaponSeedData != DefaultWeaponSeedData)
-		return;
+	//// Stop sprint if charging weapon (punch is ok)
+	//if (bIsChargingAttack && CurrentWeaponSeedData != DefaultWeaponSeedData)
+	//	return;
 
 	// If the player used all their stamina to the bottom it has to fully reset
 	if (!bCanSprint)
@@ -307,10 +322,18 @@ void APrototype2Character::ChargeAttack()
 	if (bIsChargingAttack)
 		return;
 
+	if (!bCanAttack)
+		return;
+
+	if (DebuffComponent->CurrentDebuff == EDebuff::Daze || DebuffComponent->CurrentDebuff == EDebuff::Stun)
+		return;
+	
 	DropItem();
 	
 	if (AttackTimer <= 0.0f)
 	{
+		AttackTimer = AttackTimerTime;
+		
 		Weapon->Client_ChargeAttack(this);
 		
 		if (HasAuthority())
@@ -325,7 +348,7 @@ void APrototype2Character::ChargeAttack()
 			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			Server_ChargeAttack();
 		}
-
+		PlayWeaponSound(ChargeCue);
 	}
 }
 
@@ -336,13 +359,14 @@ void APrototype2Character::CancelChargeAttack()
 
 void APrototype2Character::ReleaseAttack()
 {
-	
 	if (!Weapon)
 		return;
 
 	if (!bIsChargingAttack || !bCanAttack)
 		return;
-
+	
+	bCanAttack = false;
+	
 	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
 	{
 		// VFX
@@ -354,22 +378,17 @@ void APrototype2Character::ReleaseAttack()
 		SetPlayerAimingMovement(false);
 	}
 
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// add movement 
-		AddMovementInput(ForwardDirection, 1);
-		AddMovementInput(RightDirection, 0);
-	}
+	bIsFollowingThroughAttack = true;
 	
 	Server_ReleaseAttack(GetActorLocation(), GetActorForwardVector());
+	// Delayed attack
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(Handle,
+		FTimerDelegate::CreateLambda(
+			[this]
+			{
+				ResetAttack();
+			}), InstantAttackDelay, false);
 }
 
 void APrototype2Character::Interact()
@@ -391,9 +410,10 @@ void APrototype2Character::Server_Interact_Implementation()
 {
 	if (ClosestInteractableItem)
 	{
-		InteractTimer = InteractTimerTime;
-		
 		ClosestInteractableItem->Interact(this);
+
+		if (!bIsHoldingInteract)
+		InteractTimer = InteractTimerTime;
 		
 		if (HeldItem)
 		{
@@ -409,6 +429,7 @@ void APrototype2Character::Server_Interact_Implementation()
 	}
 
 	ClosestInteractableActor = nullptr;
+	if (!bIsHoldingInteract)
 	ClosestInteractableItem = nullptr;
 }
 
@@ -438,17 +459,8 @@ void APrototype2Character::OpenIngameMenu()
 	PlayerHUDRef->EnableDisableMenu();
 }
 
-void APrototype2Character::Server_CountdownTimers_Implementation(float _DeltaSeconds)
-{
-	DeltaDecrement(InteractTimer, _DeltaSeconds);
-	DeltaDecrement(AttackTimer, _DeltaSeconds);
-	DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
-	DeltaDecrement(AutoAttackTimer, _DeltaSeconds);
-}
-
 void APrototype2Character::ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	Server_SetPlayerAimingMovement(true);
 	Server_ExecuteAttack(_AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
 }
 
@@ -478,6 +490,8 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 		if (HasAuthority())
 		{
 			// Server_DropItem
+			HeldItem->Server_Drop();
+			
 			if (DropCue)
 				PlaySoundAtLocation(GetActorLocation(), DropCue);
 			if (WeaponMesh)
@@ -685,15 +699,15 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	
 	// Drop item
 	DropItem(1000.0f);
-
-	PlaySoundAtLocation(GetActorLocation(), GetHitCue);
-
+	
+	PlayWeaponSound(GetHitCue);
+	
 	// VFX
 	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
 	AttackVFXLocation = AttackVFXLocation.GetSafeNormal();
 	AttackVFXLocation *= 50.0f;
 	AttackVFXLocation += GetActorLocation();
-	Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
+	//Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		ActivateParticleSystemFromEnum(EParticleSystems::Attack);
@@ -712,18 +726,6 @@ void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent*
 	_Object->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	
 	_Object->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName(_Socket));
-}
-
-void APrototype2Character::Multi_ToggleChargeSound_Implementation(bool _soundEnabled)
-{
-	if (_soundEnabled && !ChargeAttackAudioComponent->IsPlaying())
-	{
-		ChargeAttackAudioComponent->Play();
-	}
-	else
-	{
-		ChargeAttackAudioComponent->Stop();		
-	}	
 }
 
 void APrototype2Character::UpdateSpeed()
@@ -827,11 +829,10 @@ void APrototype2Character::InitMiscComponents()
 	AttackAreaIndicatorMesh->SetHiddenInGame(true);
 	AttackAreaIndicatorMesh->SetIsReplicated(true);
 
-	// Charge attack audio
-	ChargeAttackAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("ChargeAttackAudioComponent"));
-	ChargeAttackAudioComponent->SetIsReplicated(true);
-	ChargeAttackAudioComponent->SetupAttachment(RootComponent);
-	
+	// SFX
+	WeaponAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponAudioComponent"));
+	WeaponAudioComponent->SetupAttachment(RootComponent);
+
 	// Decal component
 	DecalArmSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DecalArrowArm"));
 	DecalArmSceneComponent->SetupAttachment(RootComponent);
@@ -858,7 +859,6 @@ void APrototype2Character::UpdateDecalAngle()
 
 	const FVector CurrentPlayerPosition = FVector(GetActorLocation().X, GetActorLocation().Y, 0);
 	const FVector SellPosition = FVector(SellBin->GetActorLocation().X, SellBin->GetActorLocation().Y, 0);
-	DecalArmSceneComponent->SetWorldRotation(UKismetMathLibrary::FindLookAtRotation(CurrentPlayerPosition, SellPosition));
 
 	DecalComponent->SetVisibility(false);
 	if (!HeldItem)
@@ -952,14 +952,90 @@ void APrototype2Character::LandAfterfalling()
 
 void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewSystem)
 {
-	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-		ParticleSystemsToActivate.Add(_NewSystem);
+	switch (_NewSystem)
+	{
+	case EParticleSystems::WalkPoof:
+		{
+			VFXComponent->ActivateParticleSystemFromEnum(WalkPoof_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::SprintPoof:
+		{
+			VFXComponent->ActivateParticleSystemFromEnum(SprintPoof_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Sweat:
+		{
+			VFXComponent->ActivateParticleSystemFromEnum(Sweat_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::AttackTrail:
+		{
+				VFXComponent->ActivateParticleSystemFromEnum(AttackTrail_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Attack:
+		{
+			VFXComponent->ActivateParticleSystemFromEnum(Attack_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Dizzy:
+		{
+			VFXComponent->ActivateParticleSystemFromEnum(Dizzy_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Test:
+		{
+			//Test_NiagraComponent->Activate();
+			break;
+		}
+	default:
+		break;
+	}
 }
 
 void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _NewSystem)
 {
-	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-		ParticleSystemsToDeActivate.Add(_NewSystem);
+	switch (_NewSystem)
+	{
+	case EParticleSystems::WalkPoof:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(WalkPoof_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::SprintPoof:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(SprintPoof_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Sweat:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(Sweat_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::AttackTrail:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(AttackTrail_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Attack:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(Attack_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Dizzy:
+		{
+			VFXComponent->DeActivateParticleSystemFromEnum(Dizzy_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Test:
+		{
+			//Test_NiagraComponent->Deactivate();
+			break;
+		}
+	default:
+		break;
+	}
 }
 
 void APrototype2Character::PickupItem(APickUpItem* _Item, EPickupActor _PickupType)
@@ -978,93 +1054,7 @@ void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TAr
 
 void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off)
 {
-	for(auto ParticleSystemCast : _On)
-	{
-		switch (ParticleSystemCast)
-		{
-		case EParticleSystems::WalkPoof:
-			{
-				WalkPoof_NiagaraComponent->Activate();
-				break;
-			}
-		case EParticleSystems::SprintPoof:
-			{
-				SprintPoof_NiagaraComponent->Activate();
-				break;
-			}
-		case EParticleSystems::Sweat:
-			{
-				Sweat_NiagaraComponent->Activate();
-				break;
-			}
-		case EParticleSystems::AttackTrail:
-			{
-				AttackTrail_NiagaraComponent->Activate();
-				break;
-			}
-		case EParticleSystems::Attack:
-			{
-				Attack_NiagaraComponent->Activate(true);
-				break;
-			}
-		case EParticleSystems::Dizzy:
-			{
-				Dizzy_NiagaraComponent->Activate();
-				break;
-			}
-		case EParticleSystems::Test:
-			{
-				//Test_NiagraComponent->Activate();
-				break;
-			}
-		default:
-			break;
-		}
-	}
-
-	for(auto ParticleSystemCast : _Off)
-	{
-		switch (ParticleSystemCast)
-		{
-		case EParticleSystems::WalkPoof:
-			{
-				WalkPoof_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::SprintPoof:
-			{
-				SprintPoof_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::Sweat:
-			{
-				Sweat_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::AttackTrail:
-			{
-				AttackTrail_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::Attack:
-			{
-				Attack_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::Dizzy:
-			{
-				Dizzy_NiagaraComponent->Deactivate();
-				break;
-			}
-		case EParticleSystems::Test:
-			{
-				//Test_NiagraComponent->Deactivate();
-				break;
-			}
-		default:
-			break;
-		}
-	}
+	
 }
 
 void APrototype2Character::UpdateDecalDirection(bool _bIsOn)
@@ -1180,10 +1170,37 @@ void APrototype2Character::CheckForFloorSurface()
 
 void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation)
 {
-	if (!HasIdealRole())
-		return;
-	
-	Server_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
+	if (HasAuthority())
+	{
+		Multi_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
+	}
+	else if (GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
+	}
+}
+
+void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
+{
+	if (HasAuthority())
+	{
+		Multi_PlayWeaponSound(_SoundToPlay);
+	}
+	else if (GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		Server_PlayWeaponSound(_SoundToPlay);
+	}
+}
+
+void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
+{
+	Multi_PlayWeaponSound(_SoundToPlay);
+}
+
+void APrototype2Character::Multi_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
+{
+	WeaponAudioComponent->SetSound(_SoundToPlay);
+	WeaponAudioComponent->Play();
 }
 
 UWidget_PlayerHUD* APrototype2Character::GetPlayerHUD()
@@ -1276,6 +1293,7 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 			}
 			else
 			{
+				UE_LOG(LogTemp, Warning, TEXT("Plant was normal when picked up for me"));
 				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PlantData->PlantIcon);
 			}
 			OnPickUpItemDelegate.Broadcast();
@@ -1400,27 +1418,52 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 
 void APrototype2Character::ResetAttack()
 {
+	bCanAttack = true;
+
 	// Reset Attack Timer
 	if (HasAuthority())
 	{
-		AttackTimer = AttackTimerTime;
-
 		// Reset Attack variables
 		bIsChargingAttack = false;
 		AttackChargeAmount = 0.0f;
-		AutoAttackTimer = AutoAttackDuration;
+		AutoAttackTimer = 0.0f;
 
 		// Stop the player Interacting while "executing attack"
 		InteractTimer = InteractTimerTime;
-
-		bCanAttack = true;
-
+		
 		SetPlayerAimingMovement(false);
 	}
 	else
 	{
+		Server_ResetAttack();
 		Server_SetPlayerAimingMovement(false);
 	}
+}
+
+void APrototype2Character::Server_ResetAttack_Implementation()
+{
+	// Reset Attack variables
+	bIsChargingAttack = false;
+	AttackChargeAmount = 0.0f;
+	AutoAttackTimer = 0.0f;
+
+	// Stop the player Interacting while "executing attack"
+	InteractTimer = InteractTimerTime;
+
+	bCanAttack = true;
+}
+
+void APrototype2Character::FollowThroughOnAttack()
+{
+	if (bIsFollowingThroughAttack)
+	{
+		AddMovementInput(GetActorForwardVector(), 1.0f);
+	}
+}
+
+void APrototype2Character::Client_BroadcastOvercharge_Implementation()
+{
+	OnOverChargeDelegate.Broadcast(AutoAttackTimer, AutoAttackDuration);
 }
 
 void APrototype2Character::Server_RefreshCurrentMaxSpeed_Implementation()
@@ -1481,7 +1524,11 @@ void APrototype2Character::Server_EndSprint_Implementation()
 {
 	bSprinting = false;
 	bHasNotifiedCanSprint = false;
-	DelayedSprintRegenTimer = 0.0f;
+	
+	if (bCanSprint)
+	{
+		DelayedSprintRegenTimer = 0.0f;
+	}
 }
 
 void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
@@ -1499,6 +1546,7 @@ void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 void APrototype2Character::Server_TeleportToEndGame_Implementation(FTransform _EndGameTransform)
 {
 	Multi_TeleportToEndGame(_EndGameTransform);
+	bIsHoldingInteract = false;
 }
 
 void APrototype2Character::Multi_TeleportToEndGame_Implementation(FTransform _EndGameTransform)
@@ -1516,6 +1564,23 @@ void APrototype2Character::Multi_TeleportToEndGame_Implementation(FTransform _En
 bool APrototype2Character::HasIdealRole()
 {
 	return HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy;
+}
+
+bool APrototype2Character::GetHasCrown()
+{
+	// check if this player is crown holder and give points to the attacker if so
+	if (!PlayerStateRef || !GameState)
+	{
+		return false;
+	}
+	
+	if (PlayerStateRef->Player_ID == GameState->GetPlayerWinner())
+	{
+		return true;
+	}
+
+	return false;
+	
 }
 
 void APrototype2Character::InitPlayerNameWidgetComponent()
@@ -1546,30 +1611,11 @@ void APrototype2Character::InitPlayerNameWidgetComponent()
 	PlayerNameWidget->SetPlayerRef(PlayerStateRef);
 }
 
-void APrototype2Character::InitAudioComponents()
-{
-	if (!ChargeAttackAudioComponent)
-		return;
-
-	ChargeAttackAudioComponent->SetIsReplicated(true);
-	ChargeAttackAudioComponent->SetVolumeMultiplier(1.0f);
-
-	if (!ChargeCue)
-		return;
-
-	ChargeAttackAudioComponent->SetSound(ChargeCue);
-
-	if (!SoundAttenuationSettings)
-		return;
-	
-	ChargeAttackAudioComponent->AttenuationSettings = SoundAttenuationSettings;
-}
-
 void APrototype2Character::InitWeapon()
 {
 	if (HasAuthority())
 	{
-		AutoAttackTimer = AutoAttackDuration;
+		AutoAttackTimer = 0.0f;
 		bCanAttack = true;
 	}
 }
@@ -1654,17 +1700,25 @@ void APrototype2Character::HandleAttackChargeBehavior(float _DeltaSeconds)
 	{
 		if (bIsChargingAttack)
 		{
-			if(AttackChargeAmount < MaxAttackCharge + AutoAttackDuration)
+			if(AttackChargeAmount < MaxAttackCharge)// + AutoAttackDuration)
 				AttackChargeAmount += _DeltaSeconds;
 	
 			if (AttackChargeAmount >= MaxAttackCharge)
 			{
 				AttackChargeAmount = MaxAttackCharge;
-				AutoAttackTimer -= _DeltaSeconds;
-	
-				if (AutoAttackTimer <= 0)
-					ReleaseAttack();
+				AutoAttackTimer += _DeltaSeconds;
 			}
+		}
+	}
+
+	if (bIsChargingAttack)
+	{
+		if (AttackChargeAmount >= MaxAttackCharge)
+		{
+			OnOverChargeDelegate.Broadcast(AutoAttackTimer, AutoAttackDuration);
+			
+			if (AutoAttackTimer >= AutoAttackDuration)
+				ReleaseAttack();
 		}
 	}
 	// Client
@@ -1750,15 +1804,13 @@ void APrototype2Character::UpdateParticleSystems()
 
 void APrototype2Character::ToggleParticleSystems()
 {
-	if (!HasIdealRole())
-		return;
 	
-	if (ParticleSystemsToActivate.Num() > 0 || ParticleSystemsToDeActivate.Num() > 0)
-	{
-		Server_ToggleParticleSystems(ParticleSystemsToActivate, ParticleSystemsToDeActivate);
-		ParticleSystemsToActivate.Empty();
-		ParticleSystemsToDeActivate.Empty();
-	}
+	//if (ParticleSystemsToActivate.Num() > 0 || ParticleSystemsToDeActivate.Num() > 0)
+	//{
+	//	Server_ToggleParticleSystems(ParticleSystemsToActivate, ParticleSystemsToDeActivate);
+	//	ParticleSystemsToActivate.Empty();
+	//	ParticleSystemsToDeActivate.Empty();
+	//}
 }
 
 void APrototype2Character::DeltaDecrement(float& _Variable, float& _DeltaSeconds)
@@ -1769,10 +1821,12 @@ void APrototype2Character::DeltaDecrement(float& _Variable, float& _DeltaSeconds
 
 void APrototype2Character::TickTimers(float _DeltaSeconds)
 {
+	// This is no longer replicated
+	DeltaDecrement(AttackTimer, _DeltaSeconds);
+
 	if (HasAuthority())
 	{
 		DeltaDecrement(InteractTimer, _DeltaSeconds);
-		DeltaDecrement(AttackTimer, _DeltaSeconds);
 		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
 		DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
 		if (WeaponFlashTimer < 0.0f)
@@ -1858,9 +1912,9 @@ void APrototype2Character::Server_Sprint_Implementation()
 {
 	if (DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > 0)
 	{
-		// Can sprint while charging with fists
-		if (CurrentWeaponSeedData != DefaultWeaponSeedData && bIsChargingAttack)
-			return;
+		//// Can sprint while charging with fists
+		//if (CurrentWeaponSeedData != DefaultWeaponSeedData && bIsChargingAttack)
+		//	return;
 
 		bSprinting = true;
 		
@@ -1900,34 +1954,32 @@ void APrototype2Character::Server_ChargeAttack_Implementation()
 
 void APrototype2Character::Server_ReleaseAttack_Implementation(FVector _CachedActorLocation, FVector _CachedForwardVector)
 {
-	bCanAttack = false;
-	
 	// Socket Weapon back to held
 	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 	
 	// Set the radius of the sphere for attack
 	int32 AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
 	
-	// If attack button is clicked without being held
+
+	// Always delay attack because of the new launch
+	bool bFullChargeAttack = true;
 	if (AttackChargeAmount < MaxAttackCharge) // InstantAttackThreshold
 	{
-		Weapon->ReleaseAttack(false, this);
-		// Delayed attack
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(Handle,
-			FTimerDelegate::CreateLambda(
-				[this, AttackSphereRadius, _CachedActorLocation, _CachedForwardVector]
-				{
-					
-					SetPlayerAimingMovement(false);
-					ExecuteAttack(AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
-				}), InstantAttackDelay, false);	
+		bFullChargeAttack = false;
 	}
-	else
-	{
-		Weapon->ReleaseAttack(true, this);
-		Weapon->ExecuteAttack(AttackSphereRadius,this, _CachedActorLocation, _CachedForwardVector);
-	}
+	Weapon->ReleaseAttack(bFullChargeAttack, this);
+	
+	// Delayed attack
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(Handle,
+		FTimerDelegate::CreateLambda(
+			[this, AttackSphereRadius, _CachedActorLocation, _CachedForwardVector]
+			{
+				
+				SetPlayerAimingMovement(false);
+				ExecuteAttack(AttackSphereRadius, _CachedActorLocation, _CachedForwardVector);
+			}), InstantAttackDelay, false);
+
 }
 
 void APrototype2Character::Multi_ReleaseAttack_Implementation()
@@ -1945,6 +1997,7 @@ void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _Loc
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundQueue, _Location, 1, 1, 0, _Attenuation);
 	else
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundQueue, _Location, 1, 1, 0, SoundAttenuationSettings);
+
 }
 
 void APrototype2Character::Client_AddHUD_Implementation()
@@ -1977,6 +2030,8 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 {
+	HeldItem->Server_Drop();
+	
 	// Server_DropItem
 	if (DropCue)
 		PlaySoundAtLocation(GetActorLocation(), DropCue);
@@ -2160,10 +2215,4 @@ void APrototype2Character::Multi_ReceiveMaterialsArray_Implementation(
 			SkellyMeshComponent->SetMaterial(i, _InMaterialsArray[i]);
 		}
 	}
-}
-
-
-void APrototype2Character::Server_ToggleChargeSound_Implementation(bool _bIsSoundEnabled)
-{
-	Multi_ToggleChargeSound(_bIsSoundEnabled);
 }

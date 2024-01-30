@@ -24,21 +24,18 @@ void APlant::BeginPlay()
 	Super::BeginPlay();
 	
 	SetReplicatingMovement(true);
+
+	Lifetime = InitialLifetime;
+	WiltDelayTimer = WiltDelay;
 }
 
 
 void APlant::Interact(APrototype2Character* _Player)
 {
-	if (!bGrown)
-	{
-		return;
-	}
-
-	WiltingDelayTimer = 0;
 	ItemComponent->Interact(_Player, this);
-	Multi_SetWilt(false);
 
-
+	Multi_OnInteract();
+	bShouldWilt = false;
 }
 
 void APlant::HoldInteract(APrototype2Character* _Player)
@@ -55,6 +52,8 @@ void APlant::ClientInteract(APrototype2Character* _Player)
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 	
 	SSComponent->Boing();
+
+	WiltDelayTimer = WiltDelay;
 }
 
 void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
@@ -69,6 +68,11 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, cla
 
 bool APlant::IsInteractable(APrototype2PlayerState* _Player)
 {
+	if (!bGrown)
+	{
+		return false;
+	}
+	
 	if (!_Player)
 		return false;
 
@@ -93,49 +97,83 @@ void APlant::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	Multi_Wilt(DeltaSeconds);
+	Wilt(DeltaSeconds);
 }
 
 void APlant::Server_Drop()
 {
-	Super::Server_Drop();
-	Multi_SetWilt(true);
+	bShouldWilt = true;
+}
+
+void APlant::Client_Drop()
+{
 }
 
 void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(APlant, WiltingDelayTimer)
-	DOREPLIFETIME(APlant, WiltTime)
-	DOREPLIFETIME(APlant, bShouldWilt)
+	DOREPLIFETIME(APlant, bShouldWilt);
 }
 
-void APlant::Multi_Wilt(float DeltaTime)
+void APlant::Wilt(float DeltaTime)
 {
 	if (!bShouldWilt)
 		return;
-	
-	WiltingDelayTimer += DeltaTime;
-	
-	if (WiltingDelayTimer < WiltingWaitTime)
-	{
-		return;
-	}
-	
-	WiltTime -= DeltaTime;
 
-	if (WiltTime <= 0)
+	WiltMaterial();
+
+	if (WiltDelayTimer > 0)
 	{
-		this->Destroy();
+		WiltDelayTimer -= DeltaTime;
 	}
+	else if (Lifetime > 0)
+	{
+		Lifetime -= DeltaTime;
+		if (Lifetime <= 0)
+		{
+			if (DestroyVFX)
+			{
+				auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+				SpawnedVFX->SetLifeSpan(5.0f);
+			}
+			
+			if (HasAuthority())
+				Destroy();
+		}
+	}
+}
+
+void APlant::WiltMaterial()
+{
+	if (PlantMats.Num() <= 0)
+	{
+		for(int i = 0; i < ItemComponent->Mesh->GetNumMaterials(); i++)
+		{
+			auto MaterialInstance = ItemComponent->Mesh->CreateDynamicMaterialInstance(i, ItemComponent->Mesh->GetMaterial(i));
+			PlantMats.Add(MaterialInstance);
+			ItemComponent->Mesh->SetMaterial(i , MaterialInstance);
+		}
+	}
+	
+	for(int i = 0; i < PlantMats.Num(); i++)
+	{
+		PlantMats[i]->SetScalarParameterValue(FName("GrayScaleTint"), FMath::Lerp<float>(1.0f, 0.0f, Lifetime / InitialLifetime));
+
+		UE_LOG(LogTemp, Warning, TEXT("wilted plant material"));
+	}
+}
+
+void APlant::Multi_OnInteract_Implementation()
+{
+	WiltDelayTimer = WiltDelay;
+}
+
+void APlant::Server_Destroy_Implementation()
+{
+	Destroy();
 }
 
 void APlant::Multi_ScalePlant()
 {
 	ItemComponent->Mesh->SetWorldScale3D(SeedData->BabyScale);
-}
-
-void APlant::Multi_SetWilt(bool _bShouldWilt)
-{
-	bShouldWilt = _bShouldWilt;
 }

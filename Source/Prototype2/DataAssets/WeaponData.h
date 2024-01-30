@@ -72,4 +72,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
 	EDebuff Debuff = EDebuff::None;
+	
+	UPROPERTY(EditDefaultsOnly, Category= "Functionality")
+	float LaunchVelocityMultiplier = 2000.0f;
 };

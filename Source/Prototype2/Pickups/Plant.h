@@ -19,25 +19,41 @@ public:
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void Server_Drop() override;
+	virtual void Client_Drop() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-		
-	void Multi_Wilt(float DeltaTime);
+
+	UFUNCTION()
+	void Wilt(float DeltaTime);
+	UFUNCTION()
+	void WiltMaterial();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnInteract();
+	UFUNCTION(Server, Reliable)
+	void Server_Destroy();
+	
 	void Multi_ScalePlant();
-	void Multi_SetWilt(bool _bShouldWilt);
 
 	bool bGrown = false;
 	UPROPERTY(EditAnywhere)
-	int32 NumberOfNearbyFlowers = 0;
+	int32 NumberOfNearbyFlowers{};
 
-	// Time to wait after being dropped until wilting starts
-	static constexpr float WiltingWaitTime{5};
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> DestroyVFX{};
+	
+	UPROPERTY(EditAnywhere)
+	float InitialLifetime{30};
+	UPROPERTY(VisibleAnywhere)
+	float Lifetime{};
+	
+	UPROPERTY(EditAnywhere)
+	float WiltDelay{30};
+	UPROPERTY(VisibleAnywhere)
+	float WiltDelayTimer{};
 
-	UPROPERTY(EditAnywhere, Replicated)
-	float WiltingDelayTimer{0};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bShouldWilt{};
 
-	UPROPERTY(EditAnywhere, Replicated)
-	float WiltTime{30};
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool bShouldWilt = false;
+	UPROPERTY(VisibleAnywhere)
+	TArray<class UMaterialInstanceDynamic*> PlantMats;
 };

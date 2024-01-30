@@ -35,7 +35,8 @@ void ASellBin_Winter::BeginPlay()
 
 	IcePlane->SetupAttachment(ItemComponent->Mesh);
 	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	IcePlane->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	IceBoundary->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	IceBoundary->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel1, ECR_Block);
 	
 	IceBoundary->SetupAttachment(ItemComponent->Mesh);
@@ -43,6 +44,7 @@ void ASellBin_Winter::BeginPlay()
 	IceBoundary->SetCollisionProfileName("NoCollision");
 	IceBoundary->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 	IceBoundary->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	IceBoundary->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	IceBoundary->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 

@@ -95,7 +95,6 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 	LobbyGamestate->Server_Players.Remove(PlayerStateReference);
 	LobbyGamestate->Server_TeamOne.Remove(PlayerStateReference);
 	LobbyGamestate->Server_TeamTwo.Remove(PlayerStateReference);
-	
 	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
 	{
 		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
@@ -157,6 +156,7 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 		}
 	}
 }
+
 
 FCharacterDetails ALobbyGamemode::CreateDetailsFromColourEnum(EColours _Colour)
 {

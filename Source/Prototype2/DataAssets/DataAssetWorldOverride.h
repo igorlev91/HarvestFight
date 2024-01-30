@@ -16,4 +16,7 @@ class PROTOTYPE2_API ADataAssetWorldOverride : public AActor
 public:
 	UPROPERTY(EditAnywhere)
 	class UWorldOverrideData* WorldOverrideData;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<class UStaticMeshComponent*> PreGameArenaSpawnLocations;
 };

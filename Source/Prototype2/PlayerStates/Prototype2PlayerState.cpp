@@ -58,6 +58,7 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 {
 	bIsShowingExtraCoins = true;
 	ExtraCoins = _amount;
+	Client_OnAddCoins();
 	Multi_OnAddCoins();
 }
 
@@ -66,6 +67,7 @@ void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 	bIsShowingExtraCoins = true;
 	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1)) * Gamestate->SellMultiplier;
 	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->SeedData->GoldMultiplier : PlantSellValue;
+	Client_OnAddCoins();
 	Multi_OnAddCoins();
 }
 
@@ -101,6 +103,46 @@ void APrototype2PlayerState::Client_OnAddCoins_Implementation()
 void APrototype2PlayerState::Multi_OnAddCoins()
 {
 	OnItemSoldDelegate.Broadcast(Player_ID);
+}
+
+bool APrototype2PlayerState::IsLoosing()
+{
+	bool bLoosing{};
+	int32 LoosingPlayerScore{9999};
+	if (Gamestate)
+	{
+		for(APrototype2PlayerState* Player : Gamestate->Server_Players)
+		{
+			if (Player->Coins < LoosingPlayerScore)
+			{
+				LoosingPlayerScore = Player->Coins;
+			}
+		}
+	}
+	if (Coins == LoosingPlayerScore)
+		bLoosing = true;
+	
+	return bLoosing;
+}
+
+bool APrototype2PlayerState::IsWinning()
+{
+	bool bWinning{};
+	int32 WinningPlayerScore{};
+	if (Gamestate)
+	{
+		for(APrototype2PlayerState* Player : Gamestate->Server_Players)
+		{
+			if (Player->Coins > WinningPlayerScore)
+			{
+				WinningPlayerScore = Player->Coins;
+			}
+		}
+	}
+	if (Coins == WinningPlayerScore)
+		bWinning = true;
+	
+	return bWinning;
 }
 
 void APrototype2PlayerState::UpdateCharacterMaterial(FCharacterDetails _Details)

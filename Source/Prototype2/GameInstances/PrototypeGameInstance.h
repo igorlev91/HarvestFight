@@ -74,6 +74,9 @@ public:
 	UPrototypeGameInstance();
 	virtual void StartGameInstance() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bPlayerStentil{ false };
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 MaxPlayersOnServer{0};
 
@@ -88,4 +91,13 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bTeams{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MusicVolume{ 0.5f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AmbienceVolume{ 0.5f };
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SFXVolume{ 0.5f };
 };

@@ -1,6 +1,8 @@
 
 #include "AutoGrowSpot.h"
 
+#include <Prototype2/DataAssets/ConcreteBagData.h>
+
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/DataAssetWorldOverride.h"
@@ -8,12 +10,15 @@
 #include "Prototype2/DataAssets/WorldOverrideData.h"
 #include "Prototype2/Gamemodes/Prototype2GameMode.h"
 #include "Prototype2/Pickups/Fertiliser.h"
+#include "Prototype2/Pickups/GrowableWeapon.h"
 #include "Prototype2/Pickups/Seed.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 AAutoGrowSpot::AAutoGrowSpot()
 {
 	bReplicates = true;
+	bIsNormalGrowSpot = false;
 }
 
 void AAutoGrowSpot::BeginPlay()

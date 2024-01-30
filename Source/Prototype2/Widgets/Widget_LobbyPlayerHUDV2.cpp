@@ -4,6 +4,7 @@
 
 #include "Widget_LobbyCharacterSelection.h"
 #include "Widget_MapChoice.h"
+#include "Components/Border.h"
 #include "Components/Button.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
@@ -17,6 +18,7 @@
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
+#include "SlateCore/Public/Fonts/SlateFontInfo.h"
 
 void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 {
@@ -79,7 +81,8 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	ReadyImages.Add(P5ReadyImage);
 	ReadyImages.Add(P6ReadyImage);
 
-	
+	BackgroundImageT1->SetOpacity(0.0f);
+	BackgroundImageT2->SetOpacity(0.0f);
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -273,6 +276,12 @@ void UWidget_LobbyPlayerHUDV2::InitTeams()
 			TeamBText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]);
 		}
 
+		BackgroundImageT1->SetOpacity(0.4f);
+		BackgroundImageT2->SetOpacity(0.4f);
+
+		LeftTeamOverlay->SetRenderTranslation(FVector2d(0, -100.0f));
+		RightTeamOverlay->SetRenderTranslation(FVector2d(0, -100.0f));
+		
 		if (Overlays.Num() > 0)
 		{
 			for (int i = 0; i < 6; i++)
@@ -289,7 +298,19 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 {
 	if (!bTeams)
 		return;
+
+	/* Set outline colour to white if black team */
+	FSlateFontInfo FontInfo{};
+	FontInfo = TeamAText->GetFont();
+	FontInfo.OutlineSettings = TeamAText->GetFont().OutlineSettings;
+	FontInfo.OutlineSettings.OutlineColor = FLinearColor::White;
 	
+	if (GameStateReference->TeamOneColour == EColours::BLACK)
+		TeamAText->SetFont(FontInfo);
+	if (GameStateReference->TeamTwoColour == EColours::BLACK)
+		TeamBText->SetFont(FontInfo);
+	
+	/* Update team 1 positions in vertical box */
 	for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
 	{
 		if (auto Player = GameStateReference->Server_TeamOne[i])
@@ -338,11 +359,32 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 					break;
 				}
 			}
-			
 		}
 	}
+
+	/* Adding padding */
+	if (VerticalBoxLeft->GetSlots().Num() > 1)
+	{
+		for (int i = 1; i < VerticalBoxLeft->GetSlots().Num(); i++)
+		{
+			UVerticalBoxSlot* VerticalSlot = Cast<UVerticalBoxSlot>(VerticalBoxLeft->GetSlots()[i]);
+
+			if (VerticalSlot->Content->GetVisibility() == ESlateVisibility::Hidden)
+			{
+				VerticalSlot->Content->RemoveFromParent();
+				//VerticalBoxLeft->RemoveChildAt(i);
+				i--;
+			}
+			else
+			{
+				VerticalSlot->SetPadding(FMargin(0,30,0,0));
+			}
+		}
+	}
+	
 	VerticalBoxLeft->InvalidateLayoutAndVolatility();
 
+	/* Update team 2 positions in vertical box */
 	for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
 	{
 		if (auto Player = GameStateReference->Server_TeamTwo[i])
@@ -399,6 +441,26 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 			}
 		}
 	}
+
+	/* Adding padding */
+	if (VerticalBoxRight->GetSlots().Num() > 1)
+	{
+		for (int i = 1; i < VerticalBoxRight->GetSlots().Num(); i++)
+		{
+			UVerticalBoxSlot* VerticalSlot = Cast<UVerticalBoxSlot>(VerticalBoxRight->GetSlots()[i]);
+
+			if (VerticalSlot->Content->GetVisibility() == ESlateVisibility::Hidden)
+			{
+				VerticalBoxRight->RemoveChildAt(i);
+				i--;
+			}
+			else
+			{
+				VerticalSlot->SetPadding(FMargin(0,30,0,0));
+			}
+		}
+	}
+	
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 

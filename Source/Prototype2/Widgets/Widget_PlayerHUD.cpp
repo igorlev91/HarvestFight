@@ -480,6 +480,10 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 
 void UWidget_PlayerHUD::UpdatePickupUI(UTexture2D* _PickupTexture)
 {
+	if (!_PickupTexture)
+	{
+		return;
+	}
 	OverlayPickup->SetVisibility(ESlateVisibility::Visible);
 	FVector2D ImageSize ={(float)_PickupTexture->GetSizeX(), (float)_PickupTexture->GetSizeY()};
 	PickupImage->SetDesiredSizeOverride(ImageSize);

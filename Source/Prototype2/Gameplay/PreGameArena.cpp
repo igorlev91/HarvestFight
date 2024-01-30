@@ -4,6 +4,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/PlayerStartPIE.h"
 #include "GameFramework/PlayerStart.h"
+#include "Net/UnrealNetwork.h"
+#include "Prototype2/Gamemodes/Prototype2GameMode.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
@@ -13,21 +15,21 @@ APreGameArena::APreGameArena()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
-
-
 	bReplicates = true;
 }
 
 void APreGameArena::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	TeamsMaterial = Mesh->CreateDynamicMaterialInstance(0);
 
-	Mesh->SetIsReplicated(true);
+	Mesh->SetIsReplicated(false);
 	SetReplicateMovement(true);
-
+	
 	if (!HasAuthority())
 		return;
-
+	
 	FRotator Rotation{0.0f, 45.0f, 0.0f};
 	SetActorRotation(Rotation);
 	Mesh->SetWorldRotation(Rotation);
@@ -39,6 +41,16 @@ void APreGameArena::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (APrototype2Gamestate* SomeGamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if (AssignedTeam == 0)
+			TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8_t)SomeGamestate->TeamOneColour]);
+		else
+			TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8_t)SomeGamestate->TeamTwoColour]);
+		
+		Mesh->SetMaterial(0, TeamsMaterial);
+	}
+	
 	if (!HasAuthority())
 		return;
 	
@@ -47,5 +59,17 @@ void APreGameArena::Tick(float DeltaTime)
 
 	if (GameState->HasGameStarted())
 		Destroy();
+}
+
+void APreGameArena::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APreGameArena, AssignedTeam);
+}
+
+void APreGameArena::Multi_SetArenaColour_Implementation()
+{
+
+	Mesh->SetMaterial(0, TeamsMaterial);
 }
 

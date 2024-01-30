@@ -60,7 +60,8 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_Boing();
 protected:
-
+	UPROPERTY(EditAnywhere)
+	int32 LoosingPlayerCanAddMatchTimeTime{20};
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UItemComponent* ItemComponent;

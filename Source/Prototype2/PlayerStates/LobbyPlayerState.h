@@ -19,7 +19,7 @@ class PROTOTYPE2_API ALobbyPlayerState : public APlayerState
 	virtual void Tick(float _DeltaSeconds) override;
 	
 public:
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	bool IsReady{};
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)

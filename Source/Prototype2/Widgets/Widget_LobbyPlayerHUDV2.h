@@ -171,5 +171,15 @@ public:
 	UImage* P5ReadyImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UImage* P6ReadyImage;
+
+	/* Team borders */
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UOverlay* LeftTeamOverlay;
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UOverlay* RightTeamOverlay;
 	
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UImage* BackgroundImageT1;
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	UImage* BackgroundImageT2;
 };

@@ -21,9 +21,7 @@ UDebuffComponent::UDebuffComponent()
 void UDebuffComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UDebuffComponent, DebuffDuration);
 	DOREPLIFETIME(UDebuffComponent, DazeRandomDirection);
-	DOREPLIFETIME(UDebuffComponent, PunchCounterDropOffTimer);
 	DOREPLIFETIME(UDebuffComponent, PunchCounter);
 	DOREPLIFETIME(UDebuffComponent, CurrentDebuff);
 }
@@ -44,28 +42,22 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	
 	if (!Player)
 		return;
-	
-	if (!Player->HasAuthority())
-	{
-		return;
-	}
-	
+
 	DecrementTimers(DeltaTime);	
-
-	if (CurrentDebuff == EDebuff::None)
-		return;
-
-	if (CurrentDebuff == EDebuff::Stun)
-	{
-		// Continually interrupt player beng able to interact and attack
-		UpdateStun();
-	}
-
+	
 	if (CurrentDebuff == EDebuff::Daze)
 	{
 		// Make character walk in random direction
-		Client_UpdateDaze();
+		UpdateDaze();
 	}
+}
+
+void UDebuffComponent::Server_RemoveDebuff_Implementation()
+{
+	// Reset this bufftype
+	CurrentDebuff = EDebuff::None;
+
+	Client_ToggleDizzyVFX(false);
 }
 
 void UDebuffComponent::DecrementTimers(float _DeltaTime)
@@ -74,7 +66,10 @@ void UDebuffComponent::DecrementTimers(float _DeltaTime)
 	{
 		PunchCounterDropOffTimer -= _DeltaTime;
 		if (PunchCounterDropOffTimer <= 0)
-			UpdatePunchCounter();
+		{
+			PunchCounterDropOffTimer = PunchCounterDropOff;
+			Server_UpdatePunchCounter();
+		}
 	}
 
 	if (DebuffDuration > 0)
@@ -82,7 +77,8 @@ void UDebuffComponent::DecrementTimers(float _DeltaTime)
 		DebuffDuration -= _DeltaTime;
 		if (DebuffDuration <= 0)
 		{
-			RemoveDebuff();
+			Server_RemoveDebuff();
+			Player->RefreshCurrentMaxSpeed();
 		}
 	}
 }
@@ -113,17 +109,17 @@ void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
 	{
 	case EDebuff::Stun:
 		{
-			Stun();
 			break;
 		}
 	case EDebuff::Daze:
 		{
-			Daze();
+			Player->CurrentMaxWalkSpeed = DazeSpeed;	
+			DazeRandomDirection = FMath::RandRange(0,1000);
 			break;
 		}
 	case EDebuff::Slow:
 		{
-			Slow();
+			Player->CurrentMaxWalkSpeed = SlowSpeed;
 			break;
 		}
 	case EDebuff::Punch:
@@ -138,33 +134,7 @@ void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
 	}
 }
 
-void UDebuffComponent::Stun()
-{
-	// Trigger debuff VFX/animation
-
-	UKismetSystemLibrary::PrintString(GetWorld(), "Stunned");
-}
-
-void UDebuffComponent::UpdateStun()
-{
-	Player->ResetAttack();
-	Player->bAllowMovementFromInput = false;
-}
-
-void UDebuffComponent::Daze()
-{
-	// Trigger debuff VFX
-	
-	// Slightly slow player and apply ratescale
-	Player->CurrentMaxWalkSpeed = DazeSpeed;
-	
-	// Stop player movement from input
-	Player->bAllowMovementFromInput = false;
-	
-	DazeRandomDirection = FMath::RandRange(0,1000);
-}
-
-void UDebuffComponent::Client_UpdateDaze_Implementation()
+void UDebuffComponent::UpdateDaze()
 {
 	// Update direction of dizzy vector
 	// Apply the dizzy vector to player movement
@@ -186,45 +156,12 @@ void UDebuffComponent::Client_UpdateDaze_Implementation()
 	Player->AddMovementInput(ForwardDirection, FMath::Sin(DebuffDuration + DazeRandomDirection * 7));
 	Player->AddMovementInput(RightDirection, FMath::Sin(DebuffDuration + DazeRandomDirection));
 }
-//
-// void UDebuffComponent::UpdateDaze()
-// {
-// 	// Update direction of dizzy vector
-// 	// Apply the dizzy vector to player movement
-//
-// 	if (!Player->Controller)
-// 		return;
-// 	
-// 	// find out which way is forward
-// 	const FRotator Rotation = Player->Controller->GetControlRotation();
-// 	const FRotator YawRotation(0, Rotation.Yaw, 0);
-//
-// 	// get forward vector
-// 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-// 	
-// 	// get right vector 
-// 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-//
-// 	// add movement 
-// 	Player->AddMovementInput(ForwardDirection, FMath::Sin(DebuffDuration + DazeRandomDirection * 7));
-// 	Player->AddMovementInput(RightDirection, FMath::Sin(DebuffDuration + DazeRandomDirection));
-// }
-
-void UDebuffComponent::Slow()
-{
-	// Trigger debuff VFX/
-	Player->CurrentMaxWalkSpeed = SlowSpeed;
-}
 
 void UDebuffComponent::Punch()
 {
 	PunchCounter++;
 	UKismetSystemLibrary::PrintString(GetWorld(), "Punch Counter: " + FString::FromInt(PunchCounter));
-	
-	// Slow for short duration
-	Player->CurrentMaxWalkSpeed = SlowSpeed;
-	DebuffDuration = 0.5f;
-	
+
 	if (PunchCounter == 3)
 	{
 		// Reset counter and timer
@@ -233,33 +170,18 @@ void UDebuffComponent::Punch()
 
 		// Stun for 2s
 		CurrentDebuff = EDebuff::Stun;		
-		Player->bAllowMovementFromInput = false;
 		DebuffDuration = 2.0f;
 		
 		UKismetSystemLibrary::PrintString(GetWorld(), "Player Stunned!");
 	}
 }
 
-void UDebuffComponent::UpdatePunchCounter()
+void UDebuffComponent::Server_UpdatePunchCounter_Implementation()
 {
-	PunchCounterDropOffTimer = PunchCounterDropOff;
 	PunchCounter--;
 	if (PunchCounter < 0)
 	{
 		PunchCounter = 0;
 	}
-}
-
-void UDebuffComponent::RemoveDebuff()
-{
-	// Allow movement again
-	Player->bAllowMovementFromInput = true;
-
-	// Reset this bufftype
-	CurrentDebuff = EDebuff::None;
-	
-	Player->RefreshCurrentMaxSpeed();
-	
-	Client_ToggleDizzyVFX(false);
 }
 

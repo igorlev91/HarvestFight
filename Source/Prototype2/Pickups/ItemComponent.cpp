@@ -15,11 +15,18 @@ UItemComponent::UItemComponent()
 
 	Mesh->SetRenderCustomDepth(false);
 	Mesh->CustomDepthStencilValue = 1;
+
+	SetIsReplicatedByDefault(true);
 }
 
 void UItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!bDoBeginPlay)
+	{
+		return;
+	}
+
 	
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);

@@ -4,6 +4,7 @@
 #include "Prototype2/Spawning/FallOffRespawn.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Microsoft/AllowMicrosoftPlatformTypes.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Pickups/PickUpItem.h"
 
@@ -51,6 +52,8 @@ void AFallOffRespawn::RespawnPlayersBelowHeight()
 
 void AFallOffRespawn::CheckTimer(float DeltaTime)
 {
+	if (!HasAuthority())
+		return;
 	TimeCounter -= DeltaTime;
 
 	if (TimeCounter < 0)

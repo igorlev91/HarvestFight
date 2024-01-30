@@ -31,6 +31,20 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	//SetGameTime();
+
+	if (HasAuthority())
+	{
+		TArray<EColours> ScannedColours{};
+		for(auto PlayerState : Server_Players)
+		{
+			ScannedColours.Add(PlayerState->Details.Colour);
+		}
+		if (ScannedColours.Num() >= 2)
+		{
+			TeamOneColour = ScannedColours[0];
+			TeamTwoColour = ScannedColours[1];
+		}
+	}
 	
 	TickCountdownTimer(DeltaSeconds);
 	TickMatchTimer(DeltaSeconds);
@@ -456,7 +470,7 @@ void APrototype2Gamestate::UpdateTeamsScores()
 		{
 			Team1PointsTally += Player->Coins;
 		}
-		UE_LOG(LogTemp, Warning, TEXT("T1Tally: %d"), Team1PointsTally);
+		//UE_LOG(LogTemp, Warning, TEXT("T1Tally: %d"), Team1PointsTally);
 	}
 	Team1Points = Team1PointsTally;
 

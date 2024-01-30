@@ -17,6 +17,12 @@ APickUpItem::APickUpItem()
 	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
+void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APickUpItem, ItemComponent);
+}
+
 // Called when the game starts or when spawned
 void APickUpItem::BeginPlay()
 {

@@ -27,12 +27,18 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float _DeltaTime) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
-	bool IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
+	virtual bool IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void Interact(APrototype2Character* _Player) override;
-	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
+	// stealing
+	virtual void HoldInteract(APrototype2Character* _Player) override;
+	bool Stealing_IsInteractable_Unprotected(APrototype2Character* _Player);
+	void Stealing_ClientInteract(APrototype2Character* _Player);
+	void Stealing_Interact(APrototype2Character* _Player);
+	void Stealing_OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID);
+	
 	void PlantASeed(ASeed* _SeedToPlant);
 	void DestroyPlant();
 
@@ -73,6 +79,7 @@ public:
 	APrototype2Character* CurrentPlayerStealing = nullptr;
 	float HoldInteractTotalDuration = 5.0f;
 	float HoldInteractTimer = 0.0f;
+
 	
 protected:
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -142,6 +149,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	class UBoxComponent* HitBox{nullptr};
 
+	bool bIsNormalGrowSpot = true;
 	//
 	//	SFX
 	//

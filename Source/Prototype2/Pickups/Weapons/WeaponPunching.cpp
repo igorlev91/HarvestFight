@@ -83,6 +83,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 				if (HitPlayerCast != _Player)
 				{
 					HitPlayerCast->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					CheckIfCrownHit(_Player, HitPlayerCast);
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
@@ -102,10 +103,10 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	Client_BroadcastAttackToHUD(_Player);
 	
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
-
+	_Player->PlayWeaponSound(_Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
+	
 	// Reset all attack variables
-	_Player->ResetAttack();
+	//_Player->ResetAttack();
 }
 
 void UWeaponPunching::UpdateAOEIndicator(APrototype2Character* _Player)

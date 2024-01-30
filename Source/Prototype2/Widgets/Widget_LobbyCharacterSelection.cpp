@@ -363,14 +363,14 @@ int32 UWidget_LobbyCharacterSelection::GetNumberOfBluePlayers()
 	return Count;
 }
 
-void UWidget_LobbyCharacterSelection::UpdateTeamsCharacterColourFromSelection(int32 _NumberOfColors)
+void UWidget_LobbyCharacterSelection::UpdateTeamsCharacterColourFromSelection(int32 _Color, int32 _PlayerID)
 {
-	IdealDetails.Colour = (EColours)_NumberOfColors;
-	SetCharacterColourFromSelection(_NumberOfColors);
+	IdealDetails.Colour = (EColours)_Color;
+	SetCharacterColourFromSelection(_Color);
 	
 	if (!OwningController)
 		return;
 	
-	OwningController->SyncPlayerMaterial(PlayerID, IdealDetails);
+	OwningController->SyncPlayerMaterial(_PlayerID, IdealDetails);
 	UpdateCharacterImage(OwningController);	
 }

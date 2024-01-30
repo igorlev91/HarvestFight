@@ -8,6 +8,7 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/GrowSpot.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
 
 // Sets default values
@@ -87,6 +88,16 @@ void AAspearagusProjectile::CheckForHitPlayers()
 				if (HitPlayerCast != OwningPlayer)
 				{
 					HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
+					if (HitPlayerCast->GetHasCrown())
+					{
+						int32 PointsForHit = static_cast<int32>(OwningPlayer->AttackChargeAmount);
+						if (PointsForHit < 1)
+						{
+							PointsForHit = 1;
+						}
+						OwningPlayer->PlayerStateRef->AddCoins(PointsForHit);
+						HitPlayerCast->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+					}
 					Destroy();
 				}
 			}

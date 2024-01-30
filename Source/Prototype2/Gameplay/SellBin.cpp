@@ -60,8 +60,9 @@ void ASellBin::BeginPlay()
 	{
 		ItemComponent->Mesh->SetWorldScale3D(SellBinData->DesiredScale);
 	}
-	
-	SSComponent->SetMeshToStretch(ItemComponent->Mesh);
+
+	if (HasAuthority())
+		SSComponent->SetMeshToStretch(ItemComponent->Mesh);
 }
 
 void ASellBin::Tick(float DeltaTime)
@@ -220,7 +221,17 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 				
 				if (SomePlayer->SellCue)
 				{
-					SomePlayer->Multi_PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+				}
+
+				if (!SomePlayer->PlayerStateRef->IsWinning() && GameStateCast->MatchLengthSeconds < LoosingPlayerCanAddMatchTimeTime)
+				{
+					GameStateCast->MatchLengthSeconds += 15;
+					if (GameStateCast->MatchLengthSeconds >= 60)
+					{
+						GameStateCast->MatchLengthSeconds = 0;
+						GameStateCast->MatchLengthMinutes++;
+					}
 				}
 				
 				SomePlayer->PlayerStateRef->AddCoins(Plant);
@@ -266,7 +277,7 @@ void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player,
 {
 	if (_Player->SellCue)
 	{
-		_Player->Multi_PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
+		_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
 	}
 				
 	_Player->PlayerStateRef->AddCoins(_Plant);

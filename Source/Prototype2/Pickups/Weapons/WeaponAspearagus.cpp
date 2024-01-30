@@ -74,11 +74,11 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->DropWeapon();
 
 		//AttackTrail_NiagaraComponent->Deactivate();
-		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		//_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	// Play attack audio
-	_Player->Multi_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio, nullptr);
-
+	_Player->PlayWeaponSound(_Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
+	
 	// Reset all attack variables
 	_Player->ResetAttack();
 }
@@ -91,7 +91,7 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
 {
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius;// + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
 	
 	FVector DownVector = {_Player->GetActorLocation().X, _Player->GetActorLocation().Y, _Player->GetMesh()->GetComponentLocation().Z};
 	DownVector += _Player->GetActorForwardVector() * 10000.0f;

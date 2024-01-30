@@ -65,6 +65,7 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 				if (HitPlayerCast != _Player)
 				{
 					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					CheckIfCrownHit(_Player, HitPlayerCast);
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
@@ -88,14 +89,13 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	if (_Player->WeaponCurrentDurability <= 0)
 	{
 		_Player->DropWeapon();
-
-		//AttackTrail_NiagaraComponent->Deactivate();
-		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		
+		//_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 
 	// Play attack audio
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
-
+	_Player->PlayWeaponSound(_Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
+	
 	// Reset all attack variables
 	_Player->ResetAttack();
 }

@@ -30,6 +30,8 @@ class PROTOTYPE2_API APickUpItem : public AActor
 public:	
 	/* Sets default values for this actor's properties */
 	APickUpItem();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
@@ -48,7 +50,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
 
 	UPROPERTY(EditAnywhere)

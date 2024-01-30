@@ -26,6 +26,7 @@ void UWidget_LobbyPlayerHUD::NativeOnInitialized()
 	}
 
 	// Make cancel hidden
+	ReadyButton->SetVisibility(ESlateVisibility::Visible);
 	CancelButton->SetVisibility(ESlateVisibility::Hidden);
 }
 
