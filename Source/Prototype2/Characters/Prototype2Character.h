@@ -18,6 +18,7 @@ class UAudioComponent;
 class USoundCue;
 class UItemComponent;
 class UDebuffComponent;
+class Smite;
 
 /* Enum for controlling particle systems */
 UENUM()
@@ -147,6 +148,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<UAnimationData*> AllAnimationDatas;
+
+	// Smite
+	Smite* smite = nullptr;
+
+public:
+	void Multi_SetSmite(Smite* _smite);
+	Smite* GetSmite() const {return smite;}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Tick													 ///

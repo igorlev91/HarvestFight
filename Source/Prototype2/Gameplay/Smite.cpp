@@ -5,6 +5,7 @@
 
 Smite::Smite()
 {
+	Timer = TimerStartTime;
 }
 
 Smite::~Smite()
@@ -18,7 +19,10 @@ void Smite::Tick(float DeltaTime)
 		Timer -= DeltaTime;
 		
 		if (Timer < 0)
+		{
 			Timer = 0;
+			Strike();
+		}
 	}	
 }
 
@@ -29,7 +33,8 @@ void Smite::IncreaseTime(float _Amount)
 
 void Smite::Strike()
 {
-	// strike player here
+	Player->GetHit(1.0f, Player->GetActorLocation(), SmiteData);
+	IncreaseTime(10);
 }
 
 void Smite::SetPlayer(APrototype2Character* _Player)

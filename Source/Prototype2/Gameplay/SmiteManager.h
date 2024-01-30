@@ -16,11 +16,14 @@ public:
 	// Sets default values for this actor's properties
 	ASmiteManager();
 	
-	void SetPlayerSmites();
+	void SetPlayerSmites() const;
 	UPROPERTY(EditAnywhere)
 	float TimeBetweenChecks{10};
 
 	float Timer{0};
+
+	UPROPERTY(EditAnywhere)
+	UWeaponData* SmiteData;
 	
 protected:
 	// Called when the game starts or when spawned

@@ -13,18 +13,23 @@ ASmiteManager::ASmiteManager()
 
 }
 
-void ASmiteManager::SetPlayerSmites()
+void ASmiteManager::SetPlayerSmites() const
 {
 	TArray<AActor*> PlayerCharacters{};
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APrototype2Character::StaticClass(), PlayerCharacters);
 
-	for (auto PlayerCharacter : PlayerCharacters)
+	for (const auto PlayerCharacter : PlayerCharacters)
 	{
-		// check if smite
-
-		// make a smite and apply it to the player
-		Smite* smite = new Smite();
-		
+		if (auto Player = Cast<APrototype2Character>(PlayerCharacter))
+		{
+			// check if smite
+			if (Player->GetSmite() == nullptr)
+			{
+				Smite* smite = new Smite();
+				smite->SmiteData = SmiteData;
+				Player->Multi_SetSmite(smite);
+			}
+		}
 	}
 }
 

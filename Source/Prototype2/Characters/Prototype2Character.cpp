@@ -49,6 +49,7 @@
 #include "Prototype2/Spawning/FertiliserSpawner.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/VFX/VFXComponent.h"
+#include "Prototype2/Gameplay/Smite.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
 
 APrototype2Character::APrototype2Character()
@@ -188,6 +189,12 @@ void APrototype2Character::InitInputMappingContext()
 	//GetCharacterMovement()->SetIsReplicated(true);
 }
 
+void APrototype2Character::Multi_SetSmite(Smite* _smite)
+{
+	smite = _smite;
+	smite->SetPlayer(this);
+}
+
 void APrototype2Character::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
@@ -213,6 +220,11 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	
 	//ToggleParticleSystems();
 	UpdateSpeed();
+
+	if (smite)
+	{
+		smite->Tick(_DeltaSeconds);
+	}
 }
 
 void APrototype2Character::TogglePlayerStencil()

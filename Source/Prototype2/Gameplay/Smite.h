@@ -14,10 +14,11 @@ public:
 
 	void Tick(float DeltaTime);
 
-	static constexpr float TimerStartTime{60};
+	static constexpr float TimerStartTime{30};
 	float Timer{0};
 
 	APrototype2Character* Player{nullptr};
+	UWeaponData* SmiteData;
 
 	void IncreaseTime(float _Amount);
 	void Strike();
