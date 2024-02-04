@@ -3,6 +3,7 @@
 #include "Widget_PlayerHUD.h"
 
 #include "Widget_EndgameMenu.h"
+#include "Widget_GameOptions.h"
 #include "Widget_IngameMenu.h"
 #include "Widget_StartAndEndMenu.h"
 #include "Components/HorizontalBox.h"
@@ -42,6 +43,14 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	Rings.Add(P4Ring);
 	Rings.Add(P5Ring);
 	Rings.Add(P6Ring);
+
+	/* Add overlays to array */
+	Overlays.Add(OverlayPlayer1);
+	Overlays.Add(OverlayPlayer2);
+	Overlays.Add(OverlayPlayer3);
+	Overlays.Add(OverlayPlayer4);
+	Overlays.Add(OverlayPlayer5);
+	Overlays.Add(OverlayPlayer6);
 
 	// Add icons to array
 	Icons.Add(P1Icon);
@@ -187,8 +196,14 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		/* Set UI colours for teams */
 		if (ColourData && GameStateReference->bTeams)
 		{
-			T1Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]); // Red Team
-			T2Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]); // Blue Team
+			if (ColourData->PureColours.IsValidIndex((int32)GameStateReference->TeamOneColour))
+			{
+				T1Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]); // Red Team
+			}
+			if (ColourData->PureColours.IsValidIndex((int32)GameStateReference->TeamTwoColour))
+			{
+				T2Ring->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]); // Blue Team
+			}
 		}
 
 		/* Game timers related */
@@ -221,8 +236,14 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			// Updating points/coins
 			for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
 			{
+				if (!GameStateReference->Server_Players.IsValidIndex(i))
+					continue;
+				
 				if (auto Player = GameStateReference->Server_Players[i])
 				{
+					//if (!Player)
+					//	return;
+					
 					auto Coins = Player->Coins;
 					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
 					auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
@@ -468,7 +489,8 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UWidget_PlayerHUD::EnableDisableMenu()
 {
-	IngameMenu->ToggleMenu();
+	if (OptionsMenu->GetVisibility() == ESlateVisibility::Hidden)
+		IngameMenu->ToggleMenu();
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()

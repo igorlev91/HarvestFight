@@ -153,13 +153,13 @@ bool AAspearagusProjectile::CheckForHitObstacle()
 }
 
 void AAspearagusProjectile::InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed,
-                                                                       float _LifeTime, float _AttackSphereRadius)
+                                                                       float _LifeTime, float _AttackSphereRadius, float _AttackChargeAmount)
 {
 	OwningPlayer = _Player;
 	AspearagusMesh->SetStaticMesh(_Mesh);
 	Speed = _Speed;
 	DeathTimer = _LifeTime;
 	AttackSphereRadius = _AttackSphereRadius * OwningPlayer->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
-	ChargeAmount = _Player->AttackChargeAmount;
+	ChargeAmount = _AttackChargeAmount;
 }
 

@@ -284,8 +284,8 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	if (_SeedToPlant->SeedData->BabyType == EPickupDataType::WeaponData)
 	{
 		AGrowableWeapon* NewItem = GetWorld()->SpawnActor<AGrowableWeapon>(WeaponPrefab);
-		NewItem->SetActorRotation(FRotator{90.0f, 0.0f, 0.0f});
 		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		NewItem->SetActorRotation(FRotator{90.0f, 0.0f, 0.0f});
 		NewItem->SetActorLocation(GetActorLocation() - (FVector::UpVector));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
@@ -296,6 +296,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		ABeehive* NewItem = GetWorld()->SpawnActor<ABeehive>(BeehivePrefab);
 		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		NewItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 5.0f));
+		NewItem->SetBeehiveLocation();
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
 		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData,EPickupActor::BeehiveActor);
@@ -564,8 +565,20 @@ void AGrowSpot::MakePlantGold()
 		return;
 	
 	GrowingItemRef->ItemComponent->bGold = true;
-	Multi_MakePlantGold();
+	if (HasAuthority())
+	{
+		Multi_MakePlantGold();
+	}
+	else
+	{
+		Server_MakePlantGold();
+	}
 	UpdateMaterial();
+}
+
+void AGrowSpot::Server_MakePlantGold_Implementation()
+{
+	Multi_MakePlantGold();
 }
 
 void AGrowSpot::Multi_MakePlantConcrete_Implementation()

@@ -47,7 +47,7 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 }
 
 
-void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
+void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, float _AttackChargeAmount, bool _bSprinting)
 {
 	if (!_Player)
 		return;

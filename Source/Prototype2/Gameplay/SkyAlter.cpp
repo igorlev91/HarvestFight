@@ -88,6 +88,7 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 		{
 			//Client_OnPlayerSell(SomePlayer);
 			SomePlayer->GetSmite()->IncreaseTime(Plant->SeedData->BabyStarValue * 20);
+			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
 			
 			// Audio
 			if (HasAuthority())
@@ -107,7 +108,7 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 				// Destroy the crop the player is holding
 				SomePlayer->HeldItem->Destroy();
 				SomePlayer->HeldItem = nullptr;
-				SomePlayer->RefreshCurrentMaxSpeed();
+				SomePlayer->Client_RefreshCurrentMaxSpeed();
 			}
 		}
 	}

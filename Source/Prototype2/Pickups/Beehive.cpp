@@ -24,7 +24,7 @@ void ABeehive::BeginPlay()
 	if (BeesPrefab)
 	{
 		Bees = GetWorld()->SpawnActor<AFlock>(BeesPrefab);
-		Bees->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
 	}
 	TrackerTimeTillCollect = TimeTillCollect;
 }
@@ -98,6 +98,14 @@ bool ABeehive::IsInteractable(APrototype2PlayerState* _Player)
 	return bIsReadyToCollect;
 }
 
+void ABeehive::SetBeehiveLocation()
+{
+	if (Bees && ItemComponent->Mesh)
+	{
+		Bees->SeekPositionLocation = ItemComponent->Mesh->GetComponentLocation();
+	}
+}
+
 void ABeehive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -113,6 +121,7 @@ void ABeehive::Tick(float DeltaSeconds)
 
 	if (TimeTillCollect > 0)
 		ItemComponent->Mesh->SetWorldScale3D(FMath::Lerp(SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
+	
 
 	if (!HasAuthority())
 		return;

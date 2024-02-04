@@ -207,7 +207,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	if (!GameStateCast)
 		return;
 	
-	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
+	//UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
 	if (SomePlayer->HeldItem)
 	{
 		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
@@ -244,7 +244,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 				// Destroy the crop the player is holding
 				SomePlayer->HeldItem->Destroy();
 				SomePlayer->HeldItem = nullptr;
-				SomePlayer->RefreshCurrentMaxSpeed();
+				SomePlayer->Client_RefreshCurrentMaxSpeed();
 			}
 		}
 	}
@@ -290,14 +290,15 @@ void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player,
 	// Destroy the crop the player is holding
 	_Player->HeldItem->Destroy();
 	_Player->HeldItem = nullptr;
-	_Player->RefreshCurrentMaxSpeed();
+	_Player->Client_RefreshCurrentMaxSpeed();
 }
 
 void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
 {
 	if (_Player->PlayerHUDRef)
 		_Player->PlayerHUDRef->ClearPickupUI();
-	
+
+	_Player->bIsHoldingGold = false;
 	ItemComponent->SetStencilEnabled(false);
 	OnItemSoldDelegate.Broadcast(_Player->PlayerStateRef->Player_ID);
 }

@@ -2,6 +2,7 @@
 
 #include "Prototype2/Gameplay/MovingPlatforms.h"
 
+#include "EnvironmentQuery/EnvQueryGenerator.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -30,8 +31,8 @@ void AMovingPlatforms::BeginPlay()
 
 	SineHeightBounce = GetActorLocation();
 
-	SineTime = FMath::RandRange(SineStartTimeMin * 100, SineStartTimeMax * 100);
-	SineTime /= 100;
+	//SineTime = FMath::RandRange(SineStartTimeMin * 100, SineStartTimeMax * 100);
+	//SineTime /= 100.0f;
 }
 
 // Called every frame
@@ -39,31 +40,69 @@ void AMovingPlatforms::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bDoSineWave)
-		SineWave(DeltaTime);
-
-	if (bDoMove)
+	if (HasAuthority() && InitialDelay >= 0)
 	{
-		TimeStop -= DeltaTime;
-
-		if (TimeStop > 0)
-			return;
-
-		TimeTrackerTimeToMove += DeltaTime;
-
-		MovePlatform();
+		InitialDelay -= DeltaTime;
 	}
+	
+	if (InitialDelay >= 0)
+		return;
 
-	if (bDoRotate)
+	if (HasAuthority())
 	{
-		Rotate(DeltaTime);
+		if (bDoSineWave)
+			SineWave(DeltaTime);
+
+		if (bDoMove)
+		{
+			TimeStop -= DeltaTime;
+
+			if (TimeStop > 0)
+				return;
+
+			TimeTrackerTimeToMove += DeltaTime;
+
+			MovePlatform();
+		}
+
+		if (bDoRotate)
+		{
+			Rotate(DeltaTime);
+		}
+
+		ServerMovePlatform(GetActorLocation(), GetActorRotation());
+	}
+	else
+	{
+		if (bDoSineWave)
+			SineWave(DeltaTime);
+
+		if (bDoMove)
+		{
+			if (TimeStop > 0)
+				return;
+
+			TimeTrackerTimeToMove += DeltaTime;
+
+			MovePlatform();
+		}
+
+		if (bDoRotate)
+		{
+			Rotate(DeltaTime);
+		}
 	}
 }
 
 void AMovingPlatforms::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMovingPlatforms, Mesh);
+	DOREPLIFETIME_CONDITION(AMovingPlatforms, Mesh, COND_SimulatedOnly);
+	DOREPLIFETIME(AMovingPlatforms, SineTime);
+	DOREPLIFETIME(AMovingPlatforms, TimeStop);
+	DOREPLIFETIME(AMovingPlatforms, TimeTrackerTimeToMove);
+	DOREPLIFETIME(AMovingPlatforms, PositionInMoveArray);
+	DOREPLIFETIME(AMovingPlatforms, bMoveArrayBackwards);
 }
 
 void AMovingPlatforms::MovePlatform()
@@ -80,10 +119,23 @@ void AMovingPlatforms::MovePlatform()
 
 void AMovingPlatforms::MovePlatformForward()
 {
+	if (HasAuthority())
+	{
+		if (PositionInMoveArray >= MovementInfoArray.Num())
+		{
+			bMoveArrayBackwards = true;
+			PositionInMoveArray -= 2;
+			return;	
+		}
+
+		if (PositionInMoveArray == 0)
+		{
+			PositionInMoveArray++;
+		}
+	}
+
 	if (PositionInMoveArray >= MovementInfoArray.Num())
 	{
-		bMoveArrayBackwards = true;
-		PositionInMoveArray -= 2;
 		return;	
 	}
 
@@ -112,10 +164,23 @@ void AMovingPlatforms::MovePlatformForward()
 
 void AMovingPlatforms::MovePlatformBackwards()
 {
+	if (HasAuthority())
+	{
+		if (PositionInMoveArray < 0)
+		{
+			bMoveArrayBackwards = false;
+			PositionInMoveArray += 2;
+			return;	
+		}
+
+		if (PositionInMoveArray == MovementInfoArray.Num() - 1)
+		{
+			PositionInMoveArray--;
+		}
+	}
+
 	if (PositionInMoveArray < 0)
 	{
-		bMoveArrayBackwards = false;
-		PositionInMoveArray += 2;
 		return;	
 	}
 
@@ -144,8 +209,23 @@ void AMovingPlatforms::MovePlatformBackwards()
 
 void AMovingPlatforms::Rotate(float DeltaTime)
 {
-	FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
-	SetActorRotation(NewRotation);
+	if (!bDoMove)
+	{
+		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
+		SetActorRotation(NewRotation);
+		return;
+	}
+
+	if (!bMoveArrayBackwards)
+	{
+		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
+		SetActorRotation(NewRotation);
+	}
+	else
+	{
+		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, -RotationSpeed * DeltaTime, 0.0f);
+		SetActorRotation(NewRotation);
+	}
 }
 
 void AMovingPlatforms::SineWave(float DeltaTime)
@@ -158,5 +238,11 @@ void AMovingPlatforms::SineWave(float DeltaTime)
 
 	const FVector NewLocation = SineHeightBounce + FVector(0.0f, 0.0f, Amplitude * FMath::Sin(SineTime));
 	SetActorLocation(NewLocation);
+}
+
+void AMovingPlatforms::ServerMovePlatform_Implementation(FVector NewLocation, FRotator NewRotation)
+{
+	SetActorLocation(NewLocation);
+	SetActorRotation(NewRotation);
 }
 

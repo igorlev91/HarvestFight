@@ -22,15 +22,14 @@ public:
 	virtual void ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player) override;
 
 	/* Any weapon specific functionality while executing attack*/
-	virtual void Client_ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector) override;
-	virtual void ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector) override;
+	virtual void Client_ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,  float _AttackChargeAmount) override;
+	virtual void ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, float _AttackChargeAmount, bool bIsSprinting) override;
 
 	/* How this weapon affects the AOE indicator */
-	virtual void Client_UpdateAOEIndicator(APrototype2Character* _Player) override;
-	virtual void UpdateAOEIndicator(APrototype2Character* _Player) override;
+	virtual void UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount) override;
 	
 	UFUNCTION(Server, Reliable)
-	void Server_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius);
+	void Server_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius);
+	void Multi_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
 };

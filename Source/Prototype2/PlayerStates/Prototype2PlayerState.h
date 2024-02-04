@@ -46,7 +46,7 @@ public:
 	
 	bool bSkinSet{};
 	
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
     int32 Player_ID{};
 	
 	UPROPERTY(Replicated, EditAnywhere)

@@ -16,14 +16,13 @@ UDebuffComponent::UDebuffComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	Player = Cast<APrototype2Character>(GetOuter());
+	SetIsReplicatedByDefault(true);
 }
 
 void UDebuffComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UDebuffComponent, DazeRandomDirection);
-	DOREPLIFETIME(UDebuffComponent, PunchCounter);
-	DOREPLIFETIME(UDebuffComponent, CurrentDebuff);
+	DOREPLIFETIME(UDebuffComponent, DebuffInfo);
 }
 
 
@@ -39,9 +38,13 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                      FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 	
 	if (!Player)
+	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "No Player");
 		return;
+	}
 
 	DecrementTimers(DeltaTime);	
 	
@@ -55,9 +58,8 @@ void UDebuffComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UDebuffComponent::Server_RemoveDebuff_Implementation()
 {
 	// Reset this bufftype
-	CurrentDebuff = EDebuff::None;
-
-	Client_ToggleDizzyVFX(false);
+	DebuffInfo.Debuff = EDebuff::None;
+	DebuffInfo.Duration = 0.0f;
 }
 
 void UDebuffComponent::DecrementTimers(float _DeltaTime)
@@ -68,22 +70,36 @@ void UDebuffComponent::DecrementTimers(float _DeltaTime)
 		if (PunchCounterDropOffTimer <= 0)
 		{
 			PunchCounterDropOffTimer = PunchCounterDropOff;
-			Server_UpdatePunchCounter();
+			UpdatePunchCounter();
 		}
 	}
 
-	if (DebuffDuration > 0)
+	if (CurrentDebuff == EDebuff::None)
+		return;
+	
+	if (DebuffDuration >= 0)
 	{
 		DebuffDuration -= _DeltaTime;
 		if (DebuffDuration <= 0)
 		{
-			Server_RemoveDebuff();
+			if (Player->HasAuthority())
+			{
+				// Reset this bufftype
+				DebuffInfo.Debuff = EDebuff::None;
+				DebuffInfo.Duration = 0.0f;
+				OnRep_ApplyDebuff();
+			}
+			else
+			{
+				Server_RemoveDebuff();
+			}
+			
 			Player->RefreshCurrentMaxSpeed();
 		}
 	}
 }
 
-void UDebuffComponent::Client_ToggleDizzyVFX_Implementation(bool _bTurnOn)
+void UDebuffComponent::ToggleDizzyVFX(bool _bTurnOn)
 {
 	if (_bTurnOn)
 	{
@@ -95,43 +111,51 @@ void UDebuffComponent::Client_ToggleDizzyVFX_Implementation(bool _bTurnOn)
 	}
 }
 
-void UDebuffComponent::ApplyDebuff(EDebuff _DebuffType, float _Duration)
-{
-	if (_DebuffType == EDebuff::None)
-		return;
-	
-	DebuffDuration = _Duration;
-	CurrentDebuff = _DebuffType;
-	
-	Client_ToggleDizzyVFX_Implementation(true);
-	
+void UDebuffComponent::OnRep_ApplyDebuff()
+{	
+	CurrentDebuff = DebuffInfo.Debuff;
+	UKismetSystemLibrary::PrintString(GetWorld(), "CDebuffInfo.Debuff enum int: " + FString::FromInt( (int32)DebuffInfo.Debuff));
+	DebuffDuration = DebuffInfo.Duration;	
+	UKismetSystemLibrary::PrintString(GetWorld(), "DebuffInfo.Duration: " + FString::SanitizeFloat(DebuffInfo.Duration));
 	switch (CurrentDebuff)
 	{
 	case EDebuff::Stun:
 		{
+			ToggleDizzyVFX(true);
 			break;
 		}
 	case EDebuff::Daze:
 		{
-			Player->CurrentMaxWalkSpeed = DazeSpeed;	
+			ToggleDizzyVFX(true);
+			Player->SetMaxWalkSpeed(DazeSpeed);	
 			DazeRandomDirection = FMath::RandRange(0,1000);
 			break;
 		}
 	case EDebuff::Slow:
-		{
-			Player->CurrentMaxWalkSpeed = SlowSpeed;
+		{	
+			ToggleDizzyVFX(true);
+			Player->SetMaxWalkSpeed(SlowSpeed);
 			break;
 		}
 	case EDebuff::Punch:
 		{
+			CurrentDebuff = EDebuff::None;
+			DebuffDuration = 0.0f;
 			Punch();
 			break;
 		}
 	case EDebuff::None:
 		{
+			ToggleDizzyVFX(false);
 			break;
 		}
 	}
+}
+
+void UDebuffComponent::Server_SetDebuff_Implementation(EDebuff _InDebuff, float _InDuration)
+{
+	DebuffInfo.Debuff = _InDebuff;
+	DebuffInfo.Duration = _InDuration;
 }
 
 void UDebuffComponent::UpdateDaze()
@@ -169,14 +193,21 @@ void UDebuffComponent::Punch()
 		PunchCounterDropOffTimer = PunchCounterDropOff;
 
 		// Stun for 2s
-		CurrentDebuff = EDebuff::Stun;		
-		DebuffDuration = 2.0f;
-		
+		if (Player->HasAuthority())
+		{
+			DebuffInfo.Debuff = EDebuff::Stun;
+			DebuffInfo.Duration = 2.0f;
+			OnRep_ApplyDebuff();
+		}
+		else
+		{
+			Server_SetDebuff(EDebuff::Stun, 2.0f);
+		}
 		UKismetSystemLibrary::PrintString(GetWorld(), "Player Stunned!");
 	}
 }
 
-void UDebuffComponent::Server_UpdatePunchCounter_Implementation()
+void UDebuffComponent::UpdatePunchCounter()
 {
 	PunchCounter--;
 	if (PunchCounter < 0)

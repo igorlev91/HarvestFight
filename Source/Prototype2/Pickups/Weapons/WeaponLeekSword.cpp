@@ -27,25 +27,21 @@ void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* 
 	}
 }
 
-void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
+void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,  float _AttackChargeAmount, bool bIsSprinting)
 {
-	_CachedActorLocation = _Player->GetActorLocation();
-	_CachedForwardVector = _Player->GetActorForwardVector();
-	
 	// Scale the actual area of effect to be larger than what the indicator shows 
 	_AttackSphereRadius *= _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
 	
-	Super::ExecuteAttack(_AttackSphereRadius, _Player, _CachedActorLocation, _CachedForwardVector);
+	Super::ExecuteAttack(_AttackSphereRadius, _Player, _AttackChargeAmount, bIsSprinting);
 	
 	// Get a vector infront of the character for the attack sphere to spawn at
-	///const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
-	const FVector InFrontOfPlayer = _CachedActorLocation + (_CachedForwardVector * _AttackSphereRadius) + (_CachedForwardVector * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);	
+	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
 
 	// Trigger the VFX in blueprint
 	const FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, _Player->GetMesh()->GetComponentLocation().Z};
-	_Player->TriggerAttackVFX(DownVector, _AttackSphereRadius, _Player->AttackChargeAmount);	
+	_Player->TriggerAttackVFX(DownVector, _AttackSphereRadius, _AttackChargeAmount);	
 
 	// create tarray for catching hit results
 	TArray<FHitResult> OutHits;
@@ -66,13 +62,13 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(_Player->AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					HitPlayerCast->GetHit(_AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 					CheckIfCrownHit(_Player, HitPlayerCast);
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				HitSellBinCast->GetHit(_Player->AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+				HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
 			}
 
 			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
@@ -104,18 +100,18 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 	_Player->ResetAttack();
 }
 
-void UWeaponLeekSword::UpdateAOEIndicator(APrototype2Character* _Player)
+void UWeaponLeekSword::UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount)
 {
-	Super::UpdateAOEIndicator(_Player);
+	Super::UpdateAOEIndicator(_Player, _AttackChargeAmount);
 	
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
 	FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
 	
 	FVector DownVector = {InFrontOfPlayer.X, InFrontOfPlayer.Y, _Player->GetMesh()->GetComponentLocation().Z};
 
 	_Player->AttackAreaIndicatorMesh->SetWorldLocation(DownVector);
-	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({AttackSphereRadius,AttackSphereRadius,_Player->AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
+	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({AttackSphereRadius,AttackSphereRadius,_AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
 
 }

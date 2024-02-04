@@ -51,17 +51,17 @@ void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 }
 
 void UWeaponAspearagus::Client_ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,
-	FVector _CachedActorLocation, FVector _CachedForwardVector)
+	float _AttackChargeAmount)
 {
 }
 
-void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, FVector _CachedActorLocation, FVector _CachedForwardVector)
+void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,  float _AttackChargeAmount, bool bIsSprinting)
 {
-	Super::ExecuteAttack(_AttackSphereRadius, _Player, _CachedActorLocation, _CachedForwardVector);
+	Super::ExecuteAttack(_AttackSphereRadius, _Player, _AttackChargeAmount, bIsSprinting);
 
 	UE_LOG(LogTemp, Warning, TEXT("Spawn Aspearagus Projectile"));
 	
-	Server_SpawnProjectile(_Player, _AttackSphereRadius);
+	Server_SpawnProjectile(_Player, _AttackSphereRadius, _AttackChargeAmount);
 	
 	// make UI pop out
 	Client_BroadcastAttackToHUD(_Player);
@@ -83,29 +83,23 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	_Player->ResetAttack();
 }
 
-void UWeaponAspearagus::Client_UpdateAOEIndicator(APrototype2Character* _Player)
-{
-}
-
-void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player)
+void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount)
 {
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);
 	
-	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius;// + _Player->AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
+	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius;// + _AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	
 	
 	FVector DownVector = {_Player->GetActorLocation().X, _Player->GetActorLocation().Y, _Player->GetMesh()->GetComponentLocation().Z};
 	DownVector += _Player->GetActorForwardVector() * 10000.0f;
 	
 	_Player->AttackAreaIndicatorMesh->SetWorldLocation(DownVector);
 	_Player->AttackAreaIndicatorMesh->SetWorldRotation(_Player->GetActorRotation());
-	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({10000.0f, AttackSphereRadius,_Player->AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
+	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({10000.0f, AttackSphereRadius,_AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
 
 }
 
-void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
+void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
 {
-
-	
 	// Spawn projectile
 	FTransform ProjectileTransform = _Player->GetTransform();
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
@@ -115,14 +109,14 @@ void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Characte
 		
 		NewAspearagusProjectile->SetActorTransform(ProjectileTransform);
 		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
-												4000.0f, 3.0f, _AttackSphereRadius);
+												4000.0f, 3.0f, _AttackSphereRadius, _AttackChargeAmount);
 	}
 }
 
-void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius)
+void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
 {
 	if (!_Player)
 		return;
 
-	Multi_SpawnProjectile(_Player, _AttackSphereRadius);
+	Multi_SpawnProjectile(_Player, _AttackSphereRadius, _AttackChargeAmount);
 }

@@ -14,6 +14,10 @@
 APrototype2Gamestate::APrototype2Gamestate()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FObjectFinder<UWorldOverrideData> FoundDefaultWorldData(TEXT("/Game/DataAssets/WorldOverride/DA_DefaultWorld_Data"));
+	if (IsValid(FoundDefaultWorldData.Object))
+		DefaultWorldOverrideData = FoundDefaultWorldData.Object;
 }
 
 void APrototype2Gamestate::BeginPlay()
@@ -85,6 +89,8 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME(APrototype2Gamestate, TeamOneColour);
 	DOREPLIFETIME(APrototype2Gamestate, TeamTwoColour);
+	DOREPLIFETIME(APrototype2Gamestate, TeamOneName);
+	DOREPLIFETIME(APrototype2Gamestate, TeamTwoName);
 	DOREPLIFETIME(APrototype2Gamestate, Server_TeamOne);
 	DOREPLIFETIME(APrototype2Gamestate, Server_TeamTwo);
 
@@ -291,24 +297,25 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 
 	if (bTeams)
 	{
-		int32 RedTeamCoins{};
-		int32 BlueTeamCoins{};
-		bool RedTeamWon{};
-		for(auto PlayerState : PlayerArray)
+		int32 Team1Coins{};
+		int32 Team2Coins{};
+		if (!PlayerArray.IsEmpty())
 		{
-			if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+			for(auto PlayerState : PlayerArray)
 			{
-				if (CastedPlayerstate->Details.Colour == EColours::RED)
+				if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
 				{
-					RedTeamCoins += CastedPlayerstate->Coins;
-				}
-				else if (CastedPlayerstate->Details.Colour == EColours::BLUE)
-				{
-					BlueTeamCoins += CastedPlayerstate->Coins;
+					if (CastedPlayerstate->Details.Colour == TeamOneColour)
+					{
+						Team1Coins += CastedPlayerstate->Coins;
+					}
+					else if (CastedPlayerstate->Details.Colour == TeamTwoColour)
+					{
+						Team2Coins += CastedPlayerstate->Coins;
+					}
 				}
 			}
 		}
-		RedTeamWon = RedTeamCoins > BlueTeamCoins;
 
 		if (EndGamePodiumActorCasted)
 		{
@@ -318,9 +325,11 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 				{
 					if (APrototype2Character* CastedPlayerCharacter = Cast<APrototype2Character>(CastedPlayerState->GetPlayerController()->GetCharacter()))
 					{
-						if (RedTeamWon && CastedPlayerState->Details.Colour == EColours::RED)
+						if (Team1Coins > Team2Coins && CastedPlayerState->Details.Colour == TeamOneColour)
 							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(i)->GetComponentTransform());
-						else if (!RedTeamWon && CastedPlayerState->Details.Colour == EColours::BLUE)
+						else if (Team2Coins > Team1Coins && CastedPlayerState->Details.Colour == TeamTwoColour)
+							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(i)->GetComponentTransform());
+						else if (Team2Coins == Team1Coins)
 							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetWinPosition(i)->GetComponentTransform());
 						else
 							CastedPlayerCharacter->TeleportToEndGame(EndGamePodiumActorCasted->GetLossPosition(i)->GetComponentTransform());

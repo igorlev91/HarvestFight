@@ -47,8 +47,11 @@ void APrototype2GameMode::BeginPlay()
 
 	if (auto Gamestate = GetGameState<APrototype2Gamestate>())
 	{
+		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
 		GameStateRef = Gamestate;
-		Gamestate->SetFinalConnectionCount(GetGameInstance<UPrototypeGameInstance>()->FinalConnectionCount);
+		Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
+		Gamestate->TeamOneName = GameInstance->TeamOneName;
+		Gamestate->TeamTwoName = GameInstance->TeamTwoName;
 	}
 
 

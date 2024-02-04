@@ -9,6 +9,7 @@
 #include "Containers/Map.h"
 #include "Prototype2/DataAssets/WeaponData.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Pickups/PickUpItem.h"
 #include "Prototype2Character.generated.h"
 
@@ -203,13 +204,11 @@ protected:
 	UFUNCTION()
 	void DeltaDecrement(float& _Variable, float& _DeltaSeconds);
 	UFUNCTION()
-	void DecrementSprintAndCheckFortFinish(float _DeltaSeconds);
+	void DecrementSprintTimers(float _DeltaSeconds);
 	
 	UFUNCTION()
 	void ToggleParticleSystems();
-	
-	void UpdateSpeed();
-	
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Input													 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -271,6 +270,9 @@ public:
 
 	bool HasClaimedPlot();
 	void SetClaimedPlot(class ARadialPlot* _Plot);
+
+	UFUNCTION(Client, Reliable)
+	void Client_BroadcastPlotClaimed(ARadialPlot* _Plot);
 	
 	/* Client RPC for picking up items */
 	UFUNCTION(Client, Reliable)
@@ -308,7 +310,7 @@ public:
 	class APickUpItem* HeldItem;
 
 	/* Bool for checking if player is holding gold to slow them down */
-	UPROPERTY(Replicated, VisibleAnywhere, Category="Gold")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Gold")
 	bool bIsHoldingGold;
 
 	
@@ -409,6 +411,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_ResetAttack();
 	
+	/* Execute Attack */
+	void ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
+	
+	/* RPC for executing attack*/
+	UFUNCTION(Server, Reliable)
+	void Server_ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
+	
 	UFUNCTION(Client, Reliable)
 	void Client_BroadcastOvercharge();
 
@@ -416,6 +425,23 @@ public:
 	bool bIsFollowingThroughAttack = false;
 
 	void SetCanAttack(bool _InbCanAttack) { bCanAttack = _InbCanAttack; }
+
+	UFUNCTION()
+	void OnRep_ChargeStateChanged();
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetAOEIndicatorVisibility(bool _bIsVisible);
+	
+	void ThrowItem();
+	UFUNCTION(Server, Reliable)
+	void Server_ThrowItem();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ThrowItem();
+	UPROPERTY(EditDefaultsOnly)
+	float ThrowItemStrength = 500.0f;
+	
+	UFUNCTION(Server, Reliable)
+	void Server_ApplyHoneyGoopSlow();
 	
 	UPROPERTY(Replicated)
 	bool bShouldWeaponFlashRed;
@@ -431,19 +457,22 @@ public:
 	class UWeapon* Weapon;
 	
 	/* Is player holding down attack */
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsChargingAttack;
+
+	UPROPERTY(ReplicatedUsing=OnRep_ChargeStateChanged)
+	bool bChargeAnimationState;
 
 	/* Maximum amount of Attack Charge */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MaxAttackCharge = 3.0f;
 
 	/* The Amount of charge the player currently has */
-	UPROPERTY(Replicated, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	float AttackChargeAmount;
 	
 	/* The Amount of charge the player currently has */
-	UPROPERTY(Replicated, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	float AutoAttackTimer;
 	
 	/* The Amount of charge the player currently has */
@@ -470,13 +499,6 @@ public:
 	class UStaticMeshComponent* WeaponMesh;
 
 protected:
-	/* Execute Attack */
-	void ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector);
-	
-	/* RPC for executing attack*/
-	UFUNCTION(Server, Reliable)
-	void Server_ExecuteAttack(float _AttackSphereRadius, FVector _CachedActorLocation, FVector _CachedForwardVector);
-
 	/* Invincible timer - how long the player can't be hit after being hit*/
 	UPROPERTY(EditDefaultsOnly)
 	float InvincibilityTimer = 0.0f;
@@ -502,42 +524,38 @@ protected:
 	///														Sprint													 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
+	UFUNCTION()
+	void SetMaxWalkSpeed(float _Speed);
+	UFUNCTION(Server, Reliable)
+	void Server_SetMaxWalkSpeed(float _Speed);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetSprintState(bool _NewSprintAnimationState);
+	
+	/* Public access to update speed */
+	UFUNCTION()
+	void RefreshCurrentMaxSpeed();
+
+	UFUNCTION(Client, Reliable)
+	void Client_RefreshCurrentMaxSpeed();
+	
 	/* Sprint */
-	UPROPERTY(Replicated, BlueprintReadWrite, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	bool bSprinting{false};
 
-	UPROPERTY(Replicated)
-	float CurrentMaxWalkSpeed = 500.0f; // hard code to walk speed for starting.
-		
-	/* Sets the character speed */
-	UFUNCTION(Server, Reliable)
-	void Server_SetCharacterSpeed(float _NewCurrentMaxSpeed);
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool bSprintAnimationState = false;
 	
-	/* Public access to call the server rpc to update speed */
-	void RefreshCurrentMaxSpeed();
+	UPROPERTY()
+	float CurrentMaxWalkSpeed = 500.0f; // hard code to walk speed for starting.
 	
 protected:	
 	void UpdateCanSprintUI();
 	
 	/* Client cansprint */
-	UFUNCTION(Client, Reliable)
-	void Client_SetCanSprint(bool _bCanSprint);
+	UFUNCTION()
+	void SetCanSprint(bool _bCanSprint);
 
-	/* Applying current speed on server */
-	UFUNCTION(Server, Reliable)
-	void Server_ApplyCurrentMaxSpeed();
-	UFUNCTION(Server, Reliable)
-	void Server_RefreshCurrentMaxSpeed();
-	
-	/* Sprint RPC */
-	UFUNCTION(Server, Reliable)
-	void Server_Sprint();
-	UFUNCTION(Server, Reliable)
-	void Server_EndSprint();
-	
-	UFUNCTION(Client, Reliable)
-	void Client_EndSprint();
-	
 	/* Player regular walk speed */
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	float WalkSpeed = 500.f;
@@ -553,19 +571,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTime = 2.0f;
 	/* Timer for handling sprint */
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float SprintTimer{};
 
 	/* Delay before sprint regens*/
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float DelayedSprintRegenTimer{};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float DelayedSprintRegenTotalDuration = 0.5f;
 	
 	/* Allows telling the player HUD one time that sprint is ready*/
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	bool bHasNotifiedCanSprint = false;
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	bool bCanSprint = true;
 	
 	/* Rate scales for adjusting animation speed */
@@ -589,7 +607,12 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChargeCancelled);
 	UPROPERTY(BlueprintAssignable)
 	FOnChargeCancelled OnChargeCancelledDelegate;
-
+	
+	/* Delegate for telling the animation blueprint when charge has started*/
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChargeStateChanged, bool, IsCharging);
+	UPROPERTY(BlueprintAssignable)
+	FOnChargeStateChanged OnChargeStateChangedDelegate;
+	
 	/* Delegate for telling the Player Hud widget when to emphasize UI */
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExecuteAttack);
 	UPROPERTY(BlueprintAssignable)
@@ -628,6 +651,11 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOverCharge, float, OverChargeAmount, float, TotalOverChargeDuration);
 	UPROPERTY(BlueprintAssignable)
 	FOnOverCharge OnOverChargeDelegate;
+
+	/* Delegate for telling HUD when this player has claimed a plot */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlotClaimed, ARadialPlot*, Plot);
+	UPROPERTY(BlueprintAssignable)
+	FOnPlotClaimed OnPlotClaimedDelegate;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Getters 												 ///
@@ -686,10 +714,10 @@ public:
 	/* Activating and Deactivating particle systems */
 	void ActivateParticleSystemFromEnum(EParticleSystems _NewSystem);
 	void DeActivateParticleSystemFromEnum(EParticleSystems _NewSystem);
-	
-	/* Updates the area of attack indicator */
-	void UpdateAOEIndicator();
 
+	UFUNCTION()
+	void OnRep_UpdateAOE();
+	
 	/* Toggling particle effects */
 	UFUNCTION(Server, Unreliable)
 	void Server_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
@@ -714,7 +742,7 @@ public:
 	ASellBin* SellBin;
 
 	/* Variables needed for VFX */
-	UPROPERTY(EditAnywhere, Category = VFX) 
+	UPROPERTY(ReplicatedUsing=OnRep_UpdateAOE, EditAnywhere, Category = VFX) 
 	UStaticMeshComponent* AttackAreaIndicatorMesh;
 	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* WalkPoof_NiagaraComponent;
@@ -875,4 +903,5 @@ protected:
 	float IceFriction{0.1f};
 	
 };
+
 

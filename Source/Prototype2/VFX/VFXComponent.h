@@ -21,9 +21,9 @@ public:
 	UFUNCTION()
 	void DeActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void Server_ActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void Server_DeActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
 
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -50,9 +50,14 @@ public:
 	UFUNCTION()
 	void InitOwner();
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void Server_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
+
+	UPROPERTY(VisibleAnywhere)
+	float ToggleDelay {0.3};
+	UPROPERTY(EditAnywhere)
+	float ToggleDelayTimer{};
 };

@@ -32,6 +32,7 @@ void UWidget_GameOptions::NativePreConstruct()
 	/* Set graphics text & settings */
 	FullScreen_Control->OptionText->SetText(FText::FromString("Fullscreen"));
 	Resolution_Control->OptionText->SetText(FText::FromString("Resolution"));
+	ResolutionScale_Control->OptionText->SetText(FText::FromString("Resolution Scale"));
 	VSync_Control->OptionText->SetText(FText::FromString("VSync"));
 	HDRDisplay_Control->OptionText->SetText(FText::FromString("HDR Display"));
 	FramerateLimit_Control->OptionText->SetText(FText::FromString("Framerate Limit"));
@@ -41,6 +42,9 @@ void UWidget_GameOptions::NativePreConstruct()
 	ShadowQuality_Control->OptionText->SetText(FText::FromString("Shadow Quality"));
 	PostProcessingQuality_Control->OptionText->SetText(FText::FromString("Post Processing Quality"));
 	AntiAliasingQuality_Control->OptionText->SetText(FText::FromString("Anti Aliasing Quality"));
+	GlobalIlluminationQuality_Control->OptionText->SetText(FText::FromString("Global Illumination Quality"));
+	ReflectionQuality_Control->OptionText->SetText(FText::FromString("Reflection Quality"));
+	VisualEffectQuality_Control->OptionText->SetText(FText::FromString("Visual Effect Quality"));
 
 	/* Set audio text & settings */
 	MasterVolume_Control->OptionText->SetText(FText::FromString("Master Volume"));
@@ -50,6 +54,11 @@ void UWidget_GameOptions::NativePreConstruct()
 	
 	/* Set Game Option settings */
 	PlayerStencil_Control->OptionText->SetText(FText::FromString("Player Coloured Outline"));
+	EnemyStencilAlwaysRed_Control->OptionText->SetText(FText::FromString("Enemy Outline Always Red"));
+
+	/* UI */
+	UIOffscreenIndicators_Control->OptionText->SetText(FText::FromString("Waypoint Indicators"));
+	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
 }
 
 void UWidget_GameOptions::NativeConstruct()
@@ -85,6 +94,12 @@ void UWidget_GameOptions::NativeConstruct()
 	{
 		Resolution_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnResolutionControlLeftButtonPressed);
 		Resolution_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnResolutionControlRightButtonPressed);
+	}
+
+	if (ResolutionScale_Control)
+	{
+		ResolutionScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnResolutionScaleControlLeftButtonPressed);
+		ResolutionScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnResolutionScaleControlRightButtonPressed);
 	}
 
 	if (VSync_Control)
@@ -141,6 +156,24 @@ void UWidget_GameOptions::NativeConstruct()
 		AntiAliasingQuality_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnAntiAliasingQualityControlRightButtonPressed);
 	}
 
+	if (GlobalIlluminationQuality_Control)
+	{
+		GlobalIlluminationQuality_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnGlobalIlluminationQualityControlLeftButtonPressed);
+		GlobalIlluminationQuality_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnGlobalIlluminationQualityControlRightButtonPressed);
+	}
+
+	if (ReflectionQuality_Control)
+	{
+		ReflectionQuality_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnReflectionQualityControlLeftButtonPressed);
+		ReflectionQuality_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnReflectionQualityControlRightButtonPressed);
+	}
+
+	if (VisualEffectQuality_Control)
+	{
+		VisualEffectQuality_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnVisualEffectQualityControlButtonPressed);
+		VisualEffectQuality_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnVisualEffectQualityControlButtonPressed);
+	}
+
 	/* Audio control buttons */
 	if (MasterVolume_Control)
 	{
@@ -171,6 +204,25 @@ void UWidget_GameOptions::NativeConstruct()
 	{
 		PlayerStencil_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerStencilControlButtonPressed);
 		PlayerStencil_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerStencilControlButtonPressed);
+	}
+
+	if (EnemyStencilAlwaysRed_Control)
+	{
+		EnemyStencilAlwaysRed_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnEnemyStencilAlwaysRedControlButtonPressed);
+		EnemyStencilAlwaysRed_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnEnemyStencilAlwaysRedControlButtonPressed);
+	}
+
+	/* UI */
+	if (UIOffscreenIndicators_Control)
+	{
+		UIOffscreenIndicators_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorsControlLeftButtonPressed);
+		UIOffscreenIndicators_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorsControlRightButtonPressed);
+	}
+
+	if (UIOffscreenIndicatorSize_Control)
+	{
+		UIOffscreenIndicatorSize_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlLeftButtonPressed);
+		UIOffscreenIndicatorSize_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlRightButtonPressed);
 	}
 
 	if (ConfirmButton)
@@ -219,6 +271,27 @@ void UWidget_GameOptions::SetOptionsText()
 			break;
 		}
 	}
+
+	/* Resolution */
+	const FIntPoint Resolution = HHGameGameUserSettings->GetScreenResolution();
+
+	if (Resolution.X == 1280 && Resolution.Y == 720)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("1280x720"));
+	else if (Resolution.X == 1366 && Resolution.Y == 768)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("1366x768"));
+	else if (Resolution.X == 1600 && Resolution.Y == 900)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("1600x900"));
+	else if (Resolution.X == 1920 && Resolution.Y == 1080)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("1920x1080"));
+	else if (Resolution.X == 2560 && Resolution.Y == 1080)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1080"));
+	else if (Resolution.X == 2560 && Resolution.Y == 1440)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1440"));
+	else if (Resolution.X == 3440 && Resolution.Y == 1440)
+		Resolution_Control->OptionValueText->SetText(FText::FromString("3440x1440"));
+
+	/* Resolution scale */
+	SetResolutionScaleSetting();
 
 	/* VSync */
 	if (HHGameGameUserSettings->IsVSyncEnabled() == true)
@@ -276,13 +349,16 @@ void UWidget_GameOptions::SetOptionsText()
 	SetShadowQualitySetting();
 	SetPostProcessingQualitySetting();
 	SetAntiAliasingQualitySetting();
+	SetGlobalIlluminationQualitySetting();
+	SetReflectionQualitySetting();
+	SetVisualEffectQualitySetting();
 
 	MasterVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMasterVolume())));
 	MusicVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMusicVolume())));
 	AmbienceVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetAmbienceVolume())));
 	SFXVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetSFXVolume())));
 
-	/* VSync */
+	/* Player Outline */
 	if (HHGameGameUserSettings->GetPlayerStencil() == true)
 	{
 		PlayerStencil_Control->OptionValueText->SetText(FText::FromString("On"));
@@ -291,7 +367,18 @@ void UWidget_GameOptions::SetOptionsText()
 	{
 		PlayerStencil_Control->OptionValueText->SetText(FText::FromString("Off"));
 	}
-	
+
+	if (HHGameGameUserSettings->bEnemyAlwaysRed == true)
+	{
+		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("On"));
+	}
+	else
+	{
+		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("Off"));
+	}
+
+	SetUIOffscreenIndicatorsSetting();
+	SetUIOffscreenIndicatorSizeSettingText();
 }
 
 void UWidget_GameOptions::UpdateGameInstanceVariables()
@@ -359,6 +446,9 @@ void UWidget_GameOptions::OnFullScreenControlRightButtonPressed()
 		{
 			FullScreen_Control->OptionValueText->SetText(FText::FromString("Fullscreen"));
 			HHGameGameUserSettings->SetFullscreenMode(EWindowMode::Fullscreen);
+
+			const FIntPoint Resolution = HHGameGameUserSettings->GetDesktopResolution();
+			HHGameGameUserSettings->SetScreenResolution(Resolution);
 			break;
 		}
 	case EWindowMode::Windowed:
@@ -377,86 +467,140 @@ void UWidget_GameOptions::OnFullScreenControlRightButtonPressed()
 
 void UWidget_GameOptions::OnResolutionControlLeftButtonPressed()
 {
-	
+	if (ResolutionOption >= 0)
+		ResolutionOption -= 1;
+	if (ResolutionOption < 0)
+		ResolutionOption = (uint8)EResolution::INDEX - 1;
 
 	SetResolutionSetting();
 }
 
 void UWidget_GameOptions::OnResolutionControlRightButtonPressed()
 {
-
+	if (ResolutionOption < (uint8)EResolution::INDEX)
+		ResolutionOption += 1;
+	if (ResolutionOption >= (uint8)EResolution::INDEX)
+		ResolutionOption = 0;
 
 	SetResolutionSetting();
 }
 
 void UWidget_GameOptions::SetResolutionSetting()
 {
-	//if (!HHGameGameUserSettings)
-	//	return;
-	//
-	//switch (ResolutionOption)
-	//{
-	//case (uint8)EResolution::R_1280x720:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("1280x720"));
-	//		ResolutionX = 1280;
-	//		ResolutionY = 720;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_1366x768:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("1366x768"));
-	//		ResolutionX = 1366;
-	//		ResolutionY = 768;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_1600x900:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("1600x900"));
-	//		ResolutionX = 1600;
-	//		ResolutionY = 900;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_1920x1080:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("1920x1080"));
-	//		ResolutionX = 1920;
-	//		ResolutionY = 1080;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_2560x1440:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1440"));
-	//		ResolutionX = 2560;
-	//		ResolutionY = 1440;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_2560x1080:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1080"));
-	//		ResolutionX = 2560;
-	//		ResolutionY = 1080;
-	//		break;
-	//	}
-	//case (uint8)EResolution::R_3440x1440:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("3440x1440"));
-	//		ResolutionX = 3440;
-	//		ResolutionY = 1440;
-	//		break;
-	//	}
-	//default:
-	//	{
-	//		Resolution_Control->OptionValueText->SetText(FText::FromString("Default 1280x720"));
-	//		ResolutionX = 1280;
-	//		ResolutionY = 720;
-	//		break;
-	//	}
-	//}
-	//
-	//// Set the desired screen resolution (optional)
-	//const FIntPoint Resolution = FIntPoint(ResolutionX, ResolutionY); // Change this to your desired resolution
-	//HHGameGameUserSettings->SetScreenResolution(Resolution);
+	if (!HHGameGameUserSettings)
+		return;
+	
+	switch (ResolutionOption)
+	{
+	case (uint8)EResolution::R_1280x720:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("1280x720"));
+			ResolutionX = 1280;
+			ResolutionY = 720;
+			break;
+		}
+	case (uint8)EResolution::R_1366x768:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("1366x768"));
+			ResolutionX = 1366;
+			ResolutionY = 768;
+			break;
+		}
+	case (uint8)EResolution::R_1600x900:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("1600x900"));
+			ResolutionX = 1600;
+			ResolutionY = 900;
+			break;
+		}
+	case (uint8)EResolution::R_1920x1080:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("1920x1080"));
+			ResolutionX = 1920;
+			ResolutionY = 1080;
+			break;
+		}
+	case (uint8)EResolution::R_2560x1440:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1440"));
+			ResolutionX = 2560;
+			ResolutionY = 1440;
+			break;
+		}
+	case (uint8)EResolution::R_2560x1080:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("2560x1080"));
+			ResolutionX = 2560;
+			ResolutionY = 1080;
+			break;
+		}
+	case (uint8)EResolution::R_3440x1440:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("3440x1440"));
+			ResolutionX = 3440;
+			ResolutionY = 1440;
+			break;
+		}
+	default:
+		{
+			Resolution_Control->OptionValueText->SetText(FText::FromString("Default 1280x720"));
+			ResolutionX = 1280;
+			ResolutionY = 720;
+			break;
+		}
+	}
+	
+	// Set the desired screen resolution (optional)
+	const FIntPoint Resolution = FIntPoint(ResolutionX, ResolutionY); // Change this to your desired resolution
+	HHGameGameUserSettings->SetScreenResolution(Resolution);
+}
+
+void UWidget_GameOptions::OnResolutionScaleControlLeftButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.9f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.75f);
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.7f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.5f);
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.4f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.25f);
+	else
+		HHGameGameUserSettings->SetResolutionScaleNormalized(1.0f);
+
+	SetResolutionScaleSetting();
+}
+
+void UWidget_GameOptions::OnResolutionScaleControlRightButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.9f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.25f);
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.7f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(1.0f);
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.4f)
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.75f);
+	else
+		HHGameGameUserSettings->SetResolutionScaleNormalized(0.5f);
+
+	SetResolutionScaleSetting();
+}
+
+void UWidget_GameOptions::SetResolutionScaleSetting()
+{
+	if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.9f)
+		ResolutionScale_Control->OptionValueText->SetText(FText::FromString("100"));
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.7f)
+		ResolutionScale_Control->OptionValueText->SetText(FText::FromString("75"));
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.4f)
+		ResolutionScale_Control->OptionValueText->SetText(FText::FromString("50"));
+	else if (HHGameGameUserSettings->GetResolutionScaleNormalized() >= 0.2f)
+		ResolutionScale_Control->OptionValueText->SetText(FText::FromString("25"));
+
+	UE_LOG(LogTemp, Warning, TEXT("Resolution Scale: %f"), HHGameGameUserSettings->GetResolutionScaleNormalized());
 }
 
 void UWidget_GameOptions::OnVSyncControlButtonPressed()
@@ -578,9 +722,9 @@ void UWidget_GameOptions::OnTextureQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetTextureQuality() >= 0)
+	if (HHGameGameUserSettings->GetTextureQuality() > 0)
 		HHGameGameUserSettings->SetTextureQuality(HHGameGameUserSettings->GetTextureQuality() - 1);
-	if (HHGameGameUserSettings->GetTextureQuality() < 0)
+	else if (HHGameGameUserSettings->GetTextureQuality() == 0)
 		HHGameGameUserSettings->SetTextureQuality(3);
 
 	SetTextureQualitySetting();
@@ -601,33 +745,7 @@ void UWidget_GameOptions::OnTextureQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetTextureQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetTextureQuality())
-	{
-	case 0:
-		{
-			TextureQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			TextureQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			TextureQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			TextureQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			TextureQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(TextureQuality_Control, HHGameGameUserSettings->GetTextureQuality());
 }
 
 void UWidget_GameOptions::OnFoliageQualityControlLeftButtonPressed()
@@ -635,9 +753,9 @@ void UWidget_GameOptions::OnFoliageQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetFoliageQuality() >= 0)
+	if (HHGameGameUserSettings->GetFoliageQuality() > 0)
 		HHGameGameUserSettings->SetFoliageQuality(HHGameGameUserSettings->GetFoliageQuality() - 1);
-	if (HHGameGameUserSettings->GetFoliageQuality() < 0)
+	else if (HHGameGameUserSettings->GetFoliageQuality() == 0)
 		HHGameGameUserSettings->SetFoliageQuality(3);
 
 	SetFoliageQualitySetting();
@@ -655,33 +773,7 @@ void UWidget_GameOptions::OnFoliageQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetFoliageQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetFoliageQuality())
-	{
-	case 0:
-		{
-			FoliageQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			FoliageQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			FoliageQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			FoliageQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			FoliageQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(FoliageQuality_Control, HHGameGameUserSettings->GetFoliageQuality());
 }
 
 void UWidget_GameOptions::OnShadingQualityControlLeftButtonPressed()
@@ -689,9 +781,9 @@ void UWidget_GameOptions::OnShadingQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetShadingQuality() >= 0)
+	if (HHGameGameUserSettings->GetShadingQuality() > 0)
 		HHGameGameUserSettings->SetShadingQuality(HHGameGameUserSettings->GetShadingQuality() - 1);
-	if (HHGameGameUserSettings->GetShadingQuality() < 0)
+	else if (HHGameGameUserSettings->GetShadingQuality() == 0)
 		HHGameGameUserSettings->SetShadingQuality(3);
 
 
@@ -710,33 +802,7 @@ void UWidget_GameOptions::OnShadingQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetShadingQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetShadingQuality())
-	{
-	case 0:
-		{
-			ShadingQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			ShadingQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			ShadingQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			ShadingQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			ShadingQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(ShadingQuality_Control, HHGameGameUserSettings->GetShadingQuality());
 }
 
 void UWidget_GameOptions::OnShadowQualityControlLeftButtonPressed()
@@ -744,9 +810,9 @@ void UWidget_GameOptions::OnShadowQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetShadowQuality() >= 0)
+	if (HHGameGameUserSettings->GetShadowQuality() > 0)
 		HHGameGameUserSettings->SetShadowQuality(HHGameGameUserSettings->GetShadowQuality() - 1);
-	if (HHGameGameUserSettings->GetShadowQuality() < 0)
+	else if (HHGameGameUserSettings->GetShadowQuality() == 0)
 		HHGameGameUserSettings->SetShadowQuality(3);
 
 	SetShadowQualitySetting();
@@ -767,33 +833,7 @@ void UWidget_GameOptions::OnShadowQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetShadowQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetShadowQuality())
-	{
-	case 0:
-		{
-			ShadowQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			ShadowQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			ShadowQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			ShadowQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			ShadowQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(ShadowQuality_Control, HHGameGameUserSettings->GetShadowQuality());
 }
 
 void UWidget_GameOptions::OnPostProcessingQualityControlLeftButtonPressed()
@@ -801,9 +841,9 @@ void UWidget_GameOptions::OnPostProcessingQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetPostProcessingQuality() >= 0)
+	if (HHGameGameUserSettings->GetPostProcessingQuality() > 0)
 		HHGameGameUserSettings->SetPostProcessingQuality(HHGameGameUserSettings->GetPostProcessingQuality() - 1);
-	if (HHGameGameUserSettings->GetPostProcessingQuality() < 0)
+	else if (HHGameGameUserSettings->GetPostProcessingQuality() == 0)
 		HHGameGameUserSettings->SetPostProcessingQuality(3);
 
 	SetPostProcessingQualitySetting();
@@ -824,33 +864,7 @@ void UWidget_GameOptions::OnPostProcessingQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetPostProcessingQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetPostProcessingQuality())
-	{
-	case 0:
-		{
-			PostProcessingQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			PostProcessingQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			PostProcessingQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			PostProcessingQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			PostProcessingQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(PostProcessingQuality_Control, HHGameGameUserSettings->GetPostProcessingQuality());
 }
 
 void UWidget_GameOptions::OnAntiAliasingQualityControlLeftButtonPressed()
@@ -858,9 +872,9 @@ void UWidget_GameOptions::OnAntiAliasingQualityControlLeftButtonPressed()
 	if (!HHGameGameUserSettings)
 		return;
 	
-	if (HHGameGameUserSettings->GetAntiAliasingQuality() >= 0)
+	if (HHGameGameUserSettings->GetAntiAliasingQuality() > 0)
 		HHGameGameUserSettings->SetAntiAliasingQuality(HHGameGameUserSettings->GetAntiAliasingQuality() - 1);
-	if (HHGameGameUserSettings->GetAntiAliasingQuality() < 0)
+	else if (HHGameGameUserSettings->GetAntiAliasingQuality() == 0)
 		HHGameGameUserSettings->SetAntiAliasingQuality(3);
 
 	SetAntiAliasingQualitySetting();
@@ -881,33 +895,87 @@ void UWidget_GameOptions::OnAntiAliasingQualityControlRightButtonPressed()
 
 void UWidget_GameOptions::SetAntiAliasingQualitySetting()
 {
-	switch (HHGameGameUserSettings->GetAntiAliasingQuality())
-	{
-	case 0:
-		{
-			AntiAliasingQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
-			break;
-		}
-	case 1:
-		{
-			AntiAliasingQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
-			break;
-		}
-	case 2:
-		{
-			AntiAliasingQuality_Control->OptionValueText->SetText(FText::FromString("High"));
-			break;
-		}
-	case 3:
-		{
-			AntiAliasingQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
-			break;
-		}
-	default:
-		{
-			AntiAliasingQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
-		}
-	}
+	SetQualityLevelText(AntiAliasingQuality_Control, HHGameGameUserSettings->GetAntiAliasingQuality());
+}
+
+void UWidget_GameOptions::OnGlobalIlluminationQualityControlLeftButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetGlobalIlluminationQuality() > 0)
+		HHGameGameUserSettings->SetGlobalIlluminationQuality(HHGameGameUserSettings->GetGlobalIlluminationQuality() - 1);
+	else if (HHGameGameUserSettings->GetGlobalIlluminationQuality() == 0)
+		HHGameGameUserSettings->SetGlobalIlluminationQuality(3);
+
+	SetGlobalIlluminationQualitySetting();
+}
+
+void UWidget_GameOptions::OnGlobalIlluminationQualityControlRightButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetGlobalIlluminationQuality() < 4)
+		HHGameGameUserSettings->SetGlobalIlluminationQuality(HHGameGameUserSettings->GetGlobalIlluminationQuality() + 1);
+	if (HHGameGameUserSettings->GetGlobalIlluminationQuality() >= 4)
+		HHGameGameUserSettings->SetGlobalIlluminationQuality(0);
+
+	SetGlobalIlluminationQualitySetting();
+}
+
+void UWidget_GameOptions::SetGlobalIlluminationQualitySetting()
+{
+	SetQualityLevelText(GlobalIlluminationQuality_Control, HHGameGameUserSettings->GetGlobalIlluminationQuality());
+}
+
+void UWidget_GameOptions::OnReflectionQualityControlLeftButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetReflectionQuality() > 0)
+		HHGameGameUserSettings->SetReflectionQuality(HHGameGameUserSettings->GetReflectionQuality() - 1);
+	else if (HHGameGameUserSettings->GetReflectionQuality() == 0)
+		HHGameGameUserSettings->SetReflectionQuality(3);
+
+	SetReflectionQualitySetting();
+}
+
+void UWidget_GameOptions::OnReflectionQualityControlRightButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetReflectionQuality() < 4)
+		HHGameGameUserSettings->SetReflectionQuality(HHGameGameUserSettings->GetReflectionQuality() + 1);
+	if (HHGameGameUserSettings->GetReflectionQuality() >= 4)
+		HHGameGameUserSettings->SetReflectionQuality(0);
+
+	SetReflectionQualitySetting();
+}
+
+void UWidget_GameOptions::SetReflectionQualitySetting()
+{
+	SetQualityLevelText(ReflectionQuality_Control, HHGameGameUserSettings->GetReflectionQuality());
+}
+
+void UWidget_GameOptions::OnVisualEffectQualityControlButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->GetVisualEffectQuality() == 3)
+		HHGameGameUserSettings->SetVisualEffectQuality(2);
+	else
+		HHGameGameUserSettings->SetVisualEffectQuality(3);
+
+	SetVisualEffectQualitySetting();
+}
+
+void UWidget_GameOptions::SetVisualEffectQualitySetting()
+{
+	SetQualityLevelText(VisualEffectQuality_Control, HHGameGameUserSettings->GetVisualEffectQuality());
 }
 
 void UWidget_GameOptions::OnMasterVolumeControlLeftButtonPressed()
@@ -1028,6 +1096,165 @@ void UWidget_GameOptions::OnPlayerStencilControlButtonPressed()
 	{
 		PlayerStencil_Control->OptionValueText->SetText(FText::FromString("On"));
 		HHGameGameUserSettings->SetPlayerStencil(true);
+	}
+}
+
+void UWidget_GameOptions::OnEnemyStencilAlwaysRedControlButtonPressed()
+{
+	if (!HHGameGameUserSettings)
+		return;
+	
+	if (HHGameGameUserSettings->bEnemyAlwaysRed == true)
+	{
+		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("Off"));
+		HHGameGameUserSettings->bEnemyAlwaysRed = false;
+	}
+	else
+	{
+		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("On"));
+		HHGameGameUserSettings->bEnemyAlwaysRed = true;
+	}
+}
+
+void UWidget_GameOptions::OnUIOffscreenIndicatorsControlLeftButtonPressed()
+{
+	switch (HHGameGameUserSettings->GetUIIndicators())
+	{
+	case EIndicatorUISetting::ON:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::OFF);
+			break;
+		}
+	case EIndicatorUISetting::ONSIDESONLY:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			break;
+		}
+	case EIndicatorUISetting::OFF:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ONSIDESONLY);
+			break;
+		}
+	default:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			break;
+		}
+	}
+
+	SetUIOffscreenIndicatorsSetting();
+}
+
+void UWidget_GameOptions::OnUIOffscreenIndicatorsControlRightButtonPressed()
+{
+	switch (HHGameGameUserSettings->GetUIIndicators())
+	{
+	case EIndicatorUISetting::ON:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ONSIDESONLY);
+			break;
+		}
+	case EIndicatorUISetting::ONSIDESONLY:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::OFF);
+			break;
+		}
+	case EIndicatorUISetting::OFF:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			break;
+		}
+	default:
+		{
+			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			break;
+		}
+	}
+
+	SetUIOffscreenIndicatorsSetting();
+}
+
+void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
+{
+	switch (HHGameGameUserSettings->GetUIIndicators())
+	{
+	case EIndicatorUISetting::ON:
+		{
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			break;
+		}
+	case EIndicatorUISetting::ONSIDESONLY:
+		{
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On (window edge only)"));
+			break;
+		}
+	case EIndicatorUISetting::OFF:
+		{
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Off"));
+			break;
+		}
+	default:
+		{
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			break;
+		}
+	}
+}
+
+void UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlLeftButtonPressed()
+{
+	bool bLargeSize = HHGameGameUserSettings->GetUIIndicatorSizeLarge();
+	bLargeSize = !bLargeSize;
+	HHGameGameUserSettings->SetUIIndicatorSizeLarge(bLargeSize);
+
+	SetUIOffscreenIndicatorSizeSettingText();
+}
+
+void UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlRightButtonPressed()
+{
+	bool bLargeSize = HHGameGameUserSettings->GetUIIndicatorSizeLarge();
+	bLargeSize = !bLargeSize;
+	HHGameGameUserSettings->SetUIIndicatorSizeLarge(bLargeSize);
+
+	SetUIOffscreenIndicatorSizeSettingText();
+}
+
+void UWidget_GameOptions::SetUIOffscreenIndicatorSizeSettingText()
+{
+	if (HHGameGameUserSettings->GetUIIndicatorSizeLarge() == true)
+		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Large"));
+	else
+		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Small"));
+}
+
+void UWidget_GameOptions::SetQualityLevelText(UWidget_OptionSelector* _OptionSelectorWidget, int32 _QualityValue)
+{
+	switch (_QualityValue)
+	{
+	case 0:
+		{
+			_OptionSelectorWidget->OptionValueText->SetText(FText::FromString("Potato"));
+			break;
+		}
+	case 1:
+		{
+			_OptionSelectorWidget->OptionValueText->SetText(FText::FromString("Medium"));
+			break;
+		}
+	case 2:
+		{
+			_OptionSelectorWidget->OptionValueText->SetText(FText::FromString("High"));
+			break;
+		}
+	case 3:
+		{
+			_OptionSelectorWidget->OptionValueText->SetText(FText::FromString("Epic"));
+			break;
+		}
+	default:
+		{
+			_OptionSelectorWidget->OptionValueText->SetText(FText::FromString("Default Medium"));
+		}
 	}
 }
 

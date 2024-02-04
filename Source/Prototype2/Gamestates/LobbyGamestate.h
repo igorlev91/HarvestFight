@@ -68,6 +68,12 @@ public:
 	EColours TeamOneColour;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	EColours TeamTwoColour;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	FString TeamOneName;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	FString TeamTwoName;
+	UPROPERTY(VisibleAnywhere)
+	class UTeamNames* TeamNamesData;
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamOne;
@@ -144,4 +150,31 @@ private:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bHasAllPlayersVoted{};
+
+
+	/* Maps */
+
+	// Friendly Farm
+	FString FriendlyFarmClassic = "/Game/Maps/Level_FF_Large";
+	FString FriendlyFarmBrawl = "/Game/Maps/Level_FF_Brawl";
+	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_Blitz";
+	
+	// Frosty Fields (Winter)
+	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_LargeV2";
+	FString FrostyFieldsBrawl = "/Game/Maps/Level_Winter_Brawl";
+	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_Blitz";
+
+	// Honey
+	FString HoneyClassic = "/Game/Maps/Level_Honey_Large";
+	FString HoneyBrawl = "/Game/Maps/Level_Honey_Brawl";
+	FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz";
+
+	// Floating Islands
+	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIsland";
+	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
+
+	// Chaos
+	FString Chaos = "/Game/Maps/Level_FF_Chaos";
+
+	
 };

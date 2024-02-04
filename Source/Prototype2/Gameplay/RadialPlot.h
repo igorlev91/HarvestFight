@@ -37,10 +37,10 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	UMaterialInstance* PlotSignMaterial;
 
-	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	UMaterialInstanceDynamic* PlotSignMaterialDynamic;
 
-	UPROPERTY(Replicated, EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	class APlotSign* PlotSign;
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<APlotSign> PlotSignPrefab;
@@ -48,7 +48,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	TSubclassOf<AGrowSpot> GrowSpotPrefab;
 	
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	EColours PlayerColour;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
@@ -57,7 +57,8 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float PlotZHeight {30.0f};
 	
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	EColours SignColour;
 
 	bool bDoOnce{true};
 };

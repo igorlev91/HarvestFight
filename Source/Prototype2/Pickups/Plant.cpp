@@ -159,7 +159,7 @@ void APlant::WiltMaterial()
 	{
 		PlantMats[i]->SetScalarParameterValue(FName("GrayScaleTint"), FMath::Lerp<float>(1.0f, 0.0f, Lifetime / InitialLifetime));
 
-		UE_LOG(LogTemp, Warning, TEXT("wilted plant material"));
+		//UE_LOG(LogTemp, Warning, TEXT("wilted plant material"));
 	}
 }
 

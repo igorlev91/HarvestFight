@@ -100,4 +100,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SFXVolume{ 0.5f };
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FString TeamOneName;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FString TeamTwoName;
 };

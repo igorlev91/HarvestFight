@@ -51,6 +51,13 @@ public:
 	EColours TeamOneColour;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	EColours TeamTwoColour;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	FString TeamOneName;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	FString TeamTwoName;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWorldOverrideData* DefaultWorldOverrideData;
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_TeamOne;

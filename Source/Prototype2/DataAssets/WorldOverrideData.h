@@ -39,10 +39,10 @@ public:
 	TSubclassOf<class ACrown> KingCrown;
 
 	/* Game modifier values */
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 GameTimeShort;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 GameTimeMedium;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 GameTimeLong;
 };

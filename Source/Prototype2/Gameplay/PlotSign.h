@@ -35,7 +35,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;
 	
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	bool bHasBeenClaimed{};
 		
 	float HoldInteractTotalDuration = 1.0f;

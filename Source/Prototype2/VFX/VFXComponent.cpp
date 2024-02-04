@@ -36,10 +36,24 @@ void UVFXComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 	if (Owner && Owner->HasAuthority())
 		ToggleParticleSystems(); 
+	/*if (ToggleDelayTimer > 0)
+	{
+		ToggleDelayTimer -= DeltaTime;
+		if (ToggleDelayTimer <= 0)
+		{
+
+		}
+	}*/
 }
 
 void UVFXComponent::ActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem)
 {
+	if (CastedOwner)
+	{
+		if (!CastedOwner->HasIdealRole())
+			return;
+	}
+
 	Server_ActivateParticleSystemFromEnum(_NewSystem);
 }
 
@@ -62,7 +76,17 @@ void UVFXComponent::ToggleParticleSystems()
 {
 	if (ParticleSystemsToActivate.Num() > 0 || ParticleSystemsToDeActivate.Num() > 0)
 	{
-		Multi_ToggleParticleSystems(ParticleSystemsToActivate, ParticleSystemsToDeActivate);
+		for(auto ParticleSystemCast : ParticleSystemsToActivate)
+		{
+			if (ParticleSystemCast)
+				ParticleSystemCast->Activate();
+		}
+
+		for(auto ParticleSystemCast : ParticleSystemsToDeActivate)
+		{
+			if (ParticleSystemCast)
+				ParticleSystemCast->Deactivate();
+		}
 		ParticleSystemsToActivate.Empty();
 		ParticleSystemsToDeActivate.Empty();
 	}

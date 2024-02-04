@@ -106,10 +106,13 @@ protected:
 	void MandrakePickupNoise(APrototype2Character* _Player);
 
 	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
+	
 	void MakePlantGold();
-
+	UFUNCTION(Server, Reliable)
+	void Server_MakePlantGold();
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantGold();
+	
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantConcrete();
 	UFUNCTION(NetMulticast, Unreliable)

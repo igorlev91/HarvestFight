@@ -49,6 +49,9 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UStaticMeshComponent* Mesh;
 
+	UFUNCTION(Server, Reliable)
+	void ServerMovePlatform(FVector NewLocation, FRotator NewRotation);
+
 private:
 
 	UPROPERTY(EditAnywhere)
@@ -59,18 +62,21 @@ private:
 	bool bDoMove;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	TArray<FMovementInfo> MovementInfoArray;
-	UPROPERTY(EditAnywhere, Category = "Movement")
+	UPROPERTY(Replicated, EditAnywhere, Category = "Movement")
 	bool bMoveArrayBackwards;
-	UPROPERTY(VisibleAnywhere, Category = "Movement")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
 	int32 PositionInMoveArray = 0;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float TimeToMove;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float BaseTimeStop;
-	UPROPERTY(VisibleAnywhere, Category = "Movement")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
 	float TimeTrackerTimeToMove;
-	UPROPERTY(VisibleAnywhere, Category = "Movement")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
 	float TimeStop;
+
+	UPROPERTY(Replicated, EditAnywhere, Category = "Movement")
+	float InitialDelay = 0;
 
 	//rotation
 	UPROPERTY(EditAnywhere, Category = "Rotation")
@@ -87,10 +93,12 @@ private:
 	float Frequency;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	FVector SineHeightBounce;
-	UPROPERTY(VisibleAnywhere, Category = "Sine Wave")
+	UPROPERTY(Replicated, EditAnywhere, Category = "Sine Wave")
 	float SineTime;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	float SineStartTimeMin;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	float SineStartTimeMax;
+
+	bool bPredictMovement;
 };

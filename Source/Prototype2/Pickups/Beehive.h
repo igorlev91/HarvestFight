@@ -22,6 +22,7 @@ public:
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
 	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	void SetBeehiveLocation();
 private:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;

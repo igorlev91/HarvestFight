@@ -32,31 +32,46 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 
 	if (GameStateReference->bTeams)
 	{
-		int32 RedTeamCoins{};
-		int32 BlueTeamCoins{};
-		bool RedTeamWon{};
-		bool Draw{};
-		for(auto PlayerState : GameStateReference->PlayerArray)
+		int32 Team1Coins{};
+		int32 Team2Coins{};
+		if (!GameStateReference->PlayerArray.IsEmpty())
 		{
-			if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+			for(auto PlayerState : GameStateReference->PlayerArray)
 			{
-				if (CastedPlayerstate->Details.Colour == EColours::RED)
+				if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
 				{
-					RedTeamCoins += CastedPlayerstate->Coins;
-				}
-				else if (CastedPlayerstate->Details.Colour == EColours::BLUE)
-				{
-					BlueTeamCoins += CastedPlayerstate->Coins;
+					if (CastedPlayerstate->Details.Colour == GameStateReference->TeamOneColour)
+					{
+						Team1Coins += CastedPlayerstate->Coins;
+					}
+					else if (CastedPlayerstate->Details.Colour == GameStateReference->TeamTwoColour)
+					{
+						Team2Coins += CastedPlayerstate->Coins;
+					}
 				}
 			}
 		}
-
-		if (RedTeamCoins == BlueTeamCoins)
+		FString TeamName;
+		int LastFoundSIndex{};
+		GameStateReference->TeamOneName.FindLastChar('s', LastFoundSIndex);
+		
+		if (Team1Coins == Team2Coins)
 			TextGameWinner->SetText(FText::FromString("DRAW!"));
-		else if (RedTeamCoins > BlueTeamCoins)
-			TextGameWinner->SetText(FText::FromString("RED TEAM WINS!"));
+		else if (Team1Coins > Team2Coins)
+		{
+			if (LastFoundSIndex != GameStateReference->TeamOneName.Len() - 1)
+				TeamName = GameStateReference->TeamOneName + "'s Win!";
+			else
+				TeamName = GameStateReference->TeamOneName + " Win!";
+		}
 		else
-			TextGameWinner->SetText(FText::FromString("BLUE TEAM WINS!"));
+		{
+			if (LastFoundSIndex != GameStateReference->TeamOneName.Len() - 1)
+				TeamName = GameStateReference->TeamTwoName + "'s Win!";
+			else
+				TeamName = GameStateReference->TeamTwoName + " Win!";
+		}
+		TextGameWinner->SetText(FText::FromString(TeamName));
 	}
 	else
 	{

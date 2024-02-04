@@ -6,9 +6,19 @@
 #include "GameFramework/GameUserSettings.h"
 #include "HarvestHavocGameUserSettings.generated.h"
 
+UENUM(BlueprintType)
+enum class EIndicatorUISetting : uint8
+{
+	ON,
+	ONSIDESONLY,
+	OFF
+};
+
 UCLASS()
 class PROTOTYPE2_API UHarvestHavocGameUserSettings : public UGameUserSettings
 {
+	friend class APrototype2Character;
+	friend class UWidget_GameOptions;
 	GENERATED_UCLASS_BODY()
 
 public:
@@ -28,6 +38,10 @@ public:
 	void SetSFXVolume(int32 _Volume);
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerStencil(bool _bEnable);
+	UFUNCTION(BlueprintCallable)
+	void SetUIIndicators(EIndicatorUISetting _Setting);
+	UFUNCTION(BlueprintCallable)
+	void SetUIIndicatorSizeLarge(bool _bLargeSize);
 
 	UFUNCTION(BlueprintPure)
 	int32 GetMasterVolume() const { return MasterVolume; }
@@ -39,6 +53,10 @@ public:
 	int32 GetSFXVolume() const { return SFXVolume; }
 	UFUNCTION(BlueprintPure)
 	bool GetPlayerStencil() const { return bPlayerStencil; }
+	UFUNCTION(BlueprintPure)
+	EIndicatorUISetting GetUIIndicators() const { return (EIndicatorUISetting)UIIndicators; }
+	UFUNCTION(BlueprintPure)
+	bool GetUIIndicatorSizeLarge() const { return UIIndicatorSizeLarge; }
 
 protected:
 	/* Custom Audio Settings */
@@ -57,4 +75,14 @@ protected:
 	/* Custom Game Settings */
 	UPROPERTY(config, EditAnywhere)
 	bool bPlayerStencil;
+
+	UPROPERTY(config, EditAnywhere)
+	bool bEnemyAlwaysRed;
+
+	/* UI Related */
+	UPROPERTY(config, EditAnywhere)
+	int32 UIIndicators;
+
+	UPROPERTY(config, EditAnywhere)
+	bool UIIndicatorSizeLarge;
 };

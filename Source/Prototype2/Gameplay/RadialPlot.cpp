@@ -47,6 +47,8 @@ void ARadialPlot::Multi_SetPlotMaterial_Implementation(APrototype2PlayerState* _
 		PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(PlotSignMaterial, this);
 		PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), _Id->Details.PureToneColour);
 		PlotSign->GetMesh()->SetMaterial(0, PlotSignMaterialDynamic);
+
+		SignColour = _Id->Details.Colour;
 	}
 }
 

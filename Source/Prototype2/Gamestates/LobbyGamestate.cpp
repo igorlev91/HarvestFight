@@ -9,11 +9,16 @@
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Widgets/Widget_IngameMenu.h"
 #include "Prototype2/Widgets/Widget_MapChoice.h"
+#include "Prototype2/DataAssets/TeamNames.h"
 
 ALobbyGamestate::ALobbyGamestate()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bNetLoadOnClient = true;
+
+	static ConstructorHelpers::FObjectFinder<UTeamNames> FoundTeamNamesData(TEXT("/Game/DataAssets/MiscData/DA_TeamNames"));
+	if (IsValid(FoundTeamNamesData.Object))
+		TeamNamesData = FoundTeamNamesData.Object;
 }
 
 
@@ -24,14 +29,21 @@ void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 	if (HasAuthority())
 	{
 		int RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+		if (RandomColour == (int)EColours::RED)
+			RandomColour++;
 		TeamOneColour = (EColours)RandomColour;
 	
 		do
 		{
 			RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+			if (RandomColour == (int)EColours::RED)
+				RandomColour++;
 		}
 		while ((EColours)RandomColour == TeamOneColour);
 		TeamTwoColour = (EColours)RandomColour;
+
+		TeamOneName = TeamNamesData->TeamNames[TeamOneColour].Names[rand() % TeamNamesData->TeamNames[TeamOneColour].Names.Num()];
+		TeamTwoName = TeamNamesData->TeamNames[TeamTwoColour].Names[rand() % TeamNamesData->TeamNames[TeamTwoColour].Names.Num()];
 	}
 }
 
@@ -41,15 +53,13 @@ void ALobbyGamestate::BeginPlay()
 
 	/* Pre set backup level */
 	if (GameMode == 0) // Normal Mode
-		MapChoice = "/Game/Maps/Level_FF_Large";
+		MapChoice = FriendlyFarmClassic;
 	else if (GameMode == 1) // Brawl Mode
-		MapChoice = "/Game/Maps/Level_FF_Brawl";
+		MapChoice = FriendlyFarmBrawl;
 	else if (GameMode == 2) // Blitz Mode
-		MapChoice = "/Game/Maps/Level_FF_Blitz";
+		MapChoice = FriendlyFarmBlitz;
 	else if (GameMode == 3) // Blitz Mode
-		MapChoice = "/Game/Maps/Level_FF_Chaos";
-
-
+		MapChoice = Chaos;
 }
 
 void ALobbyGamestate::Tick(float _DeltaSeconds)
@@ -201,10 +211,12 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 	DOREPLIFETIME(ALobbyGamestate, GameMode);
 
-	DOREPLIFETIME(ALobbyGamestate, Server_TeamOne);
+	DOREPLIFETIME(ALobbyGamestate, Server_TeamOne); 
 	DOREPLIFETIME(ALobbyGamestate, Server_TeamTwo);
 	DOREPLIFETIME(ALobbyGamestate, TeamOneColour);
 	DOREPLIFETIME(ALobbyGamestate, TeamTwoColour);
+	DOREPLIFETIME(ALobbyGamestate, TeamOneName);
+	DOREPLIFETIME(ALobbyGamestate, TeamTwoName);
 	DOREPLIFETIME(ALobbyGamestate, bHasAllPlayersVoted);
 }
 
@@ -220,37 +232,39 @@ void ALobbyGamestate::PickMapToPlay()
 		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_FF_Large";
+				MapChoice = FriendlyFarmClassic;
 			else if (GameMode == 1) // Brawl Mode
-				MapChoice = "/Game/Maps/Level_FF_Brawl";
+				MapChoice = FriendlyFarmBrawl;
 			else if (GameMode == 2) // Blitz Mode
-				MapChoice = "/Game/Maps/Level_FF_Blitz";
+				MapChoice = FriendlyFarmBlitz;
 			
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_Winter_LargeV2";
+				MapChoice = FrostyFieldsClassic;
 			else if (GameMode == 1)// Brawl Mode
-				MapChoice = "/Game/Maps/Level_Winter_Brawl";
+				MapChoice = FrostyFieldsBrawl;
 			else if (GameMode == 2) // Blitz Mode
-				MapChoice = "/Game/Maps/Level_Winter_Blitz";
+				MapChoice = FrostyFieldsBlitz;
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_Honey_Large";
+				MapChoice = HoneyClassic;
 			else if (GameMode == 1) // Brawl Mode
-				MapChoice = "/Game/Maps/Level_Honey_Brawl";
+				MapChoice = HoneyBrawl;
 			else if (GameMode == 2) // Blitz Mode
-				MapChoice = "/Game/Maps/Level_Honey_Blitz";
+				MapChoice = HoneyBlitz;
 		}
 		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm) // floating islands farm gets most votes
 			{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = "/Game/Maps/Level_SkyIsland";
+				MapChoice = FloatingIslandsClassic;
+			else if (GameMode == 1) // Brawl Mode
+				MapChoice = FloatingIslandsBrawl;
 			else
-				UE_LOG(LogTemp, Warning, TEXT("Sky island brawl mode attempted to start")); // No brawl mode for floating islands
+				UE_LOG(LogTemp, Warning, TEXT("Sky island blitz mode attempted to start")); // No brawl mode for floating islands
 			}
 		else // Pick a random map from highest votes
 		{
@@ -423,6 +437,9 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 									}
 									GameInstance->FinalPlayerDetails.Add(SomePlayerName, Player->Details);
 								}
+
+								GameInstance->TeamOneName = TeamOneName;
+								GameInstance->TeamTwoName = TeamTwoName;
 							}
 							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
 							GetWorld()->ServerTravel(MapChoice, false, false); // Start level

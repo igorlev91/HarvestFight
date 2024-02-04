@@ -22,7 +22,7 @@ public:
 	bool CheckForHitObstacle();
 
 	UFUNCTION()
-	void InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed, float _LifeTime, float _AttackSphereRadius);
+	void InitializeProjectile(APrototype2Character* _Player, UStaticMesh* _Mesh, float _Speed, float _LifeTime, float _AttackSphereRadius, float _AttackChargeAmount);
 	
 	UPROPERTY(VisibleAnywhere)
 	float AttackSphereRadius;

@@ -159,7 +159,7 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 				}
 			}
 
-			/* Set player names to actual names and changing colour to player colour */
+			/* Set player names to actual names */
 			if (Names.Num() > i)
 			{
 				Names[i]->SetText(FText::FromString(FString(Player->PlayerName)));
@@ -304,6 +304,8 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	FontInfo = TeamAText->GetFont();
 	FontInfo.OutlineSettings = TeamAText->GetFont().OutlineSettings;
 	FontInfo.OutlineSettings.OutlineColor = FLinearColor::White;
+	TeamAText->SetText(FText::FromString(GameStateReference->TeamOneName));
+	TeamBText->SetText(FText::FromString(GameStateReference->TeamTwoName));
 	
 	if (GameStateReference->TeamOneColour == EColours::BLACK)
 		TeamAText->SetFont(FontInfo);

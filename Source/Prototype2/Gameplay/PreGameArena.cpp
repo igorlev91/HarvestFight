@@ -35,6 +35,14 @@ void APreGameArena::BeginPlay()
 	Mesh->SetWorldRotation(Rotation);
 	
 	GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	
+	TArray<AActor*> Players{};
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APrototype2Character::StaticClass(), Players);
+
+	for (auto Player : Players)
+	{
+		Player->SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 100));
+	}
 }
 
 void APreGameArena::Tick(float DeltaTime)
