@@ -48,9 +48,16 @@ public:
 
 	class APrototype2Gamestate* GameStateReference;
 
-	/* Turns ingame menu on/off */
+	/* Toggle ingame menu on/off */
 	UFUNCTION(BlueprintCallable)
 	void EnableDisableMenu();
+
+	/* Toggle radial emote on/off */
+	UFUNCTION(BlueprintCallable)
+	void ShowEmoteRadialMenu();
+
+	UFUNCTION(BlueprintCallable)
+	void DisableEmoteRadialMenu();
 
 	/* Enables the endgame menu */
 	UFUNCTION(BlueprintCallable)
@@ -91,6 +98,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_IngameMenu* IngameMenu;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidget_EmoteRadial* EmoteRadialMenu;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_GameOptions* OptionsMenu;
 

@@ -255,6 +255,8 @@ protected:
 	
 	/* UI */
 	void OpenIngameMenu();
+	void ShowRadialEmoteMenu();
+	void DisableRadialEmoteMenu();
 
 	/* Canceled by being hit by other player */
 	void CancelChargeAttack();
@@ -870,6 +872,10 @@ private:
 	/* UI */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MenuAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ShowEmoteAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* DisableEmoteAction;
 	/* Attack */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ChargeAttackAction;

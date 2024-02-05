@@ -165,6 +165,8 @@ void APrototype2Character::SetupPlayerInputComponent(class UInputComponent* Play
 		
 		// UI
 		EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Triggered, this, &APrototype2Character::OpenIngameMenu);
+		EnhancedInputComponent->BindAction(ShowEmoteAction, ETriggerEvent::Triggered, this, &APrototype2Character::ShowRadialEmoteMenu);
+		EnhancedInputComponent->BindAction(DisableEmoteAction, ETriggerEvent::Triggered, this, &APrototype2Character::DisableRadialEmoteMenu);
 
 		// Jump
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APrototype2Character::Jump);
@@ -578,6 +580,22 @@ void APrototype2Character::OpenIngameMenu()
 		return;
 
 	PlayerHUDRef->EnableDisableMenu();
+}
+
+void APrototype2Character::ShowRadialEmoteMenu()
+{
+	if (!PlayerHUDRef)
+		return;
+
+	PlayerHUDRef->ShowEmoteRadialMenu();
+}
+
+void APrototype2Character::DisableRadialEmoteMenu()
+{
+	if (!PlayerHUDRef)
+		return;
+
+	PlayerHUDRef->DisableEmoteRadialMenu();
 }
 
 void APrototype2Character::ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting)

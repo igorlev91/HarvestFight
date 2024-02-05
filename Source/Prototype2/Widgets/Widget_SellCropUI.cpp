@@ -1,5 +1,4 @@
 
-
 #include "Widget_SellCropUI.h"
 
 #include "Components/TextBlock.h"

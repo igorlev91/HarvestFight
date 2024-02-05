@@ -2,6 +2,7 @@
 
 #include "Widget_PlayerHUD.h"
 
+#include "Widget_EmoteRadial.h"
 #include "Widget_EndgameMenu.h"
 #include "Widget_GameOptions.h"
 #include "Widget_IngameMenu.h"
@@ -491,6 +492,16 @@ void UWidget_PlayerHUD::EnableDisableMenu()
 {
 	if (OptionsMenu->GetVisibility() == ESlateVisibility::Hidden)
 		IngameMenu->ToggleMenu();
+}
+
+void UWidget_PlayerHUD::ShowEmoteRadialMenu()
+{
+	EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
+}
+
+void UWidget_PlayerHUD::DisableEmoteRadialMenu()
+{
+	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()
