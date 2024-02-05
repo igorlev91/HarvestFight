@@ -51,6 +51,7 @@
 #include "Prototype2/VFX/VFXComponent.h"
 #include "Prototype2/Gameplay/Smite.h"
 #include "Prototype2/GameUserSettings/HarvestHavocGameUserSettings.h"
+#include "Prototype2/Widgets/Widget_PlayerEmote.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
 
 APrototype2Character::APrototype2Character()
@@ -219,6 +220,7 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 
 	TogglePlayerStencil();
 	UpdatePlayerNames();
+	UpdateEmote();
 	UpdatePlayerHUD();
 
 	FollowThroughOnAttack();
@@ -982,6 +984,12 @@ void APrototype2Character::InitMiscComponents()
 	PlayerNameWidgetComponent->SetIsReplicated(false);
 	PlayerNameWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	/* Emote widget (above head) */
+	EmoteWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("EmoteWidgetComponent"));
+	EmoteWidgetComponent->SetupAttachment(RootComponent);
+	EmoteWidgetComponent->SetIsReplicated(false);
+	EmoteWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	// Debuff component
 	DebuffComponent = CreateDefaultSubobject<UDebuffComponent>("DebuffComponent");
 	//DebuffComponent->SetIsReplicated(true);
@@ -1022,6 +1030,16 @@ void APrototype2Character::UpdatePlayerNames()
 
 	FRotator LookAtRotation = LookAtDirection.Rotation();
 	PlayerNameWidgetComponent->SetWorldRotation(LookAtRotation);
+}
+
+void APrototype2Character::UpdateEmote()
+{
+	const FVector CameraLocation = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation();
+	FVector LookAtDirection = CameraLocation - EmoteWidgetComponent->GetComponentLocation();
+	LookAtDirection.Normalize();
+
+	FRotator LookAtRotation = LookAtDirection.Rotation();
+	EmoteWidgetComponent->SetWorldRotation(LookAtRotation);
 }
 
 void APrototype2Character::SyncCharacterColourWithPlayerState()
@@ -1796,6 +1814,7 @@ void APrototype2Character::Server_TeleportToEndGame_Implementation(FTransform _E
 void APrototype2Character::Multi_TeleportToEndGame_Implementation(FTransform _EndGameTransform)
 {
 	PlayerNameWidgetComponent->SetVisibility(true);
+	EmoteWidgetComponent->SetVisibility(true);
 	
 	GetCharacterMovement()->StopActiveMovement();
 	GetCharacterMovement()->StopMovementImmediately();
@@ -1853,6 +1872,29 @@ void APrototype2Character::InitPlayerNameWidgetComponent()
 	
 	PlayerNameWidget = NameWidget;
 	PlayerNameWidget->SetPlayerRef(PlayerStateRef);
+}
+
+void APrototype2Character::InitEmoteWidgetComponent()
+{
+	if (EmoteWidget)
+		return;
+		
+	if (!EmoteWidgetComponent)
+		return;
+
+	UUserWidget* Widget = EmoteWidgetComponent->GetWidget();
+	if (!Widget)
+		return;
+
+	UWidget_PlayerEmote* EmoteRadialWidget = Cast<UWidget_PlayerEmote>(Widget);
+	if (!EmoteRadialWidget)
+		return;
+
+	if (!PlayerStateRef)
+		return;
+	
+	EmoteWidget = EmoteRadialWidget;
+	EmoteWidget->SetPlayerRef(PlayerStateRef);
 }
 
 void APrototype2Character::InitWeapon()

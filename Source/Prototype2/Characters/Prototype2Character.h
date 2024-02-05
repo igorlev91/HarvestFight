@@ -86,6 +86,8 @@ protected:
 	UFUNCTION()
 	void InitPlayerNameWidgetComponent();
 	UFUNCTION()
+	void InitEmoteWidgetComponent();
+	UFUNCTION()
 	void InitWeapon();
 	UFUNCTION()
 	void InitPlayerHUD();
@@ -133,9 +135,16 @@ protected:
 	/* Display name widget (above head) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* PlayerNameWidgetComponent;
-
+	
 	UPROPERTY()
 	class UWidget_PlayerName* PlayerNameWidget{nullptr};
+
+	/* Emote above head */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UWidgetComponent* EmoteWidgetComponent;
+
+	UPROPERTY()
+	class UWidget_PlayerEmote* EmoteWidget{nullptr};
 	
 	/* Player HUD Prefab */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
@@ -197,6 +206,9 @@ protected:
 
 	/* Billboarding player names + removing current players name */
 	void UpdatePlayerNames();
+
+	/* Billboarding emote */
+	void UpdateEmote();
 
 	/* Timers on tick */
 	UFUNCTION()
