@@ -65,6 +65,13 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	UDebuffComponent* DebuffComponent;
+
+	/* Emote above head */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UWidgetComponent* EmoteWidgetComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UWidget_PlayerEmote* EmoteWidget{nullptr};
 	
 protected:
 	/* Constructor */
@@ -139,12 +146,9 @@ protected:
 	UPROPERTY()
 	class UWidget_PlayerName* PlayerNameWidget{nullptr};
 
-	/* Emote above head */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UWidgetComponent* EmoteWidgetComponent;
+	
 
-	UPROPERTY()
-	class UWidget_PlayerEmote* EmoteWidget{nullptr};
+	
 	
 	/* Player HUD Prefab */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))

@@ -482,8 +482,6 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	}
 
 	InteractionImagePulse(InDeltaTime);
-
-	UpdateEmphasizers(InDeltaTime);
 	
 	UpdatePlayerIcons();
 }
@@ -497,11 +495,27 @@ void UWidget_PlayerHUD::EnableDisableMenu()
 void UWidget_PlayerHUD::ShowEmoteRadialMenu()
 {
 	EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
+
+	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+	if (PlayerController)
+	{
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->SetShowMouseCursor(true);
+	}
 }
 
 void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 {
 	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
+
+	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+	if (PlayerController)
+	{
+		FInputModeGameOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->SetShowMouseCursor(false);
+	}
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()
@@ -654,44 +668,6 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 					}
 				}
 			}
-		}
-	}
-}
-
-
-void UWidget_PlayerHUD::UpdateEmphasizers(float _DeltaTime)
-{
-	if (Emphasizers.IsEmpty())
-		return;
-
-	for (FEmphasizer Emphasizer : Emphasizers)
-	{
-		if (Emphasizer.bHasEmphasized)
-		{
-			// Shrink
-			FVector2D ShrunkVector;
-			ShrunkVector.X = Emphasizer.Image->GetRenderTransform().Scale.X - _DeltaTime * Emphasizer.Speed;
-			ShrunkVector.Y = Emphasizer.Image->GetRenderTransform().Scale.Y - _DeltaTime * Emphasizer.Speed;
-			Emphasizer.Image->SetRenderScale(ShrunkVector);
-			
-			// If Image has reached original scale, remove
-			if (Emphasizer.Image->GetRenderTransform().Scale.Length() <= Emphasizer.OriginalScale.Length())
-			{
-				Emphasizer.Image->SetRenderScale(Emphasizer.OriginalScale);
-				Emphasizers.Remove(Emphasizer);
-				continue;
-			}
-		}
-
-		// Grow
-		FVector2d GrownVector;
-		GrownVector.X = Emphasizer.Image->GetRenderTransform().Scale.X + _DeltaTime * Emphasizer.Speed;
-		GrownVector.Y = Emphasizer.Image->GetRenderTransform().Scale.Y + _DeltaTime * Emphasizer.Speed;
-		Emphasizer.Image->SetRenderScale(GrownVector);
-
-		if (GrownVector.Length() > Emphasizer.DesiredScale.Length())
-		{
-			Emphasizer.bHasEmphasized = true;
 		}
 	}
 }

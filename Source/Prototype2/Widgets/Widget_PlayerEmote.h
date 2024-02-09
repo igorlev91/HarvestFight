@@ -2,19 +2,6 @@
 
 #pragma once
 
-UENUM(BlueprintType)
-enum class EEmote : uint8
-{
-	Emote1,
-	Emote2,
-	Emote3,
-	Emote4,
-	Emote5,
-	Emote6,
-	Emote7,
-	Emote8
-};
-
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Widget_PlayerEmote.generated.h"
@@ -26,13 +13,24 @@ class PROTOTYPE2_API UWidget_PlayerEmote : public UUserWidget
 
 	/* Public Functions */
 public:
+	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
 	void SetPlayerRef(APlayerState* _Player);
 	APlayerState* GetPlayerRef();
+
+	UFUNCTION(BlueprintCallable)
+	void SetEmoteIcon();
 	
 	/* Public Variables */
 public:
+	class APrototype2Gamestate* GameStateReference;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	APlayerState* OwningPlayer{nullptr};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
+	class UImage* EmoteImage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Emote1;

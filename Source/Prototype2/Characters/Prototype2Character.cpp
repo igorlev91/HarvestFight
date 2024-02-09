@@ -136,6 +136,7 @@ void APrototype2Character::DelayedBeginPlay()
 		}
 	}
 	InitPlayerNameWidgetComponent();
+	InitEmoteWidgetComponent();
 	SyncCharacterColourWithPlayerState();
 }
 
@@ -1886,14 +1887,14 @@ void APrototype2Character::InitEmoteWidgetComponent()
 	if (!Widget)
 		return;
 
-	UWidget_PlayerEmote* EmoteRadialWidget = Cast<UWidget_PlayerEmote>(Widget);
-	if (!EmoteRadialWidget)
+	UWidget_PlayerEmote* PlayerEmoteWidget = Cast<UWidget_PlayerEmote>(Widget);
+	if (!PlayerEmoteWidget)
 		return;
 
 	if (!PlayerStateRef)
 		return;
 	
-	EmoteWidget = EmoteRadialWidget;
+	EmoteWidget = PlayerEmoteWidget;
 	EmoteWidget->SetPlayerRef(PlayerStateRef);
 }
 

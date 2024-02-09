@@ -7,33 +7,6 @@
 #include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
-USTRUCT(BlueprintType)
-struct FEmphasizer
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-	class UImage* Image = nullptr;
-	UPROPERTY(BlueprintReadWrite)
-	FVector2D OriginalScale = {1.0f, 1.0f};
-	UPROPERTY(BlueprintReadWrite)
-	FVector2D DesiredScale = {2.0f, 2.0f};
-	UPROPERTY(BlueprintReadWrite)
-	float Speed = 2.0f;
-	UPROPERTY(BlueprintReadWrite)
-	bool bHasEmphasized = false;
-
-	// == operator overloaded to be able to remove from array
-	bool operator==(FEmphasizer const &B) const
-	{
-		return (this->Image == B.Image &&
-				this->OriginalScale == B.OriginalScale &&
-				this->DesiredScale == B.DesiredScale &&
-				this->Speed == B.Speed &&
-				this->bHasEmphasized == B.bHasEmphasized);
-	}
-};
-
 class UPlantData;
 
 UCLASS()
@@ -88,11 +61,6 @@ public:
 	/* Updates the player icons & colour - top of screen for each player */
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerIcons();
-
-	void UpdateEmphasizers(float _DeltaTime);
-public:
-	UPROPERTY(BlueprintReadWrite)
-	TArray<FEmphasizer> Emphasizers;
 	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -149,7 +117,7 @@ public:
 	
 	/* Array of all icons */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<UImage*> Icons;
+	TArray<class UImage*> Icons;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UImage* P1Icon;
@@ -285,52 +253,6 @@ public:
 	// Weapon UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* WeaponImage;
-	
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* LeekWeaponTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* AsparagusWeaponTexture;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* WeaponSeedTexture;
-
-	//// Object Textures
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CarrotTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CarrotGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CarrotSeedTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CabbageTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CabbageGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* CabbageSeedTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* MandrakeTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* MandrakeGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* MandrakeSeedTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* BroccoliTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* BroccoliGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* BroccoliSeedTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* DaikonTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* DaikonGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* DaikonSeedTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* RadishTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* RadishGoldTexture;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	//UTexture2D* RadishSeedTexture;
 	
 	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
