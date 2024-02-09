@@ -40,10 +40,16 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, meta = (AllowPrivateAccess))
 	class AFertiliser* SpawnedFertiliser{};
 
+
+
 	/* Protected Functions */
 protected:
 	void GenerateFertiliserOnTimer(float _DeltaTime);
 	void SpawnFertiliser();
+
+	//
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnSpawnFertiliser(UStaticMeshComponent* _NewFertiliserMesh);
 
 	void CheckForTooManyFertiliserBags();
 	UFUNCTION(NetMulticast, Unreliable)

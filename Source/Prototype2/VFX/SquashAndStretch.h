@@ -23,6 +23,8 @@ public:
 	void SetMeshesToStretch(TArray<class UStaticMeshComponent*> _Statics = {});
 	void SetMeshToStretch(class UStaticMeshComponent* _StaticMesh);
 	void FindMeshesToStretch();
+
+	bool IsActive() const;
 		
 protected:
 	void SquashAndStretch();
@@ -68,6 +70,8 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	TArray<class UStaticMeshComponent*> StaticMeshes{};
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	TArray<FVector> StartScales{};
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	FVector SSAxis{1,1,-1};

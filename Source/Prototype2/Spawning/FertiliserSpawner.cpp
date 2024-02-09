@@ -38,7 +38,7 @@ void AFertiliserSpawner::BeginPlay()
 	
 	ChickenMesh->AttachToComponent(ItemComponent->Mesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	ChickenMesh->SetRelativeLocation(FVector(75.006312,1.607227,167.150239)); // Copied from the original blueprint placement
-
+	SSComponent->SetMeshToStretch(ChickenMesh);
 
 	if (!HasAuthority())
 		return;
@@ -60,9 +60,17 @@ void AFertiliserSpawner::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
 
-	if (SpawnedFertiliser)
+	if (SpawnedFertiliser != nullptr && SSComponent && SSComponent->IsActive() == false)
+	{
+		SSComponent->SetMeshesToStretch({ChickenMesh, SpawnedFertiliser->ItemComponent->Mesh});
 		SSComponent->Enable();
-
+	}
+	else if (!SpawnedFertiliser&& SSComponent && SSComponent->IsActive() == true)
+	{
+		SSComponent->SetMeshesToStretch({ChickenMesh});
+		SSComponent->Disable();
+	}
+	
 	if (!HasAuthority())
 		return;
 
@@ -120,10 +128,11 @@ bool AFertiliserSpawner::IsInteractable(APrototype2PlayerState* _Player)
 
 void AFertiliserSpawner::ClientInteract(APrototype2Character* _Player)
 {
+	SSComponent->Disable();
+	
 	if (SpawnedFertiliser)
 	{
 		SpawnedFertiliser->Client_Pickup();
-		SSComponent->Disable();
 	}
 }
 
@@ -164,8 +173,10 @@ void AFertiliserSpawner::SpawnFertiliser()
 
 	SpawnedFertiliser = GetWorld()->SpawnActor<AFertiliser>(FertiliserPrefab);
 	SpawnedFertiliser->SetReplicates(true);
+	Multi_OnSpawnFertiliser(SpawnedFertiliser->ItemComponent->Mesh);
 	SpawnedFertiliser->ItemComponent->Mesh->SetSimulatePhysics(false);
 	SpawnedFertiliser->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SpawnedFertiliser->ItemComponent->Mesh->SetIsReplicated(false);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
 	if (FertiliserDatas.Num() > 1)
@@ -176,7 +187,11 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
 
-	SSComponent->SetMeshToStretch({SpawnedFertiliser->ItemComponent->Mesh});
+
+}
+
+void AFertiliserSpawner::Multi_OnSpawnFertiliser_Implementation(UStaticMeshComponent* _NewFertiliserMesh)
+{
 }
 
 void AFertiliserSpawner::CheckForTooManyFertiliserBags()
