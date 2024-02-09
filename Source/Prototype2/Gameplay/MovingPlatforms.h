@@ -19,23 +19,78 @@ struct FMovementInfo
 	float TimeToMove = 0.f;
 };
 
+USTRUCT()
+struct FMPMove
+{
+	GENERATED_BODY()
+
+	FMPMove() {}
+
+	UPROPERTY()
+	float movementSpeed;
+	UPROPERTY()
+	float movementAmplitude;
+	UPROPERTY()
+	float deltaTime;
+	UPROPERTY()
+	float time;
+};
+
+USTRUCT()
+struct FMPServerState
+{
+	GENERATED_BODY()
+
+	FMPServerState() {}
+
+	UPROPERTY()
+	FMPMove currentMove;
+	UPROPERTY()
+	FTransform transform;
+};
+
+#define MAX_POSITION_HISTORY 4
+
 UCLASS()
 class PROTOTYPE2_API AMovingPlatforms : public AActor
 {
 	GENERATED_BODY()
-	
 public:	
-	// Sets default values for this actor's properties
 	AMovingPlatforms();
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+	FVector PredictFuturePosition(float PredictionTime);
+	bool FindClosestTimestamps(float TargetTime, int32& Index1, int32& Index2);
+
+	void DoMovementLogic(float DeltaTime);
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(Replicated, VisibleAnywhere)
+	TArray<FVector> PreviousPositions;
+	UPROPERTY(Replicated, VisibleAnywhere)
+	TArray<FQuat> PreviousRotations;
+	UPROPERTY(Replicated, VisibleAnywhere)
+	TArray<float> Timestamps;
 
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* Mesh;
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FVector StartPosition{-1337.0f, -1337.0f, -1337.0f};
+	
+	UPROPERTY(Replicated, VisibleAnywhere)
+	FQuat StartRotation{FQuat::Identity};
+
+	UPROPERTY(EditAnywhere)
+	bool bDoRotation{false};
+private:
+	UPROPERTY(ReplicatedUsing = OnRep_PlatformPosition)
+	FVector ReplicatedPlatformPosition;
+
+	UFUNCTION()
+	void OnRep_PlatformPosition();
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void MovePlatform();
 
@@ -43,17 +98,19 @@ public:
 	void MovePlatformBackwards();
 
 	void Rotate(float DeltaTime);
-
 	void SineWave(float DeltaTime);
+	
 
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
-	UStaticMeshComponent* Mesh;
 
-	UFUNCTION(Server, Reliable)
-	void ServerMovePlatform(FVector NewLocation, FRotator NewRotation);
+
+	//UFUNCTION(Server, Reliable)
+	//void ServerMovePlatform(FVector NewLocation, FRotator NewRotation);
 
 private:
+	//UPROPERTY(Replicated)
+	//double ServerStartTime;
 
+	
 	UPROPERTY(EditAnywhere)
 	bool bUseBaseTimers = true;
 	
@@ -62,20 +119,20 @@ private:
 	bool bDoMove;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	TArray<FMovementInfo> MovementInfoArray;
-	UPROPERTY(Replicated, EditAnywhere, Category = "Movement")
+	UPROPERTY(EditAnywhere, Category = "Movement")
 	bool bMoveArrayBackwards;
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, Category = "Movement")
 	int32 PositionInMoveArray = 0;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float TimeToMove;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float BaseTimeStop;
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, Category = "Movement")
 	float TimeTrackerTimeToMove;
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, Category = "Movement")
 	float TimeStop;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = "Movement")
+	UPROPERTY(EditAnywhere, Category = "Movement")
 	float InitialDelay = 0;
 
 	//rotation
@@ -93,12 +150,12 @@ private:
 	float Frequency;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	FVector SineHeightBounce;
-	UPROPERTY(Replicated, EditAnywhere, Category = "Sine Wave")
+	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	float SineTime;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	float SineStartTimeMin;
 	UPROPERTY(EditAnywhere, Category = "Sine Wave")
 	float SineStartTimeMax;
-
-	bool bPredictMovement;
+//
+	//bool bPredictMovement;
 };
