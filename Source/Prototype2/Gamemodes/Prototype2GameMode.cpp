@@ -16,6 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Gameplay/Crown.h"
+#include "Prototype2/Gameplay/RandomEventManager.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
@@ -38,7 +39,8 @@ APrototype2GameMode::APrototype2GameMode()
 	PrimaryActorTick.bCanEverTick = true;
 	bUseSeamlessTravel = false;
 
-
+	RandomEventManager = CreateDefaultSubobject<URandomEventManager>(TEXT("Random Event Manager"));
+	RandomEventManager->GamemodeOwner = this;
 }
 
 void APrototype2GameMode::BeginPlay()
@@ -176,26 +178,37 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 		if (AActor* DataAssetWorldOverrideActor = UGameplayStatics::GetActorOfClass(GetWorld(), ADataAssetWorldOverride::StaticClass()))
 		{
 			DataAssetWorldOverride = Cast<ADataAssetWorldOverride>(DataAssetWorldOverrideActor);
-			if (DataAssetWorldOverride->WorldOverrideData)
-			{
-				if (DataAssetWorldOverride->WorldOverrideData->KingCrown)
-					KingCrown = GetWorld()->SpawnActor<ACrown>(DataAssetWorldOverride->WorldOverrideData->KingCrown);
-				else
-					KingCrown = GetWorld()->SpawnActor<ACrown>(ACrown::StaticClass());
-			}
+			
 
 			SpawnDefaultPregameArena();
 		}
 	}
 
-	if (AutomaticCrownCheckTimer <= 0)
+	if (DataAssetWorldOverride->WorldOverrideData && !KingCrown)
 	{
-		AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
-		
+		if (DataAssetWorldOverride->WorldOverrideData->KingCrown)
+			KingCrown = GetWorld()->SpawnActor<ACrown>(DataAssetWorldOverride->WorldOverrideData->KingCrown);
+		else
+			KingCrown = GetWorld()->SpawnActor<ACrown>(ACrown::StaticClass());
 	}
-	else
+
+	if (KingCrown)
 	{
-		AutomaticCrownCheckTimer -= _DeltaSeconds;
+		if (AutomaticCrownCheckTimer <= 0)
+		{
+			AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
+		
+		}
+		else
+		{
+			AutomaticCrownCheckTimer -= _DeltaSeconds;
+		}
+
+		if (bTeams)
+		{
+			KingCrown->Destroy();
+			KingCrown = nullptr;
+		}
 	}
 
 	// Teams functionality

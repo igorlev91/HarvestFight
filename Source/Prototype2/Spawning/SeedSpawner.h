@@ -13,6 +13,7 @@ class ASeed;
 UCLASS()
 class PROTOTYPE2_API ASeedSpawner : public AActor
 {
+	friend class URandomEventManager;
 	GENERATED_BODY()
 	
 public:	
@@ -35,7 +36,7 @@ protected:
 	 * @param _MaxSeeds 
 	 */
 	void SpawnSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
-
+	void SpawnSeeds_RAW();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 public:
 	

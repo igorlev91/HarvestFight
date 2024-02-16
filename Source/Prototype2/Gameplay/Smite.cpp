@@ -31,10 +31,15 @@ void Smite::IncreaseTime(float _Amount)
 	Timer += _Amount;
 }
 
+void Smite::SetSmiteTime(float Amount)
+{
+	Timer = Amount;
+}
+
 void Smite::Strike()
 {
 	Player->GetHit(1.0f, Player->GetActorLocation(), SmiteData);
-	IncreaseTime(10);
+	IncreaseTime(StrikeTimeIncrease);
 }
 
 void Smite::SetPlayer(APrototype2Character* _Player)

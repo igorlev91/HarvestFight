@@ -37,6 +37,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Components/Image.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/Internal/Kismet/BlueprintTypeConversions.h"
 #include "Prototype2/Pickups/GrowableWeapon.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 #include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
@@ -1022,6 +1023,24 @@ void APrototype2Character::OnRep_UpdateAOE()
 		Weapon->UpdateAOEIndicator(this, AttackChargeAmount);
 }
 
+void APrototype2Character::PlayEmote(EEmote _Emote)
+{
+	if (HasAuthority())
+		Multi_PlayEmote(_Emote);
+	else
+		Server_PlayEmote(_Emote);
+}
+
+void APrototype2Character::Server_PlayEmote_Implementation(EEmote _Emote)
+{
+	Multi_PlayEmote(_Emote);
+}
+
+void APrototype2Character::Multi_PlayEmote_Implementation(EEmote _Emote)
+{
+	EmoteWidget->PlayEmote(_Emote);
+}
+
 
 void APrototype2Character::UpdatePlayerNames()
 {
@@ -1697,13 +1716,17 @@ void APrototype2Character::Server_SetAOEIndicatorVisibility_Implementation(bool 
 
 void APrototype2Character::ThrowItem()
 {
+	if (!HeldItem)
+		return;
+	
 	// Local Stuff
 	if (PlayerHUDRef)
 	{
 		PlayerHUDRef->ClearPickupUI();
 		PlayerHUDRef->SetHUDInteractText("");
 	}
-	HeldItem->Client_Drop();
+	if (HeldItem)
+		HeldItem->Client_Drop();
 		
 	bIsHoldingGold = false;
 

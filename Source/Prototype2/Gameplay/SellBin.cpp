@@ -12,9 +12,11 @@
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/DataAssets/SellBinData.h"
+#include "Prototype2/Gamemodes/Prototype2GameMode.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_SellCropUI.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
+#include "Prototype2/Gameplay/RandomEventManager.h"
 
 ASellBin::ASellBin()
 {
@@ -233,7 +235,8 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 						GameStateCast->MatchLengthMinutes++;
 					}
 				}
-				
+
+
 				SomePlayer->PlayerStateRef->AddCoins(Plant);
 
 				// Reset player speed incase of gold plant

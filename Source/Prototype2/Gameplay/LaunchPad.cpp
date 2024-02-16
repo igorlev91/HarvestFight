@@ -30,10 +30,17 @@ void ALaunchPad::BeginPlay()
 void ALaunchPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	Counter -= DeltaTime;
 }
 
 void ALaunchPad::LaunchPlayer(APrototype2Character* _Player)
 {
+	if (Counter > 0)
+		return;
+	else
+	{
+		Counter = Delay;
+	}
 	FVector LaunchVector = _Player->GetActorForwardVector();
 	LaunchVector *= ForwardStrength;
 	LaunchVector.Z = VerticalStrength;

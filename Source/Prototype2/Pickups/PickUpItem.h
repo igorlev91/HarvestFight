@@ -53,8 +53,8 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
 
-	UPROPERTY(EditAnywhere)
-	class USquashAndStretch* SSComponent;
+	//sUPROPERTY(EditAnywhere)
+	//sclass USquashAndStretch* SSComponent;
 
 	UPROPERTY(EditAnywhere)
 	class USeedData* SeedData{nullptr};

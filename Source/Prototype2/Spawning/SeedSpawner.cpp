@@ -76,6 +76,12 @@ void ASeedSpawner::SpawnSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, f
 		return;
 
 	// Spawn Seed
+	SpawnSeeds_RAW();
+}
+
+void ASeedSpawner::SpawnSeeds_RAW()
+{
+	// Spawn Seed
 	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
 	{
 		FNavLocation Result{};

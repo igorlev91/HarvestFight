@@ -37,7 +37,7 @@ AGrowSpot::AGrowSpot()
 	HitBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
-	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash Amd Stretch SComponent"));
+	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash Amd Stretch SComponent"));
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -354,6 +354,26 @@ void AGrowSpot::DestroyPlant()
 	
 }
 
+void AGrowSpot::CompleteGrowth()
+{
+	GrowSpotState = EGrowSpotState::Grown;
+	if (GrowingActor)
+	{
+		if (!Cast<ABeehive>(GrowingActor))
+		{
+			Multi_SetPlantReadySparkle(true);
+		}
+		else
+		{
+			Multi_SetPlantReadySparkle(false);
+		}
+	}
+	else
+	{
+		Multi_SetPlantReadySparkle(true);
+	}
+}
+
 void AGrowSpot::DegradeConcrete()
 {
 	if (HasAuthority())
@@ -400,12 +420,12 @@ void AGrowSpot::BeginPlay()
 		ItemComponent->Mesh->SetWorldScale3D(GrowSpotData->DesiredScale);
 	}
 
-	if (HasAuthority())
-		SSComponent->SetMeshToStretch(ItemComponent->Mesh);
+	//if (HasAuthority())
+	//	SSComponent->SetMeshToStretch(ItemComponent->Mesh);
 	
 	if (ItemComponent->Mesh)
 	{
-		ItemComponent->Mesh->SetIsReplicated(true);
+		ItemComponent->Mesh->SetIsReplicated(false);
 		ItemComponent->Mesh->SetSimulatePhysics(false);
 		ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
@@ -452,23 +472,7 @@ void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
 		if (GrowTimer > 0)
 			return;
 		
-		GrowSpotState = EGrowSpotState::Grown;
-
-		if (GrowingActor)
-		{
-			if (!Cast<ABeehive>(GrowingActor))
-			{
-				Multi_SetPlantReadySparkle(true);
-			}
-			else
-			{
-				Multi_SetPlantReadySparkle(false);
-			}
-		}
-		else
-		{
-			Multi_SetPlantReadySparkle(true);
-		}
+		CompleteGrowth();
 	}
 }
 
@@ -659,7 +663,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 		return;
 	}
 	
-	SSComponent->Boing();
+	//SSComponent->Boing();
 	
 	if (!_Player->PlayerStateRef)
 		return;

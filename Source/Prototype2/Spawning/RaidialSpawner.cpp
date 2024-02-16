@@ -41,13 +41,16 @@ void ARaidialSpawner::SetUp()
 {
 	if (bShouldChangePlayerCount)
 	{
-		if (auto GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+		if (auto World = UGameplayStatics::GetGameState(GetWorld()))
 		{
-			PlayerCount = GameState->GetFinalConnectionCount();
-		}
-		if (PlayerCount <= 0)
-		{
-			PlayerCount = 1;
+			if (auto GameState = Cast<APrototype2Gamestate>(World))
+			{
+				PlayerCount = GameState->GetFinalConnectionCount();
+			}
+			if (PlayerCount <= 0)
+			{
+				PlayerCount = 1;
+			}
 		}
 	}
 	

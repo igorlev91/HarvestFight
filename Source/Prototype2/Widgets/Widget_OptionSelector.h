@@ -1,4 +1,11 @@
-
+/* Bachelor of Software Engineering
+ * Media Design School
+ * Auckland
+ * New Zealand
+ * (c) Media Design School
+ * File Name : Widget_OptionsSelector.h
+ * Description : Widget for a option selection
+ * Author/s : Stace Frear */
 
 #pragma once
 

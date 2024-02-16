@@ -16,7 +16,7 @@ AFallOffRespawn::AFallOffRespawn()
 
 }
 
-void AFallOffRespawn::RemovePhysicsObjectsBelowHeight()
+void AFallOffRespawn::Multi_RemovePhysicsObjectsBelowHeight()
 {
 	TArray<AActor*> AllPickUps{};
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickUpItem::StaticClass(), AllPickUps);
@@ -29,7 +29,7 @@ void AFallOffRespawn::RemovePhysicsObjectsBelowHeight()
 	}
 }
 
-void AFallOffRespawn::RespawnPlayersBelowHeight()
+void AFallOffRespawn::Multi_RespawnPlayersBelowHeight()
 {
 	TArray<AActor*> AllPlayers{};
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APrototype2Character::StaticClass(), AllPlayers);
@@ -42,6 +42,7 @@ void AFallOffRespawn::RespawnPlayersBelowHeight()
 				if (Character->HeldItem)
 				{
 					Character->DropItem();
+					Client_ClearItem(Character);
 				}
 			}
 			
@@ -52,16 +53,22 @@ void AFallOffRespawn::RespawnPlayersBelowHeight()
 
 void AFallOffRespawn::CheckTimer(float DeltaTime)
 {
-	if (!HasAuthority())
-		return;
 	TimeCounter -= DeltaTime;
 
 	if (TimeCounter < 0)
 		return;
 
-	RemovePhysicsObjectsBelowHeight();
-	RespawnPlayersBelowHeight();
+	Multi_RemovePhysicsObjectsBelowHeight();
+	Multi_RespawnPlayersBelowHeight();
 	TimeCounter = TimeBetweenChecks;
+}
+
+void AFallOffRespawn::Client_ClearItem_Implementation(APrototype2Character* _Player)
+{
+	if (_Player->PlayerHUDRef)
+		_Player->PlayerHUDRef->ClearPickupUI();
+
+	_Player->bIsHoldingGold = false;
 }
 
 // Called when the game starts or when spawned

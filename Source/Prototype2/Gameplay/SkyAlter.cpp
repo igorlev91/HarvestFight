@@ -8,6 +8,7 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Pickups/Plant.h"
+#include "SymsLib/syms/core/generated/syms_meta_serial_ext.h"
 
 // Sets default values
 ASkyAlter::ASkyAlter()
@@ -66,8 +67,16 @@ void ASkyAlter::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProto
 {
 }
 
+void ASkyAlter::Client_ClearItem_Implementation(APrototype2Character* _Player)
+{
+	if (_Player->PlayerHUDRef)
+		_Player->PlayerHUDRef->ClearPickupUI();
+
+	_Player->bIsHoldingGold = false;
+}
+
 void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+                                   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!OtherActor->HasNetOwner())
 		return;
@@ -87,8 +96,10 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 		{
 			//Client_OnPlayerSell(SomePlayer);
-			SomePlayer->GetSmite()->IncreaseTime(Plant->SeedData->BabyStarValue * 20);
+			SomePlayer->GetSmite()->SetSmiteTime(Smite::TimerStartTime);
 			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
+
+			Client_ClearItem(SomePlayer);
 			
 			// Audio
 			if (HasAuthority())
@@ -104,10 +115,12 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 				SomePlayer->bIsHoldingGold = false;
 			
 				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
-				
+
+				APickUpItem* item = SomePlayer->HeldItem;
+				SomePlayer->DropItem();
 				// Destroy the crop the player is holding
-				SomePlayer->HeldItem->Destroy();
-				SomePlayer->HeldItem = nullptr;
+				item->Destroy();
+
 				SomePlayer->Client_RefreshCurrentMaxSpeed();
 			}
 		}

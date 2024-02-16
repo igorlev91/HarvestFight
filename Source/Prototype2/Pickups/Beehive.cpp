@@ -86,7 +86,7 @@ void ABeehive::Interact(APrototype2Character* _Player)
 
 void ABeehive::ClientInteract(APrototype2Character* _Player)
 {
-	SSComponent->Boing();
+	//SSComponent->Boing();
 }
 
 void ABeehive::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)

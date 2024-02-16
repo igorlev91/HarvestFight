@@ -281,4 +281,8 @@ public:
 	bool bHasChangedBlackTextOutlineColour{false};
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	int32 PlayerIDToChangeOutline{};
+
+	/* Emote related */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsEmoteButtonPressed{false};
 };

@@ -76,7 +76,9 @@ void UWeapon::CheckIfCrownHit(APrototype2Character* _Attacker, APrototype2Charac
 
 void UWeapon::Client_SetFollowingThroughToFalse_Implementation(APrototype2Character* _Player)
 {
-	_Player->bIsFollowingThroughAttack = false;
+	if (_Player)
+		_Player->bIsFollowingThroughAttack = false;
+	
 }
 
 void UWeapon::Client_BroadcastAttackToHUD_Implementation(APrototype2Character* _Player)

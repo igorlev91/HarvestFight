@@ -30,6 +30,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<USkeletalMesh*> PlayerMeshes;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class URandomEventManager* RandomEventManager;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTeams{};

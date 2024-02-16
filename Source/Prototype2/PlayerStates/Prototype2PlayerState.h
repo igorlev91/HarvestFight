@@ -5,6 +5,20 @@
 #include "GameFramework/PlayerState.h"
 #include "Prototype2PlayerState.generated.h"
 
+UENUM(BlueprintType)
+enum class EEmote : uint8
+{
+	Emote1,
+	Emote2,
+	Emote3,
+	Emote4,
+	Emote5,
+	Emote6,
+	Emote7,
+	Emote8,
+	NONE
+};
+
 UCLASS()
 class PROTOTYPE2_API APrototype2PlayerState : public APlayerState
 {
@@ -39,6 +53,7 @@ public:
 
 	bool IsLoosing();
 	bool IsWinning();
+
 public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
 	UPROPERTY(BlueprintAssignable)
@@ -54,6 +69,9 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FString PlayerName{};
+	
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	EEmote Emote{EEmote::Emote1};
 
 	UPROPERTY(VisibleAnywhere)
 	class APrototype2Gamestate* Gamestate;

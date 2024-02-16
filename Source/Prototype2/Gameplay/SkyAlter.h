@@ -29,6 +29,9 @@ protected:
 	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
 
+	UFUNCTION(Client, Reliable)
+	void Client_ClearItem(APrototype2Character* _Player);
+
 	UFUNCTION()
 	void OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 

@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "FallOffRespawn.generated.h"
 
+class APrototype2Character;
+
 UCLASS()
 class PROTOTYPE2_API AFallOffRespawn : public AActor
 {
@@ -18,9 +20,11 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void RemovePhysicsObjectsBelowHeight();
-	void RespawnPlayersBelowHeight();
+	void Multi_RemovePhysicsObjectsBelowHeight();
+	void Multi_RespawnPlayersBelowHeight();
 	void CheckTimer(float DeltaTime);
+	UFUNCTION(Client, Reliable)
+	void Client_ClearItem(APrototype2Character* _Player);
 	
 public:	
 	// Called every frame

@@ -27,6 +27,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float VerticalStrength = 3000.0f;
+
+	float Delay = 0.2f;
+	float Counter = 0.2f;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

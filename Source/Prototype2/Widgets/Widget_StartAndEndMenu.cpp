@@ -57,6 +57,9 @@ void UWidget_StartAndEndMenu::NativeTick(const FGeometry& MyGeometry, float InDe
 
 void UWidget_StartAndEndMenu::UpdateTimerText()
 {
+	if (!GameStateReference)
+		return;
+	
 	if (TimerText && GameStateReference->Server_Players.Num() >= GameStateReference->GetFinalConnectionCount() && ! GameStateReference->HasGameStarted())
 	{
 		TimerText->SetText(FText::FromString(FString::FromInt(GameStateReference->GetCountdownLengthSeconds())));

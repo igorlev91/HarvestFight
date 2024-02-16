@@ -742,6 +742,13 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
 
+	UFUNCTION(BlueprintCallable)
+	void PlayEmote(EEmote _Emote);
+	UFUNCTION(Server, Reliable)
+	void Server_PlayEmote(EEmote _Emote);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayEmote(EEmote _Emote);
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UVFXComponent* VFXComponent;
 	

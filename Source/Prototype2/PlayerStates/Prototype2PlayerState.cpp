@@ -5,6 +5,9 @@
 #include "Prototype2/Pickups/Plant.h"
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/Gamemodes/Prototype2GameMode.h"
+#include "Prototype2/Gameplay/RandomEventManager.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 
 void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -19,6 +22,8 @@ void APrototype2PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(APrototype2PlayerState, Details);
 	DOREPLIFETIME(APrototype2PlayerState, PlayerName);
+
+	DOREPLIFETIME(APrototype2PlayerState, Emote);
 }
 
 APrototype2PlayerState::APrototype2PlayerState()
@@ -64,8 +69,14 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 
 void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 {
+
 	bIsShowingExtraCoins = true;
-	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1)) * Gamestate->SellMultiplier;
+	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1));
+	if (auto Gamemode = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if (Gamemode->RandomEventManager)
+			PlantSellValue *= Gamemode->RandomEventManager->GetSellMultiplier();
+	}
 	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->SeedData->GoldMultiplier : PlantSellValue;
 	Client_OnAddCoins();
 	Multi_OnAddCoins();

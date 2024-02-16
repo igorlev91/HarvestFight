@@ -494,21 +494,46 @@ void UWidget_PlayerHUD::EnableDisableMenu()
 
 void UWidget_PlayerHUD::ShowEmoteRadialMenu()
 {
-	EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
-
-	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
-	if (PlayerController)
+	if (EmoteRadialMenu->GetVisibility() == ESlateVisibility::Hidden)
 	{
-		FInputModeGameAndUI InputMode;
-		PlayerController->SetInputMode(InputMode);
-		PlayerController->SetShowMouseCursor(true);
+		EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
+
+		APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+		if (PlayerController)
+		{
+			FInputModeGameAndUI InputMode;
+			PlayerController->SetInputMode(InputMode);
+			PlayerController->SetShowMouseCursor(true);
+
+			/* Set mouse to centre of the screen */
+			FVector2D ViewportSize;
+			if (GEngine && GEngine->GameViewport)
+			{
+				GEngine->GameViewport->GetViewportSize(ViewportSize);
+			}
+			FVector2D CenterViewportPosition(ViewportSize.X / 2.0f, ViewportSize.Y / 2.0f);
+
+			PlayerController->SetMouseLocation(CenterViewportPosition.X, CenterViewportPosition.Y);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("Pressed Radial Emote Button "));
+	}
+	else
+	{
+		APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+		if (PlayerController)
+		{
+			FInputModeGameOnly InputMode;
+			PlayerController->SetInputMode(InputMode);
+			PlayerController->SetShowMouseCursor(false);
+		}
+
+		EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
 void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 {
-	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
-
 	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
 	if (PlayerController)
 	{
@@ -516,6 +541,8 @@ void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 		PlayerController->SetInputMode(InputMode);
 		PlayerController->SetShowMouseCursor(false);
 	}
+
+	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_PlayerHUD::EnableEndgameMenu()

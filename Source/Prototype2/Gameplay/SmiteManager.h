@@ -18,7 +18,7 @@ public:
 	
 	void SetPlayerSmites() const;
 	UPROPERTY(EditAnywhere)
-	float TimeBetweenChecks{10};
+	float TimeBetweenChecks{20};
 
 	float Timer{0};
 

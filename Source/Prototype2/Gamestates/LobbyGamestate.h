@@ -170,7 +170,7 @@ private:
 	FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz";
 
 	// Floating Islands
-	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIsland";
+	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
 	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
 
 	// Chaos

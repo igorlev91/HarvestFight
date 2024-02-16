@@ -1,11 +1,6 @@
 
 
 #include "Prototype2/Gameplay/MovingPlatforms.h"
-
-#include "EnvironmentQuery/EnvQueryGenerator.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
-#include "math.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -150,35 +145,30 @@ bool AMovingPlatforms::FindClosestTimestamps(float TargetTime, int32& Index1, in
 
 void AMovingPlatforms::DoMovementLogic(float DeltaTime)
 {
-	if (InitialDelay >= 0)
+	// dont update both movement and sinewave
+	if (bDoSineWave && bDoMove)
+		return;
+
+	if (InitialDelay > 0)
 	{
 		InitialDelay -= DeltaTime;
-	}
-	
-	if (InitialDelay >= 0)
 		return;
-	
-	// Sine Wave
-	SineWave(DeltaTime);
-	if (bDoMove)
-	{
-		TimeStop -= DeltaTime;
-		if (TimeStop >= 0)
-			return;
-	
-		TimeTrackerTimeToMove += DeltaTime;
-	
-		MovePlatform();
 	}
-	Rotate(DeltaTime);
+	
+	//Sine Wave
+	SineWave(DeltaTime);
+	MovePlatform(DeltaTime);
+	//Rotate(DeltaTime);
 }
 
 void AMovingPlatforms::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMovingPlatforms, ReplicatedPlatformPosition);
+	DOREPLIFETIME(AMovingPlatforms, ReplicatedPlatformRotation);
 	DOREPLIFETIME(AMovingPlatforms, PreviousPositions);
 	DOREPLIFETIME(AMovingPlatforms, StartPosition);
+	DOREPLIFETIME(AMovingPlatforms, StartRotation);
 	DOREPLIFETIME(AMovingPlatforms, PreviousRotations);
 	DOREPLIFETIME(AMovingPlatforms, Timestamps);
 }
@@ -219,10 +209,24 @@ void AMovingPlatforms::OnRep_PlatformPosition()
 	SetActorRotation(NewRotation);
 }
 
-void AMovingPlatforms::MovePlatform()
+void AMovingPlatforms::MovePlatform(float DeltaTime)
 {
 	if (!bDoMove)
 		return;
+
+	if (MovementInfoArray.Num() == 0)
+		return;
+
+	TimeStop -= DeltaTime;
+	if (TimeStop >= 0)
+		return;
+	
+	TimeTrackerTimeToMove += DeltaTime;
+	if (bDoLoop)
+	{
+		MovePlatformLoop();
+		return;
+	}
 	
 	if (!bMoveArrayBackwards)
 	{
@@ -262,7 +266,16 @@ void AMovingPlatforms::MovePlatformForward()
 
 	// moves the platform
 	const FVector Position = FMath::Lerp<FVector>(MovementInfoArray[PositionInMoveArray - 1].Position, MovementInfoArray[PositionInMoveArray].Position, TimeTrackerTimeToMove / TimeToMove);
-	SetActorLocation(Position);
+	
+	ReplicatedPlatformPosition = Position;
+	SetActorRelativeLocation(ReplicatedPlatformPosition, false, nullptr, ETeleportType::TeleportPhysics);
+
+	/*if (bDoRotation)
+	{
+		FQuat NewRotation = FQuat::MakeFromEuler(FVector(StartRotation.X, StartRotation.Y, StartRotation.Z + Amplitude * FMath::Sin(SineTime)));
+		SetActorRotation(NewRotation);
+	}*/
+	
 	// update the needed variables for pausing
 	if  (TimeTrackerTimeToMove >= TimeToMove)
 	{
@@ -309,7 +322,16 @@ void AMovingPlatforms::MovePlatformBackwards()
 
 	// moves the platform
 	const FVector Position = FMath::Lerp<FVector>(MovementInfoArray[PositionInMoveArray + 1].Position, MovementInfoArray[PositionInMoveArray].Position, TimeTrackerTimeToMove / TimeToMove);
-	SetActorLocation(Position);
+
+	ReplicatedPlatformPosition = Position;
+	SetActorRelativeLocation(ReplicatedPlatformPosition, false, nullptr, ETeleportType::TeleportPhysics);
+
+	/*if (bDoRotation)
+	{
+		FQuat NewRotation = FQuat::MakeFromEuler(FVector(StartRotation.X, StartRotation.Y, StartRotation.Z + Amplitude * FMath::Sin(SineTime)));
+		SetActorRotation(NewRotation);
+	}*/
+	
 	// update the needed variables for pausing
 	if  (TimeTrackerTimeToMove >= TimeToMove)
 	{
@@ -328,6 +350,55 @@ void AMovingPlatforms::MovePlatformBackwards()
 	}
 }
 
+void AMovingPlatforms::MovePlatformLoop()
+{
+	if (PositionInMoveArray >= MovementInfoArray.Num())
+	{
+		PositionInMoveArray = 0;
+		return;	
+	}
+
+	int32 PreviousPosition = PositionInMoveArray - 1;
+
+	if (PreviousPosition < 0)
+	{
+		PreviousPosition = MovementInfoArray.Num() - 1;
+	}
+
+	if (PreviousPosition < 0 || PositionInMoveArray < 0)
+		return;
+
+
+	// moves the platform
+	const FVector Position = FMath::Lerp<FVector>(MovementInfoArray[PreviousPosition].Position, MovementInfoArray[PositionInMoveArray].Position, TimeTrackerTimeToMove / TimeToMove);
+	
+	ReplicatedPlatformPosition = Position;
+	SetActorRelativeLocation(ReplicatedPlatformPosition, false, nullptr, ETeleportType::TeleportPhysics);
+
+	/*if (bDoRotation)
+	{
+		FQuat NewRotation = FQuat::MakeFromEuler(FVector(StartRotation.X, StartRotation.Y, StartRotation.Z + Amplitude * FMath::Sin(SineTime)));
+		SetActorRotation(NewRotation);
+	}*/
+	
+	// update the needed variables for pausing
+	if  (TimeTrackerTimeToMove >= TimeToMove)
+	{
+		// uses unique timers for each stop (not used ingame atm)
+		if (!bUseBaseTimers)
+		{
+			TimeStop = MovementInfoArray[PositionInMoveArray].TimeToStopFor;
+			TimeToMove = MovementInfoArray[PositionInMoveArray].TimeToMove;
+		}
+		else
+		{
+			TimeStop = BaseTimeStop;
+		}
+		TimeTrackerTimeToMove = 0;
+		PositionInMoveArray += 1;
+	}
+}
+
 void AMovingPlatforms::Rotate(float DeltaTime)
 {
 	if (!bDoRotate)
@@ -337,7 +408,8 @@ void AMovingPlatforms::Rotate(float DeltaTime)
 	if (!bDoMove)
 	{
 		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
-		SetActorRotation(NewRotation);
+		ReplicatedPlatformRotation = NewRotation;
+		SetActorRelativeRotation(ReplicatedPlatformRotation, false, nullptr, ETeleportType::TeleportPhysics);
 		return;
 	}
 
@@ -345,12 +417,14 @@ void AMovingPlatforms::Rotate(float DeltaTime)
 	if (!bMoveArrayBackwards)
 	{
 		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, RotationSpeed * DeltaTime, 0.0f);
-		SetActorRotation(NewRotation);
+		ReplicatedPlatformRotation = NewRotation;
+		SetActorRelativeRotation(ReplicatedPlatformRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 	else
 	{
 		FRotator NewRotation = GetActorRotation() + FRotator(0.0f, -RotationSpeed * DeltaTime, 0.0f);
-		SetActorRotation(NewRotation);
+		ReplicatedPlatformRotation = NewRotation;
+		SetActorRelativeRotation(ReplicatedPlatformRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 }
 
@@ -379,11 +453,11 @@ void AMovingPlatforms::SineWave(float DeltaTime)
 	ReplicatedPlatformPosition = NewLocation;
 	SetActorRelativeLocation(ReplicatedPlatformPosition, false, nullptr, ETeleportType::TeleportPhysics);
 
-	if (bDoRotation)
+	/*if (bDoRotation)
 	{
 		FQuat NewRotation = FQuat::MakeFromEuler(FVector(StartRotation.X, StartRotation.Y, StartRotation.Z + Amplitude * FMath::Sin(SineTime)));
 		SetActorRotation(NewRotation);
-	}
+	}*/
 }
 
 //void AMovingPlatforms::ServerMovePlatform_Implementation(FVector NewLocation, FRotator NewRotation)

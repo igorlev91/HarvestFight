@@ -143,12 +143,13 @@ void APrototype2Gamestate::TickMatchTimer(float DeltaSeconds)
 			}
 
 			/* Set final minute settings */
-			if (MatchLengthMinutes <= 1 && MatchLengthSeconds <= 0 && bIsLastMinute == false)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Final minute of gameplay"));
-				bIsLastMinute = true;
-				SellMultiplier = 2;
-			}
+			// MOVED TO URandomEventManager
+			//if (MatchLengthMinutes <= 1 && MatchLengthSeconds <= 0 && bIsLastMinute == false)
+			//{
+			//	UE_LOG(LogTemp, Warning, TEXT("Final minute of gameplay"));
+			//	bIsLastMinute = true;
+			//	SellMultiplier = 2;
+			//}
 		}
 		else
 		{

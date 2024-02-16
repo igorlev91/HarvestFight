@@ -51,7 +51,7 @@ void APlant::ClientInteract(APrototype2Character* _Player)
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 	
-	SSComponent->Boing();
+	//SSComponent->Boing();
 
 	WiltDelayTimer = WiltDelay;
 }

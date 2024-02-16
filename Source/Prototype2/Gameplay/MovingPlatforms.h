@@ -87,15 +87,19 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_PlatformPosition)
 	FVector ReplicatedPlatformPosition;
 
+	UPROPERTY(ReplicatedUsing = OnRep_PlatformPosition)
+	FRotator ReplicatedPlatformRotation;
+
 	UFUNCTION()
 	void OnRep_PlatformPosition();
 public:	
 	// Called every frame
 
-	void MovePlatform();
+	void MovePlatform(float DeltaTime);
 
 	void MovePlatformForward();
 	void MovePlatformBackwards();
+	void MovePlatformLoop();
 
 	void Rotate(float DeltaTime);
 	void SineWave(float DeltaTime);
@@ -117,6 +121,8 @@ private:
 	// movement
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	bool bDoMove;
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	bool bDoLoop;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	TArray<FMovementInfo> MovementInfoArray;
 	UPROPERTY(EditAnywhere, Category = "Movement")

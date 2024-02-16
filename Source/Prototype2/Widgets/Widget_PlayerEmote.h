@@ -19,8 +19,11 @@ public:
 	void SetPlayerRef(APlayerState* _Player);
 	APlayerState* GetPlayerRef();
 
-	UFUNCTION(BlueprintCallable)
-	void SetEmoteIcon();
+	UFUNCTION()
+	void PlayEmote(EEmote _Emote);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnPlayEmote();
 	
 	/* Public Variables */
 public:

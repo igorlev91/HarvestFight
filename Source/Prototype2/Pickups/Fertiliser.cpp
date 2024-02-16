@@ -44,7 +44,7 @@ void AFertiliser::ClientInteract(APrototype2Character* _Player)
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Boing();
+//	SSComponent->Boing();
 }
 
 void AFertiliser::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)

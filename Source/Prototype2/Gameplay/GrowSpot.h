@@ -19,6 +19,7 @@ class AWeaponSeed;
 UCLASS()
 class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 {
+	friend class URandomEventManager;
 	GENERATED_BODY()
 	
 public:	
@@ -41,6 +42,7 @@ public:
 	
 	void PlantASeed(ASeed* _SeedToPlant);
 	void DestroyPlant();
+	void CompleteGrowth();
 
 	void DegradeConcrete();
 	UFUNCTION(Server, Reliable)
@@ -57,8 +59,8 @@ public:
 	float StartZHeight{};
 	UPROPERTY(EditAnywhere)
 	class UCurveFloat* RiseCurve{};
-	UPROPERTY(EditAnywhere)
-	class USquashAndStretch* SSComponent;
+	//UPROPERTY(EditAnywhere)
+	//class USquashAndStretch* SSComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	ARadialPlot* RadialPlot;

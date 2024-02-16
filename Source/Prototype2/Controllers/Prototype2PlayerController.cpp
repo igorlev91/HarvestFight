@@ -26,8 +26,6 @@ void APrototype2PlayerController::BeginPlay()
 	}
 
 	bCanPossessWithoutAuthority = true;
-
-
 }
 
 void APrototype2PlayerController::Tick(float DeltaSeconds)

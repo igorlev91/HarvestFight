@@ -14,7 +14,7 @@ APickUpItem::APickUpItem()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
-	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -39,14 +39,14 @@ void APickUpItem::Client_Pickup()
 {
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Boing();
+	//SSComponent->Boing();
 }
 
 void APickUpItem::Client_Drop()
 {
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Boing();
+	//SSComponent->Boing();
 }
 
 void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)

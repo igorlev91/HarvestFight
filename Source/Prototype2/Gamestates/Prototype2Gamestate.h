@@ -40,6 +40,7 @@ public:
 	void SetGameTime();
 	int32 GetSellMultiplier();
 	void SetSellMultiplier(int32 _Multiplier);
+	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;

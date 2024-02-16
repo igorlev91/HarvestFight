@@ -79,7 +79,7 @@ void ASeed::ClientInteract(APrototype2Character* _Player)
 	}
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	SSComponent->Boing();
+	//SSComponent->Boing();
 }
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)

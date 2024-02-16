@@ -114,9 +114,9 @@ void UDebuffComponent::ToggleDizzyVFX(bool _bTurnOn)
 void UDebuffComponent::OnRep_ApplyDebuff()
 {	
 	CurrentDebuff = DebuffInfo.Debuff;
-	UKismetSystemLibrary::PrintString(GetWorld(), "CDebuffInfo.Debuff enum int: " + FString::FromInt( (int32)DebuffInfo.Debuff));
+	//UKismetSystemLibrary::PrintString(GetWorld(), "CDebuffInfo.Debuff enum int: " + FString::FromInt( (int32)DebuffInfo.Debuff));
 	DebuffDuration = DebuffInfo.Duration;	
-	UKismetSystemLibrary::PrintString(GetWorld(), "DebuffInfo.Duration: " + FString::SanitizeFloat(DebuffInfo.Duration));
+	//UKismetSystemLibrary::PrintString(GetWorld(), "DebuffInfo.Duration: " + FString::SanitizeFloat(DebuffInfo.Duration));
 	switch (CurrentDebuff)
 	{
 	case EDebuff::Stun:
