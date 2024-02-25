@@ -34,21 +34,6 @@ void APrototype2Gamestate::BeginPlay()
 void APrototype2Gamestate::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	//SetGameTime();
-
-	if (HasAuthority())
-	{
-		TArray<EColours> ScannedColours{};
-		for(auto PlayerState : Server_Players)
-		{
-			ScannedColours.Add(PlayerState->Details.Colour);
-		}
-		if (ScannedColours.Num() >= 2)
-		{
-			TeamOneColour = ScannedColours[0];
-			TeamTwoColour = ScannedColours[1];
-		}
-	}
 	
 	TickCountdownTimer(DeltaSeconds);
 	TickMatchTimer(DeltaSeconds);
@@ -98,6 +83,10 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME(APrototype2Gamestate, Team1Points);
 	DOREPLIFETIME(APrototype2Gamestate, Team2Points);
+	DOREPLIFETIME(APrototype2Gamestate, ExtraSettings);
+
+	DOREPLIFETIME(APrototype2Gamestate, FinalTeamACount);
+	DOREPLIFETIME(APrototype2Gamestate, FinalTeamBCount);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -386,83 +375,34 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 
 void APrototype2Gamestate::SetGameTime()
 {
+	//
 	if (!HasAuthority())
 		return;
 
-	//if (GameModeRef)
-	//	return;
-
-	//if (MatchLengthMinutes != -1)
-	//	return;
-	
-	//if (!GameMode)
-	//	return;
-	
-	if (!GameModeRef)
+	if (!DefaultWorldOverrideData)
 		return;
 	
-	
-	if (auto Subsystem = IOnlineSubsystem::Get())
+	switch (ExtraSettings.GameSpeed)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Found Subsystem"));
-		IOnlineSessionPtr IdentityInterface = Subsystem->GetSessionInterface();
-		if (IdentityInterface.IsValid())
+	case SHORT_GAME:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Found IdentityInterface"));
-			IOnlineSessionPtr Session = IOnlineSubsystem::Get()->GetSessionInterface(); // Get a reference to the online session interface
-			//FOnlineSessionSettings* Session = IdentityInterface->GetSessionSettings(NAME_GameSession);
-
-			if (APrototype2PlayerState* CastedPlayerState = Cast<APrototype2PlayerState>(PlayerArray[0]))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Found player state"));
-				//FName GameSession = FName(*FString::Printf(TEXT("Number%d"), CastedPlayerState->SessionName));
-
-				FNamedOnlineSession* NamedSession = Session->GetNamedSession(CastedPlayerState->SessionName);
-
-				if (Session)
-					UE_LOG(LogTemp, Warning, TEXT("Found Session"));
-			
-				if (NamedSession)
-				{
-					//Session->GetSessionSettings(NAME_GameSession)
-					UE_LOG(LogTemp, Warning, TEXT("Found Named session"));
-					// Get the session settings.
-					//FOnlineSessionSettings SessionSettings = Session->SessionSettings;
-				
-					// Now you can access various settings including extra settings.
-					int32 GameTime;
-					if (NamedSession->SessionSettings.Get(FName("GameTime"), GameTime))
-					{
-						int32 MatchLengthModifier = GameTime;
-						UE_LOG(LogTemp, Warning, TEXT("Found gametime"));
-
-						/* Set match length */
-						switch (MatchLengthModifier)
-						{
-						case 0:
-							{
-								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeShort;
-								break;
-							}
-						case 1:
-							{
-								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeMedium;
-								break;
-							}
-						case 2:
-							{
-								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeLong;
-								break;
-							}
-						default:
-							{
-								MatchLengthMinutes = GameModeRef->DataAssetWorldOverride->WorldOverrideData->GameTimeMedium;
-								break;
-							}
-						}
-					}
-				}
-			}
+			MatchLengthMinutes = DefaultWorldOverrideData->GameTimeShort;
+			break;
+		}
+	case MEDIUM_GAME:
+		{
+			MatchLengthMinutes = DefaultWorldOverrideData->GameTimeMedium;
+			break;
+		}
+	case LONG_GAME:
+		{
+			MatchLengthMinutes = DefaultWorldOverrideData->GameTimeLong;
+			break;
+		}
+	default:
+		{
+			MatchLengthMinutes = DefaultWorldOverrideData->GameTimeMedium;
+			break;
 		}
 	}
 }

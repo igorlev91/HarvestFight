@@ -8,6 +8,34 @@
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Gamestate.generated.h"
 
+UENUM(BlueprintType)
+enum EGameSpeed : int
+{
+	SHORT_GAME,
+	MEDIUM_GAME,
+	LONG_GAME,
+	INDEX
+};
+
+USTRUCT(BlueprintType)
+struct FHHExtraSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	TEnumAsByte<EGameSpeed> GameSpeed{EGameSpeed::MEDIUM_GAME};
+	
+	UPROPERTY(BlueprintReadWrite)
+	bool bStealing{true};
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bGoldFertiliser{true};
+	UPROPERTY(BlueprintReadWrite)
+	bool bConcreteFertiliser{true};
+	UPROPERTY(BlueprintReadWrite)
+	bool bPoisonFertiliser{true};
+};
+
 UCLASS()
 class PROTOTYPE2_API APrototype2Gamestate : public AGameStateBase
 {
@@ -37,6 +65,7 @@ public:
 	int32 GetWinningScore();
 	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 	void PupeteerCharactersForEndGame();
+	UFUNCTION(BlueprintCallable)
 	void SetGameTime();
 	int32 GetSellMultiplier();
 	void SetSellMultiplier(int32 _Multiplier);
@@ -56,6 +85,9 @@ public:
 	FString TeamOneName;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	FString TeamTwoName;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite)
+	FHHExtraSettings ExtraSettings;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWorldOverrideData* DefaultWorldOverrideData;
@@ -121,6 +153,12 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 FinalConnectionCount{0};
+
+	UPROPERTY(Replicated,EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 FinalTeamACount{0};
+
+	UPROPERTY(Replicated,EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 FinalTeamBCount{0};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 PlayerWinner{-1};

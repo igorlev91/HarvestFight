@@ -7,7 +7,7 @@
 #include "RandomEventManager.generated.h"
 
 UENUM(BlueprintType)
-enum class ERandomEvent : uint8
+enum ERandomEvent
 {
 	DOUBLE_POINTS = 0,
 	ALL_GOLD,

@@ -89,8 +89,20 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FCharacterDetails> FinalPlayerDetails{};
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bTeams{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 FinalTeamACount{0};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	int32 FinalTeamBCount{0};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	EColours FinalTeamAColour{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	EColours FinalTeamBColour{};
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MusicVolume{ 0.5f };

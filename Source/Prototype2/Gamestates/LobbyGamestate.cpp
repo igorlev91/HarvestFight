@@ -58,7 +58,7 @@ void ALobbyGamestate::BeginPlay()
 		MapChoice = FriendlyFarmBrawl;
 	else if (GameMode == 2) // Blitz Mode
 		MapChoice = FriendlyFarmBlitz;
-	else if (GameMode == 3) // Blitz Mode
+	else if (GameMode == 3) // Chaos Mode
 		MapChoice = Chaos;
 }
 
@@ -264,8 +264,8 @@ void ALobbyGamestate::PickMapToPlay()
 				MapChoice = HoneyClassic;
 			else if (GameMode == 1) // Brawl Mode
 				MapChoice = HoneyBrawl;
-			else if (GameMode == 2) // Blitz Mode
-				MapChoice = HoneyBlitz;
+			//else if (GameMode == 2) // Blitz Mode - no honey blitz
+			//	MapChoice = HoneyBlitz;
 		}
 		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm) // floating islands farm gets most votes
 		{
@@ -273,8 +273,8 @@ void ALobbyGamestate::PickMapToPlay()
 				MapChoice = FloatingIslandsClassic;
 			else if (GameMode == 1) // Brawl Mode
 				MapChoice = FloatingIslandsBrawl;
-			else
-				UE_LOG(LogTemp, Warning, TEXT("Sky island blitz mode attempted to start")); // No brawl mode for floating islands
+			else if (GameMode == 2) // Blitz Mode
+				MapChoice = FloatingIslandsBlitz;
 		}
 		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
 		{
@@ -431,6 +431,8 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 						{
 							bIsCountingDown = false;
 
+							
+
 							/* Map selection unless chaos */
 							if (GameMode == 3)
 								MapChoice = "/Game/Maps/Level_FF_Chaos";
@@ -461,6 +463,11 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 
 								GameInstance->TeamOneName = TeamOneName;
 								GameInstance->TeamTwoName = TeamTwoName;
+								GameInstance->bTeams = bTeams;
+								GameInstance->FinalTeamACount = Server_TeamOne.Num();
+								GameInstance->FinalTeamBCount = Server_TeamTwo.Num();
+								GameInstance->FinalTeamAColour = TeamOneColour;
+								GameInstance->FinalTeamBColour = TeamTwoColour;
 							}
 							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
 							GetWorld()->ServerTravel(MapChoice, false, false); // Start level

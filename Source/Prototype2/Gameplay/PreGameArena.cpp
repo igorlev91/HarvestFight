@@ -51,12 +51,15 @@ void APreGameArena::Tick(float DeltaTime)
 
 	if (APrototype2Gamestate* SomeGamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		if (AssignedTeam == 0)
-			TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8_t)SomeGamestate->TeamOneColour]);
-		else
-			TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8_t)SomeGamestate->TeamTwoColour]);
+		if (SomeGamestate->bTeams)
+		{
+			if (AssignedTeam == 0)
+				TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8)SomeGamestate->TeamOneColour]);
+			else
+				TeamsMaterial->SetVectorParameterValue(FName("ColourTint"), ColourData->PureColours[(uint8)SomeGamestate->TeamTwoColour]);
 		
-		Mesh->SetMaterial(0, TeamsMaterial);
+			Mesh->SetMaterial(0, TeamsMaterial);
+		}
 	}
 	
 	if (!HasAuthority())
