@@ -120,6 +120,10 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 	{
 		FloatingIslandFarm += 1;
 	}
+	else if (_Level == EFarm::CLOCKWORKFARM)
+	{
+		ClockworkFarm += 1;
+	}
 }
 
 void ALobbyGamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
@@ -168,6 +172,11 @@ int32 ALobbyGamestate::GetFloatingIslandFarm() const
 	return FloatingIslandFarm;
 }
 
+int32 ALobbyGamestate::GetClockworkFarm() const
+{
+	return ClockworkFarm;
+}
+
 bool ALobbyGamestate::HasMapBeenChosen() const
 {
 	return bMapChosen;
@@ -202,6 +211,7 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, WinterFarm);
 	DOREPLIFETIME(ALobbyGamestate, HoneyFarm);
 	DOREPLIFETIME(ALobbyGamestate, FloatingIslandFarm);
+	DOREPLIFETIME(ALobbyGamestate, ClockworkFarm);
 
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceTotalLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
@@ -229,7 +239,7 @@ void ALobbyGamestate::PickMapToPlay()
 	if (bMapChosen == false)
 	{
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
-		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm) // Normal farm gets most votes
+		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = FriendlyFarmClassic;
@@ -239,7 +249,7 @@ void ALobbyGamestate::PickMapToPlay()
 				MapChoice = FriendlyFarmBlitz;
 			
 		}
-		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm) // Winter farm gets most votes
+		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = FrostyFieldsClassic;
@@ -248,7 +258,7 @@ void ALobbyGamestate::PickMapToPlay()
 			else if (GameMode == 2) // Blitz Mode
 				MapChoice = FrostyFieldsBlitz;
 		}
-		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm) // Honey farm gets most votes
+		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = HoneyClassic;
@@ -257,15 +267,26 @@ void ALobbyGamestate::PickMapToPlay()
 			else if (GameMode == 2) // Blitz Mode
 				MapChoice = HoneyBlitz;
 		}
-		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm) // floating islands farm gets most votes
-			{
+		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm) // floating islands farm gets most votes
+		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = FloatingIslandsClassic;
 			else if (GameMode == 1) // Brawl Mode
 				MapChoice = FloatingIslandsBrawl;
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Sky island blitz mode attempted to start")); // No brawl mode for floating islands
+		}
+		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
+		{
+			if (GameMode == 0) // Normal Mode
+				MapChoice = ClockworkClassic;
+			else if (GameMode == 1) // Brawl Mode
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm brawl mode attempted to start")); // No brawl mode for ClockworkFarm
 			}
+			else
+				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm blitz mode attempted to start")); // No blitz mode for ClockworkFarm
+		}
 		else // Pick a random map from highest votes
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Selecting random map from top votes"));
@@ -396,7 +417,7 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 						
 						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 
-						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm;
+						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm + ClockworkFarm;
 						if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
 						{
 							bHasAllPlayersVoted = true;

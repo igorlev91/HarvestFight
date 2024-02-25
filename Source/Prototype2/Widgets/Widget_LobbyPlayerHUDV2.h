@@ -38,7 +38,11 @@ public:
 	
 	/* Brawl Mode Map Choice Widget*/
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UWidget_MapChoice* WBP_MapChoiceBrawl;
+	UWidget_MapChoice* WBP_MapChoiceBrawl;
+
+	/* Blitz Mode Map Choice Widget*/
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UWidget_MapChoice* WBP_MapChoiceBlitz;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	class UWidget_LobbyCharacterSelection* WBP_LobbyCharacterSelection;

@@ -16,7 +16,8 @@ enum class EFarm : uint8
 	FARM,
 	WINTERFARM,
 	HONEYFARM,
-	FLOATINGISLANDSFARM
+	FLOATINGISLANDSFARM,
+	CLOCKWORKFARM
 };
 
 UCLASS()
@@ -47,7 +48,7 @@ public:
 	int32 GetWinterFarm() const;
 	int32 GetHoneyFarm() const;
 	int32 GetFloatingIslandFarm() const;
-
+	int32 GetClockworkFarm() const;
 
 	bool HasMapBeenChosen() const;
 	int32 GetMapChoiceTotalLengthSeconds() const;
@@ -141,6 +142,8 @@ private:
 	int32 HoneyFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 FloatingIslandFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 ClockworkFarm{0};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
@@ -172,7 +175,10 @@ private:
 	// Floating Islands
 	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
 	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
-
+	
+	// Floating Islands
+	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Vertical";
+	
 	// Chaos
 	FString Chaos = "/Game/Maps/Level_FF_Chaos";
 

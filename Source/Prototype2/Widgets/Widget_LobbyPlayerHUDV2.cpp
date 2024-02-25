@@ -191,25 +191,31 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 		{
 			UpdateMapChoice(WBP_MapChoice);
 		}
-		else // Brawl
+		else if (GameStateReference->GetGameMode() == 1) // Brawl
 		{
 			UpdateMapChoice(WBP_MapChoiceBrawl);
 		}
-		
+		else
+		{
+			UpdateMapChoice(WBP_MapChoiceBlitz);
+		}
 	}
 	
 	/* Show timer after map vote */
 	if (GameStateReference->ShouldShowMapChoices())
 	{
 		if (GameStateReference->GetGameMode() == 0) // Normal Game mode
-			{
-				UpdateMapChoiceTimer(WBP_MapChoice);
-			}
-		else // Brawl
-			{
-				UpdateMapChoiceTimer(WBP_MapChoiceBrawl);
-			}
-		
+		{
+			UpdateMapChoiceTimer(WBP_MapChoice);
+		}
+		else if (GameStateReference->GetGameMode() == 1)// Brawl
+		{
+			UpdateMapChoiceTimer(WBP_MapChoiceBrawl);
+		}
+		else // Blitz
+		{
+			UpdateMapChoiceTimer(WBP_MapChoiceBlitz);
+		}
 	}
 }
 
@@ -221,6 +227,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 
 	/* Turning on visibility of maps if value is higher than 0 */
@@ -243,6 +250,11 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->GetFloatingIslandFarm() > 0) // Clockwork farm
+		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)

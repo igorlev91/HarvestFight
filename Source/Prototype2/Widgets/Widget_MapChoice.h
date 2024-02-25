@@ -33,18 +33,22 @@ public:
 
 	/* Winter Farm vote counter */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* WinterLevelCounter;
+	UTextBlock* WinterLevelCounter;
 
 	/* Honey Farm vote counter */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* HoneyLevelCounter;
+	UTextBlock* HoneyLevelCounter;
 
 	/* Honey Farm vote counter */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* FloatingIslandsLevelCounter;
+	UTextBlock* FloatingIslandsLevelCounter;
+
+	/* Honey Farm vote counter */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* ClockworkLevelCounter;
 
 	/* Timer after players have voted on map */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
-	class UTextBlock* MapChoiceTimer;
+	UTextBlock* MapChoiceTimer;
 	
 };
