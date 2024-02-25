@@ -13,6 +13,7 @@
 #include "Prototype2/DataAssets/ConcreteBagData.h"
 #include "Prototype2/DataAssets/FertiliserData.h"
 #include "Prototype2/DataAssets/GrowSpotData.h"
+#include "Prototype2/DataAssets/PoisonFertiliserData.h"
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/DataAssets/SeedData.h"
@@ -56,6 +57,7 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, OwningPlayerColor);
 	DOREPLIFETIME(AGrowSpot, ConcretedHealth);
 	DOREPLIFETIME(AGrowSpot, ConcretedDamageTimer);
+	DOREPLIFETIME(AGrowSpot, bPoisoned);
 }
 
 bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
@@ -82,7 +84,7 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 	if (CastedCharacter->HeldItem &&
 	CastedCharacter->HeldItem->SeedData &&
 	CastedCharacter->HeldItem->SeedData->FertiliserData &&
-	CastedCharacter->HeldItem->SeedData->FertiliserData->bConcrete)
+	CastedCharacter->HeldItem->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 	{
 		if (_Player->Details.Colour == OwningPlayerColor)
 			return false;
@@ -134,7 +136,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->bConcrete)
+				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -148,7 +150,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->bConcrete)
+				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -162,7 +164,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->bConcrete)
+				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -179,7 +181,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 		{
 			if (AFertiliser* SomeFertilizer = Cast<AFertiliser>(CastedCharacter->HeldItem))
 			{
-				if (SomeFertilizer->SeedData->FertiliserData->bConcrete)
+				if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 			}
 			break;
@@ -612,6 +614,17 @@ void AGrowSpot::Multi_BrakePlantConcrete_Implementation()
 	}
 }
 
+void AGrowSpot::Multi_MakePlantPoison_Implementation()
+{
+	if (!GrowingItemRef || !PoisonMaterial)
+		return;
+	
+	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
+	{
+		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, PoisonMaterial);
+	}
+}
+
 void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
 {
 	if (PlantReadyComponent)
@@ -641,6 +654,8 @@ void AGrowSpot::Multi_UpdateMaterial_Implementation()
 		ItemComponent->Mesh->SetMaterial(0, ConcreteMaterial);
 	else if (bIsFertilised && GoldMaterial)
 		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
+	else if (bPoisoned && PoisonMaterial)
+		ItemComponent->Mesh->SetMaterial(0, PoisonMaterial);
 	else if (DefaultMaterial)
 		ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
 }
@@ -710,19 +725,36 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 						{
 							if (auto FertData = Fertiliser->SeedData->FertiliserData)
 							{
-								if (FertData->bConcrete)
+								FertiliseInteractDelayTimer = FertiliseInteractDelay;
+								
+								switch (FertData->Type)
 								{
-									FertiliseInteractDelayTimer = FertiliseInteractDelay;
-									bIsFertilised = false;
-									if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
-										ConcretedHealth = ConcreteData->MaxStrength;
-									Multi_MakePlantConcrete();
-								}
-								else
-								{
-									FertiliseInteractDelayTimer = FertiliseInteractDelay;
-									ConcretedHealth = 0;
-									bIsFertilised = true;
+								case EFertiliserType::GOLD:
+									{
+										ConcretedHealth = 0;
+										bIsFertilised = true;
+										break;
+									}
+								case EFertiliserType::CONCRETE:
+									{
+										bIsFertilised = false;
+										if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
+											ConcretedHealth = ConcreteData->MaxStrength;
+										Multi_MakePlantConcrete();
+										break;
+									}
+								case EFertiliserType::POISON:
+									{
+										bIsFertilised = false;
+										if(auto PoisonData = Cast<UPoisonFertiliserData>(FertData))
+										{
+											bPoisoned = true;
+										}
+										Multi_MakePlantPoison();
+										break;
+									}
+								default:
+									break;
 								}
 							}
 							_Player->PlayerStateRef->AddCoins(5);
@@ -752,27 +784,46 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 						{
 							if (auto FertData = Fertiliser->SeedData->FertiliserData)
 							{
-								if (FertData->bConcrete)
+								FertiliseInteractDelayTimer = FertiliseInteractDelay;
+								
+								switch (FertData->Type)
 								{
-									FertiliseInteractDelayTimer = FertiliseInteractDelay;
-									GrowingItemRef->ItemComponent->bGold = false;
-									bIsFertilised = false;
-									if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
-										ConcretedHealth = ConcreteData->MaxStrength;
-									Multi_MakePlantConcrete();
-								}
-								else
-								{
-									if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+								case EFertiliserType::GOLD:
 									{
+										if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+										{
+											break;
+										}
+										else
+										{
+											bIsFertilised = true;
+											MakePlantGold();
+										}
 										break;
 									}
-									else
+								case EFertiliserType::CONCRETE:
 									{
-										bIsFertilised = true;
-										FertiliseInteractDelayTimer = FertiliseInteractDelay;
-										MakePlantGold();
+										GrowingItemRef->ItemComponent->bGold = false;
+										bIsFertilised = false;
+										if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
+											ConcretedHealth = ConcreteData->MaxStrength;
+										Multi_MakePlantConcrete();
+										break;
 									}
+								case EFertiliserType::POISON:
+									{
+										GrowingItemRef->ItemComponent->bGold = false;
+										bIsFertilised = false;
+										bPoisoned = true;
+										if (APlant* SomePlant = Cast<APlant>(GrowingItemRef))
+										{
+											SomePlant->bPoisoned = true;
+										}
+										Multi_MakePlantPoison();
+										break;
+									}
+								default:
+									break;
 								}
 							}
 							_Player->PlayerStateRef->AddCoins(5);
@@ -805,27 +856,46 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 							{
 								if (auto FertData = Fertiliser->SeedData->FertiliserData)
 								{
-									if (FertData->bConcrete)
+									FertiliseInteractDelayTimer = FertiliseInteractDelay;
+								
+									switch (FertData->Type)
 									{
-										FertiliseInteractDelayTimer = FertiliseInteractDelay;
-										GrowingItemRef->ItemComponent->bGold = false;
-										bIsFertilised = false;
-										if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
-											ConcretedHealth = ConcreteData->MaxStrength;
-										Multi_MakePlantConcrete();
-									}
-									else
-									{
-										if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
-										{
+										case EFertiliserType::GOLD:
+											{
+												if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+												{
+													break;
+												}
+												else
+												{
+													bIsFertilised = true;
+													MakePlantGold();
+												}
+												break;
+											}
+										case EFertiliserType::CONCRETE:
+											{
+												GrowingItemRef->ItemComponent->bGold = false;
+												bIsFertilised = false;
+												if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
+													ConcretedHealth = ConcreteData->MaxStrength;
+												Multi_MakePlantConcrete();
+												break;
+											}
+										case EFertiliserType::POISON:
+											{
+												GrowingItemRef->ItemComponent->bGold = false;
+												bIsFertilised = false;
+												bPoisoned = true;
+												if (APlant* SomePlant = Cast<APlant>(GrowingItemRef))
+												{
+													SomePlant->bPoisoned = true;
+												}
+												Multi_MakePlantPoison();
+												break;
+											}
+										default:
 											break;
-										}
-										else
-										{
-											FertiliseInteractDelayTimer = FertiliseInteractDelay;
-											bIsFertilised = true;
-											MakePlantGold();
-										}
 									}
 								}
 								_Player->PlayerStateRef->AddCoins(5);
@@ -1039,11 +1109,27 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			}
 			else if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
-				else
-					_InvokingWidget->SetHUDInteractText("Fertilize");
-				
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::GOLD:
+					{
+						_InvokingWidget->SetHUDInteractText("Fertilize");
+						break;
+					}
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
+
 				_Owner->EnableStencil(true);
 				return;
 			}
@@ -1054,10 +1140,26 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem);
 			if (Fertiliser)
 			{
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
-				else
-					_InvokingWidget->SetHUDInteractText("Fertilize");
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::GOLD:
+					{
+						_InvokingWidget->SetHUDInteractText("Fertilize");
+						break;
+					}
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
 
 				_Owner->EnableStencil(true);
 				return;
@@ -1071,10 +1173,26 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			if (Fertiliser)
 			{
 				// Fert
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
-				else
-					_InvokingWidget->SetHUDInteractText("Fertilize");
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::GOLD:
+					{
+						_InvokingWidget->SetHUDInteractText("Fertilize");
+						break;
+					}
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
 				_Owner->EnableStencil(true);
 				return;
 			}
@@ -1188,14 +1306,38 @@ void AGrowSpot::Stealing_Interact(APrototype2Character* _Player)
 		{
 			if (auto FertData = Fertiliser->SeedData->FertiliserData)
 			{
-				if (FertData->bConcrete)
+				FertiliseInteractDelayTimer = FertiliseInteractDelay;
+								
+				switch (FertData->Type)
 				{
-					FertiliseInteractDelayTimer = FertiliseInteractDelay;
-					bIsFertilised = false;
-					if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
-						ConcretedHealth = ConcreteData->MaxStrength;
-					Multi_MakePlantConcrete();
-				}
+					case EFertiliserType::GOLD:
+						{
+							break;
+						}
+					case EFertiliserType::CONCRETE:
+						{
+							GrowingItemRef->ItemComponent->bGold = false;
+							bIsFertilised = false;
+							if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
+								ConcretedHealth = ConcreteData->MaxStrength;
+							Multi_MakePlantConcrete();
+							break;
+						}
+					case EFertiliserType::POISON:
+						{
+							GrowingItemRef->ItemComponent->bGold = false;
+							bIsFertilised = false;
+							bPoisoned = true;
+							if (APlant* SomePlant = Cast<APlant>(GrowingItemRef))
+							{
+								SomePlant->bPoisoned = true;
+							}
+							Multi_MakePlantPoison();			
+							break;
+						}
+					default:
+						break;
+					}
 			}
 			_Player->PlayerStateRef->AddCoins(5);
 			UpdateMaterial();
@@ -1224,8 +1366,21 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 		{
 			if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
 				
 				_Owner->EnableStencil(true);
 				return;
@@ -1236,8 +1391,21 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 		{
 			if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
 
 				_Owner->EnableStencil(true);
 				return;
@@ -1251,8 +1419,21 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 			if (Fertiliser)
 			{
 				// Fert
-				if (Fertiliser->SeedData->FertiliserData->bConcrete)
-					_InvokingWidget->SetHUDInteractText("Concrete");
+				switch (Fertiliser->SeedData->FertiliserData->Type)
+				{
+				case EFertiliserType::CONCRETE:
+					{
+						_InvokingWidget->SetHUDInteractText("Concrete");
+						break;
+					}
+				case EFertiliserType::POISON:
+					{
+						_InvokingWidget->SetHUDInteractText("Poison");				
+						break;
+					}
+				default:
+					break;
+				}
 				_Owner->EnableStencil(true);
 				return;
 			}

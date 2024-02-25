@@ -54,6 +54,9 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bShouldWilt{};
 
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bPoisoned{};
+
 	UPROPERTY(VisibleAnywhere)
 	TArray<class UMaterialInstanceDynamic*> PlantMats;
 };

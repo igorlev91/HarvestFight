@@ -179,10 +179,19 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->ItemComponent->Mesh->SetIsReplicated(false);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
-	if (FertiliserDatas.Num() > 1)
+	if (FertiliserDatas.Num() > 0)
 	{
-		USeedData* FertiliserData = rand() % ChanceOfConcrete_Inverse == 0 ? FertiliserDatas[1] : FertiliserDatas[0];
-		SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+		int8 ChanceOfGold = rand() % 2;
+		if (ChanceOfGold == 0)
+		{
+			USeedData* FertiliserData = FertiliserDatas[ChanceOfGold];
+			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+		}
+		else
+		{
+			USeedData* FertiliserData = FertiliserDatas[rand() % FertiliserDatas.Num()];
+			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+		}
 	}
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});

@@ -99,6 +99,9 @@ protected:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float ConcretedDamageTimer{};
 
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bPoisoned{};
+	
 	UFUNCTION()
 	void RiseTimelineUpdate(float _Delta);
 	
@@ -117,6 +120,8 @@ protected:
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantConcrete();
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multi_MakePlantPoison();
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_BrakePlantConcrete();
 	void SetPlantReadySparkle(bool _bIsActive);
@@ -138,6 +143,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* GoldMaterial;
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInstance* PoisonMaterial;
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* ConcreteMaterial;

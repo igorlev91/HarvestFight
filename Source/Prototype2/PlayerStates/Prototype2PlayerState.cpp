@@ -6,6 +6,7 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/DataAssets/PoisonFertiliserData.h"
 #include "Prototype2/Gamemodes/Prototype2GameMode.h"
 #include "Prototype2/Gameplay/RandomEventManager.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
@@ -76,6 +77,13 @@ void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 	{
 		if (Gamemode->RandomEventManager)
 			PlantSellValue *= Gamemode->RandomEventManager->GetSellMultiplier();
+	}
+	if (_SomePlant->bPoisoned)
+	{
+		if (UPoisonFertiliserData* PoisonData = Cast<UPoisonFertiliserData>(_SomePlant->SeedData->FertiliserData))
+		{
+			PlantSellValue *= PoisonData->SellMultiplier;
+		}
 	}
 	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->SeedData->GoldMultiplier : PlantSellValue;
 	Client_OnAddCoins();
