@@ -50,5 +50,7 @@ public:
 	/* Timer after players have voted on map */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* MapChoiceTimer;
-	
+
+	UPROPERTY(EditAnywhere, meta=(BindWidget))
+	class UOverlay* LoadingPageFake;
 };

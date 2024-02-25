@@ -3,6 +3,7 @@
 #include "Widget_PlayerEmote.h"
 
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
@@ -42,32 +43,50 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 		}
 	case EEmote::Emote3:
 		{
-			EmoteImage->SetBrushFromTexture(Emote3);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote3);
+			else
+				EmoteImage->SetBrushFromTexture(Emote3);
 			break;
 		}
 	case EEmote::Emote4:
 		{
-			EmoteImage->SetBrushFromTexture(Emote4);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote4);
+			else
+				EmoteImage->SetBrushFromTexture(Emote4);
 			break;
 		}
 	case EEmote::Emote5:
 		{
-			EmoteImage->SetBrushFromTexture(Emote5);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote5);
+			else
+				EmoteImage->SetBrushFromTexture(Emote5);
 			break;
 		}
 	case EEmote::Emote6:
 		{
-			EmoteImage->SetBrushFromTexture(Emote6);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote6);
+			else
+				EmoteImage->SetBrushFromTexture(Emote6);
 			break;
 		}
 	case EEmote::Emote7:
 		{
-			EmoteImage->SetBrushFromTexture(Emote7);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote7);
+			else
+				EmoteImage->SetBrushFromTexture(Emote7);
 			break;
 		}
 	case EEmote::Emote8:
 		{
-			EmoteImage->SetBrushFromTexture(Emote8);
+			if (GameStateReference->bTeams)
+				EmoteImage->SetBrushFromTexture(Emote8);
+			else
+				EmoteImage->SetBrushFromTexture(Emote8);
 			break;
 		}
 	default:

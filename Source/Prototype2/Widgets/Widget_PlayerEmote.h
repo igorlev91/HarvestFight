@@ -51,4 +51,15 @@ public:
 	UTexture2D* Emote7;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Emote8;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Emote9;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Emote10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Emote11;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Emote12;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* Emote13;
 };

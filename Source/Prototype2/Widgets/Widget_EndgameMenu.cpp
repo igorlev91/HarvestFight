@@ -38,15 +38,18 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 		{
 			for(auto PlayerState : GameStateReference->PlayerArray)
 			{
-				if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
+				if (PlayerState)
 				{
-					if (CastedPlayerstate->Details.Colour == GameStateReference->TeamOneColour)
+					if (APrototype2PlayerState* CastedPlayerstate = Cast<APrototype2PlayerState>(PlayerState))
 					{
-						Team1Coins += CastedPlayerstate->Coins;
-					}
-					else if (CastedPlayerstate->Details.Colour == GameStateReference->TeamTwoColour)
-					{
-						Team2Coins += CastedPlayerstate->Coins;
+						if (CastedPlayerstate->Details.Colour == GameStateReference->TeamOneColour)
+						{
+							Team1Coins += CastedPlayerstate->Coins;
+						}
+						else if (CastedPlayerstate->Details.Colour == GameStateReference->TeamTwoColour)
+						{
+							Team2Coins += CastedPlayerstate->Coins;
+						}
 					}
 				}
 			}
