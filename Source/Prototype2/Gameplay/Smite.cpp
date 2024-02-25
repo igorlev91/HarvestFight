@@ -3,16 +3,16 @@
 
 #include "Prototype2/Gameplay/Smite.h"
 
-Smite::Smite()
+USmite::USmite()
 {
 	Timer = TimerStartTime;
 }
 
-Smite::~Smite()
+USmite::~USmite()
 {
 }
 
-void Smite::Tick(float DeltaTime)
+void USmite::Tick(float DeltaTime)
 {
 	if (Timer > 0)
 	{
@@ -26,23 +26,23 @@ void Smite::Tick(float DeltaTime)
 	}	
 }
 
-void Smite::IncreaseTime(float _Amount)
+void USmite::IncreaseTime(float _Amount)
 {
 	Timer += _Amount;
 }
 
-void Smite::SetSmiteTime(float Amount)
+void USmite::SetSmiteTime(float Amount)
 {
 	Timer = Amount;
 }
 
-void Smite::Strike()
+void USmite::Strike()
 {
 	Player->GetHit(1.0f, Player->GetActorLocation(), SmiteData);
 	IncreaseTime(StrikeTimeIncrease);
 }
 
-void Smite::SetPlayer(APrototype2Character* _Player)
+void USmite::SetPlayer(APrototype2Character* _Player)
 {
 	Player = _Player;
 }

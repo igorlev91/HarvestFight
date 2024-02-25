@@ -4,18 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Smite.generated.h"
 
-
-class PROTOTYPE2_API Smite
+UCLASS()
+class PROTOTYPE2_API USmite : public UObject
 {
+
+	GENERATED_BODY()
+	
 public:
-	Smite();
-	~Smite();
+	USmite();
+	~USmite();
 
 	void Tick(float DeltaTime);
 
-	static constexpr float TimerStartTime{90};
-	static constexpr float StrikeTimeIncrease{30};
+	UPROPERTY(BlueprintReadOnly)
+	float TimerStartTime{90};
+	inline static float StrikeTimeIncrease{30};
+	UPROPERTY(BlueprintReadOnly)
 	float Timer{0};
 
 	APrototype2Character* Player{nullptr};

@@ -23,9 +23,9 @@ void ASmiteManager::SetPlayerSmites() const
 		if (auto Player = Cast<APrototype2Character>(PlayerCharacter))
 		{
 			// check if smite
-			if (Player->GetSmite() == nullptr)
+			if (Player->smite == nullptr)
 			{
-				Smite* smite = new Smite();
+				USmite* smite = NewObject<USmite>();
 				smite->SmiteData = SmiteData;
 				Player->Multi_SetSmite(smite);
 			}

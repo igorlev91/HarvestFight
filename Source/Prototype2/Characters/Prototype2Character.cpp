@@ -197,7 +197,7 @@ void APrototype2Character::InitInputMappingContext()
 	//GetCharacterMovement()->SetIsReplicated(true);
 }
 
-void APrototype2Character::Multi_SetSmite(Smite* _smite)
+void APrototype2Character::Multi_SetSmite(USmite* _smite)
 {
 	smite = _smite;
 	smite->SetPlayer(this);

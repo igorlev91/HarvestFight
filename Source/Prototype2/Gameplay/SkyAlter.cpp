@@ -96,7 +96,7 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 		{
 			//Client_OnPlayerSell(SomePlayer);
-			SomePlayer->GetSmite()->SetSmiteTime(Smite::TimerStartTime);
+			SomePlayer->smite->SetSmiteTime(SomePlayer->smite->TimerStartTime);
 			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
 
 			Client_ClearItem(SomePlayer);

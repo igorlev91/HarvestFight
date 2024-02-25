@@ -19,7 +19,7 @@ class UAudioComponent;
 class USoundCue;
 class UItemComponent;
 class UDebuffComponent;
-class Smite;
+class USmite;
 
 /* Enum for controlling particle systems */
 UENUM()
@@ -163,12 +163,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TArray<UAnimationData*> AllAnimationDatas;
 
-	// Smite
-	Smite* smite = nullptr;
+	
 
 public:
-	void Multi_SetSmite(Smite* _smite);
-	Smite* GetSmite() const {return smite;}
+	// Smite
+	UPROPERTY(BlueprintReadOnly);
+	USmite* smite = nullptr;
+	void Multi_SetSmite(USmite* _smite);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Tick													 ///
