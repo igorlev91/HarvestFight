@@ -133,14 +133,11 @@ void APlant::Wilt(float DeltaTime)
 		Lifetime -= DeltaTime;
 		if (Lifetime <= 0)
 		{
-			if (DestroyVFX)
-			{
-				auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-				SpawnedVFX->SetLifeSpan(5.0f);
-			}
-			
 			if (HasAuthority())
+			{
+				Multi_OnDestroy();
 				Destroy();
+			}
 		}
 	}
 }
@@ -178,4 +175,13 @@ void APlant::Server_Destroy_Implementation()
 void APlant::Multi_ScalePlant()
 {
 	ItemComponent->Mesh->SetWorldScale3D(SeedData->BabyScale);
+}
+
+void APlant::Multi_OnDestroy_Implementation()
+{
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }

@@ -32,6 +32,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_Destroy();
 	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnDestroy();
+	
 	void Multi_ScalePlant();
 
 	UPROPERTY(Replicated)

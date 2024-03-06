@@ -19,6 +19,12 @@ ASeed::ASeed()
 	ParachuteMesh->SetIsReplicated(true);
 
 	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
+	if (PoofVFX.Class != NULL)
+	{
+		DestroyVFX = PoofVFX.Class;
+	}
 }
 
 void ASeed::BeginPlay()
@@ -45,6 +51,9 @@ void ASeed::BeginPlay()
 		if (SeedData->BabyType == EPickupDataType::BeehiveData)
 			ItemComponent->Mesh->SetWorldScale3D({2.0f,2.0f,2.0f});
 	}
+
+	Lifetime = InitialLifetime;
+	WiltDelayTimer = WiltDelay;
 }
 
 void ASeed::Tick(float _DeltaSeconds)
@@ -55,6 +64,8 @@ void ASeed::Tick(float _DeltaSeconds)
 	{
 		HandleParachuteMovement();
 	}
+
+	Wilt(_DeltaSeconds);
 }
 
 void ASeed::Interact(APrototype2Character* _Player)
@@ -63,7 +74,8 @@ void ASeed::Interact(APrototype2Character* _Player)
 		return;
 	ItemComponent->Interact(_Player, this);
 	
-
+	Multi_OnInteract();
+	bShouldWilt = false;
 }
 
 void ASeed::HoldInteract(APrototype2Character* _Player)
@@ -85,6 +97,8 @@ void ASeed::ClientInteract(APrototype2Character* _Player)
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
 	//SSComponent->Boing();
+
+	WiltDelayTimer = WiltDelay;
 }
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
@@ -113,6 +127,7 @@ void ASeed::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(ASeed, ParachuteMesh);
 	DOREPLIFETIME(ASeed, bIsParachuteStaticMeshSet);
 	DOREPLIFETIME(ASeed, bHasLanded);
+	DOREPLIFETIME(ASeed, bShouldWilt);
 }
 
 void ASeed::Multi_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
@@ -146,6 +161,71 @@ void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
 	}
 }
 
+void ASeed::Wilt(float DeltaTime)
+{
+	if (!bShouldWilt)
+		return;
+
+	//WiltMaterial();
+
+	if (WiltDelayTimer > 0)
+	{
+		WiltDelayTimer -= DeltaTime;
+	}
+	else if (Lifetime > 0)
+	{
+		Lifetime -= DeltaTime;
+		if (Lifetime <= 0)
+		{
+			if (HasAuthority())
+			{
+				Multi_OnDestroy();
+				Destroy();
+			}
+		}
+	}
+}
+
+void ASeed::WiltMaterial()
+{
+	if (Materials.Num() <= 0)
+	{
+		for(int i = 0; i < ItemComponent->Mesh->GetNumMaterials(); i++)
+		{
+			auto MaterialInstance = ItemComponent->Mesh->CreateDynamicMaterialInstance(i, ItemComponent->Mesh->GetMaterial(i));
+			Materials.Add(MaterialInstance);
+			ItemComponent->Mesh->SetMaterial(i , MaterialInstance);
+		}
+	}
+	
+	for(int i = 0; i < Materials.Num(); i++)
+	{
+		Materials[i]->SetScalarParameterValue(FName("GrayScaleTint"), FMath::Lerp<float>(1.0f, 0.0f, Lifetime / InitialLifetime));
+
+		//UE_LOG(LogTemp, Warning, TEXT("wilted plant material"));
+	}
+}
+
+void ASeed::Multi_OnInteract_Implementation()
+{
+	WiltDelayTimer = WiltDelay;
+}
+
+void ASeed::Server_Drop()
+{
+	bShouldWilt = true;
+}
+
+void ASeed::Multi_OnDestroy_Implementation()
+{
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+}
+
+
 void ASeed::HandleParachuteMovement()
 {
 	if (bHasLanded)
@@ -160,13 +240,14 @@ void ASeed::HandleParachuteMovement()
 			float XVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
 			float ZVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
 			SetActorRotation({SpawnRotation.Pitch + XVariation, GetActorRotation().Yaw, SpawnRotation.Roll + ZVariation});
-			float Lifetime = GetWorld()->GetTimeSeconds() - SpawnTime;
-			SetActorLocation(FMath::Lerp(SpawnPos, SpawnPos + (FVector::DownVector * DropDistance), Lifetime / FallTime), false, nullptr, ETeleportType::ResetPhysics);
+			float ParachuteLifetime = GetWorld()->GetTimeSeconds() - SpawnTime;
+			SetActorLocation(FMath::Lerp(SpawnPos, SpawnPos + (FVector::DownVector * DropDistance), ParachuteLifetime / FallTime), false, nullptr, ETeleportType::ResetPhysics);
 		}
 		else
 		{
 			Multi_ToggleParachuteVisibility(false);
 			bHasLanded = true;
+			bShouldWilt = true;
 			ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -20.0});
 		}
 	}

@@ -79,4 +79,36 @@ public:
 
 	UPROPERTY(Replicated)
 	bool bHasLanded;
+
+	// Wilting
+public:
+	UFUNCTION()
+	void Wilt(float DeltaTime);
+	UFUNCTION()
+	void WiltMaterial();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnInteract();
+	virtual void Server_Drop() override;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnDestroy();
+	
+	UPROPERTY(VisibleAnywhere)
+	TArray<class UMaterialInstanceDynamic*> Materials;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> DestroyVFX{};
+
+	UPROPERTY(EditAnywhere)
+	float InitialLifetime{30};
+	UPROPERTY(VisibleAnywhere)
+	float Lifetime{};
+	
+	UPROPERTY(EditAnywhere)
+	float WiltDelay{30};
+	UPROPERTY(VisibleAnywhere)
+	float WiltDelayTimer{};
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool bShouldWilt{};
 };
