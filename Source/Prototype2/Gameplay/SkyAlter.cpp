@@ -26,6 +26,9 @@ void ASkyAlter::BeginPlay()
 {
 	Super::BeginPlay();
 	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASkyAlter::OnPlayerTouchAltar);
+	BoxComponent1->OnComponentHit.AddDynamic(this, &ASkyAlter::OnPlayerTouchAltar);
+	BoxComponent2->OnComponentHit.AddDynamic(this, &ASkyAlter::OnPlayerTouchAltar);
+	BoxComponent3->OnComponentHit.AddDynamic(this, &ASkyAlter::OnPlayerTouchAltar);
 }
 
 void ASkyAlter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const
@@ -91,39 +94,44 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 		return;
 	
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to offer something!"));
-	if (SomePlayer->HeldItem)
+	if (!SomePlayer->HeldItem)
+		return;
+
+	if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 	{
-		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
+		if (Plant->SeedData->Name != "Lamb")
 		{
-			//Client_OnPlayerSell(SomePlayer);
+			SomePlayer->smite->IncreaseTime(Plant->SeedData->BabyStarValue * 10);
+			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
+		}
+		else
+		{
 			SomePlayer->smite->SetSmiteTime(SomePlayer->smite->TimerStartTime);
 			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
-
-			Client_ClearItem(SomePlayer);
-			
-			// Audio
-			if (HasAuthority())
-			{
-				//SSComponent->Boing();
-				
-				if (SomePlayer->SellCue)
-				{
-					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
-				}
-
-				// Reset player speed incase of gold plant
-				SomePlayer->bIsHoldingGold = false;
-			
-				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
-
-				APickUpItem* item = SomePlayer->HeldItem;
-				SomePlayer->DropItem();
-				// Destroy the crop the player is holding
-				item->Destroy();
-
-				SomePlayer->Client_RefreshCurrentMaxSpeed();
-			}
 		}
+
+		Client_ClearItem(SomePlayer);
+			
+		// Audio
+		if (!HasAuthority())
+			return;
+
+		if (SomePlayer->SellCue)
+		{
+			SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+		}
+
+		// Reset player speed incase of gold plant
+		SomePlayer->bIsHoldingGold = false;
+			
+		SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
+
+		APickUpItem* item = SomePlayer->HeldItem;
+		SomePlayer->DropItem();
+		// Destroy the crop the player is holding
+		item->Destroy();
+
+		SomePlayer->Client_RefreshCurrentMaxSpeed();
 	}
 }
 

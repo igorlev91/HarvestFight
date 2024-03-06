@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/BoxComponent.h"
 
 #include "GameFramework/Actor.h"
 #include "SkyAlterAttack.generated.h"
@@ -30,4 +31,10 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	class UWeaponData* SmiteWeaponData;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent3;
 };

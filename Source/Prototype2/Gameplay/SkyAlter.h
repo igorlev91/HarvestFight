@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
 #include "Prototype2/InteractInterface.h"
 #include "Prototype2/Pickups/ItemComponent.h"
@@ -38,4 +39,11 @@ protected:
 public:	
 	UPROPERTY(EditAnywhere)
 	UItemComponent* ItemComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* BoxComponent3;
 };

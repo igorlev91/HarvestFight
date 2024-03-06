@@ -23,6 +23,9 @@ void ASkyAlterAttack::BeginPlay()
 {
 	Super::BeginPlay();
 	StaticMesh->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
+	BoxComponent1->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
+	BoxComponent2->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
+	BoxComponent3->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
 }
 
 void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent*
