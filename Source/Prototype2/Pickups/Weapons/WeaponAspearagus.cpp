@@ -100,17 +100,6 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player, float 
 
 void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
 {
-	// Spawn projectile
-	FTransform ProjectileTransform = _Player->GetTransform();
-	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
-	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>(FActorSpawnParameters{});
-	if (NewAspearagusProjectile)
-	{
-		
-		NewAspearagusProjectile->SetActorTransform(ProjectileTransform);
-		NewAspearagusProjectile->InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
-												4000.0f, 3.0f, _AttackSphereRadius, _AttackChargeAmount);
-	}
 }
 
 void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
@@ -118,5 +107,16 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 	if (!_Player)
 		return;
 
-	Multi_SpawnProjectile(_Player, _AttackSphereRadius, _AttackChargeAmount);
+	FTransform ProjectileTransform = _Player->GetTransform();
+	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
+	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>();
+	if (NewAspearagusProjectile)
+	{
+		NewAspearagusProjectile->SetReplicates(true);
+		NewAspearagusProjectile->SetReplicateMovement(true);
+		NewAspearagusProjectile->SetActorTransform(ProjectileTransform);
+		NewAspearagusProjectile->Server_InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
+												2800.0f, 3.0f, _AttackSphereRadius, _AttackChargeAmount);
+		NewAspearagusProjectile->SetReplicateMovement(false);
+	}
 }
