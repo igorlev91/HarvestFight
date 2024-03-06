@@ -114,6 +114,7 @@ void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APlant, bShouldWilt);
 	DOREPLIFETIME(APlant, bPoisoned);
+	DOREPLIFETIME(APlant, bGrown);
 }
 
 void APlant::Wilt(float DeltaTime)

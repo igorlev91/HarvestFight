@@ -21,13 +21,6 @@
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
-class ALobbyGamestate;
-
-AEndGamePodium* APrototype2GameMode::GetEndGamePodium()
-{
-	return EndGamePodium;
-}
-
 APrototype2GameMode::APrototype2GameMode()
 {
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/Characters/BP_Player"));
@@ -113,15 +106,17 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 		return;
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
+\
+	FVector SpawnOffset{0.0f, 0.0f , 300.0f};
 	
-	if (GameInstance->bTeams)
+	if (GameInstance->bTeams && PreGameArenas.Num() > 0)
 	{
 		if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamAColour)
 		{
 			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
 			if (PreGameArenas.Num() > 0)
 			{
-				Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+				Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
 				UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena A"), *FString::FromInt(GameStateReference->Server_Players.Num()));
 			}
 		}
@@ -130,7 +125,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
 			if (PreGameArenas.Num() > 0)
 			{
-				Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+				Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
 				UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena B"), *FString::FromInt(GameStateReference->Server_Players.Num()));
 			}
 		}
@@ -141,7 +136,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	{
 		if (DefaultPreGameArena)
 		{
-			Character->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+			Character->SetActorLocation(DefaultPreGameArena->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
 			UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena (Solo)"), *FString::FromInt(GameStateReference->Server_Players.Num()));
 		}
 	}
@@ -163,12 +158,23 @@ void APrototype2GameMode::Logout(AController* _Exiting)
 	if (!PrototypeGameInstance)
 		return;
 
+	// Default
 	Prototype2Gamestate->Server_Players.Remove(PlayerStateReference);
-	Prototype2Gamestate->Server_TeamOne.Remove(PlayerStateReference);
-	Prototype2Gamestate->Server_TeamTwo.Remove(PlayerStateReference);
+
+	// Local Details
 	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
 	{
 		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
+	}
+
+	// Teams
+	if (Prototype2Gamestate->Server_TeamOne.Contains(PlayerStateReference))
+	{
+		Prototype2Gamestate->Server_TeamOne.Remove(PlayerStateReference);
+	}
+	if (Prototype2Gamestate->Server_TeamTwo.Contains(PlayerStateReference))
+	{
+		Prototype2Gamestate->Server_TeamTwo.Remove(PlayerStateReference);
 	}
 	
 	UpdateAllPlayerInfo(Prototype2Gamestate, PrototypeGameInstance);
@@ -222,8 +228,6 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 			KingCrown = nullptr;
 		}
 	}
-
-	TeleportUnteleportedPlayersToPreGameArena_Teams();
 }
 
 void APrototype2GameMode::DisableControllerInput(APlayerController* _PlayerController)
@@ -270,261 +274,11 @@ void APrototype2GameMode::EnableControllerInputForAll()
 	}
 }
 
-void APrototype2GameMode::LookOutForGameEnd()
-{
-	if (GameStateRef)
-	{
-		if (Server_Characters.Num() < GameStateRef->GetCurrentConnectionCount())
-		{
-			Server_Characters.Empty();
-			Server_Characters = {};
-			for(auto PlayerState : GameStateRef->Server_Players)
-			{
-				if (auto Character = Cast<APrototype2Character>(PlayerState->GetPlayerController()->GetCharacter()))
-				{
-					Server_Characters.Add(Character);
-				}
-			}
-		}
-
-		Server_PlayerStates = GameStateRef->Server_Players;
-		
-		if (GameStateRef->HasGameFinished() && !bTpHasHappened)
-		{
-			//TeleportEveryoneToPodium();
-			//PupeteerPlayerCharactersForEndGame();
-			bTpHasHappened = true;
-		}
-	}
-}
-
 void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 }
-
-void APrototype2GameMode::TeleportEveryoneToPodium()
-{
-	bool bP1win{false};
-	bool bP2win{false};
-	bool bP3win{false};
-	bool bP4win{false};
-	
-	int32 HighestCoins{};
-
-	for(auto i = 0; i < Server_PlayerStates.Num(); i++)
-	{
-		if (Server_PlayerStates[i].Get()->Coins > HighestCoins)
-		{
-			HighestCoins = Server_PlayerStates[i].Get()->Coins;
-		}
-	}
-
-	for(auto i = 0; i < Server_PlayerStates.Num(); i++)
-	{
-		if (Server_PlayerStates[i].Get()->Coins == HighestCoins)
-		{
-			if (i == 0)
-			{
-				bP1win = true;
-			}
-			if (i == 1)
-			{
-				bP2win = true;
-			}
-			if (i == 2)
-			{
-				bP3win = true;
-			}
-			if (i == 3)
-			{
-				bP4win = true;
-			}
-		}
-	}
-	if (!EndGamePodium)
-	{
-		return;
-	}
-		
-	FTransform defautTransform{};
-	defautTransform.SetScale3D({1.0f, 1.0f, 1.0f});
-		
-	APrototype2Character* CurrentCharacter{nullptr};
-	
-	// Tp Everyone
-	if (Server_Characters.Num() > 0 && EndGamePodium)
-	{
-		CurrentCharacter = Server_Characters[0].Get();
-		if (!CurrentCharacter)
-			return;
-			
-		if (bP1win == true)
-		{
-			//player1->AttachToComponent(endGamePodium->P1WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(0)->GetComponentLocation(), EndGamePodium->GetWinPosition(0)->GetComponentRotation());
-		}
-		else
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(0)->GetComponentLocation(), EndGamePodium->GetLossPosition(0)->GetComponentRotation());
-			//player1->AttachToComponent(endGamePodium->P1LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-	}
-		
-	if (Server_Characters.Num() > 1 && EndGamePodium)
-	{
-		CurrentCharacter = Server_Characters[1].Get();
-		if (!CurrentCharacter)
-			return;
-		
-		if (bP2win == true)
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(1)->GetComponentLocation(), EndGamePodium->GetWinPosition(1)->GetComponentRotation());
-			//player2->AttachToComponent(endGamePodium->P2WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-		else
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(1)->GetComponentLocation(), EndGamePodium->GetLossPosition(1)->GetComponentRotation());
-			//player2->AttachToComponent(endGamePodium->P2LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-		
-	}
-	if (Server_Characters.Num() > 2 && EndGamePodium)
-	{
-		CurrentCharacter = Server_Characters[2].Get();
-		if (!CurrentCharacter)
-			return;
-		if (bP3win == true)
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(2)->GetComponentLocation(), EndGamePodium->GetWinPosition(2)->GetComponentRotation());
-			//player3->AttachToComponent(endGamePodium->P3WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-		else
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(2)->GetComponentLocation(), EndGamePodium->GetLossPosition(2)->GetComponentRotation());
-			//player3->AttachToComponent(endGamePodium->P3LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-		
-	}
-	if (Server_Characters.Num() > 3 && EndGamePodium)
-	{
-		CurrentCharacter = Server_Characters[3].Get();
-		if (!CurrentCharacter)
-			return;
-		if (bP4win == true)
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetWinPosition(3)->GetComponentLocation(), EndGamePodium->GetWinPosition(3)->GetComponentRotation());
-			//player4->AttachToComponent(endGamePodium->P4WinPosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-		else
-		{
-			CurrentCharacter->TeleportToLocation(EndGamePodium->GetLossPosition(3)->GetComponentLocation(), EndGamePodium->GetLossPosition(3)->GetComponentRotation());
-			//player4->AttachToComponent(endGamePodium->P4LosePosition,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		}
-	}
-}
-
-void APrototype2GameMode::Multi_AssignCharacterSkin_Implementation(APrototype2PlayerState* _CastedPlayerState, APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference, const FString& _NewName)
-{
-	APlayerController* SomeController = _CastedPlayerState->GetPlayerController();
-	if (!SomeController)
-		return;
-
-	ACharacter* SomeCharacter = SomeController->GetCharacter();
-	if (!SomeCharacter)
-		return;
-
-	APrototype2Character* SomeCastedCharacter = Cast<APrototype2Character>(SomeCharacter);
-	if (!SomeCastedCharacter)
-		return;
-			
-	int32 CharacterSelection = (int32)_gameInstanceReference->FinalPlayerDetails[_NewName].Character;
-
-	SomeCastedCharacter->GetMesh()->SetSkeletalMesh(AnimationDatas[CharacterSelection]->SkeletalMesh);
-	SomeCastedCharacter->GetMesh()->SetMaterial(0, PlayerMaterials[CharacterSelection]);
-	if (auto MaterialInstance = SomeCastedCharacter->GetMesh()->CreateDynamicMaterialInstance(0))
-	{
-		MaterialInstance->SetVectorParameterValue(FName("Cow Colour"), _gameInstanceReference->FinalPlayerDetails[_NewName].CharacterColour);
-		MaterialInstance->SetVectorParameterValue(FName("Spot Colour"), _gameInstanceReference->FinalPlayerDetails[_NewName].CharacterSubColour);
-		SomeCastedCharacter->GetMesh()->SetMaterial(0, MaterialInstance);
-	}
-}
-
-void APrototype2GameMode::Multi_TeleportEveryoneToPodium_Implementation()
-{
-	
-}
-
-void APrototype2GameMode::KeepPlayersAtSpawnPositionUntilStart()
-{
-	if (GameStateRef)
-	{
-		if (!GameStateRef->HasGameStarted())
-		{
-			for(auto Player : GameStateRef->Server_Players)
-			{
-				if (APlayerController* Controller = Player->GetPlayerController())
-				{
-					if (ACharacter* Character = Controller->GetCharacter())
-					{
-						TArray<AActor*> FoundRadialPlots{};
-						UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARadialPlot::StaticClass(), FoundRadialPlots);
-						for(AActor* Plot : FoundRadialPlots)
-						{
-							if (ARadialPlot* RadialPlot = Cast<ARadialPlot>(Plot))
-							{
-								if (RadialPlot->GetPlayerID() == Player->Details.Colour)
-								{
-									FVector SpawnPoint = RadialPlot->GetActorLocation();
-									SpawnPoint.Z = PlayerStartingZPosition;
-									if (FVector::Distance(Character->GetActorLocation(), SpawnPoint) > 200)
-									{
-										Character->SetActorLocation(SpawnPoint);
-										Character->SetActorRotation({Character->GetActorRotation().Pitch, RadialPlot->GetActorRotation().Yaw, Character->GetActorRotation().Roll});
-
-										/* Move player forward towards sell bin */
-										FVector ForwardVector = Character->GetActorForwardVector();
-										FVector NewLocation = Character->GetActorLocation() + ForwardVector * PlayerStartingDistanceTowardsSellBin;
-										Character->SetActorLocation(NewLocation);
-									}
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-void APrototype2GameMode::PupeteerPlayerCharactersForEndGame()
-{
-	if (GameStateRef)
-	{
-		if (EndGamePodium->GetEndGameCamera())
-		{
-			if (GameStateRef->HasGameFinished())
-			{
-				for(auto PlayerState : GameStateRef->PlayerArray)
-				{
-					if (auto ControllerCast = Cast<APrototype2PlayerController>(PlayerState->GetPlayerController()))
-					{
-						if (auto CharacterCast = Cast<APrototype2Character>(ControllerCast->GetCharacter()))
-						{
-							CharacterCast->GetCharacterMovement()->StopActiveMovement();
-							CharacterCast->GetCharacterMovement()->StopMovementImmediately();
-							CharacterCast->GetCharacterMovement()->DisableMovement();
-							CharacterCast->GetCharacterMovement()->Velocity = {};
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 
 void APrototype2GameMode::UpdatePlayerInfo(APrototype2Gamestate* _GameStateReference,
 	UPrototypeGameInstance* _gameInstanceReference, APrototype2PlayerState* _PlayerState)
@@ -652,82 +406,6 @@ void APrototype2GameMode::SpawnTeamsPreGameArena()
 	PreGameArenas.Add(TeamBArena);
 }
 
-void APrototype2GameMode::TeleportToPreGameArena(APrototype2Character* _Player)
-{
-	auto Gamestate = GetGameState<APrototype2Gamestate>();
-	for(int32 i = 0; i < Gamestate->Server_Players.Num(); i++)
-	{
-		APrototype2PlayerState* CasterPlayerState = Cast<APrototype2PlayerState>(Gamestate->Server_Players[i]);
-		if (!CasterPlayerState)
-			continue;
-	
-		if (bTeams && PreGameArenas.Num() > 1)
-		{
-			if (CasterPlayerState->Details.Colour == Gamestate->TeamOneColour)
-			{
-				CasterPlayerState->GetPawn()->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-			}
-			else if (CasterPlayerState->Details.Colour == Gamestate->TeamTwoColour)
-			{
-				CasterPlayerState->GetPawn()->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-			}
-		}
-		else if (DefaultPreGameArena)
-		{
-			CasterPlayerState->GetPawn()->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-		}
-	}
-}
-
-void APrototype2GameMode::TeleportUnteleportedPlayersToPreGameArena_Teams()
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-	
-	if (!GameStateRef)
-		return;
-	
-	if (!DefaultPreGameArena)
-		return;
-
-	if (GameStateRef->Server_Players.Num() != PlayersTpdToPreGameArena_Teams.Num())
-		return;
-
-	if (PreGameArenas.Num() < 2 && GameInstance->bTeams)
-		return;
-	
-	for (int i = 0; i < PlayersTpdToPreGameArena_Teams.Num(); i++)
-	{
-		if (GameStateRef->Server_Players.Num() <= i)
-			return;
-		
-		if (PlayersTpdToPreGameArena_Teams[i] == false)
-		{
-			APrototype2Character* _Player = Cast<APrototype2Character>(GameStateRef->Server_Players[i]->GetPlayerController()->GetCharacter());
-			if (!_Player)
-				continue;
-
-			if (GameInstance->bTeams)
-			{
-				if (GameStateRef->Server_Players[i]->Details.Colour == GameInstance->FinalTeamAColour)
-				{
-					_Player->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-					PlayersTpdToPreGameArena_Teams[i] = true;
-				}
-				else if (GameStateRef->Server_Players[i]->Details.Colour == GameInstance->FinalTeamBColour)
-				{
-					_Player->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-					PlayersTpdToPreGameArena_Teams[i] = true;
-				}
-			}
-			else
-			{
-				_Player->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-				PlayersTpdToPreGameArena_Teams[i] = true;
-			}
-		}
-	}
-}
-
 void APrototype2GameMode::SpawnDefaultPregameArena()
 {
 	if (DefaultPreGameArena)
@@ -743,63 +421,32 @@ void APrototype2GameMode::TeleportHostToPreGameArena()
 {
 	if (!GameStateRef)
 		return;
-	
-	APrototype2Character* ServerCharacter = Cast<APrototype2Character>(GameStateRef->Server_Players[0]->GetPlayerController()->GetCharacter());
-	if (!ServerCharacter)
-		return;
-	
-	if (PreGameArenas.Num() > 1)
+	for(auto Player : GameStateRef->Server_Players)
 	{
-		if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamOneColour)
-			ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-		else
-			ServerCharacter->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-	}
-	else if (DefaultPreGameArena)
-	{
-		ServerCharacter->SetActorLocation(DefaultPreGameArena->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-	}
-}
-
-void APrototype2GameMode::TeleportHostToTeamsPreGameArena()
-{
-	if (!bPreGameArenasAdjustedForTeams)
-		return;
+		APrototype2Character* Character = Cast<APrototype2Character>(Player->GetPlayerController()->GetCharacter());
+		if (!Character)
+			return;
+		
+		FVector SpawnOffset{0.0f,0.0f , 300.0f};
 	
-	if (!bHostHasTpdToPreGameArena)
-		return;
-	
-	if (!bHostHasTpdToTeamsPreGameArena && bTeams && PreGameArenas.Num() > 1 && IsValid(PreGameArenas[1]))
-	{
-		APrototype2Character* ServerCharacter = Cast<APrototype2Character>(GameStateRef->Server_Players[0]->GetPlayerController()->GetCharacter());
-
-		if (ServerCharacter)
+		if (PreGameArenas.Num() > 1)
 		{
-			if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamOneColour)
-				ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-			else if (GameStateRef->Server_Players[0]->Details.Colour == GameStateRef->TeamTwoColour)
-				ServerCharacter->SetActorLocation(PreGameArenas[1]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
+			if (Player->Details.Colour == GameStateRef->TeamOneColour)
+				Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
 			else
-				ServerCharacter->SetActorLocation(PreGameArenas[0]->GetActorLocation() + (FVector::UpVector * 200.0f), false, nullptr, ETeleportType::ResetPhysics);
-
-			
-			bHostHasTpdToTeamsPreGameArena = true;
+				Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+		}
+		else if (DefaultPreGameArena)
+		{
+			Character->SetActorLocation(DefaultPreGameArena->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
 		}
 	}
+	
 }
 
 void APrototype2GameMode::ColourTeamsPreGameArenas()
 {
 	PreGameArenas[0]->AssignedTeam = 0;
 	PreGameArenas[1]->AssignedTeam = 1;
-}
-
-
-void APrototype2GameMode::Multi_PupeteerPlayerCharactersForEndGame_Implementation(APrototype2Character* _Target)
-{
-	_Target->GetCharacterMovement()->StopActiveMovement();
-	_Target->GetCharacterMovement()->StopMovementImmediately();
-	_Target->GetCharacterMovement()->DisableMovement();
-	_Target->GetCharacterMovement()->Velocity = {};
 }
 

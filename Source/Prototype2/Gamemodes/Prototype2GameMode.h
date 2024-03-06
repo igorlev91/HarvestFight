@@ -22,7 +22,6 @@ class APrototype2GameMode : public AHHGamemodeBase
 
 	/* Public Variables */
 public:
-	class AEndGamePodium* GetEndGamePodium();
 	
 	UPROPERTY(EditAnywhere)
 	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
@@ -70,32 +69,13 @@ protected:
 	void EnableControllerInput(APlayerController* _PlayerController);
 	void DisableControllerInputForAll();
 	void EnableControllerInputForAll();
-	void LookOutForGameEnd();
 
-	void TeleportEveryoneToPodium();
-
-	/* Networking */
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AssignCharacterSkin(APrototype2PlayerState* _CastedPlayerState, APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference, const FString& _NewName);
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_TeleportEveryoneToPodium();
-	void Multi_TeleportEveryoneToPodium_Implementation();
-
-	void KeepPlayersAtSpawnPositionUntilStart();
-	void PupeteerPlayerCharactersForEndGame();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PupeteerPlayerCharactersForEndGame(APrototype2Character* _Target);
-
+	void UpdatePlayerInfo(class APrototype2Gamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference, class APrototype2PlayerState* _PlayerState);
 	void UpdateAllPlayerInfo(class APrototype2Gamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
 	
 	void SpawnTeamsPreGameArena();
 	void TeleportHostToPreGameArena();
-	void TeleportHostToTeamsPreGameArena();
 	void ColourTeamsPreGameArenas();
-
-	void TeleportToPreGameArena(APrototype2Character* _Player);
-	void TeleportUnteleportedPlayersToPreGameArena_Teams();
 
 	/* Protected Variables */
 protected:

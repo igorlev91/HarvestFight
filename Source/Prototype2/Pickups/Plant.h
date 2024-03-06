@@ -34,7 +34,9 @@ public:
 	
 	void Multi_ScalePlant();
 
-	bool bGrown = false;
+	UPROPERTY(Replicated)
+	bool bGrown{};
+	
 	UPROPERTY(EditAnywhere)
 	int32 NumberOfNearbyFlowers{};
 

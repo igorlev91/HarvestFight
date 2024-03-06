@@ -74,7 +74,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> PlantToGrow;
 
+	UPROPERTY(Replicated)
 	bool bIsParachuteStaticMeshSet;
 
+	UPROPERTY(Replicated)
 	bool bHasLanded;
 };

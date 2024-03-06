@@ -59,6 +59,8 @@ void ASeed::Tick(float _DeltaSeconds)
 
 void ASeed::Interact(APrototype2Character* _Player)
 {
+	if (!bHasLanded)
+		return;
 	ItemComponent->Interact(_Player, this);
 	
 
@@ -70,6 +72,9 @@ void ASeed::HoldInteract(APrototype2Character* _Player)
 
 void ASeed::ClientInteract(APrototype2Character* _Player)
 {
+	if (!bHasLanded)
+		return;
+	
 	IInteractInterface::ClientInteract(_Player);
 
 	_Player->EnableStencil(false);
@@ -84,6 +89,8 @@ void ASeed::ClientInteract(APrototype2Character* _Player)
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
 {
+	if (!bHasLanded)
+		return;
 	if (!_Owner->HeldItem || _Owner->HeldItem != this)
 	{
 		InvokingWidget->SetHUDInteractText("Pick Up");
@@ -94,6 +101,8 @@ void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class
 
 bool ASeed::IsInteractable(APrototype2PlayerState* _Player)
 {
+	if (!bHasLanded)
+		return false;
 	return true;
 }
 
@@ -102,10 +111,13 @@ void ASeed::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASeed, ParachuteMesh);
+	DOREPLIFETIME(ASeed, bIsParachuteStaticMeshSet);
+	DOREPLIFETIME(ASeed, bHasLanded);
 }
 
 void ASeed::Multi_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
 {
+
 	ParachuteMesh->SetVisibility(true);
 	ParachuteMesh->SetStaticMesh(_InMesh);
 }
@@ -129,8 +141,8 @@ void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
 {
 	if (_InMesh)
 	{
+		Multi_SetParachuteMesh(_InMesh);
 		bIsParachuteStaticMeshSet = true;
-		Server_SetParachuteMesh(_InMesh);
 	}
 }
 
