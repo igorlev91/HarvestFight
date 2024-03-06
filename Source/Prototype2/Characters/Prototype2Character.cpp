@@ -51,6 +51,7 @@
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/VFX/VFXComponent.h"
 #include "Prototype2/Gameplay/Smite.h"
+#include "Prototype2/Gameplay/SmiteManager.h"
 #include "Prototype2/GameUserSettings/HarvestHavocGameUserSettings.h"
 #include "Prototype2/Widgets/Widget_PlayerEmote.h"
 #include "Prototype2/Widgets/Widget_PlayerName.h"
@@ -108,6 +109,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, Sweat_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, AttackTrail_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, Attack_NiagaraComponent);
+	DOREPLIFETIME(APrototype2Character, Smite_NiagaraComponent);
 }
 
 void APrototype2Character::BeginPlay()
@@ -201,6 +203,11 @@ void APrototype2Character::Multi_SetSmite(USmite* _smite)
 {
 	smite = _smite;
 	smite->SetPlayer(this);
+}
+
+void APrototype2Character::Multi_RemoveSmite()
+{
+	smite->bPauseTimer = true;
 }
 
 void APrototype2Character::Tick(float _DeltaSeconds)
@@ -374,6 +381,15 @@ void APrototype2Character::EndSprint()
 void APrototype2Character::Jump()
 {
 	Super::Jump();
+	if (HasAuthority())
+	{
+		Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+	}
+	else
+	{
+		Server_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+	}
+	
 }
 
 void APrototype2Character::ChargeAttack()
@@ -520,6 +536,9 @@ void APrototype2Character::ReleaseAttack()
 
 void APrototype2Character::Interact()
 {
+	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None && DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch)
+		return;
+	
 	if (bIsChargingAttack)
 		return;
 
@@ -535,6 +554,9 @@ void APrototype2Character::Interact()
 
 void APrototype2Character::Server_Interact_Implementation()
 {
+	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None && DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch)
+		return;
+	
 	if (ClosestInteractableItem)
 	{
 		ClosestInteractableItem->Interact(this);
@@ -562,6 +584,9 @@ void APrototype2Character::Server_Interact_Implementation()
 
 void APrototype2Character::HoldInteract()
 {
+	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None && DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch)
+		return;
+	
 	// This will get set in the items interact function
 	if (bIsHoldingInteract)
 		Server_HoldInteract();
@@ -855,7 +880,78 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	//Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
 	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		ActivateParticleSystemFromEnum(EParticleSystems::Attack);
+		//ActivateParticleSystemFromEnum(EParticleSystems::Attack);
+	}
+
+	if (HasAuthority())
+	{
+		Multi_CancelChargeAttack();
+	}
+	else
+	{
+		CancelChargeAttack();
+	}
+}
+
+void APrototype2Character::GetSmited(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
+{
+	// Can't pickup for short duration
+	InteractTimer = InteractTimerTime;
+
+	// cancel any holding interact functionionality
+	bIsHoldingInteract = false;
+	
+	// Invincible after getting hit
+	if (InvincibilityTimer > 0.0f)
+	{
+		return;
+	}
+	InvincibilityTimer = InvincibilityDuration;
+	
+	if (DebuffComponent)
+	{
+		if (DebuffComponent->CurrentDebuff == EDebuff::None)
+		{
+			DebuffComponent->DebuffInfo.Debuff = _OtherWeaponData->Debuff;
+			DebuffComponent->DebuffInfo.Duration = _AttackCharge;
+			DebuffComponent->OnRep_ApplyDebuff();			
+		}
+	}
+	
+	// Knockback
+	FVector KnockAway = (GetActorUpVector() * _OtherWeaponData->KnockUpMultiplier) + (GetActorLocation() - _AttackerLocation).GetSafeNormal();
+	
+	// Set minimum attack charge for scaling knockback
+	if (_AttackCharge < 1.0f)
+	{
+		_AttackCharge = 1.0f;
+	}
+	
+	KnockAway *= _AttackCharge * _OtherWeaponData->KnockbackMultiplier;
+	
+	// Limit the knockback to MaxKnockBackVelocity
+	if (KnockAway.Size() > _OtherWeaponData->MaxKnockback) 
+	{
+		KnockAway = KnockAway.GetSafeNormal() * _OtherWeaponData->MaxKnockback; 
+	}
+
+	// Knock this player away
+	GetCharacterMovement()->Launch(KnockAway);
+	
+	// Drop item
+	DropItem(1000.0f);
+	
+	PlayWeaponSound(GetHitCue);
+	
+	// VFX
+	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
+	AttackVFXLocation = AttackVFXLocation.GetSafeNormal();
+	AttackVFXLocation *= 50.0f;
+	AttackVFXLocation += GetActorLocation();
+	//Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
+	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		//ActivateParticleSystemFromEnum(EParticleSystems::Attack);
 	}
 
 	if (HasAuthority())
@@ -944,6 +1040,8 @@ void APrototype2Character::InitNiagraComponents()
 	AttackTrail_NiagaraComponent->SetupAttachment(WeaponMesh);
 	Attack_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Attack Component"));
 	Attack_NiagaraComponent->SetupAttachment(RootComponent);
+	Smite_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Smite Component"));
+	Smite_NiagaraComponent->SetupAttachment(RootComponent);
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1105,8 +1203,10 @@ void APrototype2Character::CheckForFalling(float _DeltaTime)
 	if (GetMovementComponent()->IsFalling())
 	{
 		FallTimer += _DeltaTime;
+		return;
 	}
-	else if(FallTimer > FallTimerThreshold)
+
+	if(FallTimer > FallTimerThreshold)
 	{
 		FallTimer = 0.0f;
 		LandAfterfalling();
@@ -1114,6 +1214,14 @@ void APrototype2Character::CheckForFalling(float _DeltaTime)
 	else
 	{
 		FallTimer = 0.0f;
+	}
+	if (HasAuthority())
+	{
+		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	}
+	else
+	{
+		Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 	}
 }
 
@@ -1131,36 +1239,48 @@ void APrototype2Character::LandAfterfalling()
 
 void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewSystem)
 {
+	if (!VFXComponent)
+		return;
+	
 	switch (_NewSystem)
 	{
 	case EParticleSystems::WalkPoof:
 		{
-			VFXComponent->ActivateParticleSystemFromEnum(WalkPoof_NiagaraComponent);
+			VFXComponent->ActivateParticleSystem(WalkPoof_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::SprintPoof:
 		{
-			VFXComponent->ActivateParticleSystemFromEnum(SprintPoof_NiagaraComponent);
+			VFXComponent->ActivateParticleSystem(SprintPoof_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Sweat:
 		{
-			VFXComponent->ActivateParticleSystemFromEnum(Sweat_NiagaraComponent);
+			VFXComponent->ActivateParticleSystem(Sweat_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::AttackTrail:
 		{
-				VFXComponent->ActivateParticleSystemFromEnum(AttackTrail_NiagaraComponent);
+				VFXComponent->ActivateParticleSystem(AttackTrail_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Attack:
 		{
-			VFXComponent->ActivateParticleSystemFromEnum(Attack_NiagaraComponent);
+			VFXComponent->ActivateParticleSystem(Attack_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Dizzy:
 		{
-			VFXComponent->ActivateParticleSystemFromEnum(Dizzy_NiagaraComponent);
+			VFXComponent->ActivateParticleSystem(Dizzy_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Smite:
+		{
+			//FVector SmiteLocation = GetActorLocation();
+			//SmiteLocation.Z = GetActorLocation().Z + 1000.0f;
+			//Smite_NiagaraComponent->SetWorldLocation(SmiteLocation);
+			Smite_NiagaraComponent->SetVectorParameter("BeamEndPoint", GetActorLocation());
+			VFXComponent->ActivateParticleSystem(Smite_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Test:
@@ -1179,32 +1299,37 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _Ne
 	{
 	case EParticleSystems::WalkPoof:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(WalkPoof_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(WalkPoof_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::SprintPoof:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(SprintPoof_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(SprintPoof_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Sweat:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(Sweat_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(Sweat_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::AttackTrail:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(AttackTrail_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(AttackTrail_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Attack:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(Attack_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(Attack_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Dizzy:
 		{
-			VFXComponent->DeActivateParticleSystemFromEnum(Dizzy_NiagaraComponent);
+			VFXComponent->DeActivateParticleSystem(Dizzy_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::Smite:
+		{
+			VFXComponent->DeActivateParticleSystem(Smite_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Test:
@@ -1527,7 +1652,7 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 		}
 	case EPickupActor::SeedActor:
 		{
-			if (PlayerHUDRef)
+			if (PlayerHUDRef && _Item)
 			{
 				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PacketIcon);
 			}
@@ -1618,12 +1743,12 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 		if (bSprinting)
 		{
 			SetMaxWalkSpeed(WalkSpeed);
-			DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
-			ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+			//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+			//ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 			return;
 		}
 		SetMaxWalkSpeed(GoldPlantSpeed);
-		DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		//DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		return;
 	}
 
@@ -1631,14 +1756,14 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	if (bSprinting)
 	{
 		SetMaxWalkSpeed(SprintSpeed);
-		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
-		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+		//ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		return;
 	}
 
 	// walk
 	SetMaxWalkSpeed(WalkSpeed);
-	DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+	//DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 }
 
 void APrototype2Character::Client_RefreshCurrentMaxSpeed_Implementation()
@@ -1741,7 +1866,9 @@ void APrototype2Character::ThrowItem()
 			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
 		FVector ThrowVector = GetActorForwardVector();
-		ThrowVector *= ThrowItemStrength + GetCharacterMovement()->GetLastUpdateVelocity().Length();
+		float VectorLength = GetCharacterMovement()->GetLastUpdateVelocity().Length();
+		VectorLength = FMath::Clamp(VectorLength, 0, 450);
+		ThrowVector *= ThrowItemStrength + VectorLength;
 		ThrowVector.Z = 500.0f;
 		Multi_ThrowItem();
 		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
@@ -1812,7 +1939,7 @@ void APrototype2Character::SetCanSprint(bool _bCanSprint)
 	}
 	else
 	{
-		ActivateParticleSystemFromEnum(EParticleSystems::Sweat);
+		//ActivateParticleSystemFromEnum(EParticleSystems::Sweat);
 		OnFailedToSprintDelegate.Broadcast();
 	}
 }
@@ -1822,6 +1949,15 @@ void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 	if (HasAuthority())
 	{
 		Multi_TeleportToEndGame(_EndGameTransform);
+		TArray<AActor*> Smite{};
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASmiteManager::StaticClass(), Smite);
+		for(AActor* SmiteActor : Smite)
+		{
+			if (auto* SmiteManager = Cast<ASmiteManager>(SmiteActor))
+			{
+				SmiteManager->ClearPlayerSmites();
+			}
+		}
 	}
 	else
 	{
@@ -2094,11 +2230,11 @@ void APrototype2Character::UpdateParticleSystems()
 	
 	if (GetCharacterMovement()->Velocity.Size() < 50.0f)
 	{
-		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+		//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 	}
 	else
 	{
-		ActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+		//ActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 	}
 }
 
@@ -2123,11 +2259,11 @@ void APrototype2Character::TickTimers(float _DeltaSeconds)
 {
 	// No longer replicated
 	DeltaDecrement(AttackTimer, _DeltaSeconds);
+	DeltaDecrement(InteractTimer, _DeltaSeconds);
 	DecrementSprintTimers(_DeltaSeconds);
 
 	if (HasAuthority())
 	{
-		DeltaDecrement(InteractTimer, _DeltaSeconds);
 		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
 		DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
 		if (WeaponFlashTimer < 0.0f)

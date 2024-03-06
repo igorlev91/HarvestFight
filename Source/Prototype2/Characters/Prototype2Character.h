@@ -33,6 +33,7 @@ enum class EParticleSystems : uint8
 	AttackTrail,
 	Attack,
 	Dizzy,
+	Smite,
 	Test,
 
 	END
@@ -72,7 +73,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UWidget_PlayerEmote* EmoteWidget{nullptr};
-	
+		
+	UPROPERTY()
+	APrototype2Gamestate* GameState;
 protected:
 	/* Constructor */
 	APrototype2Character();	
@@ -123,9 +126,6 @@ protected:
 
 	UPROPERTY()
 	APrototype2PlayerController* PlayerController;
-	
-	UPROPERTY()
-	APrototype2Gamestate* GameState;
 
 	/* Camera used for end of the game */
 	UPROPERTY(VisibleAnywhere)
@@ -170,6 +170,7 @@ public:
 	UPROPERTY(BlueprintReadOnly);
 	USmite* smite = nullptr;
 	void Multi_SetSmite(USmite* _smite);
+	void Multi_RemoveSmite();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Tick													 ///
@@ -373,6 +374,7 @@ public:
 	/* Called when hit by another player */
 	UFUNCTION(BlueprintCallable)
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	void GetSmited(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
 	
 	/* Allows for client only functionality when dropping weapon */
 	void DropWeapon();
@@ -782,6 +784,8 @@ public:
 	class UNiagaraComponent* Attack_NiagaraComponent;
 	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Dizzy_NiagaraComponent;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* Smite_NiagaraComponent;
 	UPROPERTY(VisibleAnywhere)
 	TArray<EParticleSystems> ParticleSystemsToActivate{};
 	UPROPERTY(VisibleAnywhere)

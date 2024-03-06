@@ -17,19 +17,25 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION()
-	void ActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
+	void ActivateParticleSystem(UNiagaraComponent* _NewSystem);
 	UFUNCTION()
-	void DeActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
+	void DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
 
-	UFUNCTION(Server, Unreliable)
-	void Server_ActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
-	UFUNCTION(Server, Unreliable)
-	void Server_DeActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem);
+	UFUNCTION(Server, Reliable)
+	void Server_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	UFUNCTION(Server, Reliable)
+	void Server_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	TArray<class UNiagaraComponent*> ParticleSystemsToDeActivate{};
 	UPROPERTY(Replicated, VisibleAnywhere)
 	TArray<class UNiagaraComponent*> ParticleSystemsToActivate{};
+	
 	
 	//UPROPERTY(VisibleAnywhere)
 	//TArray<EParticleSystems> ParticleSystemsToActivate{};

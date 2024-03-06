@@ -10,10 +10,6 @@ UVFXComponent::UVFXComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	///InitMeshes();
-
-
-		
-
 }
 
 void UVFXComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -34,8 +30,8 @@ void UVFXComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (Owner && Owner->HasAuthority())
-		ToggleParticleSystems(); 
+	//if (Owner && Owner->HasAuthority())
+	//	ToggleParticleSystems(); 
 	/*if (ToggleDelayTimer > 0)
 	{
 		ToggleDelayTimer -= DeltaTime;
@@ -46,30 +42,58 @@ void UVFXComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	}*/
 }
 
-void UVFXComponent::ActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem)
+void UVFXComponent::ActivateParticleSystem(UNiagaraComponent* _NewSystem)
 {
-	if (CastedOwner)
+	if (GetOwner() == nullptr || _NewSystem == nullptr)
+		return;
+	
+	if (GetOwner()->HasAuthority())
 	{
-		if (!CastedOwner->HasIdealRole())
-			return;
+		UE_LOG(LogTemp, Warning, TEXT("Server | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
+		Multi_ActivateParticleSystem(_NewSystem);
 	}
-
-	Server_ActivateParticleSystemFromEnum(_NewSystem);
+	else if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
+		Server_ActivateParticleSystem(_NewSystem);
+	}
 }
 
-void UVFXComponent::DeActivateParticleSystemFromEnum(UNiagaraComponent* _NewSystem)
+void UVFXComponent::DeActivateParticleSystem(UNiagaraComponent* _NewSystem)
 {
-	Server_DeActivateParticleSystemFromEnum(_NewSystem);
+	if (GetOwner() == nullptr || _NewSystem == nullptr)
+		return;
+	
+	if (GetOwner()->HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
+		Multi_DeActivateParticleSystem(_NewSystem);
+	}
+	else if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Client | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
+		Server_DeActivateParticleSystem(_NewSystem);
+	}
 }
 
-void UVFXComponent::Server_ActivateParticleSystemFromEnum_Implementation(UNiagaraComponent* _NewSystem)
+void UVFXComponent::Multi_DeActivateParticleSystem_Implementation(UNiagaraComponent* _NewSystem)
 {
-	ParticleSystemsToActivate.Add(_NewSystem);
+	_NewSystem->Deactivate();
 }
 
-void UVFXComponent::Server_DeActivateParticleSystemFromEnum_Implementation(UNiagaraComponent* _NewSystem)
+void UVFXComponent::Multi_ActivateParticleSystem_Implementation(UNiagaraComponent* _NewSystem)
 {
-	ParticleSystemsToDeActivate.Add(_NewSystem);
+	_NewSystem->Activate();
+}
+
+void UVFXComponent::Server_ActivateParticleSystem_Implementation(UNiagaraComponent* _NewSystem)
+{
+	Multi_ActivateParticleSystem(_NewSystem);
+}
+
+void UVFXComponent::Server_DeActivateParticleSystem_Implementation(UNiagaraComponent* _NewSystem)
+{
+	Multi_DeActivateParticleSystem(_NewSystem);
 }
 
 void UVFXComponent::ToggleParticleSystems()
