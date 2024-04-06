@@ -244,6 +244,26 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ConfirmSetting();
 	
+	// Game Mode
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidget_OptionSelector* GameMode_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 DefaultHHGameMode{0};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 TempHHGameMode{0};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 HHGameMode{0};
+
+	UFUNCTION()
+	void OnGameModeControlLeftButtonPressed();
+	UFUNCTION()
+	void OnGameModeControlRightButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateGameModeText();
+	UFUNCTION(BlueprintCallable)
+	void SetGameModeControl();
+	
 	// Game Speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_OptionSelector* GameLength_Control;

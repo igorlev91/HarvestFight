@@ -29,7 +29,11 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	DefaultGameSpeed = EGameSpeed::MEDIUM_GAME;
 	TempGameSpeed = MEDIUM_GAME;
 
-	/* Extra Settings Setup */
+	/* Host Options Setup */
+
+	/* Set game mode control */
+	GameMode_Control->OptionText->SetText(FText::FromString("Game Mode"));
+	UpdateGameModeText();
 	
 	/* Set game speed control */
 	GameLength_Control->OptionText->SetText(FText::FromString("Game Speed"));
@@ -53,6 +57,13 @@ void UWidget_LobbyPlayerHUDV2::NativeConstruct()
 	Super::NativeConstruct();
 
 	/* Extra Settings Setup */
+
+	/* Game Mode control buttons */
+	if (GameMode_Control)
+	{
+		GameMode_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed);
+		GameMode_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnGameModeControlRightButtonPressed);
+	}
 	
 	/* Game speed control buttons */
 	if (GameLength_Control)
@@ -620,9 +631,105 @@ void UWidget_LobbyPlayerHUDV2::ResetSetting()
 
 void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
 {
+	SetGameModeControl();
 	SetStealingControl();
 	SetFertiliserControl();
 	SetCementControl();
+}
+
+void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
+{
+	switch (TempHHGameMode)
+	{
+	case 0:
+		{
+			TempHHGameMode = 2;
+			break;
+		}
+	case 1:
+		{
+			TempHHGameMode = 0;
+			break;
+		}
+	case 2:
+		{
+			TempHHGameMode = 1;
+			break;
+		}
+	default:
+		{
+			TempHHGameMode = 0;
+			break;
+		}
+	}
+
+	UpdateGameModeText();
+}
+
+void UWidget_LobbyPlayerHUDV2::OnGameModeControlRightButtonPressed()
+{
+	switch (TempHHGameMode)
+	{
+	case 0:
+		{
+			TempHHGameMode = 1;
+			break;
+		}
+	case 1:
+		{
+			TempHHGameMode = 2;
+			break;
+		}
+	case 2:
+		{
+			TempHHGameMode = 0;
+			break;
+		}
+	default:
+		{
+			TempHHGameMode = 0;
+			break;
+		}
+	}
+
+	UpdateGameModeText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateGameModeText()
+{
+	switch (TempHHGameMode)
+	{
+	case 0:
+		{
+			GameMode_Control->OptionValueText->SetText(FText::FromString("Classic"));
+			break;
+		}
+	case 1:
+		{
+			GameMode_Control->OptionValueText->SetText(FText::FromString("Brawl"));
+			break;
+		}
+	case 2:
+		{
+			GameMode_Control->OptionValueText->SetText(FText::FromString("Blitz"));
+			break;
+		}
+	default:
+		{
+			GameMode_Control->OptionValueText->SetText(FText::FromString("Classic"));
+			break;
+		}
+	}
+}
+
+void UWidget_LobbyPlayerHUDV2::SetGameModeControl()
+{
+	HHGameMode = TempHHGameMode;
+	
+	if (!GameStateReference)
+		return;
+
+	GameStateReference->SetGameMode(HHGameMode); // Set game mode in gamestate so that transfer to correct map
 }
 
 void UWidget_LobbyPlayerHUDV2::OnGameSpeedControlLeftButtonPressed()
