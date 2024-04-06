@@ -1868,6 +1868,7 @@ void APrototype2Character::ThrowItem()
 	if (HasAuthority())
 	{
 		// Server_DropItem
+		if (HeldItem)
 		HeldItem->Server_Drop();
 			
 		if (DropCue)
@@ -1883,6 +1884,7 @@ void APrototype2Character::ThrowItem()
 		Multi_ThrowItem();
 		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 		HeldItem->ItemComponent->Mesh->AddImpulse(ThrowVector, NAME_None, true);
+		HeldItem->ItemComponent->PlayerWhoThrewItem = this;
 		
 		HeldItem = nullptr;
 	}
@@ -1934,7 +1936,8 @@ void APrototype2Character::Server_ThrowItem_Implementation()
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 	HeldItem->ItemComponent->Mesh->SetWorldLocation(GetActorLocation()+GetActorForwardVector()* 100.0f);
 	HeldItem->ItemComponent->Mesh->AddImpulse(ThrowVector, NAME_None, true);
-
+	HeldItem->ItemComponent->PlayerWhoThrewItem = this;
+	
 	bIsHoldingGold = false;	
 	HeldItem = nullptr;
 }

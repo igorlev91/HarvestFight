@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
 #include "Prototype2/InteractInterface.h"
 #include "Prototype2/Interface/CullingInterface.h"
@@ -61,6 +62,10 @@ protected:
 	void Multi_OnPlayerSell(APrototype2Character* _Player);
 	UFUNCTION(Client, Reliable)
 	void Client_Boing();
+
+	UFUNCTION()
+	void SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* OtherActor,
+		class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 protected:
 	UPROPERTY(EditAnywhere)
 	int32 LoosingPlayerCanAddMatchTimeTime{20};
@@ -93,4 +98,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* ThrowToSellCollider;
 };

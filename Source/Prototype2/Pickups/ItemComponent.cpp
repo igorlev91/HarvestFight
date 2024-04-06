@@ -66,6 +66,7 @@ void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UItemComponent, bGold);
 	DOREPLIFETIME(UItemComponent, bDoBeginPlay);
+	DOREPLIFETIME(UItemComponent, PlayerWhoThrewItem);
 }
 
 void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, UStaticMesh* _InMesh)

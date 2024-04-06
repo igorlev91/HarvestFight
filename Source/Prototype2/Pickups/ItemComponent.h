@@ -40,4 +40,8 @@ public:
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bGold{};
+
+	// For throwing item into bin 
+	UPROPERTY(Replicated)
+	APrototype2Character* PlayerWhoThrewItem;
 };

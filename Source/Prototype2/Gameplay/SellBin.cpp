@@ -42,7 +42,9 @@ ASellBin::ASellBin()
 		InteractSystem->SetAsset(CoinsVFX.Object);
 	}
 
-
+	ThrowToSellCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("ThrowToSellCollider"));
+	ThrowToSellCollider->SetupAttachment(RootComponent);
+	
 	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
@@ -72,6 +74,8 @@ void ASellBin::BeginPlay()
 
 	if (HasAuthority())
 		SSComponent->SetMeshToStretch(ItemComponent->Mesh);
+	
+	ThrowToSellCollider->OnComponentBeginOverlap.AddDynamic(this, &ASellBin::SellOnThrown);
 }
 
 void ASellBin::Tick(float DeltaTime)
@@ -192,7 +196,9 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	
 	if (!OtherActor)
 		return;
+	
 	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
+	
 	if (!SomePlayer)
 		return;
 	
@@ -244,6 +250,41 @@ void ASellBin::MoveUIComponent(float _Dt)
 			MovingTimer = MovingTime;
 			bIsMoving = false;
 			HideParticleSystem();
+		}
+	}
+}
+
+void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* OtherActor,
+	class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	if (!OtherActor)
+		return;
+
+	UKismetSystemLibrary::PrintString(GetWorld(), "SellOnThrow()");
+	if (APlant* ThrownPlant = Cast<APlant>(OtherActor))
+	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "Cast Successful");
+		if (ThrownPlant->ItemComponent->PlayerWhoThrewItem)
+		{
+			UKismetSystemLibrary::PrintString(GetWorld(), "Correct PlayerWhoeThrew");
+			Client_OnPlayerSell(ThrownPlant->ItemComponent->PlayerWhoThrewItem);
+			ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->Client_OnAddCoins();
+		
+			// Audio
+			if (HasAuthority())
+			{
+				SSComponent->Boing();
+				Multi_FireSellVFX(ThrownPlant->ItemComponent->PlayerWhoThrewItem, ThrownPlant->SeedData->BabyStarValue *  10);
+			
+				if (ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue)
+				{
+					ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlaySoundAtLocation(GetActorLocation(), ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue, nullptr);
+				}
+				ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->AddCoins(ThrownPlant);
+				
+				// Destroy the crop the player is holding
+				ThrownPlant->Destroy();
+			}
 		}
 	}
 }
