@@ -184,12 +184,21 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 	
-	if (!EndGamePodium)
+	if (!EndGamePodium && DataAssetWorldOverride->WorldOverrideData)
 	{
 		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
 		if (NewActor)
 		{
 			EndGamePodium = Cast<AEndGamePodium>(NewActor);
+
+			if (GetGameInstance<UPrototypeGameInstance>()->bTeams)
+			{
+				const FTransform EndGamePodiumTransform = EndGamePodium->GetTransform();
+				
+				EndGamePodium->Destroy();
+				EndGamePodium = nullptr;
+				EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(DataAssetWorldOverride->WorldOverrideData->EndGamePodium_Teams, EndGamePodiumTransform);
+			}
 		}
 	}
 	

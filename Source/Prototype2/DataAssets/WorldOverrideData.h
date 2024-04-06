@@ -36,6 +36,9 @@ public:
 	TSubclassOf<class AEndGamePodium> EndGamePodium;
 
 	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AEndGamePodium> EndGamePodium_Teams;
+
+	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class ACrown> KingCrown;
 
 	/* Game modifier values */
