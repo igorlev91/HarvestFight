@@ -9,6 +9,8 @@ UCLASS()
 class PROTOTYPE2_API UWeaponAspearagus : public UWeapon
 {
 	GENERATED_BODY()
+
+	UWeaponAspearagus();
 public:
 	virtual void Client_ChargeAttack(APrototype2Character* _Player) override;
 	virtual void ChargeAttack(APrototype2Character* _Player) override;
@@ -32,4 +34,7 @@ public:
 	void Server_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AAspearagusProjectile> Prefab;
 };

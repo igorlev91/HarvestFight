@@ -10,6 +10,15 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gameplay/SellBin_Winter.h"
 
+UWeaponAspearagus::UWeaponAspearagus()
+{
+	static ConstructorHelpers::FClassFinder<AAspearagusProjectile> AspearagusPrefab(TEXT("/Game/Blueprints/Pickups/BP_AspearagusProjectile"));
+	if (IsValid(AspearagusPrefab.Class))
+	{
+		Prefab = AspearagusPrefab.Class;
+	}
+}
+
 void UWeaponAspearagus::Client_ChargeAttack(APrototype2Character* _Player)
 {
 	_Player->SetPlayerAimingMovement(true);
@@ -109,14 +118,11 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 
 	FTransform ProjectileTransform = _Player->GetTransform();
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
-	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>();
+	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>(Prefab, ProjectileTransform);
 	if (NewAspearagusProjectile)
 	{
 		NewAspearagusProjectile->SetReplicates(true);
-		NewAspearagusProjectile->SetReplicateMovement(true);
-		NewAspearagusProjectile->SetActorTransform(ProjectileTransform);
 		NewAspearagusProjectile->Server_InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
 												2800.0f, 3.0f, _AttackSphereRadius, _AttackChargeAmount);
-		NewAspearagusProjectile->SetReplicateMovement(false);
 	}
 }

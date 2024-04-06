@@ -17,10 +17,12 @@ public:
 	AAspearagusProjectile();
 	
 	// Called every frame
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-	void CheckForHitPlayers();
-	bool CheckForHitObstacle();
+	virtual void Destroyed() override;
+	
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -30,56 +32,25 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float AttackSphereRadius;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UFUNCTION()
+	void OnRep_Initialization();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_Initialization, VisibleAnywhere)
 	APrototype2Character* OwningPlayer;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	UStaticMeshComponent* AspearagusMesh;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	float Speed = 50.0f;
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovement;
+	
 	UPROPERTY(VisibleAnywhere)
 	float DeathTimer = 10.0f;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	float ChargeAmount = 0;
 
 	UPROPERTY(VisibleAnywhere)
-	bool bHitSomething{};
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	FVector PredictFuturePosition(float PredictionTime);
-	bool FindClosestTimestamps(float TargetTime, int32& Index1, int32& Index2);
-
-	void DoMovementLogic(float DeltaTime);
-
-protected:
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<FVector> PreviousPositions;
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<float> Timestamps;
-
-	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* Mesh;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	FVector StartPosition{-1337.0f, -1337.0f, -1337.0f};
-	
-	UPROPERTY(Replicated, VisibleAnywhere)
-	FQuat StartRotation{FQuat::Identity};
-
-	UPROPERTY(EditAnywhere)
-	bool bDoRotation{false};
-private:
-	UPROPERTY(ReplicatedUsing = OnRep_PlatformPosition)
-	FVector ReplicatedPlatformPosition;
-
-	UPROPERTY(ReplicatedUsing = OnRep_PlatformPosition)
-	FRotator ReplicatedPlatformRotation;
-
-	UFUNCTION()
-	void OnRep_PlatformPosition();
+	class USphereComponent* SphereCollision;
 
 	
 };
