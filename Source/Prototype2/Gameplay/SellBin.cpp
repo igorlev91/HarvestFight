@@ -36,6 +36,13 @@ ASellBin::ASellBin()
 	InteractSystem->SetupAttachment(RootComponent);
 	InteractSystem->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> CoinsVFX(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_SellCoins"));
+	if (CoinsVFX.Object->IsValid())
+	{
+		InteractSystem->SetAsset(CoinsVFX.Object);
+	}
+
+
 	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
@@ -78,6 +85,7 @@ void ASellBin::Tick(float DeltaTime)
 
 bool ASellBin::IsInteractable(APrototype2PlayerState* _Player)
 {
+	return false;
 	if (!_Player)
 		return false;
 
@@ -106,32 +114,15 @@ void ASellBin::Server_FireParticleSystem_Implementation()
 	//Multi_FireParticleSystem();
 }
 
-void ASellBin::FireSellFX(APlant* _Plant, APrototype2Character* _Player)
+void ASellBin::Multi_FireSellVFX_Implementation(APrototype2Character* _Player, int32 _SellAmount)
 {
-	if (SellAmountWidgetComponent)
-	{
-		if (_Player->IsLocallyControlled() && _Plant)
-		{
-			// Selling UI - Show in-game UI when selling
-			if (SellAmountWidgetComponent->GetWidget())
-			{
-				SellAmountWidgetComponent->SetRelativeLocation(FVector(StartPosition)); // Reset text to start position
-				
-				if (auto sellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
-				{
-					if (_Plant->SeedData->PlantData)
-					{
-						sellCropUI->SetCropValue(_Plant->SeedData->BabyStarValue * _Plant->SeedData->PlantData->Multiplier);
-					}
-					if (sellCropUI->SellText)
-					{
-						sellCropUI->SellText->SetVisibility(ESlateVisibility::Visible);
-					}
-					bIsMoving = true;
-				}
-			}
-		}
-	}
+	APrototype2PlayerState* SomePlayerState = _Player->GetPlayerState<APrototype2PlayerState>();
+	if (!SomePlayerState)
+		return;
+
+	InteractSystem->SetVectorParameter(FName("Coin Colour"), SomePlayerState->Details.PureToneColour);
+	InteractSystem->SetIntParameter(FName("CoinCount"), _SellAmount);
+	InteractSystem->Activate(true);
 }
 
 void ASellBin::Client_MoveUI_Implementation(float _DeltaTime)
@@ -182,7 +173,6 @@ void ASellBin::ClientInteract(APrototype2Character* _Player)
 		if (auto Plant = Cast<APlant>(_Player->HeldItem))
 		{
 			bWidgetVisible = true;
-			FireSellFX(Plant, _Player);
 			//_Player->UpdateDecalDirection(false);
 			if (_Player->PlayerHUDRef)
 				_Player->PlayerHUDRef->ClearPickupUI();
@@ -205,9 +195,6 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
 	if (!SomePlayer)
 		return;
-	APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
-	if (!GameStateCast)
-		return;
 	
 	//UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
 	if (SomePlayer->HeldItem)
@@ -215,33 +202,23 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 		{
 			Client_OnPlayerSell(SomePlayer);
+			SomePlayer->PlayerStateRef->Client_OnAddCoins();
+			// Reset player speed incase of gold plant
+			SomePlayer->bIsHoldingGold = false;
 			
 			// Audio
 			if (HasAuthority())
 			{
 				SSComponent->Boing();
+				Multi_FireSellVFX(SomePlayer, Plant->SeedData->BabyStarValue *  10);
 				
 				if (SomePlayer->SellCue)
 				{
 					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
 				}
 
-				if (!SomePlayer->PlayerStateRef->IsWinning() && GameStateCast->MatchLengthSeconds < LoosingPlayerCanAddMatchTimeTime)
-				{
-					GameStateCast->MatchLengthSeconds += 15;
-					if (GameStateCast->MatchLengthSeconds >= 60)
-					{
-						GameStateCast->MatchLengthSeconds = 0;
-						GameStateCast->MatchLengthMinutes++;
-					}
-				}
-
-
 				SomePlayer->PlayerStateRef->AddCoins(Plant);
-
-				// Reset player speed incase of gold plant
-				SomePlayer->bIsHoldingGold = false;
-			
+				
 				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
 				
 				// Destroy the crop the player is holding

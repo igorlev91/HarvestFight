@@ -81,7 +81,6 @@ public:
 	APrototype2Character* CurrentPlayerStealing = nullptr;
 	float HoldInteractTotalDuration = 5.0f;
 	float HoldInteractTimer = 0.0f;
-
 	
 protected:
 	UPROPERTY(Replicated, VisibleAnywhere)

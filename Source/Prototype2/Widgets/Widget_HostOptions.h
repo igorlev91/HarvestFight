@@ -20,14 +20,7 @@ public:
 	FString ip;
 };*/
 
-UENUM(BlueprintType)
-enum class EGameSpeed : uint8 
-{
-	SHORT,
-	MEDIUM,
-	LONG,
-	INDEX
-};
+enum EGameSpeed : int;
 
 UCLASS()
 class PROTOTYPE2_API UWidget_HostOptions : public UUserWidget, public IWidgetUtilityInterface
@@ -90,17 +83,21 @@ public:
 	// Reset settings to actual setting - non temp
 	UFUNCTION(BlueprintCallable)
 	void ResetSetting();
+
+	// Confirm settings 
+	UFUNCTION(BlueprintCallable)
+	void ConfirmSetting();
 	
 	// Game Speed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UWidget_OptionSelector* GameLength_Control;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EGameSpeed DefaultGameSpeed = EGameSpeed::MEDIUM;
+	TEnumAsByte<EGameSpeed> DefaultGameSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EGameSpeed TempGameSpeed = EGameSpeed::MEDIUM;
+	TEnumAsByte<EGameSpeed> TempGameSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EGameSpeed GameSpeed = EGameSpeed::MEDIUM;
+	TEnumAsByte<EGameSpeed> GameSpeed;
 
 	UFUNCTION()
 	void OnGameSpeedControlLeftButtonPressed();

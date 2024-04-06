@@ -81,8 +81,8 @@ void ASkyAlterAttack::Attack(APrototype2Character* _PlayerToNotSmite, int32 _Sta
 		if (CastedPlayer)
 		{
 			// Check if player is team mate
-			//if (CastedPlayer->PlayerStateRef->Details.Colour == _PlayerToNotSmite->PlayerStateRef->Details.Colour)
-			//	continue;
+			if (CastedPlayer->PlayerStateRef->Details.Colour == _PlayerToNotSmite->PlayerStateRef->Details.Colour)
+				continue;
 			
 			if (SmiteWeaponData)
 			{

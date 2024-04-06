@@ -104,7 +104,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	// Niagara Components
 	DOREPLIFETIME(APrototype2Character, AttackAreaIndicatorMesh);
 	DOREPLIFETIME(APrototype2Character, Dizzy_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, WalkPoof_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, WalkPoof_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, SprintPoof_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, Sweat_NiagaraComponent);
 	DOREPLIFETIME(APrototype2Character, AttackTrail_NiagaraComponent);
@@ -381,14 +381,14 @@ void APrototype2Character::EndSprint()
 void APrototype2Character::Jump()
 {
 	Super::Jump();
-	if (HasAuthority())
-	{
-		Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
-	}
-	else
-	{
-		Server_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
-	}
+	//if (HasAuthority())
+	//{
+	//	Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+	//}
+	//else
+	//{
+	//	Server_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+	//}
 	
 }
 
@@ -878,10 +878,9 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	AttackVFXLocation *= 50.0f;
 	AttackVFXLocation += GetActorLocation();
 	//Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
-	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-	{
-		//ActivateParticleSystemFromEnum(EParticleSystems::Attack);
-	}
+
+	ActivateParticleSystemFromEnum(EParticleSystems::Attack);
+	
 
 	if (HasAuthority())
 	{
@@ -949,10 +948,9 @@ void APrototype2Character::GetSmited(float _AttackCharge, FVector _AttackerLocat
 	AttackVFXLocation *= 50.0f;
 	AttackVFXLocation += GetActorLocation();
 	//Attack_NiagaraComponent->SetWorldLocation(AttackVFXLocation);
-	if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
-	{
-		//ActivateParticleSystemFromEnum(EParticleSystems::Attack);
-	}
+
+	ActivateParticleSystemFromEnum(EParticleSystems::Attack);
+
 
 	if (HasAuthority())
 	{
@@ -1203,10 +1201,8 @@ void APrototype2Character::CheckForFalling(float _DeltaTime)
 	if (GetMovementComponent()->IsFalling())
 	{
 		FallTimer += _DeltaTime;
-		return;
 	}
-
-	if(FallTimer > FallTimerThreshold)
+	else if(FallTimer > FallTimerThreshold)
 	{
 		FallTimer = 0.0f;
 		LandAfterfalling();
@@ -1215,14 +1211,14 @@ void APrototype2Character::CheckForFalling(float _DeltaTime)
 	{
 		FallTimer = 0.0f;
 	}
-	if (HasAuthority())
-	{
-		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	}
-	else
-	{
-		Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	}
+	// if (HasAuthority())
+	// {
+	// 	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	// }
+	// else
+	// {
+	// 	Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	// }
 }
 
 void APrototype2Character::LandAfterfalling()
@@ -1246,12 +1242,17 @@ void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewS
 	{
 	case EParticleSystems::WalkPoof:
 		{
-			VFXComponent->ActivateParticleSystem(WalkPoof_NiagaraComponent);
+			if (!WalkPoof_NiagaraComponent->IsActive())
+			{
+				VFXComponent->ActivateParticleSystem(WalkPoof_NiagaraComponent);
+			}
 			break;
 		}
 	case EParticleSystems::SprintPoof:
 		{
-			VFXComponent->ActivateParticleSystem(SprintPoof_NiagaraComponent);
+			if (!SprintPoof_NiagaraComponent->IsActive())
+			{
+				VFXComponent->ActivateParticleSystem(SprintPoof_NiagaraComponent);}
 			break;
 		}
 	case EParticleSystems::Sweat:
@@ -1276,10 +1277,11 @@ void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewS
 		}
 	case EParticleSystems::Smite:
 		{
-			//FVector SmiteLocation = GetActorLocation();
-			//SmiteLocation.Z = GetActorLocation().Z + 1000.0f;
-			//Smite_NiagaraComponent->SetWorldLocation(SmiteLocation);
 			Smite_NiagaraComponent->SetVectorParameter("BeamEndPoint", GetActorLocation());
+			if (Smite_NiagaraComponent->IsActive())
+			{
+				VFXComponent->DeActivateParticleSystem(Smite_NiagaraComponent);
+			}
 			VFXComponent->ActivateParticleSystem(Smite_NiagaraComponent);
 			break;
 		}
@@ -1299,12 +1301,20 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _Ne
 	{
 	case EParticleSystems::WalkPoof:
 		{
-			VFXComponent->DeActivateParticleSystem(WalkPoof_NiagaraComponent);
+			if (WalkPoof_NiagaraComponent->IsActive())
+			{
+				WalkPoof_NiagaraComponent->Deactivate();
+				VFXComponent->DeActivateParticleSystem(WalkPoof_NiagaraComponent);
+				UKismetSystemLibrary::PrintString(GetWorld(), "Walkpoof DEactivated" + FString::SanitizeFloat(UGameplayStatics::GetTimeSeconds(GetWorld())));
+			}
 			break;
 		}
 	case EParticleSystems::SprintPoof:
 		{
-			VFXComponent->DeActivateParticleSystem(SprintPoof_NiagaraComponent);
+			if (SprintPoof_NiagaraComponent->IsActive())
+			{
+				VFXComponent->DeActivateParticleSystem(SprintPoof_NiagaraComponent);
+			}
 			break;
 		}
 	case EParticleSystems::Sweat:
@@ -1743,12 +1753,12 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 		if (bSprinting)
 		{
 			SetMaxWalkSpeed(WalkSpeed);
-			//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
-			//ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+			DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+			ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 			return;
 		}
 		SetMaxWalkSpeed(GoldPlantSpeed);
-		//DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		return;
 	}
 
@@ -1756,14 +1766,14 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	if (bSprinting)
 	{
 		SetMaxWalkSpeed(SprintSpeed);
-		//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
-		//ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		return;
 	}
 
 	// walk
 	SetMaxWalkSpeed(WalkSpeed);
-	//DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+	DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 }
 
 void APrototype2Character::Client_RefreshCurrentMaxSpeed_Implementation()
@@ -1905,6 +1915,9 @@ void APrototype2Character::Multi_ThrowItem_Implementation()
 
 void APrototype2Character::Server_ThrowItem_Implementation()
 {
+	if (!HeldItem)
+		return;
+	
 	HeldItem->Server_Drop();
 	
 	// Server_DropItem
@@ -1939,7 +1952,7 @@ void APrototype2Character::SetCanSprint(bool _bCanSprint)
 	}
 	else
 	{
-		//ActivateParticleSystemFromEnum(EParticleSystems::Sweat);
+		ActivateParticleSystemFromEnum(EParticleSystems::Sweat);
 		OnFailedToSprintDelegate.Broadcast();
 	}
 }
@@ -1996,14 +2009,21 @@ bool APrototype2Character::GetHasCrown()
 	{
 		return false;
 	}
-	
-	if (PlayerStateRef->Player_ID == GameState->GetPlayerWinner())
+
+	UPrototypeGameInstance* GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+	if (GameInstance)
 	{
-		return true;
+		if (GameInstance->bTeams)
+			return false;
+	}
+	
+	for(auto SomePlayerState : GameState->Server_Players)
+	{
+		if (SomePlayerState->Coins > PlayerStateRef->Coins)
+			return false;
 	}
 
-	return false;
-	
+	return true;
 }
 
 void APrototype2Character::InitPlayerNameWidgetComponent()
@@ -2225,15 +2245,16 @@ void APrototype2Character::UpdateWeaponMeshSkin()
 
 void APrototype2Character::UpdateParticleSystems()
 {
-	if (!HasIdealRole())
-		return;
-	
 	if (GetCharacterMovement()->Velocity.Size() < 50.0f)
 	{
+		if (WalkPoof_NiagaraComponent->IsActive())
+		WalkPoof_NiagaraComponent->Deactivate();
 		//DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 	}
 	else
 	{
+		if (!WalkPoof_NiagaraComponent->IsActive())
+		WalkPoof_NiagaraComponent->Activate();
 		//ActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 	}
 }
@@ -2259,12 +2280,12 @@ void APrototype2Character::TickTimers(float _DeltaSeconds)
 {
 	// No longer replicated
 	DeltaDecrement(AttackTimer, _DeltaSeconds);
-	DeltaDecrement(InteractTimer, _DeltaSeconds);
 	DecrementSprintTimers(_DeltaSeconds);
+	DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
 
 	if (HasAuthority())
 	{
-		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
+		DeltaDecrement(InteractTimer, _DeltaSeconds);
 		DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
 		if (WeaponFlashTimer < 0.0f)
 		{
@@ -2433,6 +2454,9 @@ void APrototype2Character::Multi_SetPlayerColour_Implementation()
 
 void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 {
+	if (!HeldItem)
+		return;
+	
 	HeldItem->Server_Drop();
 	
 	// Server_DropItem

@@ -46,7 +46,7 @@ public:
 	void Multi_GrabSkinFromGameInstance(FCharacterDetails _Details);
 	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
-	UFUNCTION(Client, Unreliable)
+	UFUNCTION()
 	void Client_OnAddCoins();
 	
 	void Multi_OnAddCoins();

@@ -6,6 +6,7 @@
 #include "Prototype2/Pickups/ItemComponent.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/FertiliserData.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
@@ -39,7 +40,7 @@ void AFertiliserSpawner::BeginPlay()
 	ChickenMesh->AttachToComponent(ItemComponent->Mesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	ChickenMesh->SetRelativeLocation(FVector(75.006312,1.607227,167.150239)); // Copied from the original blueprint placement
 	SSComponent->SetMeshToStretch(ChickenMesh);
-
+	
 	if (!HasAuthority())
 		return;
 	
@@ -59,6 +60,16 @@ void AFertiliserSpawner::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 void AFertiliserSpawner::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
+
+	if (!GameStateRef)
+	{
+		AGameStateBase* SomeGamestate = UGameplayStatics::GetGameState(GetWorld());
+		if (SomeGamestate)
+		{
+			GameStateRef = Cast<APrototype2Gamestate>(SomeGamestate);
+		}
+	}
+
 
 	if (SpawnedFertiliser != nullptr && SSComponent && SSComponent->IsActive() == false)
 	{
@@ -179,24 +190,32 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->ItemComponent->Mesh->SetIsReplicated(false);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
-	if (FertiliserDatas.Num() > 0)
+
+	TArray<USeedData*> RestrictedFertilizerDatas{};
+	FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
+	if (ExtraSettings.bGoldFertiliser && FertiliserDatas.Num() > 0)
+		RestrictedFertilizerDatas.Add(FertiliserDatas[0]);
+	if (ExtraSettings.bConcreteFertiliser && FertiliserDatas.Num() > 1)
+		RestrictedFertilizerDatas.Add(FertiliserDatas[1]);
+	if (ExtraSettings.bPoisonFertiliser && FertiliserDatas.Num() > 2)
+		RestrictedFertilizerDatas.Add(FertiliserDatas[2]);
+	
+	if (RestrictedFertilizerDatas.Num() > 0)
 	{
 		int8 ChanceOfGold = rand() % 2;
-		if (ChanceOfGold == 0)
+		if (ChanceOfGold == 0 && ExtraSettings.bGoldFertiliser)
 		{
-			USeedData* FertiliserData = FertiliserDatas[ChanceOfGold];
+			USeedData* FertiliserData = RestrictedFertilizerDatas[0];
 			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
 		}
 		else
 		{
-			USeedData* FertiliserData = FertiliserDatas[rand() % FertiliserDatas.Num()];
+			USeedData* FertiliserData = RestrictedFertilizerDatas[(rand() % (RestrictedFertilizerDatas.Num() - 1)) + 1];
 			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
 		}
 	}
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
-
-
 }
 
 void AFertiliserSpawner::Multi_OnSpawnFertiliser_Implementation(UStaticMeshComponent* _NewFertiliserMesh)

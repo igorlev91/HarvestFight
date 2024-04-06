@@ -87,7 +87,7 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 	{
 		_Player->DropWeapon();
 		
-		//_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 
 	// Play attack audio

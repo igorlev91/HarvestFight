@@ -69,6 +69,11 @@ void UWidget_GameOptions::NativeConstruct()
 	if (HHGameGameUserSettings)
 	{
 		HHGameGameUserSettings->LoadSettings(true);
+		OnLoadAudioSettings(	(float)HHGameGameUserSettings->GetMasterVolume()/10,
+							(float)HHGameGameUserSettings->GetAmbienceVolume()/10,
+							(float)HHGameGameUserSettings->GetSFXVolume()/10,
+							(float)HHGameGameUserSettings->GetMusicVolume()/10);
+		
 		UE_LOG(LogTemp, Warning, TEXT("Loaded Master Volume: %d"), HHGameGameUserSettings->GetMasterVolume());
 		UE_LOG(LogTemp, Warning, TEXT("Loaded Music Volume: %d"), HHGameGameUserSettings->GetMusicVolume());
 		UE_LOG(LogTemp, Warning, TEXT("Loaded Ambience Volume: %d"), HHGameGameUserSettings->GetAmbienceVolume());
@@ -385,11 +390,6 @@ void UWidget_GameOptions::UpdateGameInstanceVariables()
 {
 	if (!GameInstanceReference)
 		return;
-
-	/* Volume */
-	GameInstanceReference->MusicVolume = (float)HHGameGameUserSettings->GetMusicVolume() * ((float)HHGameGameUserSettings->GetMasterVolume() / 10.0f) / 10.0f;
-	GameInstanceReference->AmbienceVolume = (float)HHGameGameUserSettings->GetAmbienceVolume() * ((float)HHGameGameUserSettings->GetMasterVolume() / 10.0f) / 10.0f;
-	GameInstanceReference->SFXVolume = (float)HHGameGameUserSettings->GetSFXVolume() * ((float)HHGameGameUserSettings->GetMasterVolume() / 10.0f) / 10.0f;
 
 	/* Game Options */
 	GameInstanceReference->bPlayerStentil = HHGameGameUserSettings->GetPlayerStencil();
@@ -989,6 +989,11 @@ void UWidget_GameOptions::OnMasterVolumeControlLeftButtonPressed()
 		HHGameGameUserSettings->SetMasterVolume(10);
 
 	MasterVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMasterVolume())));
+	float MasterVolume = (float)HHGameGameUserSettings->GetMasterVolume()/10;
+	float AmbienceVolume = (float)HHGameGameUserSettings->GetAmbienceVolume()/10;
+	float SFXVolume = (float)HHGameGameUserSettings->GetSFXVolume()/10;
+	float MusicVolume = (float)HHGameGameUserSettings->GetMusicVolume()/10;
+	OnMasterVolumeChanged(MasterVolume, AmbienceVolume, SFXVolume, MusicVolume);
 }
 
 void UWidget_GameOptions::OnMasterVolumeControlRightButtonPressed()
@@ -1002,6 +1007,11 @@ void UWidget_GameOptions::OnMasterVolumeControlRightButtonPressed()
 		HHGameGameUserSettings->SetMasterVolume(0);
 
 	MasterVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMasterVolume())));
+	float MasterVolume = (float)HHGameGameUserSettings->GetMasterVolume()/10;
+	float AmbienceVolume = (float)HHGameGameUserSettings->GetAmbienceVolume()/10;
+	float SFXVolume = (float)HHGameGameUserSettings->GetSFXVolume()/10;
+	float MusicVolume = (float)HHGameGameUserSettings->GetMusicVolume()/10;
+	OnMasterVolumeChanged(MasterVolume, AmbienceVolume, SFXVolume, MusicVolume);
 }
 
 void UWidget_GameOptions::OnMusicVolumeControlLeftButtonPressed()
@@ -1015,6 +1025,8 @@ void UWidget_GameOptions::OnMusicVolumeControlLeftButtonPressed()
 		HHGameGameUserSettings->SetMusicVolume(10);
 
 	MusicVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMusicVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetMusicVolume()/10;
+	OnMusicVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnMusicVolumeControlRightButtonPressed()
@@ -1028,6 +1040,8 @@ void UWidget_GameOptions::OnMusicVolumeControlRightButtonPressed()
 		HHGameGameUserSettings->SetMusicVolume(0);
 
 	MusicVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetMusicVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetMusicVolume()/10;
+	OnMusicVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnAmbienceVolumeControlLeftButtonPressed()
@@ -1041,6 +1055,8 @@ void UWidget_GameOptions::OnAmbienceVolumeControlLeftButtonPressed()
 		HHGameGameUserSettings->SetAmbienceVolume(10);
 
 	AmbienceVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetAmbienceVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetAmbienceVolume()/10;
+	OnAmbienceVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnAmbienceVolumeControlRightButtonPressed()
@@ -1054,6 +1070,8 @@ void UWidget_GameOptions::OnAmbienceVolumeControlRightButtonPressed()
 		HHGameGameUserSettings->SetAmbienceVolume(0);
 
 	AmbienceVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetAmbienceVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetAmbienceVolume()/10;
+	OnAmbienceVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnSFXVolumeControlLeftButtonPressed()
@@ -1067,6 +1085,8 @@ void UWidget_GameOptions::OnSFXVolumeControlLeftButtonPressed()
 		HHGameGameUserSettings->SetSFXVolume(10);
 
 	SFXVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetSFXVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetSFXVolume()/10;
+	OnSFXVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnSFXVolumeControlRightButtonPressed()
@@ -1080,6 +1100,8 @@ void UWidget_GameOptions::OnSFXVolumeControlRightButtonPressed()
 		HHGameGameUserSettings->SetSFXVolume(0);
 	
 	SFXVolume_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(HHGameGameUserSettings->GetSFXVolume())));
+	float Volume = (float)HHGameGameUserSettings->GetSFXVolume()/10;
+	OnSFXVolumeChanged(Volume);
 }
 
 void UWidget_GameOptions::OnPlayerStencilControlButtonPressed()

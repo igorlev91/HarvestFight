@@ -772,7 +772,7 @@ public:
 	/* Variables needed for VFX */
 	UPROPERTY(ReplicatedUsing=OnRep_UpdateAOE, EditAnywhere, Category = VFX) 
 	UStaticMeshComponent* AttackAreaIndicatorMesh;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* WalkPoof_NiagaraComponent;
 	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SprintPoof_NiagaraComponent;

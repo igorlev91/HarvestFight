@@ -52,6 +52,6 @@ private:
 	//FVector Player1StartPosition = FVector{2000.0f,40.0f, 90.0f};
 
 	/* Player distances in lobby */
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	float DistanceBetweenPlayers = 230.0f;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	//float DistanceBetweenPlayers = 230.0f;
 };

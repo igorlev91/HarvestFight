@@ -58,8 +58,8 @@ void ALobbyGamestate::BeginPlay()
 		MapChoice = FriendlyFarmBrawl;
 	else if (GameMode == 2) // Blitz Mode
 		MapChoice = FriendlyFarmBlitz;
-	else if (GameMode == 3) // Chaos Mode
-		MapChoice = Chaos;
+	//else if (GameMode == 3) // Chaos Mode
+	//	MapChoice = Chaos;
 }
 
 void ALobbyGamestate::Tick(float _DeltaSeconds)
@@ -403,7 +403,7 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 			{
 				if (LobbyLengthMinutes <= 0)
 				{
-					if (GameMode != 3) // Only show map choice if not a chaos map
+					//if (GameMode != 3) // Only show map choice if not a chaos map
 						bShowMapChoice = true; // Show map choice
 
 					//PickMapToPlay();

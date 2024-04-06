@@ -22,5 +22,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(BlueprintReadWrite)
+	AActor* AssignedPlayer{nullptr};
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void SmtieStrike();
 };

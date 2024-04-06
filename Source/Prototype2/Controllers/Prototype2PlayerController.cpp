@@ -71,17 +71,26 @@ void APrototype2PlayerController::Server_SetIsReady_Implementation(int32 _Player
 	}
 }
 
-void APrototype2PlayerController::VoteMap(int32 _Player, EFarm _Level)
+void APrototype2PlayerController::VoteMap(EFarm _Level)
 {
-	Server_VoteMap(_Player, _Level);
+	Server_VoteMap(_Level);
 }
 
 
-void APrototype2PlayerController::Server_VoteMap_Implementation(int32 _Player, EFarm _Level)
+void APrototype2PlayerController::Server_VoteMap_Implementation(EFarm _Level)
 {
-	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (ALobbyGamestate* LobbyGameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
-		GameStateCast->VoteMap(_Level);
+		if (LobbyGameStateCast)
+			LobbyGameStateCast->VoteMap(_Level);
+	}
+
+	if (APrototype2Gamestate* Proto2GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		if (Proto2GameStateCast)
+			Proto2GameStateCast->VoteMap(_Level);
+
+		UE_LOG(LogTemp, Warning, TEXT("Prototype2 gamestate vote map function called"));
 	}
 }
 

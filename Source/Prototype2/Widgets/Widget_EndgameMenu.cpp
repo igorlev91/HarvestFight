@@ -2,6 +2,7 @@
 
 #include "Widget_EndgameMenu.h"
 
+#include "Widget_MapChoice.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
@@ -23,6 +24,8 @@ void UWidget_EndgameMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	UpdateWinnerText();
+
+	EnableEndgameMapChoice();
 }
 
 void UWidget_EndgameMenu::UpdateWinnerText()
@@ -116,7 +119,7 @@ void UWidget_EndgameMenu::EnableEndgameMenu()
 	if (GetVisibility() != ESlateVisibility::Visible)
 	{
 		SetVisibility(ESlateVisibility::Visible);
-	
+		
 		/*if (auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
 			
@@ -125,3 +128,33 @@ void UWidget_EndgameMenu::EnableEndgameMenu()
 		}*/
 	}
 }
+
+void UWidget_EndgameMenu::EnableEndgameMapChoice()
+{
+	if (!GameStateReference)
+		return;
+	
+	if (WBP_MapChoice->GetVisibility() == ESlateVisibility::Visible)
+		return;
+	
+	if (WBP_MapChoiceBrawl->GetVisibility() == ESlateVisibility::Visible)
+		return;
+	
+	if (WBP_MapChoiceBlitz->GetVisibility() == ESlateVisibility::Visible)
+		return;
+
+	if (GameStateReference->bIsMapChoiceShowing == false)
+		return;
+	
+	if (UPrototypeGameInstance* GameInstanceCast = Cast<UPrototypeGameInstance>(GetGameInstance()))
+	{
+		if (GameInstanceCast->HHMode == 0)
+			WBP_MapChoice->SetVisibility(ESlateVisibility::Visible);
+		else if (GameInstanceCast->HHMode == 1)
+			WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Visible);
+		else
+			WBP_MapChoiceBlitz->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+

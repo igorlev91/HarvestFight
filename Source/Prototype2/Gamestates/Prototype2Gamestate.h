@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "LobbyGamestate.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Gamestate.generated.h"
@@ -69,6 +70,8 @@ public:
 	void SetGameTime();
 	int32 GetSellMultiplier();
 	void SetSellMultiplier(int32 _Multiplier);
+
+	void VoteMap(EFarm _Level);
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
@@ -102,6 +105,10 @@ public:
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	int32 Team2Points{0};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPrototypeGameInstance* GameInstanceRef;
+	
 	
 private:
 	virtual void BeginPlay() override;
@@ -112,6 +119,15 @@ private:
 	void TickMatchTimer(float _DeltaSeconds);
 	void TickEndGameTimer(float _DeltaSeconds);
 	void UpdateTeamsScores();
+
+	void TickMapRotationTimer(float _DeltaSeconds);
+
+	void TickTimers(float _DeltaSeconds);
+	
+	/* Picks a random map to play for the list of those maps most voted for */
+	void PickMapToPlay();
+
+	
 
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
@@ -171,6 +187,74 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	int32 SellMultiplier{1};
+
+	/* Endgame Mapchoice */
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	float MapRotationShowTimer{20.0f};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	bool bIsMapChoiceShowing{false};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	bool bShouldServerTravel{false};
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	bool bHasAllPlayersVoted{};
+	
+	// Map choice
+	//UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	//bool bShowMapChoice{false};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	FString MapChoice{"Level_Main"};
+	const int32 NumberOfMaps = 3; 
+
+	// Timer between map choice and starting gameplay
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float MapChoiceTotalLengthSeconds{15.0f};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float MapChoiceLengthSeconds{5.0f};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	bool bMapChosen{false};
+	
+	// Maps
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 Farm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 WinterFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 HoneyFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 FloatingIslandFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 ClockworkFarm{0};
+
+	/* Maps */
+
+	// Friendly Farm
+	FString FriendlyFarmClassic = "/Game/Maps/Level_FF_Large";
+	FString FriendlyFarmBrawl = "/Game/Maps/Level_FF_Brawl";
+	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_BlitzV3";
+	
+	// Frosty Fields (Winter)
+	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_LargeV2";
+	FString FrostyFieldsBrawl = "/Game/Maps/Level_Winter_Brawl";
+	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_BlitzV2";
+
+	// Honey
+	FString HoneyClassic = "/Game/Maps/Level_Honey_Large";
+	FString HoneyBrawl = "/Game/Maps/Level_Honey_Brawl";
+	FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz";
+
+	// Floating Islands
+	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
+	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
+	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/Level_SkyIsland_Blitz";
+	
+	// Floating Islands
+	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
+	
+	// Chaos
+	FString Chaos = "/Game/Maps/Level_FF_Chaos";
 };
 
 

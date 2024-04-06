@@ -117,4 +117,7 @@ public:
 	FString TeamOneName;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString TeamTwoName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int HHMode{};
 };

@@ -9,12 +9,17 @@
 #include "Components/TextBlock.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
 
 /*#include "JsonObjectConverter.h"*/
 
 void UWidget_HostOptions::NativePreConstruct()
 {
 	Super::NativePreConstruct();
+	
+	GameSpeed = MEDIUM_GAME;
+	DefaultGameSpeed = EGameSpeed::MEDIUM_GAME;
+	TempGameSpeed = MEDIUM_GAME;
 
 	/* Extra Settings Setup */
 	
@@ -37,6 +42,7 @@ void UWidget_HostOptions::NativePreConstruct()
 	/* Set poison control */
 	Poison_Control->OptionText->SetText(FText::FromString("Poison Spawn (if available)"));
 	UpdatePoisonText();
+
 	
 }
 
@@ -44,6 +50,7 @@ void UWidget_HostOptions::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 //	GetPublicIPAddress();
+
 }
 
 void UWidget_HostOptions::NativeConstruct()
@@ -144,28 +151,35 @@ void UWidget_HostOptions::ResetSetting()
 	SetPoisonControl();
 }
 
+void UWidget_HostOptions::ConfirmSetting()
+{
+	SetStealingControl();
+	SetFertiliserControl();
+	SetCementControl();
+}
+
 void UWidget_HostOptions::OnGameSpeedControlLeftButtonPressed()
 {
 	switch (TempGameSpeed)
 	{
-	case EGameSpeed::SHORT:
+	case EGameSpeed::SHORT_GAME:
 		{
-			TempGameSpeed = EGameSpeed::LONG;
+			TempGameSpeed = EGameSpeed::LONG_GAME;
 			break;
 		}
-	case EGameSpeed::MEDIUM:
+	case EGameSpeed::MEDIUM_GAME:
 		{
-			TempGameSpeed = EGameSpeed::SHORT;
+			TempGameSpeed = EGameSpeed::SHORT_GAME;
 			break;
 		}
-	case EGameSpeed::LONG:
+	case EGameSpeed::LONG_GAME:
 		{
-			TempGameSpeed = EGameSpeed::MEDIUM;
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
 			break;
 		}
 		default:
 		{
-			TempGameSpeed = EGameSpeed::MEDIUM;
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
 			break;
 		}
 	}
@@ -177,24 +191,24 @@ void UWidget_HostOptions::OnGameSpeedControlRightButtonPressed()
 {
 	switch (TempGameSpeed)
 	{
-	case EGameSpeed::SHORT:
+	case EGameSpeed::SHORT_GAME:
 		{
-			TempGameSpeed = EGameSpeed::MEDIUM;
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
 			break;
 		}
-	case EGameSpeed::MEDIUM:
+	case EGameSpeed::MEDIUM_GAME:
 		{
-			TempGameSpeed = EGameSpeed::LONG;
+			TempGameSpeed = EGameSpeed::LONG_GAME;
 			break;
 		}
-	case EGameSpeed::LONG:
+	case EGameSpeed::LONG_GAME:
 		{
-			TempGameSpeed = EGameSpeed::SHORT;
+			TempGameSpeed = EGameSpeed::SHORT_GAME;
 			break;
 		}
 	default:
 		{
-			TempGameSpeed = EGameSpeed::MEDIUM;
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
 			break;
 		}
 	}
@@ -205,17 +219,17 @@ void UWidget_HostOptions::UpdateGameSpeedText()
 {
 	switch (TempGameSpeed)
 	{
-	case EGameSpeed::SHORT:
+	case EGameSpeed::SHORT_GAME:
 		{
 			GameLength_Control->OptionValueText->SetText(FText::FromString("Short"));
 			break;
 		}
-	case EGameSpeed::MEDIUM:
+	case EGameSpeed::MEDIUM_GAME:
 		{
 			GameLength_Control->OptionValueText->SetText(FText::FromString("Medium"));
 			break;
 		}
-	case EGameSpeed::LONG:
+	case EGameSpeed::LONG_GAME:
 		{
 			GameLength_Control->OptionValueText->SetText(FText::FromString("Long"));
 			break;

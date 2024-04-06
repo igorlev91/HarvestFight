@@ -3,26 +3,32 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Widget_LobbyPlayerHUD.h"
-#include "Components/SizeBox.h"
 #include "Components/VerticalBox.h"
+#include "WidgetUtility.h"
+#include "Blueprint/UserWidget.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Widget_LobbyPlayerHUDV2.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UWidget_LobbyPlayerHUD
+class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UUserWidget, public IWidgetUtilityInterface
 {
 	GENERATED_BODY()
-
+	
 	/* Public Functions */
+public:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	void UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget);
-	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
+	/* Updates playerstate to being ready & turns on ready UI*/
+	UFUNCTION(BlueprintCallable)
+	void SetReady();
 
-	/* Public Variables */
-public:
+	/* Updates playerstate to being not-ready & turns off ready UI */
+	UFUNCTION(BlueprintCallable)
+	void SetCancel();
+	
+	void UpdateMapChoice(class UWidget_MapChoice* _MapChoiceWidget);
+	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
 
 	UFUNCTION()
 	void SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
@@ -35,6 +41,22 @@ public:
 
 	UFUNCTION()
 	void UpdateTeams();
+
+	/* Public Variables */
+public:
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Ready Button")
+	UButton* ReadyButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Cancel Button")
+	UButton* CancelButton;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	ALobbyGamestate* GameStateReference;
+	
+	/* Classic Mode Map Choice Widget */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UWidget_MapChoice* WBP_MapChoice;
 	
 	/* Brawl Mode Map Choice Widget*/
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -186,4 +208,19 @@ public:
 	UImage* BackgroundImageT1;
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UImage* BackgroundImageT2;
+
+
+
+	
+	/* Widget Variables related to button pulsing/size changes */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	bool bIsButtonHovered;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	int32 ButtonIndex;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	FVector2D ButtonScale;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	class UButton* ButtonToPulse;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	float PulseTime;
 };

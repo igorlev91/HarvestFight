@@ -421,6 +421,7 @@ void APrototype2GameMode::TeleportHostToPreGameArena()
 {
 	if (!GameStateRef)
 		return;
+
 	for(auto Player : GameStateRef->Server_Players)
 	{
 		APrototype2Character* Character = Cast<APrototype2Character>(Player->GetPlayerController()->GetCharacter());
@@ -432,9 +433,17 @@ void APrototype2GameMode::TeleportHostToPreGameArena()
 		if (PreGameArenas.Num() > 1)
 		{
 			if (Player->Details.Colour == GameStateRef->TeamOneColour)
+			{
+				if (GameStateRef->Server_TeamOne.Num() <= 0)
+					GameStateRef->Server_TeamOne.Add(GameStateRef->Server_Players[0]);
 				Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+			}
 			else
+			{
+				if (GameStateRef->Server_TeamTwo.Num() <= 0)
+					GameStateRef->Server_TeamTwo.Add(GameStateRef->Server_Players[0]);
 				Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+			}
 		}
 		else if (DefaultPreGameArena)
 		{

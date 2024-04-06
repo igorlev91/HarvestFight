@@ -20,8 +20,9 @@ void UWidget_MapChoice::SelectLevel(EFarm _Level)
 
 		if (auto* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
 		{
-			auto PlayerID = PlayerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
-			PlayerController->VoteMap(PlayerID, _Level);
+			PlayerController->VoteMap(_Level);
+
+			UE_LOG(LogTemp, Warning, TEXT("Select Level Called"));
 		}
 	}
 }

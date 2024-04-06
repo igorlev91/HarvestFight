@@ -160,12 +160,12 @@ private:
 	// Friendly Farm
 	FString FriendlyFarmClassic = "/Game/Maps/Level_FF_Large";
 	FString FriendlyFarmBrawl = "/Game/Maps/Level_FF_Brawl";
-	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_Blitz";
+	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_BlitzV3";
 	
 	// Frosty Fields (Winter)
 	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_LargeV2";
 	FString FrostyFieldsBrawl = "/Game/Maps/Level_Winter_Brawl";
-	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_Blitz";
+	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_BlitzV2";
 
 	// Honey
 	FString HoneyClassic = "/Game/Maps/Level_Honey_Large";
@@ -175,12 +175,13 @@ private:
 	// Floating Islands
 	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
 	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
+	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/Level_SkyIsland_Blitz";
 	
 	// Floating Islands
-	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Vertical";
+	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
 	
 	// Chaos
-	FString Chaos = "/Game/Maps/Level_FF_Chaos";
+	//FString Chaos = "/Game/Maps/Level_FF_Chaos";
 
 	
 };

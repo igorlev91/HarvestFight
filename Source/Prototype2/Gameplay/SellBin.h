@@ -41,7 +41,9 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_FireParticleSystem();
 	void Server_FireParticleSystem_Implementation();
-	void FireSellFX(APlant* _InPlant, APrototype2Character* _Player);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_FireSellVFX(APrototype2Character* _Player, int32 _SellAmount = 30);
+	
 	UFUNCTION(Client, Reliable)
 	void Client_MoveUI(float _DeltaTime);
 	void Client_MoveUI_Implementation(float _DeltaTime);

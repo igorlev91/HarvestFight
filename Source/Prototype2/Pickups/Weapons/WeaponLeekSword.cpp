@@ -90,7 +90,7 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 		_Player->DropWeapon();
 
 		//AttackTrail_NiagaraComponent->Deactivate();
-		//_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	
 	// Play attack audio

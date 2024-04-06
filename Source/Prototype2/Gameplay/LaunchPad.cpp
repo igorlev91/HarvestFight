@@ -33,7 +33,7 @@ void ALaunchPad::Tick(float DeltaTime)
 	Counter -= DeltaTime;
 }
 
-void ALaunchPad::LaunchPlayer(APrototype2Character* _Player)
+void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
 {
 	if (Counter > 0)
 		return;
@@ -41,8 +41,19 @@ void ALaunchPad::LaunchPlayer(APrototype2Character* _Player)
 	{
 		Counter = Delay;
 	}
-	FVector LaunchVector = _Player->GetActorForwardVector();
-	LaunchVector *= ForwardStrength;
+	
+	// Set which direction the player will be launched according to _WithArrowDirection
+	FVector LaunchVector = GetActorForwardVector();
+	if (!_WithArrowDirection)
+	{
+		LaunchVector = _Player->GetActorForwardVector();
+	}
+	
+	LaunchVector *= ForwardStrength +
+		// basically nullify the players velocity while keeping the walkspeed velocity
+		// which is what all the jump pads would have been set up with I'm assuming
+		500.0f /* Player max walk speed */ - _Player->GetVelocity().Length();
+	
 	LaunchVector.Z = VerticalStrength;
 	_Player->LaunchCharacter(LaunchVector, false, false);
 }

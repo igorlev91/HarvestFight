@@ -5,6 +5,7 @@
 #include "Widget_EmoteRadial.h"
 #include "Widget_EndgameMenu.h"
 #include "Widget_GameOptions.h"
+#include "Widget_MapChoice.h"
 #include "Widget_IngameMenu.h"
 #include "Widget_StartAndEndMenu.h"
 #include "Components/HorizontalBox.h"
@@ -484,6 +485,26 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	InteractionImagePulse(InDeltaTime);
 	
 	UpdatePlayerIcons();
+
+	/* Showing map choice widget */
+	if (GameStateReference->bHasGameFinished)
+	{
+		if (GameStateReference->GameInstanceRef->HHMode == 0) // Normal Game mode
+			{
+				UpdateMapChoice(EndgameMenu->WBP_MapChoice);
+				UpdateMapChoiceTimer(EndgameMenu->WBP_MapChoice);
+			}
+		else if (GameStateReference->GameInstanceRef->HHMode == 1) // Brawl
+			{
+				UpdateMapChoice(EndgameMenu->WBP_MapChoiceBrawl);
+				UpdateMapChoiceTimer(EndgameMenu->WBP_MapChoiceBrawl);
+			}
+		else
+		{
+			UpdateMapChoice(EndgameMenu->WBP_MapChoiceBlitz);
+			UpdateMapChoiceTimer(EndgameMenu->WBP_MapChoiceBlitz);
+		}
+	}
 }
 
 void UWidget_PlayerHUD::EnableDisableMenu()
@@ -494,46 +515,35 @@ void UWidget_PlayerHUD::EnableDisableMenu()
 
 void UWidget_PlayerHUD::ShowEmoteRadialMenu()
 {
-	if (EmoteRadialMenu->GetVisibility() == ESlateVisibility::Hidden)
+	EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
+	bIsEmoteButtonPressed = true;
+
+	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+	if (PlayerController)
 	{
-		EmoteRadialMenu->SetVisibility(ESlateVisibility::Visible);
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->SetShowMouseCursor(true);
 
-		APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
-		if (PlayerController)
+		/* Set mouse to centre of the screen */
+		FVector2D ViewportSize;
+		if (GEngine && GEngine->GameViewport)
 		{
-			FInputModeGameAndUI InputMode;
-			PlayerController->SetInputMode(InputMode);
-			PlayerController->SetShowMouseCursor(true);
-
-			/* Set mouse to centre of the screen */
-			FVector2D ViewportSize;
-			if (GEngine && GEngine->GameViewport)
-			{
-				GEngine->GameViewport->GetViewportSize(ViewportSize);
-			}
-			FVector2D CenterViewportPosition(ViewportSize.X / 2.0f, ViewportSize.Y / 2.0f);
-
-			PlayerController->SetMouseLocation(CenterViewportPosition.X, CenterViewportPosition.Y);
+			GEngine->GameViewport->GetViewportSize(ViewportSize);
 		}
+		FVector2D CenterViewportPosition(ViewportSize.X / 2.0f, ViewportSize.Y / 2.0f);
 
-		UE_LOG(LogTemp, Warning, TEXT("Pressed Radial Emote Button "));
+		PlayerController->SetMouseLocation(CenterViewportPosition.X, CenterViewportPosition.Y);
 	}
-	else
-	{
-		APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
-		if (PlayerController)
-		{
-			FInputModeGameOnly InputMode;
-			PlayerController->SetInputMode(InputMode);
-			PlayerController->SetShowMouseCursor(false);
-		}
 
-		EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
-	}
+	UE_LOG(LogTemp, Warning, TEXT("Pressed Radial Emote Button "));
 }
 
 void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 {
+	EmoteRadialMenu->RunEmote();
+	bIsEmoteButtonPressed = false;
+	
 	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
 	if (PlayerController)
 	{
@@ -696,6 +706,54 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 				}
 			}
 		}
+	}
+}
+
+void UWidget_PlayerHUD::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget)
+{
+	//_MapChoiceWidget->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
+
+	/* Increasing value of counter for each map */
+	_MapChoiceWidget->NormalLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->Farm))); // Increase vote counter for map
+	_MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->WinterFarm))); // Increase vote counter for map
+	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->HoneyFarm))); // Increase vote counter for map
+	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->FloatingIslandFarm))); // Increase vote counter for map
+	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->ClockworkFarm))); // Increase vote counter for map
+
+	/* Turning on visibility of map counters if value is higher than 0 */
+	if (GameStateReference->Farm > 0) // Normal farm
+		_MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+	
+	if (GameStateReference->WinterFarm > 0) // Winter farm
+		_MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->WinterLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+	
+	if (GameStateReference->HoneyFarm > 0) // Honey farm
+		_MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->HoneyLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->FloatingIslandFarm > 0) // Floating islands farm
+		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->ClockworkFarm > 0) // Clockwork farm
+		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UWidget_PlayerHUD::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
+{
+	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->MapChoiceTotalLengthSeconds)));
+	if (GameStateReference->MapChoiceTotalLengthSeconds <= 0)
+	{
+		//_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
+		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
 }
 

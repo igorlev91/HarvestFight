@@ -20,12 +20,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void LaunchPlayer(APrototype2Character* _Player);
-
-	UPROPERTY(EditAnywhere)
+	void Launch(APrototype2Character* _Player, bool _WithArrowDirection);
+	
+	UPROPERTY(EditAnywhere, Category="Strength")
 	float ForwardStrength = 3000.0f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Strength")
 	float VerticalStrength = 3000.0f;
 
 	float Delay = 0.2f;

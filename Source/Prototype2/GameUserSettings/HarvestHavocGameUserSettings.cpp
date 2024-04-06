@@ -5,10 +5,10 @@
 
 UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
-	MasterVolume = 5;
-	MusicVolume = 5;
-	AmbienceVolume = 5;
-	SFXVolume = 5;
+	MasterVolume = 10;
+	MusicVolume = 10;
+	AmbienceVolume = 10;
+	SFXVolume = 10;
 	bPlayerStencil = false;
 	bEnemyAlwaysRed = true;
 	UIIndicators = (int8)EIndicatorUISetting::ON;

@@ -10,6 +10,12 @@
 void UWidget_PlayerEmote::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
+
+	/* Get gamestate and set to reference variable */
+	if (auto* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	{
+		GameStateReference = GameState;
+	}
 }
 
 void UWidget_PlayerEmote::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -29,6 +35,9 @@ APlayerState* UWidget_PlayerEmote::GetPlayerRef()
 
 void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 {
+	if (!GameStateReference)
+		return;
+	
 	switch (_Emote)
 	{
 	case EEmote::Emote1:
@@ -44,7 +53,7 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote3:
 		{
 			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote3);
+				EmoteImage->SetBrushFromTexture(Emote9);
 			else
 				EmoteImage->SetBrushFromTexture(Emote3);
 			break;
@@ -52,7 +61,7 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote4:
 		{
 			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote4);
+				EmoteImage->SetBrushFromTexture(Emote10);
 			else
 				EmoteImage->SetBrushFromTexture(Emote4);
 			break;
@@ -60,7 +69,7 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote5:
 		{
 			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote5);
+				EmoteImage->SetBrushFromTexture(Emote11);
 			else
 				EmoteImage->SetBrushFromTexture(Emote5);
 			break;
@@ -68,7 +77,7 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote6:
 		{
 			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote6);
+				EmoteImage->SetBrushFromTexture(Emote12);
 			else
 				EmoteImage->SetBrushFromTexture(Emote6);
 			break;
@@ -76,18 +85,14 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote7:
 		{
 			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote7);
+				EmoteImage->SetBrushFromTexture(Emote13);
 			else
 				EmoteImage->SetBrushFromTexture(Emote7);
 			break;
 		}
 	case EEmote::Emote8:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote8);
-			else
-				EmoteImage->SetBrushFromTexture(Emote8);
-			break;
+			EmoteImage->SetBrushFromTexture(Emote8);
 		}
 	default:
 		{

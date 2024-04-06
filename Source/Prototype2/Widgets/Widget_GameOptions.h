@@ -211,6 +211,9 @@ public:
 	
 	/* Audio Options */
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnLoadAudioSettings(float _NewMasterVolume, float _AmbienceVolume, float _SFXVolume, float _MusicVolume);
+	
 	// Master volume control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* MasterVolume_Control;
@@ -219,6 +222,9 @@ public:
 	void OnMasterVolumeControlLeftButtonPressed();
 	UFUNCTION()
 	void OnMasterVolumeControlRightButtonPressed();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnMasterVolumeChanged(float _NewMasterVolume, float _AmbienceVolume, float _SFXVolume, float _MusicVolume);
 	
 	// Music volume control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -229,6 +235,9 @@ public:
 	UFUNCTION()
 	void OnMusicVolumeControlRightButtonPressed();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnMusicVolumeChanged(float _NewVolume);
+	
 	// Ambience volume control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* AmbienceVolume_Control;
@@ -238,6 +247,9 @@ public:
 	UFUNCTION()
 	void OnAmbienceVolumeControlRightButtonPressed();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnAmbienceVolumeChanged(float _NewVolume);
+	
 	// Ambience volume control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* SFXVolume_Control;
@@ -247,6 +259,9 @@ public:
 	UFUNCTION()
 	void OnSFXVolumeControlRightButtonPressed();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnSFXVolumeChanged(float _NewVolume);
+	
 	/* Game Options */
 
 	// Player stencil control

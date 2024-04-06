@@ -30,8 +30,6 @@ void URandomEventManager::BeginPlay()
 			GameStateRef = CastedGamestate;
 		}
 	}
-	
-	RandomEventTimer = RandomEventInterval + (rand() % RandomEventIntervalVarience);
 }
 
 void URandomEventManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -39,31 +37,15 @@ void URandomEventManager::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// Return if game has ended OR Game has not started
-	if ((GameStateRef->MatchLengthSeconds <= 0  && GameStateRef->MatchLengthMinutes <= 0)
-		|| GameStateRef->CountdownLengthSeconds > 0)
+	if (GameStateRef->HasGameStarted() == false || GameStateRef->HasGameFinished())
 		return;
-	
-	if (GameStateRef->MatchLengthSeconds <= 29 && GameStateRef->MatchLengthMinutes <= 0
-		&& GameStateRef->MatchLengthSeconds > 0)
-	{
-		TriggerEvent(ERandomEvent::DOUBLE_POINTS);
-	}
-	
-	if (RandomEventDurationTimer > 0)
-	{
-		RandomEventDurationTimer -= DeltaTime;
-	}
-	
-	if (RandomEventTimer > 0)
-	{
-		RandomEventTimer -= DeltaTime;
 
-		if (RandomEventTimer <= 0)
-		{
-			uint8 RandomNum = (rand() % ((uint8)ERandomEvent::END -1)) + 1;
-			ERandomEvent RandomEvent = (ERandomEvent)RandomNum;
-			TriggerEvent(RandomEvent);
-		}
+	if (!bHasTriggeredDoublePoints &&
+		GameStateRef->MatchLengthSeconds <= 60 &&
+		GameStateRef->MatchLengthMinutes <= 0)
+	{
+		bHasTriggeredDoublePoints = true;
+		TriggerEvent(ERandomEvent::DOUBLE_POINTS);
 	}
 }
 
@@ -118,6 +100,7 @@ void URandomEventManager::TriggerDoublePoints()
 {
 	RandomEventDurationTimer = 0.0f;
 	ActiveEvent = ERandomEvent::DOUBLE_POINTS;
+	GameStateRef->SellMultiplier = 2.0f;
 	UE_LOG(LogTemp, Warning, TEXT("EVENT: Trigger Double Points"));
 	if(GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, TEXT("EVENT: Trigger Double Points"));	

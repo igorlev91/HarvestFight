@@ -76,27 +76,28 @@ void UDebuffComponent::DecrementTimers(float _DeltaTime)
 
 	if (CurrentDebuff == EDebuff::None)
 		return;
+
+	if (DebuffDuration < 0)
+		return;
 	
-	if (DebuffDuration >= 0)
+	DebuffDuration -= _DeltaTime;
+	
+	if (DebuffDuration > 0)
+		return;
+	
+	if (Player->HasAuthority())
 	{
-		DebuffDuration -= _DeltaTime;
-		if (DebuffDuration <= 0)
-		{
-			if (Player->HasAuthority())
-			{
-				// Reset this bufftype
-				DebuffInfo.Debuff = EDebuff::None;
-				DebuffInfo.Duration = 0.0f;
-				OnRep_ApplyDebuff();
-			}
-			else
-			{
-				Server_RemoveDebuff();
-			}
-			
-			Player->RefreshCurrentMaxSpeed();
-		}
+		// Reset this bufftype
+		DebuffInfo.Debuff = EDebuff::None;
+		DebuffInfo.Duration = 0.0f;
+		OnRep_ApplyDebuff();
 	}
+	else
+	{
+		Server_RemoveDebuff();
+	}
+	
+	Player->RefreshCurrentMaxSpeed();
 }
 
 void UDebuffComponent::ToggleDizzyVFX(bool _bTurnOn)

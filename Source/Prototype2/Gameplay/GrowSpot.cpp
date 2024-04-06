@@ -17,6 +17,7 @@
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 
 AGrowSpot::AGrowSpot()
@@ -39,6 +40,7 @@ AGrowSpot::AGrowSpot()
 	HitBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
 	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash Amd Stretch SComponent"));
+
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -353,7 +355,6 @@ void AGrowSpot::DestroyPlant()
 	GrowSpotState = EGrowSpotState::Empty;
 	GrowingActor = nullptr;
 	GrowingItemRef = nullptr;
-	
 }
 
 void AGrowSpot::CompleteGrowth()
@@ -388,12 +389,13 @@ void AGrowSpot::DegradeConcrete()
 			{
 				ConcretedHealth = 0;
 				Multi_BrakePlantConcrete();
+				GrowingItemRef->ItemComponent->bGold = false;
 			}
 		}
 	}
 	else
 	{
-			Server_DegradeConcrete();
+		Server_DegradeConcrete();
 	}
 }
 
@@ -407,6 +409,7 @@ void AGrowSpot::Server_DegradeConcrete_Implementation()
 		{
 			ConcretedHealth = 0;
 			Multi_BrakePlantConcrete();
+			GrowingItemRef->ItemComponent->bGold = false;
 		}
 	}
 }
@@ -456,7 +459,6 @@ void AGrowSpot::BeginPlay()
 		RiseTimeline.SetPlayRate(2.0f);
 		RiseTimeline.PlayFromStart();
 	}
-
 }
 
 void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
@@ -1220,6 +1222,26 @@ bool AGrowSpot::Stealing_IsInteractable_Unprotected(APrototype2Character* _Playe
 	{
 		return false;
 	}
+
+
+	if (_Player->GameState)
+	{
+		if (!_Player->GameState->ExtraSettings.bStealing)
+		{
+			//UKismetSystemLibrary::PrintString(GetWorld(), "No Stealing!");
+			return false;
+		}
+		else
+		{
+			//UKismetSystemLibrary::PrintString(GetWorld(), "Stealing Enabled!");
+		}
+	
+	}
+	else
+	{
+		//UKismetSystemLibrary::PrintString(GetWorld(), "No GameStateReference!");
+	}
+
 	// if its a beehive, return false
 	if (Cast<ABeehive>(GrowingActor))
 		return false;
@@ -1230,71 +1252,6 @@ bool AGrowSpot::Stealing_IsInteractable_Unprotected(APrototype2Character* _Playe
 void AGrowSpot::Stealing_ClientInteract(APrototype2Character* _Player)
 {
 	return;
-	switch(GrowSpotState)
-	{
-	case EGrowSpotState::Empty:
-		{
-			if (Cast<ASeed>(_Player->HeldItem))
-			{
-				if (_Player->PlayerHUDRef)
-					_Player->PlayerHUDRef->ClearPickupUI();
-
-				if (GrowingItemRef)
-				{
-					GrowingItemRef->Client_Pickup();
-				}
-			}
-			break;
-		}
-	case EGrowSpotState::Growing:
-		{
-			if (_Player->PlayerHUDRef)
-				_Player->PlayerHUDRef->ClearPickupUI();
-			
-			break;
-		}
-	case EGrowSpotState::Grown:
-		{
-			if (GrowingItemRef)
-			{
-				GrowingItemRef->Client_Pickup();
-			}
-			if (_Player->PlayerHUDRef)
-			{
-				if (bIsFertilised)
-				{
-					if (GrowingItemRef->SeedData)
-					{
-						if (GrowingItemRef->SeedData->PlantData)
-						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->GoldPlantIcon);
-						}
-						else if (GrowingItemRef->SeedData->WeaponData)
-						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->GoldWeaponIcon);
-						}
-					}
-				}
-				else
-				{
-					if (GrowingItemRef->SeedData)
-					{
-						if (GrowingItemRef->SeedData->PlantData)
-						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->PlantIcon);
-						}
-						else if (GrowingItemRef->SeedData->WeaponData)
-						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->WeaponIcon);
-						}
-					}
-				}
-
-			}
-		}
-	default:
-		break;
-	}
 }
 
 void AGrowSpot::Stealing_Interact(APrototype2Character* _Player)

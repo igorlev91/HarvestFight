@@ -24,12 +24,16 @@ public:
 	/* Turns on the endgame menu widget */
 	void EnableEndgameMenu();
 
+	/* Turns on the endgame menu widget */
+	void EnableEndgameMapChoice();
+	
 	/* Public Variables */
 public:
 	
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* TextGameWinner;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class APrototype2Gamestate* GameStateReference;
 
 	/* Widget Variables related to button pulsing/size changes */
@@ -44,5 +48,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
 	float PulseTime;
 
+	/* Classic Mode Map Choice Widget */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	class UWidget_MapChoice* WBP_MapChoice;
+	
+	/* Brawl Mode Map Choice Widget*/
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UWidget_MapChoice* WBP_MapChoiceBrawl;
+
+	/* Blitz Mode Map Choice Widget*/
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UWidget_MapChoice* WBP_MapChoiceBlitz;
 	
 };

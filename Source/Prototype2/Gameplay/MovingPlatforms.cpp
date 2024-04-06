@@ -1,7 +1,10 @@
 
 
 #include "Prototype2/Gameplay/MovingPlatforms.h"
+
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/Pickups/PickUpItem.h"
 
 // Sets default values
 AMovingPlatforms::AMovingPlatforms()
@@ -24,6 +27,9 @@ void AMovingPlatforms::BeginPlay()
 
 void AMovingPlatforms::Tick(float DeltaSeconds)
 {
+	if (!bDoMove && !bDoRotate && !bDoSineWave)
+		return;
+	
 	Super::Tick(DeltaSeconds);
 	
 	SetReplicateMovement(false);
@@ -222,6 +228,24 @@ void AMovingPlatforms::MovePlatform(float DeltaTime)
 		return;
 	
 	TimeTrackerTimeToMove += DeltaTime;
+
+	if (HasAuthority())
+	{
+		TArray<AActor*> NearbyPickups{};
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APickUpItem::StaticClass(), NearbyPickups);
+
+		for(AActor* NearbyActor : NearbyPickups)
+		{
+			if (FVector::Distance(GetActorLocation(), NearbyActor->GetActorLocation()) <= 300)
+			{
+				if (APickUpItem* NearbyPickup = Cast<APickUpItem>(NearbyActor))
+				{
+					NearbyPickup->ItemComponent->Mesh->SetSimulatePhysics(true);
+				}
+			}
+		}
+	}
+	
 	if (bDoLoop)
 	{
 		MovePlatformLoop();

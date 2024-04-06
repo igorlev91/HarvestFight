@@ -66,6 +66,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	float RandomEventTimer{};
 
+	UPROPERTY(VisibleAnywhere)
+	bool bHasTriggeredDoublePoints{};
+
 	UPROPERTY(EditDefaultsOnly)
 	float RandomEventDuration{30.0f};
 	

@@ -123,7 +123,7 @@ void AAspearagusProjectile::OnRep_PlatformPosition()
 			}
 			
 			// Interpolate between the two positions.
-			NewLocation = (FMath::Lerp(PreviousPositions[Index1], PreviousPositions[Index2], Alpha));
+			NewLocation = (FMath::Lerp(GetActorLocation(), PreviousPositions[Index2], Alpha));
 		}
 	}
 

@@ -16,6 +16,9 @@ class PROTOTYPE2_API UWidget_EmoteRadial : public UUserWidget
 public:
 	virtual void NativeOnInitialized() override;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Emote")
+	void RunEmote();
+
 	/* Public Variables */
 public:
 	

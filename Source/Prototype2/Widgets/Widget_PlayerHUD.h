@@ -9,7 +9,7 @@
 
 class UPlantData;
 
-UCLASS()
+UCLASS(Blueprintable)
 class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 {
 	GENERATED_BODY()
@@ -61,6 +61,9 @@ public:
 	/* Updates the player icons & colour - top of screen for each player */
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerIcons();
+
+	void UpdateMapChoice(class UWidget_MapChoice* _MapChoiceWidget);
+	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
 	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -285,4 +288,17 @@ public:
 	/* Emote related */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsEmoteButtonPressed{false};
+
+	///* Classic Mode Map Choice Widget */
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//UWidget_MapChoice* WBP_MapChoice;
+	//
+	///* Brawl Mode Map Choice Widget*/
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//UWidget_MapChoice* WBP_MapChoiceBrawl;
+//
+	///* Blitz Mode Map Choice Widget*/
+	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	//UWidget_MapChoice* WBP_MapChoiceBlitz;
+	
 };

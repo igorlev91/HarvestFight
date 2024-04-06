@@ -31,7 +31,13 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	}
 
 	/* Set map choice to hidden */
+	WBP_MapChoice->SetVisibility(ESlateVisibility::Hidden);
 	WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Hidden);
+	WBP_MapChoiceBlitz->SetVisibility(ESlateVisibility::Hidden);
+
+	// Make cancel hidden
+	ReadyButton->SetVisibility(ESlateVisibility::Visible);
+	CancelButton->SetVisibility(ESlateVisibility::Hidden);
 
 	/* Add rings to array */
     Overlays.Add(OverlayPlayer1);
@@ -219,6 +225,44 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	}
 }
 
+void UWidget_LobbyPlayerHUDV2::SetReady()
+{
+	if (auto PlayerState = Cast<ALobbyPlayerState>(GetOwningPlayerState()))
+	{
+		auto PlayerID = PlayerState->Player_ID;
+		
+		if (GameStateReference->Server_Players.Num() >= PlayerID)
+		{
+			if (auto PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+			{
+				PlayerController->SetIsReady(PlayerID, true);
+			}
+
+			ReadyButton->SetVisibility(ESlateVisibility::Hidden);
+			CancelButton->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
+}
+
+void UWidget_LobbyPlayerHUDV2::SetCancel()
+{
+	if (auto* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	{
+		auto PlayerID = PlayerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
+		
+		if (GameStateReference->Server_Players.Num() >= PlayerID)
+		{
+			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateReference->Server_Players[PlayerID]))
+			{
+				PlayerController->SetIsReady(PlayerID, false);
+
+				ReadyButton->SetVisibility(ESlateVisibility::Visible);
+				CancelButton->SetVisibility(ESlateVisibility::Hidden);
+			}
+		}
+	}
+}
+
 void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget)
 {
 	_MapChoiceWidget->SetVisibility(ESlateVisibility::Visible); // Turn widget on for map choice
@@ -228,9 +272,9 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
-	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 
-	/* Turning on visibility of maps if value is higher than 0 */
+	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->GetFarm() > 0) // Normal farm
 		_MapChoiceWidget->NormalLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
@@ -251,7 +295,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	else
 		_MapChoiceWidget->FloatingIslandsLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 
-	if (GameStateReference->GetFloatingIslandFarm() > 0) // Clockwork farm
+	if (GameStateReference->GetClockworkFarm() > 0) // Clockwork farm
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
@@ -262,6 +306,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoic
 	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
 	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
 	{
+		_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
 		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
 }

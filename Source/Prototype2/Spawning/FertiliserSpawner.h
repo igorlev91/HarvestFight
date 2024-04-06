@@ -69,6 +69,8 @@ protected:
 	UPROPERTY(EditAnywhere)
 	int32 ChanceOfConcrete_Inverse{3};
 
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Gamestate* GameStateRef;
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UItemComponent* ItemComponent;

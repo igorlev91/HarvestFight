@@ -1,5 +1,4 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -11,6 +10,14 @@
 /**
  * 
  */
+UENUM()
+enum class EFertiliserType
+{
+	GOLD,
+	CONCRETE,
+	POISON
+};
+
 UCLASS()
 class PROTOTYPE2_API UFertiliserData : public UDataAsset
 {
@@ -18,7 +25,7 @@ class PROTOTYPE2_API UFertiliserData : public UDataAsset
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Fertiliser Type")
-	bool bConcrete;
+	EFertiliserType Type;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Fertiliser Spawning")
 	int32 MaxSpawnedAtAnyGivenTime;

@@ -27,6 +27,7 @@ void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 void APickUpItem::BeginPlay()
 {
 	Super::BeginPlay();
+	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 }
 
 // Called every frame

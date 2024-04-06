@@ -74,7 +74,7 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 		_Player->DropWeapon();
 
 		//AttackTrail_NiagaraComponent->Deactivate();
-		//_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	// Play attack audio
 	_Player->PlayWeaponSound(_Player->CurrentWeaponSeedData->WeaponData->AttackAudio);

@@ -25,7 +25,7 @@ public:
 	void SetIsReady(int32 _Player, bool _bIsReady);
 
 	/* When a player votes for a map */
-	void VoteMap(int32 _Player, EFarm _Level);
+	void VoteMap(EFarm _Level);
 
 	/* Update characters material when they change the costume */
 	void UpdateCharacterMaterial(int32 _Player, FCharacterDetails _Details);
@@ -53,7 +53,7 @@ public:
 	void Server_SetIsReady(int32 _Player, bool _bIsReady);
 	/* RPC for voting for a map */
 	UFUNCTION(Server, Reliable)
-	void Server_VoteMap(int32 _Player, EFarm _Level);
+	void Server_VoteMap(EFarm _Level);
 
 	/* Multicast that updates the characters costume */
 	UFUNCTION(Server, Reliable)
