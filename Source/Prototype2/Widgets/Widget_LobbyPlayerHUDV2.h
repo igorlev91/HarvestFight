@@ -7,7 +7,10 @@
 #include "WidgetUtility.h"
 #include "Blueprint/UserWidget.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
+#include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Widget_LobbyPlayerHUDV2.generated.h"
+
+enum EGameSpeed : int;
 
 UCLASS()
 class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UUserWidget, public IWidgetUtilityInterface
@@ -16,6 +19,8 @@ class PROTOTYPE2_API UWidget_LobbyPlayerHUDV2 : public UUserWidget, public IWidg
 	
 	/* Public Functions */
 public:
+	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
@@ -223,4 +228,93 @@ public:
 	class UButton* ButtonToPulse;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
 	float PulseTime;
+
+
+
+	/* Host Options */
+	// Reset settings to defaults
+	UFUNCTION(BlueprintCallable)
+	void ResetDefaults();
+
+	// Reset settings to actual setting - non temp
+	UFUNCTION(BlueprintCallable)
+	void ResetSetting();
+
+	// Confirm settings 
+	UFUNCTION(BlueprintCallable)
+	void ConfirmSetting();
+	
+	// Game Speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidget_OptionSelector* GameLength_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EGameSpeed> DefaultGameSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EGameSpeed> TempGameSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EGameSpeed> GameSpeed;
+
+	UFUNCTION()
+	void OnGameSpeedControlLeftButtonPressed();
+	UFUNCTION()
+	void OnGameSpeedControlRightButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateGameSpeedText();
+	UFUNCTION(BlueprintCallable)
+	void SetGameSpeedControl();
+
+	// Stealing - Whether players can steal from other plots
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* Stealing_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DefaultStealingSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool TempStealingSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool StealingSetting = true;
+
+	UFUNCTION()
+	void OnStealingControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateStealingText();
+	UFUNCTION(BlueprintCallable)
+	void SetStealingControl();
+
+	// Fertiliser - Whether fertiliser spawns for maps that have it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* Fertiliser_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DefaultFertiliserSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool TempFertiliserSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool FertiliserSetting = true;
+
+	UFUNCTION()
+	void OnFertiliserControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateFertiliserText();
+	UFUNCTION(BlueprintCallable)
+	void SetFertiliserControl();
+
+	// Cement - Whether cement spawns for maps that have it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* Cement_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DefaultCementSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool TempCementSetting = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool CementSetting = true;
+
+	UFUNCTION()
+	void OnCementControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateCementText();
+	UFUNCTION(BlueprintCallable)
+	void SetCementControl();
 };

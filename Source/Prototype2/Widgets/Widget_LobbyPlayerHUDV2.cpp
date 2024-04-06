@@ -4,6 +4,7 @@
 
 #include "Widget_LobbyCharacterSelection.h"
 #include "Widget_MapChoice.h"
+#include "Widget_OptionSelector.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
 #include "Components/HorizontalBox.h"
@@ -19,6 +20,68 @@
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 #include "SlateCore/Public/Fonts/SlateFontInfo.h"
+
+void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	GameSpeed = MEDIUM_GAME;
+	DefaultGameSpeed = EGameSpeed::MEDIUM_GAME;
+	TempGameSpeed = MEDIUM_GAME;
+
+	/* Extra Settings Setup */
+	
+	/* Set game speed control */
+	GameLength_Control->OptionText->SetText(FText::FromString("Game Speed"));
+	UpdateGameSpeedText();
+
+	/* Set stealing control */
+	Stealing_Control->OptionText->SetText(FText::FromString("Stealing (from plots)"));
+	UpdateStealingText();
+
+	/* Set fertiliser control */
+	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn (if available)"));
+	UpdateFertiliserText();
+
+	/* Set cement control */
+	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn (if available)"));
+	UpdateCementText();
+}
+
+void UWidget_LobbyPlayerHUDV2::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	/* Extra Settings Setup */
+	
+	/* Game speed control buttons */
+	if (GameLength_Control)
+	{
+		GameLength_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnGameSpeedControlLeftButtonPressed);
+		GameLength_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnGameSpeedControlRightButtonPressed);
+	}
+
+	/* Stealing control buttons */
+	if (Stealing_Control)
+	{
+		Stealing_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnStealingControlButtonPressed);
+		Stealing_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnStealingControlButtonPressed);
+	}
+
+	/* Fertiliser control buttons */
+	if (Fertiliser_Control)
+	{
+		Fertiliser_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnFertiliserControlButtonPressed);
+		Fertiliser_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnFertiliserControlButtonPressed);
+	}
+	
+	/* Cement control buttons */
+	if (Cement_Control)
+	{
+		Cement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
+		Cement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
+	}
+}
 
 void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 {
@@ -521,6 +584,191 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	}
 	
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
+}
+
+void UWidget_LobbyPlayerHUDV2::ResetDefaults()
+{
+	TempGameSpeed = DefaultGameSpeed;
+	UpdateGameSpeedText();
+	SetGameSpeedControl();
+	TempStealingSetting = DefaultStealingSetting;
+	UpdateStealingText();
+	SetStealingControl();
+	TempFertiliserSetting = DefaultFertiliserSetting;
+	UpdateFertiliserText();
+	SetFertiliserControl();
+	TempCementSetting = DefaultCementSetting;
+	UpdateCementText();
+	SetCementControl();
+}
+
+void UWidget_LobbyPlayerHUDV2::ResetSetting()
+{
+	TempGameSpeed = GameSpeed;
+	UpdateGameSpeedText();
+	SetGameSpeedControl();
+	TempStealingSetting = StealingSetting;
+	UpdateStealingText();
+	SetStealingControl();
+	TempFertiliserSetting = FertiliserSetting;
+	UpdateFertiliserText();
+	SetFertiliserControl();
+	TempCementSetting = CementSetting;
+	UpdateCementText();
+	SetCementControl();
+}
+
+void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
+{
+	SetStealingControl();
+	SetFertiliserControl();
+	SetCementControl();
+}
+
+void UWidget_LobbyPlayerHUDV2::OnGameSpeedControlLeftButtonPressed()
+{
+	switch (TempGameSpeed)
+	{
+	case EGameSpeed::SHORT_GAME:
+		{
+			TempGameSpeed = EGameSpeed::LONG_GAME;
+			break;
+		}
+	case EGameSpeed::MEDIUM_GAME:
+		{
+			TempGameSpeed = EGameSpeed::SHORT_GAME;
+			break;
+		}
+	case EGameSpeed::LONG_GAME:
+		{
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
+			break;
+		}
+	default:
+		{
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
+			break;
+		}
+	}
+
+	UpdateGameSpeedText();
+}
+
+void UWidget_LobbyPlayerHUDV2::OnGameSpeedControlRightButtonPressed()
+{
+	switch (TempGameSpeed)
+	{
+	case EGameSpeed::SHORT_GAME:
+		{
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
+			break;
+		}
+	case EGameSpeed::MEDIUM_GAME:
+		{
+			TempGameSpeed = EGameSpeed::LONG_GAME;
+			break;
+		}
+	case EGameSpeed::LONG_GAME:
+		{
+			TempGameSpeed = EGameSpeed::SHORT_GAME;
+			break;
+		}
+	default:
+		{
+			TempGameSpeed = EGameSpeed::MEDIUM_GAME;
+			break;
+		}
+	}
+	UpdateGameSpeedText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateGameSpeedText()
+{
+	switch (TempGameSpeed)
+	{
+	case EGameSpeed::SHORT_GAME:
+		{
+			GameLength_Control->OptionValueText->SetText(FText::FromString("Short"));
+			break;
+		}
+	case EGameSpeed::MEDIUM_GAME:
+		{
+			GameLength_Control->OptionValueText->SetText(FText::FromString("Medium"));
+			break;
+		}
+	case EGameSpeed::LONG_GAME:
+		{
+			GameLength_Control->OptionValueText->SetText(FText::FromString("Long"));
+			break;
+		}
+	default:
+		{
+			GameLength_Control->OptionValueText->SetText(FText::FromString("Medium"));
+			break;
+		}
+	}
+}
+
+void UWidget_LobbyPlayerHUDV2::SetGameSpeedControl()
+{
+	GameSpeed = TempGameSpeed;
+}
+
+void UWidget_LobbyPlayerHUDV2::OnStealingControlButtonPressed()
+{
+	TempStealingSetting = !TempStealingSetting;
+	UpdateStealingText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateStealingText()
+{
+	if (TempStealingSetting)
+		Stealing_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		Stealing_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_LobbyPlayerHUDV2::SetStealingControl()
+{
+	StealingSetting = TempStealingSetting;
+}
+
+void UWidget_LobbyPlayerHUDV2::OnFertiliserControlButtonPressed()
+{
+	TempFertiliserSetting = !TempFertiliserSetting;
+	UpdateFertiliserText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateFertiliserText()
+{
+	if (TempFertiliserSetting)
+		Fertiliser_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		Fertiliser_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_LobbyPlayerHUDV2::SetFertiliserControl()
+{
+	FertiliserSetting = TempFertiliserSetting;
+}
+
+void UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed()
+{
+	TempCementSetting = !TempCementSetting;
+	UpdateCementText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateCementText()
+{
+	if (TempCementSetting)
+		Cement_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		Cement_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_LobbyPlayerHUDV2::SetCementControl()
+{
+	CementSetting = TempCementSetting;
 }
 
 void UWidget_LobbyPlayerHUDV2::Client_SetOwningController_Implementation(int32 _PlayerID,

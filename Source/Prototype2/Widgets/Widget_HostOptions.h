@@ -161,22 +161,4 @@ public:
 	void UpdateCementText();
 	UFUNCTION(BlueprintCallable)
 	void SetCementControl();
-
-	// Poison - Whether poison spawns for maps that have it
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* Poison_Control;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool DefaultPoisonSetting = true;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool TempPoisonSetting = true;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool PoisonSetting = true;
-
-	UFUNCTION()
-	void OnPoisonControlButtonPressed();
-	UFUNCTION()
-	void UpdatePoisonText();
-	UFUNCTION(BlueprintCallable)
-	void SetPoisonControl();
 };

@@ -38,12 +38,6 @@ void UWidget_HostOptions::NativePreConstruct()
 	/* Set cement control */
 	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn (if available)"));
 	UpdateCementText();
-
-	/* Set poison control */
-	Poison_Control->OptionText->SetText(FText::FromString("Poison Spawn (if available)"));
-	UpdatePoisonText();
-
-	
 }
 
 void UWidget_HostOptions::NativeOnInitialized()
@@ -87,13 +81,6 @@ void UWidget_HostOptions::NativeConstruct()
 		Cement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_HostOptions::OnCementControlButtonPressed);
 		Cement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_HostOptions::OnCementControlButtonPressed);
 	}
-
-	/* Poison control buttons */
-	if (Poison_Control)
-	{
-		Poison_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_HostOptions::OnPoisonControlButtonPressed);
-		Poison_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_HostOptions::OnPoisonControlButtonPressed);
-	}
 }
 
 void UWidget_HostOptions::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -127,9 +114,6 @@ void UWidget_HostOptions::ResetDefaults()
 	TempCementSetting = DefaultCementSetting;
 	UpdateCementText();
 	SetCementControl();
-	TempPoisonSetting = DefaultPoisonSetting;
-	UpdatePoisonText();
-	SetPoisonControl();
 }
 
 void UWidget_HostOptions::ResetSetting()
@@ -146,9 +130,6 @@ void UWidget_HostOptions::ResetSetting()
 	TempCementSetting = CementSetting;
 	UpdateCementText();
 	SetCementControl();
-	TempPoisonSetting = PoisonSetting;
-	UpdatePoisonText();
-	SetPoisonControl();
 }
 
 void UWidget_HostOptions::ConfirmSetting()
@@ -302,25 +283,6 @@ void UWidget_HostOptions::UpdateCementText()
 void UWidget_HostOptions::SetCementControl()
 {
 	CementSetting = TempCementSetting;
-}
-
-void UWidget_HostOptions::OnPoisonControlButtonPressed()
-{
-	TempPoisonSetting = !TempPoisonSetting;
-	UpdatePoisonText();
-}
-
-void UWidget_HostOptions::UpdatePoisonText()
-{
-	if (TempPoisonSetting)
-		Poison_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		Poison_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_HostOptions::SetPoisonControl()
-{
-	PoisonSetting = TempPoisonSetting;
 }
 
 /*void UWidget_HostOptions::GetPublicIPAddress()

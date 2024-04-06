@@ -385,74 +385,74 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			Team1Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team1Points))); // Updating team 1 points
 			Team2Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team2Points))); // Updating team 2 points
 			
-			for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
-			{
-				if (auto Player = GameStateReference->Server_TeamOne[i])
-				{
-					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
-					auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
-				
-					switch(i)
-					{
-					case 0:
-						{
-							if (bIsShowingExtraCoins == true)
-							{
-								FString plus = "+";
-								FString combined = "plus" + ExtraCoins;
-								Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Visible);
-							
-								Team1ExtraCoinsP1->SetText(FText::FromString(combined)); // Set player extra score
-							}
-							else
-							{
-								Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Hidden);
-							}
-						
-							break;
-						}
-					case 1:
-						{
-							if (bIsShowingExtraCoins == true)
-							{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-								Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Visible);
-							
-								Team1ExtraCoinsP2->SetText(FText::FromString(combined)); // Set player extra score
-							}
-							else
-							{
-								Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Hidden);
-							}
-
-							break;
-						}
-					case 2:
-						{
-							if (bIsShowingExtraCoins == true)
-							{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-								Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Visible);
-							
-								Team1ExtraCoinsP3->SetText(FText::FromString(combined)); // Set player extra score
-							}
-							else
-							{
-								Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Hidden);
-							}
-
-							break;
-						}
-					default:
-						{
-							break;
-						}
-					}
-					
-				}
-			}
+			//for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
+			//{
+			//	if (auto Player = GameStateReference->Server_TeamOne[i])
+			//	{
+			//		auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
+			//		auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
+			//	
+			//		switch(i)
+			//		{
+			//		case 0:
+			//			{
+			//				if (bIsShowingExtraCoins == true)
+			//				{
+			//					FString plus = "+";
+			//					FString combined = "plus" + ExtraCoins;
+			//					Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Visible);
+			//				
+			//					Team1ExtraCoinsP1->SetText(FText::FromString(combined)); // Set player extra score
+			//				}
+			//				else
+			//				{
+			//					Team1ExtraCoinsP1->SetVisibility(ESlateVisibility::Hidden);
+			//				}
+			//			
+			//				break;
+			//			}
+			//		case 1:
+			//			{
+			//				if (bIsShowingExtraCoins == true)
+			//				{
+			//					FString plus = "+";
+			//					FString combined = plus + ExtraCoins;
+			//					Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Visible);
+			//				
+			//					Team1ExtraCoinsP2->SetText(FText::FromString(combined)); // Set player extra score
+			//				}
+			//				else
+			//				{
+			//					Team1ExtraCoinsP2->SetVisibility(ESlateVisibility::Hidden);
+			//				}
+//
+			//				break;
+			//			}
+			//		case 2:
+			//			{
+			//				if (bIsShowingExtraCoins == true)
+			//				{
+			//					FString plus = "+";
+			//					FString combined = plus + ExtraCoins;
+			//					Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Visible);
+			//				
+			//					Team1ExtraCoinsP3->SetText(FText::FromString(combined)); // Set player extra score
+			//				}
+			//				else
+			//				{
+			//					Team1ExtraCoinsP3->SetVisibility(ESlateVisibility::Hidden);
+			//				}
+			//
+			//				break;
+			//			}
+			//		default:
+			//			{
+			//				break;
+			//			}
+			//		}
+			//		
+			//	}
+			//}
 		}
 		
 		if (GameStateReference->IsGameReadyForVote())
