@@ -53,7 +53,7 @@ void ALobbyGamestate::BeginPlay()
 
 	/* Pre set backup level */
 	if (GameMode == 0) // Normal Mode
-		MapChoice = FriendlyFarmClassic;
+		MapChoice = FriendlyFarmClassicLarge;
 	else if (GameMode == 1) // Brawl Mode
 		MapChoice = FriendlyFarmBrawl;
 	else if (GameMode == 2) // Blitz Mode
@@ -242,11 +242,20 @@ void ALobbyGamestate::PickMapToPlay()
 		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = FriendlyFarmClassic;
+			{
+				if (Server_Players.Num() <= 2)	
+					MapChoice = FriendlyFarmClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = FriendlyFarmClassicMedium;
+				else
+					MapChoice = FriendlyFarmClassicLarge;
+			}
 			else if (GameMode == 1) // Brawl Mode
 				MapChoice = FriendlyFarmBrawl;
 			else if (GameMode == 2) // Blitz Mode
 				MapChoice = FriendlyFarmBlitz;
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Attempted to start friendly farm map but incorrect mode attached"));
 			
 		}
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
@@ -257,15 +266,24 @@ void ALobbyGamestate::PickMapToPlay()
 				MapChoice = FrostyFieldsBrawl;
 			else if (GameMode == 2) // Blitz Mode
 				MapChoice = FrostyFieldsBlitz;
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Attempted to start winter map but incorrect mode attached"));
 		}
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = HoneyClassic;
+			{
+				if (Server_Players.Num() <= 2)	
+					MapChoice = HoneyClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = HoneyClassicMedium;
+				else
+					MapChoice = HoneyClassicLarge;
+			}
 			else if (GameMode == 1) // Brawl Mode
 				MapChoice = HoneyBrawl;
-			//else if (GameMode == 2) // Blitz Mode - no honey blitz
-			//	MapChoice = HoneyBlitz;
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Attempted to start honey map but incorrect mode attached"));
 		}
 		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm) // floating islands farm gets most votes
 		{
@@ -275,6 +293,8 @@ void ALobbyGamestate::PickMapToPlay()
 				MapChoice = FloatingIslandsBrawl;
 			else if (GameMode == 2) // Blitz Mode
 				MapChoice = FloatingIslandsBlitz;
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Attempted to start floating farm map but incorrect mode attached"));
 		}
 		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
 		{

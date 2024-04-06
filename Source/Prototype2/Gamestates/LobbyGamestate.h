@@ -158,17 +158,21 @@ private:
 	/* Maps */
 
 	// Friendly Farm
-	FString FriendlyFarmClassic = "/Game/Maps/Level_FF_Large";
+	FString FriendlyFarmClassicLarge = "/Game/Maps/Level_FF_ClassicLarge";
+	FString FriendlyFarmClassicMedium = "/Game/Maps/Level_FF_ClassicMedium";
+	FString FriendlyFarmClassicSmall = "/Game/Maps/Level_FF_ClassicSmall";
 	FString FriendlyFarmBrawl = "/Game/Maps/Level_FF_Brawl";
 	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_BlitzV3";
 	
 	// Frosty Fields (Winter)
-	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_LargeV2";
+	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_ClassicV2";
 	FString FrostyFieldsBrawl = "/Game/Maps/Level_Winter_Brawl";
 	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_BlitzV2";
 
 	// Honey
-	FString HoneyClassic = "/Game/Maps/Level_Honey_Large";
+	FString HoneyClassicLarge = "/Game/Maps/Level_Honey_ClassicLarge";
+	FString HoneyClassicMedium = "/Game/Maps/Level_Honey_ClassicMedium";
+	FString HoneyClassicSmall = "/Game/Maps/Level_Honey_ClassicSmall";
 	FString HoneyBrawl = "/Game/Maps/Level_Honey_Brawl";
 	FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz";
 
