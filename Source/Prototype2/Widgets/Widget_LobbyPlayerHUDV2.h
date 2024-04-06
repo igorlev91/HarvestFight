@@ -214,6 +214,42 @@ public:
 	UPROPERTY(EditAnywhere, meta=(BindWidget))
 	UImage* BackgroundImageT2;
 
+	/* Array of 'you' images */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UOverlay*> YouOverlays;
+
+	/* Player ready images */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P1YouOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P2YouOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P3YouOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P4YouOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P5YouOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P6YouOverlay;
+
+	/* Array of 'you' images */
+	UPROPERTY(VisibleAnywhere)
+	TArray<UOverlay*> KickOverlays;
+
+	/* Player ready images */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P1KickOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P2KickOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P3KickOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P4KickOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P5KickOverlay;
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UOverlay* P6KickOverlay;
+	
 
 
 	

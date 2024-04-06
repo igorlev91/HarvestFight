@@ -163,6 +163,22 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 
 	BackgroundImageT1->SetOpacity(0.0f);
 	BackgroundImageT2->SetOpacity(0.0f);
+
+	/* Add you overlays to array */
+	YouOverlays.Add(P1YouOverlay);
+	YouOverlays.Add(P2YouOverlay);
+	YouOverlays.Add(P3YouOverlay);
+	YouOverlays.Add(P4YouOverlay);
+	YouOverlays.Add(P5YouOverlay);
+	YouOverlays.Add(P6YouOverlay);
+
+	/* Add you overlays to array */
+	KickOverlays.Add(P1KickOverlay);
+	KickOverlays.Add(P2KickOverlay);
+	KickOverlays.Add(P3KickOverlay);
+	KickOverlays.Add(P4KickOverlay);
+	KickOverlays.Add(P5KickOverlay);
+	KickOverlays.Add(P6KickOverlay);
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -190,6 +206,18 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	{
 		if (auto Player = GameStateReference->Server_Players[i])
 		{
+			
+			if (GetOwningPlayerState() == Player)
+			{
+				YouOverlays[i]->SetVisibility(ESlateVisibility::Visible);
+			}
+			if (GetOwningPlayerState()->HasAuthority())
+			{
+				if (GetOwningPlayerState() != Player)
+					KickOverlays[i]->SetVisibility(ESlateVisibility::Visible);
+			}
+			
+			
 			/* Set ring colours to player colour */
 			if (Rings.Num() > i)
 			{
