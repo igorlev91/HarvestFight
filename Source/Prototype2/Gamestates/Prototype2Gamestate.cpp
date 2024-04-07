@@ -623,7 +623,12 @@ void APrototype2Gamestate::PickMapToPlay()
 		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm) // Normal farm gets most votes
 		{
 			if (GameInstanceRef->HHMode == 0) // Normal Mode
-				MapChoice = FriendlyFarmClassic;
+				if (Server_Players.Num() <= 2)	
+					MapChoice = FriendlyFarmClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = FriendlyFarmClassicMedium;
+				else
+					MapChoice = FriendlyFarmClassicLarge;
 			else if (GameInstanceRef->HHMode == 1) // Brawl Mode
 				MapChoice = FriendlyFarmBrawl;
 			else if (GameInstanceRef->HHMode == 2) // Blitz Mode
@@ -633,7 +638,12 @@ void APrototype2Gamestate::PickMapToPlay()
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
 		{
 			if (GameInstanceRef->HHMode == 0) // Normal Mode
-				MapChoice = FrostyFieldsClassic;
+				if (Server_Players.Num() <= 2)	
+					MapChoice = FrostyFieldsClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = FrostyFieldsClassicMedium;
+				else
+					MapChoice = FrostyFieldsClassicLarge;
 			else if (GameInstanceRef->HHMode == 1)// Brawl Mode
 				MapChoice = FrostyFieldsBrawl;
 			else if (GameInstanceRef->HHMode == 2) // Blitz Mode
@@ -642,7 +652,12 @@ void APrototype2Gamestate::PickMapToPlay()
 		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm) // Honey farm gets most votes
 		{
 			if (GameInstanceRef->HHMode == 0) // Normal Mode
-				MapChoice = HoneyClassic;
+				if (Server_Players.Num() <= 2)	
+					MapChoice = HoneyClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = HoneyClassicMedium;
+				else
+					MapChoice = HoneyClassicLarge;
 			else if (GameInstanceRef->HHMode == 1) // Brawl Mode
 				MapChoice = HoneyBrawl;
 			//else if (GameMode == 2) // Blitz Mode - no honey blitz
