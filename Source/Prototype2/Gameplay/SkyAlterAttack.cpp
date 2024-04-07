@@ -35,14 +35,14 @@ void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AAct
 	if (!OtherActor->HasNetOwner())
 		return;
 	
-	if (!OtherActor)
+	if (!IsValid(OtherActor))
 		return;
 	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
-	if (!SomePlayer)
+	if (!IsValid(SomePlayer))
 		return;
 
 	UE_LOG(LogTemp, Warning, TEXT("Attempted to offer something!"));
-	if (!SomePlayer->HeldItem)
+	if (!IsValid(SomePlayer->HeldItem))
 		return;
 	
 	if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
@@ -54,8 +54,7 @@ void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AAct
 		// Destroy the crop the player is holding
 		SomePlayer->HeldItem->Destroy();
 		SomePlayer->HeldItem = nullptr;
-		SomePlayer->bIsHoldingGold = false;
-		if (SomePlayer->PlayerHUDRef)
+		if (IsValid(SomePlayer->PlayerHUDRef))
 		{
 			SomePlayer->PlayerHUDRef->ClearPickupUI();
 			SomePlayer->PlayerHUDRef->SetHUDInteractText("");
@@ -84,11 +83,11 @@ void ASkyAlterAttack::Attack(APrototype2Character* _PlayerToNotSmite, int32 _Sta
 			if (CastedPlayer->PlayerStateRef->Details.Colour == _PlayerToNotSmite->PlayerStateRef->Details.Colour)
 				continue;
 			
-			if (SmiteWeaponData)
+			if (IsValid(SmiteWeaponData))
 			{
 				// Hit the player
-				CastedPlayer->GetHit(_StarValueOfPlant, GetActorLocation(), SmiteWeaponData);
-				CastedPlayer->ActivateParticleSystemFromEnum(EParticleSystems::Smite);
+				float KnockBack = KnockBackMultiplier * _StarValueOfPlant;
+				CastedPlayer->InitiateSmite(KnockBack, SmiteWeaponData);
 			}
 			else
 			{

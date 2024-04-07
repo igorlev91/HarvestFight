@@ -34,6 +34,8 @@ enum class EParticleSystems : uint8
 	Attack,
 	Dizzy,
 	Smite,
+	SmiteShockWave,
+	SmiteElectrifyWarning,
 	Test,
 
 	END
@@ -324,15 +326,13 @@ public:
 	/* Delegate for claiming plot on hold interact */
 	UFUNCTION(Client, Reliable)
 	void Client_OnStoppedClaimingPlot();
+
+	UFUNCTION()
+	void OnHeldItemChanged();
 	
 	/* Currently held item */
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(ReplicatedUsing=OnHeldItemChanged, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
-
-	/* Bool for checking if player is holding gold to slow them down */
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Gold")
-	bool bIsHoldingGold;
-
 	
 	/* The closest interactable item for HUD showing popup text */
 	class IInteractInterface* ClosestInteractableItem;
@@ -374,7 +374,8 @@ public:
 	/* Called when hit by another player */
 	UFUNCTION(BlueprintCallable)
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
-	void GetSmited(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	void InitiateSmite(float _AttackCharge, UWeaponData* _OtherWeaponData);
+	void GetSmited();
 	
 	/* Allows for client only functionality when dropping weapon */
 	void DropWeapon();
@@ -540,7 +541,13 @@ protected:
 	UPROPERTY(meta = (AllowPrivateAccess))
 	bool bCanAttack = true;
 
-
+	FTimerHandle SmiterTimer;
+	float SmiteWarningTime = 3.0f;
+	float SmiteKnockBack = 1.0f;
+	UPROPERTY()
+	UWeaponData* SmiteWeaponData;
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* SmiteCloud;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Sprint													 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -786,6 +793,10 @@ public:
 	class UNiagaraComponent* Dizzy_NiagaraComponent;
 	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Smite_NiagaraComponent;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* SmiteShockWave_NiagaraComponent;
+	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* SmiteElectrifyWarning_NiagaraComponent;
 	UPROPERTY(VisibleAnywhere)
 	TArray<EParticleSystems> ParticleSystemsToActivate{};
 	UPROPERTY(VisibleAnywhere)

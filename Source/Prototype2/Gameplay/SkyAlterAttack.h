@@ -31,6 +31,11 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	class UWeaponData* SmiteWeaponData;
+
+	/* When smite hits player the knockback will be multiplied by this value so bigger map can have more knockback */
+	UPROPERTY(EditAnywhere)
+	float KnockBackMultiplier = 1.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UBoxComponent* BoxComponent1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

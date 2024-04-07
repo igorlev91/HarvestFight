@@ -46,7 +46,7 @@ void USmite::SetSmiteTime(float Amount)
 void USmite::Strike()
 {
 	SmiteCloud->SmtieStrike();
-	Player->GetSmited(StunTime, Player->GetActorLocation(), SmiteData);
+	//Player->GetSmited(StunTime, Player->GetActorLocation(), SmiteData);
 	IncreaseTime(StrikeTimeIncrease + StunTime);
 }
 
