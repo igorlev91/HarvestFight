@@ -36,6 +36,7 @@ enum class EParticleSystems : uint8
 	Smite,
 	SmiteShockWave,
 	SmiteElectrifyWarning,
+	SmiteStaticLightning,
 	Test,
 
 	END
@@ -614,18 +615,25 @@ protected:
 	UPROPERTY()
 	bool bCanSprint = true;
 	
-	/* Rate scales for adjusting animation speed */
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	float WalkRateScale = 1.5f;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	float GoldSlowRateScale = 0.7f;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	float SprintRateScaleScalar = 1.5f;
+	///* Rate scales for adjusting animation speed */
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float WalkRateScale = 1.5f;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float GoldSlowRateScale = 0.7f;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float SprintRateScaleScalar = 1.5f;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Delegates												 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
+	/* Delegate to tell animation blueprint when player is launched */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLaunchedByLaunchPad);
+	UPROPERTY(BlueprintAssignable)
+	FOnLaunchedByLaunchPad OnLaunchedByLaunchPadDelegate;
+	UFUNCTION(BlueprintCallable)
+	void OnLaunchedByLaunchPad();
+	
 	/* Delegate for telling the animation blueprint when charge is cancelled*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFallOnButt);
 	UPROPERTY(BlueprintAssignable)
@@ -707,7 +715,7 @@ public:
 
 	/* Getters for walkspeed and ratescale for debuff component */
 	float GetWalkSpeed(){ return WalkSpeed; }
-	float GetWalkRateScale() { return WalkRateScale; }
+	//float GetWalkRateScale() { return WalkRateScale; }
 
 	class UCameraComponent* ReturnFollowCamera();
 	
@@ -791,6 +799,8 @@ public:
 	class UNiagaraComponent* SmiteShockWave_NiagaraComponent;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteElectrifyWarning_NiagaraComponent;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* SmiteStaticLightning_NiagaraComponent;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

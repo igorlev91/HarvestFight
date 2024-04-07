@@ -48,11 +48,14 @@ void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
 	{
 		LaunchVector = _Player->GetActorForwardVector();
 	}
+
+	float DistanceBetweenUs = (_Player->GetActorLocation() - GetActorLocation()).Length();
 	
 	LaunchVector *= ForwardStrength +
 		// basically nullify the players velocity while keeping the walkspeed velocity
 		// which is what all the jump pads would have been set up with I'm assuming
-		500.0f /* Player max walk speed */ - _Player->GetVelocity().Length();
+		// And just give them another little kick at the end for good measure
+		500.0f /* Player max walk speed */ - _Player->GetVelocity().Length() + 100.0f;
 	
 	LaunchVector.Z = VerticalStrength;
 	_Player->LaunchCharacter(LaunchVector, false, false);

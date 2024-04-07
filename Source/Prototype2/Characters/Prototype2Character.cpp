@@ -45,6 +45,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Prototype2/DataAssets/AnimationData.h"
 #include "Prototype2/DataAssets/SeedData.h"
+#include "Prototype2/Gameplay/LaunchPad.h"
 #include "Prototype2/Pickups/Weapons/WeaponLeekSword.h"
 #include "Prototype2/Pickups/Weapons/WeaponPunching.h"
 #include "Prototype2/Spawning/FertiliserSpawner.h"
@@ -917,14 +918,15 @@ void APrototype2Character::GetSmited()
 	// VFX
 	SmiteCloud->SetVisibility(false);
 	DeActivateParticleSystemFromEnum(EParticleSystems::SmiteElectrifyWarning);
-
+	ActivateParticleSystemFromEnum(EParticleSystems::SmiteStaticLightning);
+	
 	if (GetCharacterMovement()->IsFalling())
 	{
-		ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
+		ActivateParticleSystemFromEnum(EParticleSystems::Smite);
 	}
 	else
 	{
-		ActivateParticleSystemFromEnum(EParticleSystems::Smite);
+		ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
 	}
 
 	// Smite
@@ -1021,6 +1023,8 @@ void APrototype2Character::InitNiagraComponents()
 	SmiteShockWave_NiagaraComponent->SetupAttachment(RootComponent);
 	SmiteElectrifyWarning_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SmiteElectrifyWarning Component"));
 	SmiteElectrifyWarning_NiagaraComponent->SetupAttachment(RootComponent);
+	SmiteStaticLightning_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SmiteStaticLightning Component"));
+	SmiteStaticLightning_NiagaraComponent->SetupAttachment(RootComponent);
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1197,25 +1201,38 @@ void APrototype2Character::CheckForFalling(float _DeltaTime)
 	{
 		FallTimer = 0.0f;
 	}
-	// if (HasAuthority())
-	// {
-	// 	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	// }
-	// else
-	// {
-	// 	Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	// }
 }
 
 void APrototype2Character::LandAfterfalling()
 {
-	if (IsValid(AnimationData->FallOnButtAndGetBackUp))
+	// Line trace to check for shroom and dont play animation or jump if landing on shroom
+	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
+	FVector EndLocation = GetActorLocation() + FVector{0,0,-200}; // The end location of the line trace
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_Visibility, QueryParams);
+	bool bIsLandingOnShroom = false;
+	for (auto Hit : HitResults)
 	{
-		if (!bIsChargingAttack)
+		if (Cast<ALaunchPad>(Hit.GetActor()))
 		{
-			PlayNetworkMontage(AnimationData->FallOnButtAndGetBackUp);
+			bIsLandingOnShroom=true;
+			break;
 		}
-		OnFallOnButtDelegate.Broadcast();
+	}
+	
+	if (!bIsLandingOnShroom)
+	{
+		Jump();
+		if (IsValid(AnimationData->FallOnButtAndGetBackUp))
+		{
+			if (!bIsChargingAttack)
+			{
+				PlayNetworkMontage(AnimationData->FallOnButtAndGetBackUp);
+			}
+			OnFallOnButtDelegate.Broadcast();
+		}
 	}
 }
 
@@ -1268,12 +1285,20 @@ void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewS
 		}
 	case EParticleSystems::SmiteShockWave:
 		{
+			//SmiteShockWave_NiagaraComponent->SetVectorParameter(TEXT("BeamStartPoint"), SmiteCloud->GetComponentLocation());
+			//SmiteShockWave_NiagaraComponent->SetVectorParameter(TEXT("BeamEndPoint"), GetActorLocation());
+			
 			VFXComponent->ActivateParticleSystem(SmiteShockWave_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::SmiteElectrifyWarning:
 		{
 			VFXComponent->ActivateParticleSystem(SmiteElectrifyWarning_NiagaraComponent);
+			break;
+		}
+	case EParticleSystems::SmiteStaticLightning:
+		{
+			VFXComponent->ActivateParticleSystem(SmiteStaticLightning_NiagaraComponent);
 			break;
 		}
 	case EParticleSystems::Test:
@@ -1346,6 +1371,11 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _Ne
 			VFXComponent->DeActivateParticleSystem(SmiteElectrifyWarning_NiagaraComponent);
 			break;
 		}
+	case EParticleSystems::SmiteStaticLightning:
+		{
+			VFXComponent->DeActivateParticleSystem(SmiteStaticLightning_NiagaraComponent);
+			break;
+		}
 	case EParticleSystems::Test:
 		{
 			//Test_NiagraComponent->Deactivate();
@@ -1405,7 +1435,7 @@ void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRot
 
 void APrototype2Character::DebugSomething()
 {
-	ActivateParticleSystemFromEnum(EParticleSystems::Smite);
+	InitiateSmite(3, nullptr);
 }
 
 void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
@@ -1978,6 +2008,11 @@ void APrototype2Character::SetCanSprint(bool _bCanSprint)
 	}
 }
 
+void APrototype2Character::OnLaunchedByLaunchPad()
+{
+	OnLaunchedByLaunchPadDelegate.Broadcast();
+}
+
 void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 {
 	if (HasAuthority())
@@ -2266,7 +2301,7 @@ void APrototype2Character::UpdateWeaponMeshSkin()
 
 void APrototype2Character::UpdateParticleSystems()
 {
-	if (GetCharacterMovement()->Velocity.Size() < 50.0f)
+	if (GetCharacterMovement()->Velocity.Size() < 100.0f || !GetCharacterMovement()->IsMovingOnGround())
 	{
 		if (WalkPoof_NiagaraComponent->IsActive())
 		WalkPoof_NiagaraComponent->Deactivate();
