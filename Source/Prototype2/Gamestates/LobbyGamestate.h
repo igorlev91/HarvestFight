@@ -123,7 +123,6 @@ private:
 	bool bShowMapChoice{false};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	FString MapChoice{"Level_Main"};
-	const int32 NumberOfMaps = 3; // not currently used
 
 	// Timer between map choice and starting gameplay
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
@@ -165,7 +164,9 @@ private:
 	FString FriendlyFarmBlitz = "/Game/Maps/Level_FF_BlitzV3";
 	
 	// Frosty Fields (Winter)
-	FString FrostyFieldsClassic = "/Game/Maps/Level_Winter_ClassicV2";
+	FString FrostyFieldsClassicLarge = "/Game/Maps/Level_Winter_ClassicV2Large";
+	FString FrostyFieldsClassicMedium = "/Game/Maps/Level_Winter_ClassicV2Medium";
+	FString FrostyFieldsClassicSmall = "/Game/Maps/Level_Winter_ClassicV2Small";
 	FString FrostyFieldsBrawl = "/Game/Maps/Level_Winter_Brawl";
 	FString FrostyFieldsBlitz = "/Game/Maps/Level_Winter_BlitzV2";
 
@@ -174,18 +175,13 @@ private:
 	FString HoneyClassicMedium = "/Game/Maps/Level_Honey_ClassicMedium";
 	FString HoneyClassicSmall = "/Game/Maps/Level_Honey_ClassicSmall";
 	FString HoneyBrawl = "/Game/Maps/Level_Honey_Brawl";
-	FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz";
+	//FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz"; // No honey blitz
 
 	// Floating Islands
-	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
-	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/Level_SkyIsland_Brawl";
-	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/Level_SkyIsland_Blitz";
+	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIslandV2_Flat_Attack";
+	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Brawl_Attack";
+	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Blitz_Attack";
 	
 	// Floating Islands
 	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
-	
-	// Chaos
-	//FString Chaos = "/Game/Maps/Level_FF_Chaos";
-
-	
 };

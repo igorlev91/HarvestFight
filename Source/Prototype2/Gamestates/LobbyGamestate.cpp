@@ -261,7 +261,14 @@ void ALobbyGamestate::PickMapToPlay()
 		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = FrostyFieldsClassic;
+			{
+				if (Server_Players.Num() <= 2)	
+					MapChoice = FrostyFieldsClassicSmall;
+				else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+					MapChoice = FrostyFieldsClassicMedium;
+				else
+					MapChoice = FrostyFieldsClassicLarge;
+			}
 			else if (GameMode == 1)// Brawl Mode
 				MapChoice = FrostyFieldsBrawl;
 			else if (GameMode == 2) // Blitz Mode
@@ -311,36 +318,63 @@ void ALobbyGamestate::PickMapToPlay()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Selecting random map from top votes"));
 			
-			int32 MapChoiceArray[3] = {Farm, WinterFarm, HoneyFarm};
-			bool MapChoiceTopVotesArray[3] = {false, false, false};
+			TArray<int32> MapChoiceArray{Farm, WinterFarm, HoneyFarm, FloatingIslandFarm, ClockworkFarm};
+			TArray<int32> MapChoiceTopVotesArray{false, false, false, false, false};
+			//UE_LOG(LogTemp, Warning, TEXT("MapChoiceArray size: %d"), MapChoiceArray.Num());
+			//UE_LOG(LogTemp, Warning, TEXT("MapChoiceTopVotesArray size: %d"), MapChoiceTopVotesArray.Num());
+
+			//UE_LOG(LogTemp, Warning, TEXT("Gamemode: %d"), GameMode);
+			
+			/* Remove redundant maps from brawl/blitz choice */
+			if (GameMode == 1) // Brawl
+			{
+				MapChoiceArray.RemoveAt(4); // Remove clockwork
+				MapChoiceTopVotesArray.RemoveAt(4); // Remove 1 element
+				//NumberOfMaps = 4;
+				//UE_LOG(LogTemp, Warning, TEXT("Removing elements based on Brawl mode"));
+				//UE_LOG(LogTemp, Warning, TEXT("MapChoiceArray size: %d"), MapChoiceArray.Num());
+				//UE_LOG(LogTemp, Warning, TEXT("MapChoiceTopVotesArray size: %d"), MapChoiceArray.Num());
+			}
+			else if (GameMode == 2) // Blitz
+			{
+				MapChoiceArray.RemoveAt(4); // Remove honey farm
+				MapChoiceArray.RemoveAt(2); // Remove clockwork
+				MapChoiceTopVotesArray.RemoveAt(4); // Remove 1 element
+				MapChoiceTopVotesArray.RemoveAt(3); // Remove 1 element
+				//NumberOfMaps = 3;
+				//UE_LOG(LogTemp, Warning, TEXT("Removing elements based on Blitz mode"));
+				//UE_LOG(LogTemp, Warning, TEXT("MapChoiceArray size: %d"), MapChoiceArray.Num());
+			}
+			
 			int32 HighestVote = 0;
 			/* Work out the highest vote */
-			for (int32 i = 0; i < NumberOfMaps; i++)
+			for (int32 i = 0; i < MapChoiceArray.Num(); i++)
 			{
 				if (MapChoiceArray[i] >= HighestVote)
 					HighestVote = MapChoiceArray[i];
 			}
 			/* Set which map choices got top votes */
 			int32 NumberOfHighVotes = 0;
-			for (int32 i = 0; i < NumberOfMaps; i++)
+			for (int32 i = 0; i < MapChoiceArray.Num(); i++)
 			{
 				if (MapChoiceArray[i] == HighestVote)
 				{
 					MapChoiceTopVotesArray[i] = true;
-					UE_LOG(LogTemp, Warning, TEXT("True"));
 					NumberOfHighVotes += 1;
 				}
+				//UE_LOG(LogTemp, Warning, TEXT("MapChoiceTopVotesArray: %s"), ( MapChoiceTopVotesArray[i] ? TEXT("true") : TEXT("false") ));
 			}
 			UE_LOG(LogTemp, Warning, TEXT("Number of votes: %d"), NumberOfHighVotes);
 			/* Picking random map from highest votes */
 			int32 RandomNumber = FMath::RandRange(0, NumberOfHighVotes - 1);
 			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
 			/* Working out which map was chosen by random number */
-			for (int32 i = 0; i < NumberOfMaps; i++)
+			for (int32 i = 0; i < MapChoiceArray.Num(); i++)
 			{
 				if (MapChoiceTopVotesArray[i] == false)
 				{
 					RandomNumber++;
+					UE_LOG(LogTemp, Warning, TEXT("Random Number Now: %d"), RandomNumber);
 				}
 				else
 				{
@@ -351,29 +385,90 @@ void ALobbyGamestate::PickMapToPlay()
 						{
 						case 0:
 							{
-								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_FF_Large";
-								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_FF_Brawl";
+								if (GameMode == 0) // Classic Mode friendly farm
+								{
+									if (Server_Players.Num() <= 2)	
+										MapChoice = FriendlyFarmClassicSmall;
+									else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+										MapChoice = FriendlyFarmClassicMedium;
+									else
+										MapChoice = FriendlyFarmClassicLarge;
+								}
+								else if (GameMode == 1) // Brawl Mode friendly farm
+									MapChoice = FriendlyFarmBrawl;
+								else if (GameMode == 2) // Brawl Mode friendly farm
+									MapChoice = FriendlyFarmBlitz;
+								else
+									UE_LOG(LogTemp, Warning, TEXT("Error: Attempted to access incorrect split vote map - case 0"));
+								
 								UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
 								break;
 							}
 						case 1:
 							{
-								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_Winter_LargeV2";
-								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_Winter_Brawl";
+								if (GameMode == 0) // Frosty Fields Classic Mode
+								{
+									if (Server_Players.Num() <= 2)	
+										MapChoice = FrostyFieldsClassicSmall;
+									else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+										MapChoice = FrostyFieldsClassicMedium;
+									else
+										MapChoice = FrostyFieldsClassicLarge;
+								}
+								else if (GameMode == 1) // Frosty Fields Brawl Mode
+									MapChoice = FrostyFieldsBrawl;
+								else if (GameMode == 2) // Frosty Fields Blitz Mode
+									MapChoice = FrostyFieldsBlitz;
+								else
+									UE_LOG(LogTemp, Warning, TEXT("Error: Attempted to access incorrect split vote map - case 1"));
+								
 								UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
 								break;
 							}
 						case 2:
 							{
-								if (GameMode == 0) // Normal Mode
-									MapChoice = "/Game/Maps/Level_Honey_Large";
-								else // Brawl Mode
-									MapChoice = "/Game/Maps/Level_Honey_Brawl";
-								UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+								if (GameMode == 0) // Honey Classic Mode
+									{
+									if (Server_Players.Num() <= 2)	
+										MapChoice = HoneyClassicSmall;
+									else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+										MapChoice = HoneyClassicMedium;
+									else
+										MapChoice = HoneyClassicLarge;
+									UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+									}
+								else if (GameMode == 1) // Honey Brawl Mode
+									{
+									MapChoice = HoneyBrawl;
+									UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+									}
+								else if (GameMode == 2) // Floating island Blitz Mode
+									{
+										MapChoice = FloatingIslandsBlitz;
+										UE_LOG(LogTemp, Warning, TEXT("Floating Island Farm Map Chosen"));
+									}
+								else
+									UE_LOG(LogTemp, Warning, TEXT("Error: Attempted to access incorrect split vote map - case 2"));
+
+								break;
+							}
+						case 3:
+							{
+								if (GameMode == 0) // Classic Mode floating island
+									MapChoice = FloatingIslandsClassic;
+								else if (GameMode == 1) // Brawl Mode floating island
+									MapChoice = FloatingIslandsBrawl;
+								else
+									UE_LOG(LogTemp, Warning, TEXT("Error: Attempted to access incorrect split vote map - case 3"));
+								
+								UE_LOG(LogTemp, Warning, TEXT("Floating Island Map Chosen"));
+								break;
+							}
+						case 4:
+							{
+								/* Clockwork map choice */
+								MapChoice = ClockworkClassic;
+								UE_LOG(LogTemp, Warning, TEXT("Clockwork Map Chosen"));
 								break;
 							}
 						default:
@@ -381,16 +476,11 @@ void ALobbyGamestate::PickMapToPlay()
 								break;
 							}
 						}
-						i = NumberOfMaps;
+						break;
 					}
 				}
 			}
 		}
-		
-		//if (MapChoiceTotalLengthSeconds > MapChoiceLengthSeconds)
-		//{
-		//	MapChoiceTotalLengthSeconds = MapChoiceLengthSeconds + 1.0f;
-		//}
 	}
 }
 
