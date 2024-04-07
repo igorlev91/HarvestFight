@@ -101,17 +101,17 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	// DOREPLIFETIME(APrototype2Character, CurrentMaxWalkSpeed);
 	// DOREPLIFETIME(APrototype2Character, DelayedSprintRegenTimer);
 	
-	// Niagara Components
+	//// Niagara Components
 	DOREPLIFETIME(APrototype2Character, AttackAreaIndicatorMesh);
-	DOREPLIFETIME(APrototype2Character, Dizzy_NiagaraComponent);
-	//DOREPLIFETIME(APrototype2Character, WalkPoof_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, SprintPoof_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, Sweat_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, AttackTrail_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, Attack_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, Smite_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, SmiteShockWave_NiagaraComponent);
-	DOREPLIFETIME(APrototype2Character, SmiteElectrifyWarning_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, Dizzy_NiagaraComponent);
+	////DOREPLIFETIME(APrototype2Character, WalkPoof_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, SprintPoof_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, Sweat_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, AttackTrail_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, Attack_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, Smite_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, SmiteShockWave_NiagaraComponent);
+	//DOREPLIFETIME(APrototype2Character, SmiteElectrifyWarning_NiagaraComponent);
 }
 
 void APrototype2Character::BeginPlay()
@@ -917,14 +917,26 @@ void APrototype2Character::GetSmited()
 	// VFX
 	SmiteCloud->SetVisibility(false);
 	DeActivateParticleSystemFromEnum(EParticleSystems::SmiteElectrifyWarning);
-	ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
-	ActivateParticleSystemFromEnum(EParticleSystems::Smite);
+
+	if (GetCharacterMovement()->IsFalling())
+	{
+		ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
+	}
+	else
+	{
+		ActivateParticleSystemFromEnum(EParticleSystems::Smite);
+	}
 
 	// Smite
 	FVector RandomLocation = GetActorLocation();
 	RandomLocation.X = FMath::Rand();
 	RandomLocation.Y = FMath::Rand();
-	GetHit(SmiteKnockBack, RandomLocation, SmiteWeaponData);
+	if (IsValid(SmiteWeaponData))
+	{
+		GetHit(SmiteKnockBack, RandomLocation, SmiteWeaponData);
+	}
+	
+	UKismetSystemLibrary::PrintString(GetWorld(), "GetSmited noobs");
 }
 
 void APrototype2Character::Multi_SocketItem_Implementation(UStaticMeshComponent* _Object, FName _Socket)
@@ -1251,11 +1263,6 @@ void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewS
 		}
 	case EParticleSystems::Smite:
 		{
-			Smite_NiagaraComponent->SetVectorParameter("BeamEndPoint", GetActorLocation());
-			if (Smite_NiagaraComponent->IsActive())
-			{
-				VFXComponent->DeActivateParticleSystem(Smite_NiagaraComponent);
-			}
 			VFXComponent->ActivateParticleSystem(Smite_NiagaraComponent);
 			break;
 		}
@@ -1369,15 +1376,6 @@ void APrototype2Character::PickupItem(APickUpItem* _Item, EPickupActor _PickupTy
 	}
 }
 
-void APrototype2Character::Server_ToggleParticleSystems_Implementation(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off)
-{
-	Multi_ToggleParticleSystems(_On, _Off);
-}
-
-void APrototype2Character::Multi_ToggleParticleSystems_Implementation(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off)
-{
-	
-}
 
 void APrototype2Character::UpdateDecalDirection(bool _bIsOn)
 {
@@ -1403,6 +1401,11 @@ void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRot
 	{
 		Server_TeleportToLocation(_DestinationLocation, _DestinationRotation);
 	}
+}
+
+void APrototype2Character::DebugSomething()
+{
+	ActivateParticleSystemFromEnum(EParticleSystems::Smite);
 }
 
 void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)

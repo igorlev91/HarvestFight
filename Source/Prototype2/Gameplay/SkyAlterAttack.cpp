@@ -31,7 +31,6 @@ void ASkyAlterAttack::BeginPlay()
 void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent*
 	OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-	UKismetSystemLibrary::PrintString(GetWorld(), "Hit");
 	if (!OtherActor->HasNetOwner())
 		return;
 	
@@ -47,6 +46,8 @@ void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AAct
 	
 	if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "Sacrficed something");
+		
 		int32 StarValue = Plant->SeedData->BabyStarValue;
 		StarValue = FMath::Clamp(StarValue, 1, 5);
 		Attack(SomePlayer, StarValue);
@@ -80,14 +81,16 @@ void ASkyAlterAttack::Attack(APrototype2Character* _PlayerToNotSmite, int32 _Sta
 		if (CastedPlayer)
 		{
 			// Check if player is team mate
-			if (CastedPlayer->PlayerStateRef->Details.Colour == _PlayerToNotSmite->PlayerStateRef->Details.Colour)
-				continue;
+			//if (CastedPlayer->PlayerStateRef->Details.Colour == _PlayerToNotSmite->PlayerStateRef->Details.Colour)
+			//	continue;
 			
 			if (IsValid(SmiteWeaponData))
 			{
 				// Hit the player
 				float KnockBack = KnockBackMultiplier * _StarValueOfPlant;
 				CastedPlayer->InitiateSmite(KnockBack, SmiteWeaponData);
+				
+				UKismetSystemLibrary::PrintString(GetWorld(), "InitiatedSmite()");
 			}
 			else
 			{

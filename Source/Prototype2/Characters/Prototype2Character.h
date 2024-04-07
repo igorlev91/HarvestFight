@@ -546,7 +546,7 @@ protected:
 	float SmiteKnockBack = 1.0f;
 	UPROPERTY()
 	UWeaponData* SmiteWeaponData;
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	UStaticMeshComponent* SmiteCloud;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Sprint													 ///
@@ -745,12 +745,6 @@ public:
 
 	UFUNCTION()
 	void OnRep_UpdateAOE();
-	
-	/* Toggling particle effects */
-	UFUNCTION(Server, Unreliable)
-	void Server_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_ToggleParticleSystems(const TArray<EParticleSystems>& _On, const TArray<EParticleSystems>& _Off);
 
 	UFUNCTION(BlueprintCallable)
 	void PlayEmote(EEmote _Emote);
@@ -781,26 +775,23 @@ public:
 	UStaticMeshComponent* AttackAreaIndicatorMesh;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* WalkPoof_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SprintPoof_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Sweat_NiagaraComponent;
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* AttackTrail_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Attack_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Dizzy_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = VFX)
 	class UNiagaraComponent* Smite_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteShockWave_NiagaraComponent;
-	UPROPERTY(Replicated, EditAnywhere, Category = VFX)
+	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteElectrifyWarning_NiagaraComponent;
-	UPROPERTY(VisibleAnywhere)
-	TArray<EParticleSystems> ParticleSystemsToActivate{};
-	UPROPERTY(VisibleAnywhere)
-	TArray<EParticleSystems> ParticleSystemsToDeActivate{};
+
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														SFX		 												 ///
@@ -946,6 +937,10 @@ protected:
 	/* Friction for when player is on the ice */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float IceFriction{0.1f};
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void DebugSomething();
 	
 };
 
