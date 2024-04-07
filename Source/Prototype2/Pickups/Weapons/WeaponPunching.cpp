@@ -57,7 +57,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	const FVector SweepEnd = InFrontOfPlayer;
 	
 	// check if something got hit in the sweep
-	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
+	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_PhysicsBody, CollisionSphere);
 
 	// Debug draw the sphere of actual attack
 	// DrawDebugSphere(GetWorld(), SweepStart, _AttackSphereRadius, 50, FColor::Green, false, 10.0f);
@@ -84,6 +84,10 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
 				HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+			}
+			else if (auto HitPickupItem = Cast<APickUpItem>(HitResult.GetActor()))
+			{
+				HitPickupItem->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 			}
 
 			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))

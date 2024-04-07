@@ -267,12 +267,16 @@ void AFertiliserSpawner::CheckForTooManyFertiliserBags()
 
 void AFertiliserSpawner::Multi_SetGhostMaterial_Implementation(AFertiliser* _Fertiliser)
 {
+	if (!IsValid(_Fertiliser))
+		return;
 	_Fertiliser->ItemComponent->Mesh->SetMaterial(0, GhostMaterial);
 	_Fertiliser->ItemComponent->Mesh->SetMaterial(1, GhostMaterial);
 }
 
 void AFertiliserSpawner::Multi_SetFertilizerMaterial_Implementation(AFertiliser* _Fertiliser)
 {
+	if (!IsValid(_Fertiliser))
+		return;
 	_Fertiliser->ItemComponent->Mesh->SetMaterial(0, _Fertiliser->SeedData->PacketMaterials[0]);
 	_Fertiliser->ItemComponent->Mesh->SetMaterial(1, _Fertiliser->SeedData->PacketMaterials[1]);
 }

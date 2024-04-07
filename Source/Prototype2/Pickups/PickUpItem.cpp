@@ -55,6 +55,31 @@ void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 	Server_SetSeedData(_Data,_PickupType);
 }
 
+void APickUpItem::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
+{
+	// Knockback
+	FVector MakeItemSameZValue = _AttackerLocation;
+	MakeItemSameZValue.Z = GetActorLocation().Z;
+	FVector KnockAway = (GetActorUpVector() * _OtherWeaponData->KnockUpMultiplier) + (GetActorLocation() - MakeItemSameZValue).GetSafeNormal();
+	
+	// Set minimum attack charge for scaling knockback
+	if (_AttackCharge < 1.0f)
+	{
+		_AttackCharge = 1.0f;
+	}
+	
+	KnockAway *= _AttackCharge * _OtherWeaponData->KnockbackMultiplier;
+	
+	// Limit the knockback to MaxKnockBackVelocity
+	if (KnockAway.Size() > _OtherWeaponData->MaxKnockback) 
+	{
+		KnockAway = KnockAway.GetSafeNormal() * _OtherWeaponData->MaxKnockback; 
+	}
+
+	ItemComponent->Mesh->AddImpulse(KnockAway * GetHitMultiplier);
+	UKismetSystemLibrary::PrintString(GetWorld(),"Hit Item");
+}
+
 void APickUpItem::Multi_SetSeedData_Implementation(USeedData* _Data, EPickupActor _PickupType)
 {
 	SeedData = _Data;

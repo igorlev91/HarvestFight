@@ -49,6 +49,12 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
+
+	UFUNCTION()
+	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+
+	UPROPERTY()
+	float GetHitMultiplier = 10.0f;
 	
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
