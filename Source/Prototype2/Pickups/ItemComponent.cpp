@@ -71,13 +71,15 @@ void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, UStaticMesh* _InMesh)
 {
-	if (_InMesh)
+	if (IsValid(_InMesh))
 	{
 		Mesh->SetStaticMesh(_InMesh);
 	}
+	
 	for (int i = 0; i < _InMaterials.Num(); i++)
 	{
-		Mesh->SetMaterial(i, _InMaterials[i]);
+		if (IsValid(_InMaterials[i]))
+			Mesh->SetMaterial(i, _InMaterials[i]);
 	}
 }
 

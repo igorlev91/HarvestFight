@@ -43,18 +43,13 @@ public:
 
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
 	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
-
-	UFUNCTION(Server, Reliable)
-	void Server_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetSeedData(USeedData* _Data, EPickupActor _PickupType);
-
+	
 	UFUNCTION()
-	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	void OnRep_SetSeedData(USeedData* _Data);
+	UFUNCTION()
+	void OnRep_SetPickupActor(EPickupActor _Type);
 
-	UPROPERTY()
-	float GetHitMultiplier = 10.0f;
+	
 	
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -62,14 +57,10 @@ public:
 	//sUPROPERTY(EditAnywhere)
 	//sclass USquashAndStretch* SSComponent;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_SetSeedData)
 	class USeedData* SeedData{nullptr};
 
-	// Todo: Rename to PickupType when other Enum is replaced
-	UPROPERTY(VisibleAnywhere)
-	EPickupDataType DataAssetPickupType; //to replace pickup type in itemcomponent
-
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_SetPickupActor)
 	EPickupActor PickupActor;
 
 protected:

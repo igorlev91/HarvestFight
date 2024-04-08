@@ -21,6 +21,8 @@ void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APickUpItem, ItemComponent);
+	DOREPLIFETIME(APickUpItem, SeedData);
+	DOREPLIFETIME(APickUpItem, PickupActor);
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +36,29 @@ void APickUpItem::BeginPlay()
 void APickUpItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	
+	if (ItemComponent->Mesh->GetNumMaterials() == 0 && IsValid(SeedData))
+	{
+		switch(PickupActor)
+		{
+		case EPickupActor::SeedActor:
+			{
+				ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+				break;
+			}
+		case EPickupActor::FertilizerActor:
+			{
+				ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+				break;
+			}
+		default:
+			{
+				ItemComponent->InitializeSeed(SeedData->BabyMaterials, SeedData->BabyMesh);
+				break;
+			}
+		}
+	}
 }
 
 void APickUpItem::Client_Pickup()
@@ -52,41 +77,38 @@ void APickUpItem::Client_Drop()
 
 void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 {
-	Server_SetSeedData(_Data,_PickupType);
+	if (HasAuthority())
+	{
+		PickupActor = _PickupType;
+		SeedData = _Data;
+
+		switch(PickupActor)
+		{
+		case EPickupActor::SeedActor:
+			{
+				ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
+				break;
+			}
+		case EPickupActor::FertilizerActor:
+			{
+				ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
+				break;
+			}
+		default:
+			{
+				ItemComponent->InitializeSeed(_Data->BabyMaterials, _Data->BabyMesh);
+				break;
+			}
+		}
+	}
 }
 
-void APickUpItem::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
+void APickUpItem::OnRep_SetSeedData(USeedData* _Data)
 {
-	// Knockback
-	FVector MakeItemSameZValue = _AttackerLocation;
-	MakeItemSameZValue.Z = GetActorLocation().Z;
-	FVector KnockAway = (GetActorUpVector() * _OtherWeaponData->KnockUpMultiplier) + (GetActorLocation() - MakeItemSameZValue).GetSafeNormal();
+	if (!IsValid(_Data))
+		return;
 	
-	// Set minimum attack charge for scaling knockback
-	if (_AttackCharge < 1.0f)
-	{
-		_AttackCharge = 1.0f;
-	}
-	
-	KnockAway *= _AttackCharge * _OtherWeaponData->KnockbackMultiplier;
-	
-	// Limit the knockback to MaxKnockBackVelocity
-	if (KnockAway.Size() > _OtherWeaponData->MaxKnockback) 
-	{
-		KnockAway = KnockAway.GetSafeNormal() * _OtherWeaponData->MaxKnockback; 
-	}
-
-	ItemComponent->Mesh->AddImpulse(KnockAway * GetHitMultiplier);
-	UKismetSystemLibrary::PrintString(GetWorld(),"Hit Item");
-}
-
-void APickUpItem::Multi_SetSeedData_Implementation(USeedData* _Data, EPickupActor _PickupType)
-{
-	SeedData = _Data;
-	DataAssetPickupType = _Data->BabyType;
-	PickupActor = _PickupType;
-
-	switch(_PickupType)
+	switch(PickupActor)
 	{
 	case EPickupActor::SeedActor:
 		{
@@ -104,12 +126,31 @@ void APickUpItem::Multi_SetSeedData_Implementation(USeedData* _Data, EPickupActo
 			break;
 		}
 	}
-	
 }
 
-void APickUpItem::Server_SetSeedData_Implementation(USeedData* _Data, EPickupActor _PickupType)
+void APickUpItem::OnRep_SetPickupActor(EPickupActor _Type)
 {
-	Multi_SetSeedData(_Data, _PickupType);
+	if (!IsValid(SeedData))
+		return;
+	
+	switch(_Type)
+	{
+	case EPickupActor::SeedActor:
+		{
+			ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+			break;
+		}
+	case EPickupActor::FertilizerActor:
+		{
+			ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+			break;
+		}
+	default:
+		{
+			ItemComponent->InitializeSeed(SeedData->BabyMaterials, SeedData->BabyMesh);
+			break;
+		}
+	}
 }
 
 
