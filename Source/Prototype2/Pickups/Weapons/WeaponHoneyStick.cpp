@@ -69,7 +69,10 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 			{
 				HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
 			}
-
+			else if (auto HitPickupItem = Cast<APickUpItem>(HitResult.GetActor()))
+			{
+				HitPickupItem->GetHit(_AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+			}
 			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
 			{
 				GrowSpot->DegradeConcrete();
