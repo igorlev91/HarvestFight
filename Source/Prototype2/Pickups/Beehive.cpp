@@ -23,8 +23,8 @@ void ABeehive::BeginPlay()
 
 	if (BeesPrefab)
 	{
+		if (HasAuthority())
 		Bees = GetWorld()->SpawnActor<AFlock>(BeesPrefab);
-
 	}
 	TrackerTimeTillCollect = TimeTillCollect;
 }
@@ -98,11 +98,17 @@ bool ABeehive::IsInteractable(APrototype2PlayerState* _Player)
 	return bIsReadyToCollect;
 }
 
-void ABeehive::SetBeehiveLocation()
+void ABeehive::SetBeehiveLocation(FVector _Location)
+{
+	if (HasAuthority())
+		Server_SetBeehiveLocation(_Location);
+}
+
+void ABeehive::Server_SetBeehiveLocation_Implementation(FVector _Location)
 {
 	if (Bees && ItemComponent->Mesh)
 	{
-		Bees->SeekPositionLocation = ItemComponent->Mesh->GetComponentLocation();
+		Bees->SeekPositionLocation = _Location;//ItemComponent->Mesh->GetComponentLocation();
 	}
 }
 
