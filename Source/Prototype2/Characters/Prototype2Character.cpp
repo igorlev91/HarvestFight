@@ -528,6 +528,7 @@ void APrototype2Character::ReleaseAttack()
 	float InAttackCharge = AttackChargeAmount;
 	bool InSprinting = bSprinting;
 	// Delayed attack
+	// CAUSING A CRASH
 	FTimerHandle Handle;
 	GetWorld()->GetTimerManager().SetTimer(Handle,
 		FTimerDelegate::CreateLambda(
@@ -2100,7 +2101,7 @@ bool APrototype2Character::GetHasCrown()
 	
 	for(auto SomePlayerState : GameState->Server_Players)
 	{
-		if (SomePlayerState->Coins > PlayerStateRef->Coins)
+		if (SomePlayerState->Coins >= PlayerStateRef->Coins)
 			return false;
 	}
 

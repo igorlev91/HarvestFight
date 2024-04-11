@@ -82,15 +82,15 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	Super::PostLogin(_NewPlayer);
 	
 	APrototype2PlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<APrototype2PlayerState>();
-	if (!PlayerStateReference)
+	if (!IsValid(PlayerStateReference))
 		return;
 	
 	APrototype2Gamestate* GameStateReference = GetGameState<APrototype2Gamestate>();
-	if (!GameStateReference)
+	if (!IsValid(GameStateReference))
 		return;
 	
 	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-	if (!GameInstance)
+	if (!IsValid(GameInstance))
 		return;
 
 	PlayersTpdToPreGameArena_Teams.Add(false);
@@ -102,14 +102,14 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	UpdatePlayerInfo(GameStateReference, GameInstance, PlayerStateReference);
 	
 	APrototype2Character* Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
-	if (!Character)
+	if (!IsValid(Character))
 		return;
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 \
 	FVector SpawnOffset{0.0f, 0.0f , 300.0f};
 	
-	if (GameInstance->bTeams && PreGameArenas.Num() > 0)
+	if (GameInstance->bTeams)
 	{
 		if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamAColour)
 		{

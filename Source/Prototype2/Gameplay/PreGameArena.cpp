@@ -69,7 +69,15 @@ void APreGameArena::Tick(float DeltaTime)
 		return;
 
 	if (GameState->HasGameStarted())
-		Destroy();
+	{
+		APrototype2GameMode* GamemodeRef = Cast<APrototype2GameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+		if (IsValid(GamemodeRef))
+		{
+			GamemodeRef->PreGameArenas.Remove(this);
+			Destroy();
+		}
+	}
+
 }
 
 void APreGameArena::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
