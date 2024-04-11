@@ -521,10 +521,11 @@ void UWidget_PlayerHUD::ShowEmoteRadialMenu()
 	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
 	if (PlayerController)
 	{
+		
 		FInputModeGameAndUI InputMode;
 		PlayerController->SetInputMode(InputMode);
 		PlayerController->SetShowMouseCursor(true);
-
+		
 		/* Set mouse to centre of the screen */
 		FVector2D ViewportSize;
 		if (GEngine && GEngine->GameViewport)
@@ -547,9 +548,19 @@ void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
 	if (PlayerController)
 	{
-		FInputModeGameOnly InputMode;
-		PlayerController->SetInputMode(InputMode);
-		PlayerController->SetShowMouseCursor(false);
+		if(!GameStateReference)
+			return;
+
+		if (GameStateReference->bHasGameFinished)
+		{
+			// Do nothing
+		}
+		else
+		{
+			FInputModeGameOnly InputMode;
+			PlayerController->SetInputMode(InputMode);
+			PlayerController->SetShowMouseCursor(false);
+		}
 	}
 
 	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
@@ -560,6 +571,15 @@ void UWidget_PlayerHUD::EnableEndgameMenu()
 	IngameMenu->DisableMenu();
 	EndgameMenu->EnableEndgameMenu();
 	bEndgame = true;
+	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+	if (PlayerController)
+	{
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+	}
+	bIsFocusable = true;
+	SetFocus();
+	EmoteRadialMenu->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_PlayerHUD::UpdatePickupUI(UTexture2D* _PickupTexture)

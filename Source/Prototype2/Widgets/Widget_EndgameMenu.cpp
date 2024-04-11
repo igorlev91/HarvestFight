@@ -116,7 +116,7 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 
 void UWidget_EndgameMenu::EnableEndgameMenu()
 {
-	if (GetVisibility() != ESlateVisibility::Visible)
+	if (GetVisibility() == ESlateVisibility::Hidden)
 	{
 		SetVisibility(ESlateVisibility::Visible);
 		

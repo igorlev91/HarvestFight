@@ -93,6 +93,7 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 	case EEmote::Emote8:
 		{
 			EmoteImage->SetBrushFromTexture(Emote8);
+			break;
 		}
 	default:
 		{
