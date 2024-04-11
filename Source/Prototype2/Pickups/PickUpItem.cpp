@@ -106,7 +106,8 @@ void APickUpItem::OnRep_ServerData(FServerData& _Data)
 			break;
 		}
 	}
-	
+
+
 	bInitialized = true;
 }
 

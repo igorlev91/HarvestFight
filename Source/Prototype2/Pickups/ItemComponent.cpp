@@ -53,6 +53,11 @@ void UItemComponent::BeginPlay()
 void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActorComponentTickFunction* _ThisTickFunction)
 {
 	Super::TickComponent(_DeltaTime, _TickType, _ThisTickFunction);
+
+	if (!bInitialized)
+	{
+		OnRep_bGold();
+	}
 }
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
@@ -86,6 +91,30 @@ void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, USt
 void UItemComponent::SetStencilEnabled(bool _StencilEnabled)
 {
 	Mesh->SetRenderCustomDepth(_StencilEnabled);
+}
+
+void UItemComponent::OnRep_bGold()
+{
+	if (bGold == true)
+	{
+		auto MyOwner = GetOwner();
+		if (!IsValid(MyOwner))
+			return;
+		auto CastedOwner = Cast<APickUpItem>(MyOwner);
+		if (!IsValid(CastedOwner))
+			return;
+		if (!IsValid(CastedOwner->ServerData.SeedData))
+			return;
+		
+		for (int i = 0; i < Mesh->GetNumMaterials(); i++)
+		{
+			if (CastedOwner->ServerData.SeedData->BabyGoldMaterials.Num() > i)
+				Mesh->SetMaterial(i, CastedOwner->ServerData.SeedData->BabyGoldMaterials[i]);
+			else if (CastedOwner->ServerData.SeedData->BabyGoldMaterials.Num() > 0)
+				Mesh->SetMaterial(i, CastedOwner->ServerData.SeedData->BabyGoldMaterials[0]);
+			bInitialized = true;
+		}
+	}
 }
 
 void UItemComponent::Multi_DisableCollisionAndAttach_Implementation()

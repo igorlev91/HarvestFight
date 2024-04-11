@@ -330,12 +330,12 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	}
 	else if (_SeedToPlant->ServerData.SeedData->BabyType != EPickupDataType::BeehiveData)
 	{
-		GrowingItemRef->ItemComponent->bGold = false;
 		int32 X = rand() % 100;
 		//X = 0;
 		if (X < GrowingItemRef->ServerData.SeedData->ChanceOfGold)
 		{
 			bIsFertilised = true;
+			GrowingItemRef->ItemComponent->bGold = true;
 			MakePlantGold();
 		}
 	}
@@ -533,16 +533,16 @@ void AGrowSpot::Tick(float _DeltaTime)
 
 void AGrowSpot::Multi_MakePlantGold_Implementation()
 {
-	if (!GrowingItemRef)
-		return;
-
-	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
-	{
-		if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > i)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[i]);
-		else if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > 0)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[0]);
-	}
+	//if (!GrowingItemRef)
+	//	return;
+//
+	//for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
+	//{
+	//	if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > i)
+	//		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[i]);
+	//	else if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > 0)
+	//		GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[0]);
+	//}
 }
 
 void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
@@ -595,22 +595,17 @@ void AGrowSpot::MakePlantGold()
 {
 	if (!GrowingItemRef)
 		return;
-	
-	GrowingItemRef->ItemComponent->bGold = true;
+
 	if (HasAuthority())
-	{
-		Multi_MakePlantGold();
-	}
-	else
-	{
-		Server_MakePlantGold();
-	}
+		GrowingItemRef->ItemComponent->bGold = true;
+	
 	UpdateMaterial();
 }
 
 void AGrowSpot::Server_MakePlantGold_Implementation()
 {
-	Multi_MakePlantGold();
+	GrowingItemRef->ItemComponent->bGold = true;
+	//Multi_MakePlantGold();
 }
 
 void AGrowSpot::Multi_MakePlantConcrete_Implementation()

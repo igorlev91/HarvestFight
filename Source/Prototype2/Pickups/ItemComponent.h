@@ -37,9 +37,15 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
+
+	UFUNCTION()
+	void OnRep_bGold();
 	
-	UPROPERTY(Replicated, EditAnywhere)
-	bool bGold{};
+	UPROPERTY(ReplicatedUsing = OnRep_bGold, EditAnywhere)
+	bool bGold{false};
+
+	UPROPERTY(VisibleAnywhere)
+	bool bInitialized{};
 
 	// For throwing item into bin 
 	UPROPERTY(Replicated)
