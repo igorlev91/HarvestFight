@@ -34,6 +34,9 @@ public:
 
 	UFUNCTION()
 	void OnRep_Initialization();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnDestroy();
 	
 	UPROPERTY(ReplicatedUsing=OnRep_Initialization, VisibleAnywhere)
 	APrototype2Character* OwningPlayer;
@@ -52,5 +55,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* SphereCollision;
 
-	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> DestroyVFX{};
 };

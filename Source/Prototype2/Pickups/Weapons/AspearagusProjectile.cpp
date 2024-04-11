@@ -44,6 +44,12 @@ AAspearagusProjectile::AAspearagusProjectile()
 	{
 		AspearagusMesh->SetStaticMesh(FoundAspearagusMesh.Object);
 	}
+
+	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
+	if (PoofVFX.Class != NULL)
+	{
+		DestroyVFX = PoofVFX.Class;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -110,7 +116,19 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 		HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
 	}
 	
+	Multi_OnDestroy();
+	
 	Destroy();
+}
+
+
+void AAspearagusProjectile::Multi_OnDestroy_Implementation()
+{
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }
 
 void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
