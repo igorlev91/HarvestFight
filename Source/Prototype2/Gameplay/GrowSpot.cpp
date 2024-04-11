@@ -41,6 +41,11 @@ AGrowSpot::AGrowSpot()
 
 	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash Amd Stretch SComponent"));
 
+	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
+	if (PoofVFX.Class != NULL)
+	{
+		PoofSystem = PoofVFX.Class;
+	}
 }
 
 void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -339,10 +344,21 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	GrowingItemRef->ItemComponent->Multi_DisableCollisionAndAttach();
 	
 	_SeedToPlant->Destroy();
+
+	Multi_PlantASeed();
 	
 	GrowSpotState = EGrowSpotState::Growing;
 
 	
+}
+
+void AGrowSpot::Multi_PlantASeed_Implementation()
+{
+	if (PoofSystem)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }
 
 void AGrowSpot::DestroyPlant()

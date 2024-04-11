@@ -50,7 +50,7 @@ protected:
 	void Client_MoveUI_Implementation(float _DeltaTime);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_FireParticleSystem();
-	void Multi_FireParticleSystem_Implementation();
+	
 	void HideParticleSystem();
 	void MoveUIComponent(float _Dt);
 	
@@ -92,6 +92,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UNiagaraSystem* ParticleSystem;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	class TSubclassOf<AActor> PoofSystem;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class UNiagaraComponent* InteractSystem;

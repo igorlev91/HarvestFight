@@ -41,6 +41,10 @@ public:
 	void Stealing_OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID);
 	
 	void PlantASeed(ASeed* _SeedToPlant);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlantASeed();
+	
 	void DestroyPlant();
 	void CompleteGrowth();
 
@@ -177,7 +181,8 @@ protected:
 	class UNiagaraSystem* PlantReadySystem;
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* PlantReadyComponent;
-
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	class TSubclassOf<AActor> PoofSystem;
 	//
 	// Prefabs
 	//

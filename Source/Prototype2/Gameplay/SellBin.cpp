@@ -42,6 +42,12 @@ ASellBin::ASellBin()
 		InteractSystem->SetAsset(CoinsVFX.Object);
 	}
 
+	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
+	if (PoofVFX.Class != NULL)
+	{
+		PoofSystem = PoofVFX.Class;
+	}
+
 	ThrowToSellCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("ThrowToSellCollider"));
 	ThrowToSellCollider->SetupAttachment(RootComponent);
 	
@@ -127,6 +133,13 @@ void ASellBin::Multi_FireSellVFX_Implementation(APrototype2Character* _Player, i
 	InteractSystem->SetVectorParameter(FName("Coin Colour"), SomePlayerState->Details.PureToneColour);
 	InteractSystem->SetIntParameter(FName("CoinCount"), _SellAmount);
 	InteractSystem->Activate(true);
+
+	if (PoofSystem)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{});
+		SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }
 
 void ASellBin::Client_MoveUI_Implementation(float _DeltaTime)
