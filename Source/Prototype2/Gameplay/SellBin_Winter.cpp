@@ -6,16 +6,18 @@
 #include "Components/SplineMeshComponent.h"
 
 ASellBin_Winter::ASellBin_Winter()
+	: ASellBin()
 {
 	bReplicates = true;
-	
+
 	IcePlane = CreateDefaultSubobject<UStaticMeshComponent>("Ice Plane");
 	IcePlane->SetWorldLocation({-104.559325,-72.190911,-13.473242});
-	//IcePlane->SetPhysMaterialOverride()
+	IcePlane->SetupAttachment(RootComponent);
 	
 	IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
 	IceBoundary->SetRelativeScale3D({1,1,8});
 	IceBoundary->SetWorldLocation({-104.559325,-72.190911,300});
+	IceBoundary->SetupAttachment(RootComponent);
 
 	InterfaceType = EInterfaceType::SellBin;
 	
@@ -34,7 +36,8 @@ void ASellBin_Winter::BeginPlay()
 	IcePlane->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 	IcePlane->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel1, ECR_Block);
-	IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	if (IsValid(RootComponent))
+		IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	IcePlane->SetMobility(EComponentMobility::Static);
 	IcePlane->SetIsReplicated(false);
 
@@ -47,7 +50,8 @@ void ASellBin_Winter::BeginPlay()
 	IceBoundary->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	IceBoundary->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
 	IceBoundary->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	if (IsValid(RootComponent))
+		IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	IceBoundary->SetMobility(EComponentMobility::Static);
 	IceBoundary->SetIsReplicated(false);
 

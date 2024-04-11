@@ -202,7 +202,7 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 		}
 	}
 	
-	if (!SellBinRef)
+	if (IsValid(SellBinRef) == false)
 	{
 		AActor* NewActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
 		if (NewActor)

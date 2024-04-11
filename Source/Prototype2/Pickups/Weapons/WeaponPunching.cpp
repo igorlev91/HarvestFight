@@ -57,7 +57,7 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 	const FVector SweepEnd = InFrontOfPlayer;
 	
 	// check if something got hit in the sweep
-	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_PhysicsBody, CollisionSphere);
+	const bool bHasHitResult = GetWorld()->SweepMultiByChannel(OutHits, SweepStart, SweepEnd, FQuat::Identity, ECC_Pawn, CollisionSphere);
 
 	// Debug draw the sphere of actual attack
 	// DrawDebugSphere(GetWorld(), SweepStart, _AttackSphereRadius, 50, FColor::Green, false, 10.0f);

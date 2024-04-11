@@ -174,7 +174,7 @@ void APlant::Server_Destroy_Implementation()
 
 void APlant::Multi_ScalePlant()
 {
-	ItemComponent->Mesh->SetWorldScale3D(SeedData->BabyScale);
+	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale);
 }
 
 void APlant::Multi_OnDestroy_Implementation()

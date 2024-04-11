@@ -21,6 +21,19 @@ enum class EPickupActor : uint8
 	FertilizerActor,
 	BeehiveActor,
 };
+
+USTRUCT()
+struct FServerData
+{
+	GENERATED_BODY()
+ 	
+	UPROPERTY(EditAnywhere)
+	class USeedData* SeedData{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	EPickupActor PickupActor;
+};
+
 class APrototype2Character;
 UCLASS()
 class PROTOTYPE2_API APickUpItem : public AActor
@@ -43,13 +56,15 @@ public:
 
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
 	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
-	
-	UFUNCTION()
-	void OnRep_SetSeedData(USeedData* _Data);
-	UFUNCTION()
-	void OnRep_SetPickupActor(EPickupActor _Type);
 
+	UFUNCTION()
+	void OnRep_ServerData(FServerData& _Data);
 	
+	UFUNCTION()
+	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+
+	UPROPERTY()
+	float GetHitMultiplier = 10.0f;
 	
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
@@ -57,12 +72,12 @@ public:
 	//sUPROPERTY(EditAnywhere)
 	//sclass USquashAndStretch* SSComponent;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_SetSeedData)
-	class USeedData* SeedData{nullptr};
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_ServerData)
+	FServerData ServerData;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_SetPickupActor)
-	EPickupActor PickupActor;
-
+	UPROPERTY(VisibleAnywhere)
+	bool bInitialized{};
+	
 protected:
 	/* Called when the game starts or when spawned */
 	virtual void BeginPlay() override;

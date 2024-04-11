@@ -374,7 +374,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->WinterLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetWinterFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
-	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetClockworkFarm()))); // Increase vote counter for map
 
 	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->GetFarm() > 0) // Normal farm

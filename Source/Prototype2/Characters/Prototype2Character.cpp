@@ -499,7 +499,10 @@ void APrototype2Character::ReleaseAttack()
 		SetPlayerAimingMovement(false);
 	}
 
-	bIsFollowingThroughAttack = true;
+	if (AttackChargeAmount > 0.5f)
+	{
+		bIsFollowingThroughAttack = true;
+	}
 	
 	Server_ReleaseAttack(GetActorLocation(), GetActorForwardVector());
 
@@ -539,7 +542,9 @@ void APrototype2Character::ReleaseAttack()
 
 void APrototype2Character::Interact()
 {
-	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None && DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch)
+	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None &&
+		DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch &&
+		DebuffComponent->DebuffInfo.Debuff != EDebuff::Slow)
 		return;
 	
 	if (bIsChargingAttack)
@@ -557,9 +562,6 @@ void APrototype2Character::Interact()
 
 void APrototype2Character::Server_Interact_Implementation()
 {
-	if (DebuffComponent->DebuffInfo.Debuff != EDebuff::None && DebuffComponent->DebuffInfo.Debuff != EDebuff::Punch)
-		return;
-	
 	if (ClosestInteractableItem)
 	{
 		ClosestInteractableItem->Interact(this);
@@ -684,6 +686,9 @@ void APrototype2Character::CheckForInteractables()
 	if (!HasIdealRole())
 		return;
 
+	if (bIsHoldingInteract)
+		return;
+	
 	if (InteractTimer > InteractTimerTime / 2.0f || bIsChargingAttack)
 	{
 		EnableStencil(false);
@@ -1025,6 +1030,8 @@ void APrototype2Character::InitNiagraComponents()
 	SmiteElectrifyWarning_NiagaraComponent->SetupAttachment(RootComponent);
 	SmiteStaticLightning_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SmiteStaticLightning Component"));
 	SmiteStaticLightning_NiagaraComponent->SetupAttachment(RootComponent);
+	AssertDominance_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("AssertDominance Component"));
+	AssertDominance_NiagaraComponent->SetupAttachment(RootComponent);
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1301,6 +1308,11 @@ void APrototype2Character::ActivateParticleSystemFromEnum(EParticleSystems _NewS
 			VFXComponent->ActivateParticleSystem(SmiteStaticLightning_NiagaraComponent);
 			break;
 		}
+	case EParticleSystems::AssertDominance:
+		{
+			VFXComponent->ActivateParticleSystem(AssertDominance_NiagaraComponent);
+			break;
+		}
 	case EParticleSystems::Test:
 		{
 			//Test_NiagraComponent->Activate();
@@ -1376,6 +1388,11 @@ void APrototype2Character::DeActivateParticleSystemFromEnum(EParticleSystems _Ne
 			VFXComponent->DeActivateParticleSystem(SmiteStaticLightning_NiagaraComponent);
 			break;
 		}
+	case EParticleSystems::AssertDominance:
+		{
+			VFXComponent->DeActivateParticleSystem(AssertDominance_NiagaraComponent);
+			break;
+		}
 	case EParticleSystems::Test:
 		{
 			//Test_NiagraComponent->Deactivate();
@@ -1435,7 +1452,10 @@ void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRot
 
 void APrototype2Character::DebugSomething()
 {
-	InitiateSmite(3, nullptr);
+//#if WITH_EDITOR
+//	TeleportToEndGame(GetTransform());
+//	UKismetSystemLibrary::PrintString(GetWorld(), "Teleported to endgamepodium");
+//#endif
 }
 
 void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
@@ -1673,18 +1693,18 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 	{
 	case EPickupActor::PlantActor:
 		{
-			if (!IsValid(PlayerHUDRef) || !_Item->SeedData->PlantData)
+			if (!IsValid(PlayerHUDRef) || !_Item->ServerData.SeedData->PlantData)
 			{
 				break;
 			}
 			if (_Item->ItemComponent->bGold)
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PlantData->GoldPlantIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->GoldPlantIcon);
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Plant was normal when picked up for me"));
-				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PlantData->PlantIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->PlantIcon);
 			}
 			OnPickUpItemDelegate.Broadcast();
 			break;
@@ -1692,18 +1712,18 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 	case EPickupActor::WeaponActor:
 		{
 			// Set UI
-			if (PlayerHUDRef && _Item->SeedData->WeaponData)
+			if (PlayerHUDRef && _Item->ServerData.SeedData->WeaponData)
 			{
 				PlayerHUDRef->ClearPickupUI();
 				if (_Item->ItemComponent->bGold)
 				{
-					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->SeedData->WeaponData->GoldWeaponIcon);
+					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->GoldWeaponIcon);
 				}
 				else
 				{
-					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->SeedData->WeaponData->WeaponIcon);
+					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->WeaponIcon);
 				}
-				FVector2D ImageSize ={(float)_Item->SeedData->WeaponData->WeaponIcon->GetSizeX(), (float)_Item->SeedData->WeaponData->WeaponIcon->GetSizeY()};
+				FVector2D ImageSize ={(float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeX(), (float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeY()};
 				PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
 				OnPickUpWeaponDelegate.Broadcast();
 			}			
@@ -1713,7 +1733,7 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 		{
 			if (IsValid(PlayerHUDRef) && _Item)
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PacketIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
 			}
 			OnPickUpItemDelegate.Broadcast();
 			break;
@@ -1723,9 +1743,9 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 			if (!IsValid(PlayerHUDRef))
 				break;
 			
-			if (_Item->SeedData->PacketIcon)
+			if (_Item->ServerData.SeedData->PacketIcon)
 			{
-				PlayerHUDRef->UpdatePickupUI(_Item->SeedData->PacketIcon);
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
 			}
 			OnPickUpItemDelegate.Broadcast();
 		}
@@ -1804,10 +1824,12 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 			SetMaxWalkSpeed(WalkSpeed);
 			DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 			ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+			ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 			return;
 		}
 		SetMaxWalkSpeed(GoldPlantSpeed);
 		DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 		return;
 	}
 
@@ -1817,12 +1839,14 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 		SetMaxWalkSpeed(SprintSpeed);
 		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
 		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+		ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 		return;
 	}
 
 	// walk
 	SetMaxWalkSpeed(WalkSpeed);
 	DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
+	DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 }
 
 void APrototype2Character::Client_RefreshCurrentMaxSpeed_Implementation()
@@ -2037,14 +2061,15 @@ void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 void APrototype2Character::Server_TeleportToEndGame_Implementation(FTransform _EndGameTransform)
 {
 	Multi_TeleportToEndGame(_EndGameTransform);
-	bIsHoldingInteract = false;
 }
 
 void APrototype2Character::Multi_TeleportToEndGame_Implementation(FTransform _EndGameTransform)
 {
+	bIsHoldingInteract = false;
 	PlayerNameWidgetComponent->SetVisibility(true);
 	EmoteWidgetComponent->SetVisibility(true);
-	
+
+	OnPlayerAtEndGamePodiumDelegate.Broadcast();
 	GetCharacterMovement()->StopActiveMovement();
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCharacterMovement()->DisableMovement();
@@ -2575,14 +2600,14 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 			// Replace weapon with new one
 			if (Weapon)
 				Weapon->DestroyComponent();
-			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->SeedData->WeaponData->WeaponComponent))
+			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->ServerData.SeedData->WeaponData->WeaponComponent))
 			{
 				NewWeapon->RegisterComponent();
 				NewWeapon->SetIsReplicated(true);
 				Weapon = NewWeapon;
 			}
 			
-			CurrentWeaponSeedData = _Item->SeedData;
+			CurrentWeaponSeedData = _Item->ServerData.SeedData;
 			
 			WeaponCurrentDurability = CurrentWeaponSeedData->WeaponData->Durability;
 			if (_Item->ItemComponent->bGold)
@@ -2595,7 +2620,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 				bIsHoldingGoldWeapon = false;
 			}
 
-			CurrentWeaponAnimation = _Item->SeedData->WeaponData->WeaponAnimationType;
+			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
 			_Item->Destroy();
 
 			Multi_SocketItem_Implementation(WeaponMesh, FName("Base-HumanWeapon"));
@@ -2646,7 +2671,7 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item, E
 	{
 	case EPickupActor::WeaponActor:
 		{
-			AttackAreaIndicatorMesh->SetStaticMesh(_Item->SeedData->WeaponData->AOEIndicatorMesh);
+			AttackAreaIndicatorMesh->SetStaticMesh(_Item->ServerData.SeedData->WeaponData->AOEIndicatorMesh);
 			break;
 		}
 	default:

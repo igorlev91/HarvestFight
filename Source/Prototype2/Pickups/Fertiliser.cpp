@@ -35,11 +35,11 @@ void AFertiliser::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 void AFertiliser::BeginPlay()
 {
 	Super::BeginPlay();
-	PickupActor = EPickupActor::FertilizerActor;
+	ServerData.PickupActor = EPickupActor::FertilizerActor;
 	SetReplicatingMovement(true);
 
-	if (SeedData)
-		SetActorScale3D(SeedData->BabyScale);
+	if (ServerData.SeedData)
+		SetActorScale3D(ServerData.SeedData->BabyScale);
 
 	ItemComponent->SetStencilEnabled(false);
 

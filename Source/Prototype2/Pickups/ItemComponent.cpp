@@ -57,7 +57,7 @@ void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActo
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
 {
-	_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->PickupActor);
+	_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->ServerData.PickupActor);
 	_Player->HeldItem = _ItemPickedUp;
 }
 

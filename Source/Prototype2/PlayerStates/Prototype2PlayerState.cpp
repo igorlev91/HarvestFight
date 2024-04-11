@@ -71,9 +71,9 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 {
 	bIsShowingExtraCoins = true;
-	int32 PlantSellValue = (_SomePlant->SeedData->BabyStarValue * _SomePlant->SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1));
+	int32 PlantSellValue = (_SomePlant->ServerData.SeedData->BabyStarValue * _SomePlant->ServerData.SeedData->PlantData->Multiplier * (_SomePlant->NumberOfNearbyFlowers + 1));
 	PlantSellValue *= Gamestate->SellMultiplier;
-	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->SeedData->GoldMultiplier : PlantSellValue;
+	ExtraCoins = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	Client_OnAddCoins();
 	Multi_OnAddCoins();
 }

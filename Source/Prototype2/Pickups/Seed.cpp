@@ -1,4 +1,4 @@
-
+/
 
 #include "Seed.h"
 
@@ -46,9 +46,9 @@ void ASeed::BeginPlay()
 	SpawnTime = GetWorld()->GetTimeSeconds();
 	ItemComponent->Mesh->SetSimulatePhysics(false);
 
-	if (SeedData)
+	if (ServerData.SeedData)
 	{
-		if (SeedData->BabyType == EPickupDataType::BeehiveData)
+		if (ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
 			ItemComponent->Mesh->SetWorldScale3D({2.0f,2.0f,2.0f});
 	}
 

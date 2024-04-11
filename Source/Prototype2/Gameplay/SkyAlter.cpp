@@ -74,8 +74,6 @@ void ASkyAlter::Client_ClearItem_Implementation(APrototype2Character* _Player)
 {
 	if (_Player->PlayerHUDRef)
 		_Player->PlayerHUDRef->ClearPickupUI();
-
-	_Player->bIsHoldingGold = false;
 }
 
 void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor,
@@ -99,15 +97,15 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 
 	if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
 	{
-		if (Plant->SeedData->Name != "Lamb")
+		if (Plant->ServerData.SeedData->Name != "Lamb")
 		{
-			SomePlayer->smite->IncreaseTime(Plant->SeedData->BabyStarValue * 10);
-			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
+			SomePlayer->smite->IncreaseTime(Plant->ServerData.SeedData->BabyStarValue * 10);
+			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->ServerData.SeedData->BabyStarValue);
 		}
 		else
 		{
 			SomePlayer->smite->SetSmiteTime(SomePlayer->smite->TimerStartTime);
-			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->SeedData->BabyStarValue);
+			SomePlayer->PlayerStateRef->AddCoins(SomePlayer->HeldItem->ServerData.SeedData->BabyStarValue);
 		}
 
 		Client_ClearItem(SomePlayer);
@@ -120,9 +118,6 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 		{
 			SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
 		}
-
-		// Reset player speed incase of gold plant
-		SomePlayer->bIsHoldingGold = false;
 			
 		SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
 

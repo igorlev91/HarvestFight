@@ -61,22 +61,22 @@ void AFertiliserSpawner::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
 
-	if (!GameStateRef)
+	if (!IsValid(GameStateRef))
 	{
 		AGameStateBase* SomeGamestate = UGameplayStatics::GetGameState(GetWorld());
-		if (SomeGamestate)
+		if (IsValid(SomeGamestate))
 		{
 			GameStateRef = Cast<APrototype2Gamestate>(SomeGamestate);
 		}
 	}
 
 
-	if (SpawnedFertiliser != nullptr && SSComponent && SSComponent->IsActive() == false)
+	if (IsValid(SpawnedFertiliser) && SSComponent && SSComponent->IsActive() == false)
 	{
 		SSComponent->SetMeshesToStretch({ChickenMesh, SpawnedFertiliser->ItemComponent->Mesh});
 		SSComponent->Enable();
 	}
-	else if (!SpawnedFertiliser&& SSComponent && SSComponent->IsActive() == true)
+	else if (!IsValid(SpawnedFertiliser) && SSComponent && SSComponent->IsActive() == true)
 	{
 		SSComponent->SetMeshesToStretch({ChickenMesh});
 		SSComponent->Disable();
@@ -233,10 +233,10 @@ void AFertiliserSpawner::CheckForTooManyFertiliserBags()
 	if (!GhostMaterial)
 		return;
 
-	if (!SpawnedFertiliser->SeedData)
+	if (!SpawnedFertiliser->ServerData.SeedData)
 		return;
 
-	if (SpawnedFertiliser->SeedData->PacketMaterials.Num() < 2)
+	if (SpawnedFertiliser->ServerData.SeedData->PacketMaterials.Num() < 2)
 		return;
 
 	int32 UnclaimedBagCount{};
@@ -261,7 +261,7 @@ void AFertiliserSpawner::CheckForTooManyFertiliserBags()
 	else
 	{
 		bBagCountReachedMax = false;
-		Multi_SetFertilizerMaterial(SpawnedFertiliser);
+		//Multi_SetFertilizerMaterial(SpawnedFertiliser);
 	}
 }
 
@@ -277,7 +277,11 @@ void AFertiliserSpawner::Multi_SetFertilizerMaterial_Implementation(AFertiliser*
 {
 	if (!IsValid(_Fertiliser))
 		return;
-	_Fertiliser->ItemComponent->Mesh->SetMaterial(0, _Fertiliser->SeedData->PacketMaterials[0]);
-	_Fertiliser->ItemComponent->Mesh->SetMaterial(1, _Fertiliser->SeedData->PacketMaterials[1]);
+
+	if (!IsValid(_Fertiliser->ServerData.SeedData))
+		return;
+	
+	_Fertiliser->ItemComponent->Mesh->SetMaterial(0, _Fertiliser->ServerData.SeedData->PacketMaterials[0]);
+	_Fertiliser->ItemComponent->Mesh->SetMaterial(1, _Fertiliser->ServerData.SeedData->PacketMaterials[1]);
 }
 

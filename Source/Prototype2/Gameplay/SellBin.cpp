@@ -209,14 +209,12 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 		{
 			Client_OnPlayerSell(SomePlayer);
 			SomePlayer->PlayerStateRef->Client_OnAddCoins();
-			// Reset player speed incase of gold plant
-			SomePlayer->bIsHoldingGold = false;
 			
 			// Audio
 			if (HasAuthority())
 			{
 				SSComponent->Boing();
-				Multi_FireSellVFX(SomePlayer, Plant->SeedData->BabyStarValue *  10);
+				Multi_FireSellVFX(SomePlayer, Plant->ServerData.SeedData->BabyStarValue *  10);
 				
 				if (SomePlayer->SellCue)
 				{
@@ -274,7 +272,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 			if (HasAuthority())
 			{
 				SSComponent->Boing();
-				Multi_FireSellVFX(ThrownPlant->ItemComponent->PlayerWhoThrewItem, ThrownPlant->SeedData->BabyStarValue *  10);
+				Multi_FireSellVFX(ThrownPlant->ItemComponent->PlayerWhoThrewItem, ThrownPlant->ServerData.SeedData->BabyStarValue *  10);
 			
 				if (ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue)
 				{
@@ -302,9 +300,6 @@ void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player,
 	}
 				
 	_Player->PlayerStateRef->AddCoins(_Plant);
-
-	// Reset player speed incase of gold plant
-	_Player->bIsHoldingGold = false;
 			
 	_Player->Multi_SocketItem(_Player->WeaponMesh, FName("Base-HumanWeapon"));
 				
@@ -318,8 +313,7 @@ void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
 {
 	if (_Player->PlayerHUDRef)
 		_Player->PlayerHUDRef->ClearPickupUI();
-
-	_Player->bIsHoldingGold = false;
+	
 	ItemComponent->SetStencilEnabled(false);
 	OnItemSoldDelegate.Broadcast(_Player->PlayerStateRef->Player_ID);
 }
@@ -354,9 +348,6 @@ void ASellBin::Interact(APrototype2Character* _Player)
 			}
 
 			_Player->PlayerStateRef->AddCoins(Plant);
-
-			// Reset player speed incase of gold plant
-			_Player->bIsHoldingGold = false;
 			
 			// Destroy the crop the player is holding
 			_Player->HeldItem->Destroy();
@@ -383,7 +374,7 @@ void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProtot
 {
 	if(auto HeldItem = _Owner->HeldItem)
 	{
-		if (HeldItem->PickupActor == EPickupActor::PlantActor)
+		if (HeldItem->ServerData.PickupActor == EPickupActor::PlantActor)
 		{
 			_InvokingWidget->SetHUDInteractText("");
 

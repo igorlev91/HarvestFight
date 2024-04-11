@@ -48,7 +48,10 @@ public:
 	UAnimMontage* FallOnButtAndGetBackUp;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
-	UAnimSequence* Launch;
+	UAnimSequence* InitialLaunch;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
+	UAnimSequence* LoopingLaunch;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Launch")
 	UAnimSequence* Apex;

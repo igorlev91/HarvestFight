@@ -59,9 +59,9 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 						ReGrowTimer = ReGrowInterval;
 						ASeed* NewSeed = Cast<ASeed>(GetWorld()->SpawnActor(ASeed::StaticClass()));
 						if (rand() % 3 == 0)
-							NewSeed->SeedData = DataAssetWorldOverride->WorldOverrideData->WeaponSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->WeaponSeeds.Num()];
+							NewSeed->ServerData.SeedData = DataAssetWorldOverride->WorldOverrideData->WeaponSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->WeaponSeeds.Num()];
 						else
-							NewSeed->SeedData = DataAssetWorldOverride->WorldOverrideData->PlantSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->PlantSeeds.Num()];
+							NewSeed->ServerData.SeedData = DataAssetWorldOverride->WorldOverrideData->PlantSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->PlantSeeds.Num()];
 						PlantASeed(NewSeed);
 					}
 				}

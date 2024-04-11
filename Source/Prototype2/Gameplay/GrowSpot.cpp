@@ -84,9 +84,9 @@ bool AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 
 	//
 	if (CastedCharacter->HeldItem &&
-	CastedCharacter->HeldItem->SeedData &&
-	CastedCharacter->HeldItem->SeedData->FertiliserData &&
-	CastedCharacter->HeldItem->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
+	CastedCharacter->HeldItem->ServerData.SeedData &&
+	CastedCharacter->HeldItem->ServerData.SeedData->FertiliserData &&
+	CastedCharacter->HeldItem->ServerData.SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 	{
 		if (_Player->Details.Colour == OwningPlayerColor)
 			return false;
@@ -138,7 +138,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
+				else if (SomeFertilizer->ServerData.SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -152,7 +152,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
+				else if (SomeFertilizer->ServerData.SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -166,7 +166,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 			{
 				if (!bIsFertilised)
 					return true;
-				else if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
+				else if (SomeFertilizer->ServerData.SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 				else
 					return false;
@@ -183,7 +183,7 @@ bool AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool
 		{
 			if (AFertiliser* SomeFertilizer = Cast<AFertiliser>(CastedCharacter->HeldItem))
 			{
-				if (SomeFertilizer->SeedData->FertiliserData->Type != EFertiliserType::GOLD)
+				if (SomeFertilizer->ServerData.SeedData->FertiliserData->Type != EFertiliserType::GOLD)
 					return true;
 			}
 			break;
@@ -238,29 +238,29 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 			{
 				if (bIsFertilised)
 				{
-					if (GrowingItemRef->SeedData)
+					if (GrowingItemRef->ServerData.SeedData)
 					{
-						if (GrowingItemRef->SeedData->PlantData)
+						if (GrowingItemRef->ServerData.SeedData->PlantData)
 						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->GoldPlantIcon);
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->ServerData.SeedData->PlantData->GoldPlantIcon);
 						}
-						else if (GrowingItemRef->SeedData->WeaponData)
+						else if (GrowingItemRef->ServerData.SeedData->WeaponData)
 						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->GoldWeaponIcon);
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->ServerData.SeedData->WeaponData->GoldWeaponIcon);
 						}
 					}
 				}
 				else
 				{
-					if (GrowingItemRef->SeedData)
+					if (GrowingItemRef->ServerData.SeedData)
 					{
-						if (GrowingItemRef->SeedData->PlantData)
+						if (GrowingItemRef->ServerData.SeedData->PlantData)
 						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->PlantData->PlantIcon);
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->ServerData.SeedData->PlantData->PlantIcon);
 						}
-						else if (GrowingItemRef->SeedData->WeaponData)
+						else if (GrowingItemRef->ServerData.SeedData->WeaponData)
 						{
-							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->SeedData->WeaponData->WeaponIcon);
+							_Player->PlayerHUDRef->UpdatePickupUI(GrowingItemRef->ServerData.SeedData->WeaponData->WeaponIcon);
 						}
 					}
 				}
@@ -274,10 +274,10 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 
 void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 {
-	if (_SeedToPlant->SeedData->BabyGrowTime > 0)
+	if (_SeedToPlant->ServerData.SeedData->BabyGrowTime > 0)
 	{
-		GrowTime = _SeedToPlant->SeedData->BabyGrowTime;
-		GrowTimer = _SeedToPlant->SeedData->BabyGrowTime;
+		GrowTime = _SeedToPlant->ServerData.SeedData->BabyGrowTime;
+		GrowTimer = _SeedToPlant->ServerData.SeedData->BabyGrowTime;
 	}
 	else
 	{
@@ -285,7 +285,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		GrowTime = 1.0f;
 	}
 
-	if (_SeedToPlant->SeedData->BabyType == EPickupDataType::WeaponData)
+	if (_SeedToPlant->ServerData.SeedData->BabyType == EPickupDataType::WeaponData)
 	{
 		AGrowableWeapon* NewItem = GetWorld()->SpawnActor<AGrowableWeapon>(WeaponPrefab);
 		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
@@ -293,9 +293,9 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		NewItem->SetActorLocation(GetActorLocation() - (FVector::UpVector));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
-		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData,EPickupActor::WeaponActor);
+		GrowingItemRef->SetSeedData(_SeedToPlant->ServerData.SeedData,EPickupActor::WeaponActor);
 	}
-	else if (_SeedToPlant->SeedData->BabyType == EPickupDataType::BeehiveData)
+	else if (_SeedToPlant->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
 	{
 		ABeehive* NewItem = GetWorld()->SpawnActor<ABeehive>(BeehivePrefab);
 		NewItem->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
@@ -303,7 +303,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		NewItem->SetBeehiveLocation(GetActorLocation());
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
-		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData,EPickupActor::BeehiveActor);
+		GrowingItemRef->SetSeedData(_SeedToPlant->ServerData.SeedData,EPickupActor::BeehiveActor);
 		NewItem->ParentGrowSpot = this;
 	}
 	else
@@ -313,7 +313,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		NewItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 5.0f));
 		GrowingActor = NewItem;
 		GrowingItemRef = NewItem;
-		GrowingItemRef->SetSeedData(_SeedToPlant->SeedData, EPickupActor::PlantActor);
+		GrowingItemRef->SetSeedData(_SeedToPlant->ServerData.SeedData, EPickupActor::PlantActor);
 	}
 	
 	GrowingItemRef->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -323,12 +323,12 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	{
 		MakePlantGold();
 	}
-	else if (_SeedToPlant->SeedData->BabyType != EPickupDataType::BeehiveData)
+	else if (_SeedToPlant->ServerData.SeedData->BabyType != EPickupDataType::BeehiveData)
 	{
 		GrowingItemRef->ItemComponent->bGold = false;
 		int32 X = rand() % 100;
 		//X = 0;
-		if (X < GrowingItemRef->SeedData->ChanceOfGold)
+		if (X < GrowingItemRef->ServerData.SeedData->ChanceOfGold)
 		{
 			bIsFertilised = true;
 			MakePlantGold();
@@ -522,10 +522,10 @@ void AGrowSpot::Multi_MakePlantGold_Implementation()
 
 	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
 	{
-		if (GrowingItemRef->SeedData->BabyGoldMaterials.Num() > i)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[i]);
-		else if (GrowingItemRef->SeedData->BabyGoldMaterials.Num() > 0)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyGoldMaterials[0]);
+		if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > i)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[i]);
+		else if (GrowingItemRef->ServerData.SeedData->BabyGoldMaterials.Num() > 0)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyGoldMaterials[0]);
 	}
 }
 
@@ -536,12 +536,12 @@ void AGrowSpot::MandrakePickupNoise(APrototype2Character* _Player)
 		return;
 	}
 
-	if (!_Player->HeldItem->SeedData->BabyMesh)
+	if (!_Player->HeldItem->ServerData.SeedData->BabyMesh)
 	{
 		return;
 	}
 
-	if (_Player->HeldItem->SeedData->Name.Compare("Mandrake"))
+	if (_Player->HeldItem->ServerData.SeedData->Name.Compare("Mandrake"))
 	{
 		return;
 	}
@@ -564,13 +564,13 @@ void AGrowSpot::ScalePlantOnTick() const
 	if (GrowingItemRef  == nullptr)
 		return;
 
-	if (GrowingItemRef->SeedData == nullptr)
+	if (GrowingItemRef->ServerData.SeedData == nullptr)
 		return;
 
-	if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+	if (GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
 		return;
 	
-	const FVector Scale = FMath::Lerp<FVector>(GrowingItemRef->SeedData->BabyScale, FVector(0.2f, 0.2f, 0.2f) , GrowTimer / GrowTime);
+	const FVector Scale = FMath::Lerp<FVector>(GrowingItemRef->ServerData.SeedData->BabyScale, FVector(0.2f, 0.2f, 0.2f) , GrowTimer / GrowTime);
 
 	GrowingItemRef->ItemComponent->Mesh->SetWorldScale3D(Scale);
 }
@@ -617,10 +617,10 @@ void AGrowSpot::Multi_BrakePlantConcrete_Implementation()
 	
 	for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
 	{
-		if (GrowingItemRef->SeedData->BabyMaterials.Num() > i)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyMaterials[i]);
-		else if (GrowingItemRef->SeedData->BabyMaterials.Num() > 0)
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->SeedData->BabyMaterials[0]);
+		if (GrowingItemRef->ServerData.SeedData->BabyMaterials.Num() > i)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyMaterials[i]);
+		else if (GrowingItemRef->ServerData.SeedData->BabyMaterials.Num() > 0)
+			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyMaterials[0]);
 	}
 }
 
@@ -700,11 +700,11 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				if (!_Player->HeldItem)
 					break;
 
-				switch(_Player->HeldItem->PickupActor)
+				switch(_Player->HeldItem->ServerData.PickupActor)
 				{
 				case EPickupActor::SeedActor:
 					{
-						if (!_Player->HeldItem->SeedData)
+						if (!_Player->HeldItem->ServerData.SeedData)
 						{
 							UE_LOG(LogTemp, Warning, TEXT("Could not plant seed data asset"));
 							return;
@@ -721,7 +721,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 							_Player->DropItem();
 							PlantASeed(Seed);
 
-							_Player->PlayerStateRef->AddCoins(Seed->SeedData->BabyStarValue);
+							_Player->PlayerStateRef->AddCoins(Seed->ServerData.SeedData->BabyStarValue);
 						}
 
 						//_Player->SocketWeapon(FName("Base-HumanWeapon"));
@@ -733,7 +733,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					{
 						if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 						{
-							if (auto FertData = Fertiliser->SeedData->FertiliserData)
+							if (auto FertData = Fertiliser->ServerData.SeedData->FertiliserData)
 							{
 								FertiliseInteractDelayTimer = FertiliseInteractDelay;
 								
@@ -786,13 +786,13 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				if (!_Player->HeldItem)
 					break;
 				
-				switch(_Player->HeldItem->PickupActor)
+				switch(_Player->HeldItem->ServerData.PickupActor)
 				{
 				case EPickupActor::FertilizerActor:
 					{
 						if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 						{
-							if (auto FertData = Fertiliser->SeedData->FertiliserData)
+							if (auto FertData = Fertiliser->ServerData.SeedData->FertiliserData)
 							{
 								FertiliseInteractDelayTimer = FertiliseInteractDelay;
 								
@@ -800,7 +800,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 								{
 								case EFertiliserType::GOLD:
 									{
-										if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+										if (GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
 										{
 											break;
 										}
@@ -858,13 +858,13 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			{
 				if (_Player->HeldItem)
 				{
-					switch(_Player->HeldItem->PickupActor)
+					switch(_Player->HeldItem->ServerData.PickupActor)
 					{
 					case EPickupActor::FertilizerActor:
 						{
 							if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 							{
-								if (auto FertData = Fertiliser->SeedData->FertiliserData)
+								if (auto FertData = Fertiliser->ServerData.SeedData->FertiliserData)
 								{
 									FertiliseInteractDelayTimer = FertiliseInteractDelay;
 								
@@ -872,7 +872,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 									{
 										case EFertiliserType::GOLD:
 											{
-												if (GrowingItemRef->SeedData->BabyType == EPickupDataType::BeehiveData)
+												if (GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
 												{
 													break;
 												}
@@ -937,7 +937,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					
 					// Plant
 
-					switch(GrowingItemRef->SeedData->BabyType)
+					switch(GrowingItemRef->ServerData.SeedData->BabyType)
 					{
 					case EPickupDataType::PlantData:
 						{
@@ -1034,7 +1034,7 @@ void AGrowSpot::HoldInteract(APrototype2Character* _Player)
 	}
 
 	// Plant
-	switch(GrowingItemRef->SeedData->BabyType)
+	switch(GrowingItemRef->ServerData.SeedData->BabyType)
 	{
 	case EPickupDataType::PlantData:
 		{
@@ -1119,7 +1119,7 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			}
 			else if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::GOLD:
 					{
@@ -1150,7 +1150,7 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem);
 			if (Fertiliser)
 			{
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::GOLD:
 					{
@@ -1183,7 +1183,7 @@ void AGrowSpot::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, 
 			if (Fertiliser)
 			{
 				// Fert
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::GOLD:
 					{
@@ -1271,7 +1271,7 @@ void AGrowSpot::Stealing_Interact(APrototype2Character* _Player)
 	{
 		if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
 		{
-			if (auto FertData = Fertiliser->SeedData->FertiliserData)
+			if (auto FertData = Fertiliser->ServerData.SeedData->FertiliserData)
 			{
 				FertiliseInteractDelayTimer = FertiliseInteractDelay;
 								
@@ -1340,7 +1340,7 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 		{
 			if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::CONCRETE:
 					{
@@ -1365,7 +1365,7 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 		{
 			if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
 			{
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::CONCRETE:
 					{
@@ -1393,7 +1393,7 @@ void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 			if (Fertiliser)
 			{
 				// Fert
-				switch (Fertiliser->SeedData->FertiliserData->Type)
+				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
 				{
 				case EFertiliserType::CONCRETE:
 					{

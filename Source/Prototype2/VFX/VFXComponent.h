@@ -1,69 +1,69 @@
 
-#pragma once
 
-#include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "VFXComponent.generated.h"
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class PROTOTYPE2_API UVFXComponent : public UActorComponent
-{
-	GENERATED_BODY()
 
-public:
-	UVFXComponent();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION()
-	void ActivateParticleSystem(UNiagaraComponent* _NewSystem);
-	UFUNCTION()
-	void DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
 
-	UFUNCTION(Server, Reliable)
-	void Server_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
-	UFUNCTION(Server, Reliable)
-	void Server_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
-	
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<class UNiagaraComponent*> ParticleSystemsToDeActivate{};
-	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<class UNiagaraComponent*> ParticleSystemsToActivate{};
+
+
+
+
+
 	
 	
-	//UPROPERTY(VisibleAnywhere)
+	
+	
+	
 	//TArray<EParticleSystems> ParticleSystemsToActivate{};
-	//UPROPERTY(VisibleAnywhere)
 	//TArray<EParticleSystems> ParticleSystemsToDeActivate{};
-
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* RootComponent{nullptr};
-	
-	UPROPERTY(EditAnywhere)
+	//UPROPERTY(VisibleAnywhere)
+	//UPROPERTY(VisibleAnywhere)
 	class AActor* Owner{nullptr};
-
-	UPROPERTY(VisibleAnywhere)
 	class APrototype2Character* CastedOwner{nullptr};
-	
-	UFUNCTION()
-	void ToggleParticleSystems();
-	UFUNCTION()
-	void InitOwner();
-
-	UFUNCTION(Server, Unreliable)
-	void Server_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
-
-	UPROPERTY(VisibleAnywhere)
+	class USceneComponent* RootComponent{nullptr};
 	float ToggleDelay {0.3};
-	UPROPERTY(EditAnywhere)
 	float ToggleDelayTimer{};
+	GENERATED_BODY()
+	TArray<class UNiagaraComponent*> ParticleSystemsToActivate{};
+	TArray<class UNiagaraComponent*> ParticleSystemsToDeActivate{};
+	UFUNCTION()
+	UFUNCTION()
+	UFUNCTION()
+	UFUNCTION()
+	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
+	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
+	UVFXComponent();
+	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void ActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void InitOwner();
+	void Multi_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void Multi_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void Multi_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
+	void Server_ActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void Server_DeActivateParticleSystem(UNiagaraComponent* _NewSystem);
+	void Server_ToggleParticleSystems(const TArray<UNiagaraComponent*>& _On, const TArray<UNiagaraComponent*>& _Off);
+	void ToggleParticleSystems();
+#include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
+#include "VFXComponent.generated.h"
+#pragma once
+class PROTOTYPE2_API UVFXComponent : public UActorComponent
+public:
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+{
 };

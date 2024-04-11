@@ -166,8 +166,8 @@ void ARadialPlot::UpdateBeehiveFlowers()
 	for (int32 i = 0; i < GrowSpots.Num(); i++)
 	{
 		if (BeehiveVector.Num() > 0 && GrowSpots[i]->GrowingItemRef &&
-			(GrowSpots[i]->GrowingItemRef->SeedData->BabyType == EPickupDataType::FlowerData
-			|| GrowSpots[i]->GrowingItemRef->SeedData->BabyType == EPickupDataType::PlantData))
+			(GrowSpots[i]->GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::FlowerData
+			|| GrowSpots[i]->GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::PlantData))
 		{
 			for (ABeehive* Behive : BeehiveVector)
 			{

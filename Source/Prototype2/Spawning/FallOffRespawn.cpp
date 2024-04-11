@@ -67,8 +67,6 @@ void AFallOffRespawn::Client_ClearItem_Implementation(APrototype2Character* _Pla
 {
 	if (_Player->PlayerHUDRef)
 		_Player->PlayerHUDRef->ClearPickupUI();
-
-	_Player->bIsHoldingGold = false;
 }
 
 // Called when the game starts or when spawned

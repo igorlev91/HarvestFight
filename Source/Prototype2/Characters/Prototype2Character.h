@@ -37,6 +37,7 @@ enum class EParticleSystems : uint8
 	SmiteShockWave,
 	SmiteElectrifyWarning,
 	SmiteStaticLightning,
+	AssertDominance,
 	Test,
 
 	END
@@ -627,6 +628,11 @@ protected:
 	///														Delegates												 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
+	/* Delegate to tell animation blueprint when the player is at endgame podium */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerAtEndGamePodium);
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerAtEndGamePodium OnPlayerAtEndGamePodiumDelegate;
+	
 	/* Delegate to tell animation blueprint when player is launched */
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLaunchedByLaunchPad);
 	UPROPERTY(BlueprintAssignable)
@@ -801,6 +807,8 @@ public:
 	class UNiagaraComponent* SmiteElectrifyWarning_NiagaraComponent;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteStaticLightning_NiagaraComponent;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* AssertDominance_NiagaraComponent;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -892,7 +900,7 @@ protected:
 	void Server_TeleportToEndGame(FTransform _EndGameTransform);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_TeleportToEndGame(FTransform _EndGameTransform);
-
+	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///													Input Mapping												 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -12,6 +12,7 @@ APickUpItem::APickUpItem()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 	
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
@@ -21,14 +22,14 @@ void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APickUpItem, ItemComponent);
-	DOREPLIFETIME(APickUpItem, SeedData);
-	DOREPLIFETIME(APickUpItem, PickupActor);
+	DOREPLIFETIME(APickUpItem, ServerData);
 }
 
 // Called when the game starts or when spawned
 void APickUpItem::BeginPlay()
 {
 	Super::BeginPlay();
+	SetReplicateMovement(true);
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
 }
 
@@ -37,27 +38,9 @@ void APickUpItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	
-	if (ItemComponent->Mesh->GetNumMaterials() == 0 && IsValid(SeedData))
+	if (!bInitialized && IsValid(ServerData.SeedData))
 	{
-		switch(PickupActor)
-		{
-		case EPickupActor::SeedActor:
-			{
-				ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
-				break;
-			}
-		case EPickupActor::FertilizerActor:
-			{
-				ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
-				break;
-			}
-		default:
-			{
-				ItemComponent->InitializeSeed(SeedData->BabyMaterials, SeedData->BabyMesh);
-				break;
-			}
-		}
+		OnRep_ServerData(ServerData);
 	}
 }
 
@@ -77,38 +60,10 @@ void APickUpItem::Client_Drop()
 
 void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 {
-	if (HasAuthority())
-	{
-		PickupActor = _PickupType;
-		SeedData = _Data;
+	ServerData.SeedData = _Data;
+	ServerData.PickupActor = _PickupType;
 
-		switch(PickupActor)
-		{
-		case EPickupActor::SeedActor:
-			{
-				ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
-				break;
-			}
-		case EPickupActor::FertilizerActor:
-			{
-				ItemComponent->InitializeSeed(_Data->PacketMaterials, _Data->PacketMesh);
-				break;
-			}
-		default:
-			{
-				ItemComponent->InitializeSeed(_Data->BabyMaterials, _Data->BabyMesh);
-				break;
-			}
-		}
-	}
-}
-
-void APickUpItem::OnRep_SetSeedData(USeedData* _Data)
-{
-	if (!IsValid(_Data))
-		return;
-	
-	switch(PickupActor)
+	switch(_PickupType)
 	{
 	case EPickupActor::SeedActor:
 		{
@@ -128,29 +83,57 @@ void APickUpItem::OnRep_SetSeedData(USeedData* _Data)
 	}
 }
 
-void APickUpItem::OnRep_SetPickupActor(EPickupActor _Type)
+void APickUpItem::OnRep_ServerData(FServerData& _Data)
 {
-	if (!IsValid(SeedData))
+	if (!IsValid(_Data.SeedData))
 		return;
 	
-	switch(_Type)
+	switch(_Data.PickupActor)
 	{
 	case EPickupActor::SeedActor:
 		{
-			ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+			ItemComponent->InitializeSeed(_Data.SeedData->PacketMaterials, _Data.SeedData->PacketMesh);
 			break;
 		}
 	case EPickupActor::FertilizerActor:
 		{
-			ItemComponent->InitializeSeed(SeedData->PacketMaterials, SeedData->PacketMesh);
+			ItemComponent->InitializeSeed(_Data.SeedData->PacketMaterials, _Data.SeedData->PacketMesh);
 			break;
 		}
 	default:
 		{
-			ItemComponent->InitializeSeed(SeedData->BabyMaterials, SeedData->BabyMesh);
+			ItemComponent->InitializeSeed(_Data.SeedData->BabyMaterials, _Data.SeedData->BabyMesh);
 			break;
 		}
 	}
+	
+	bInitialized = true;
 }
 
 
+void APickUpItem::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
+{
+	// Removing for beta submission
+	return;
+	// Knockback
+	FVector MakeItemSameZValue = _AttackerLocation;
+	MakeItemSameZValue.Z = GetActorLocation().Z;
+	FVector KnockAway = (GetActorUpVector() * _OtherWeaponData->KnockUpMultiplier) + (GetActorLocation() - MakeItemSameZValue).GetSafeNormal();
+	
+	// Set minimum attack charge for scaling knockback
+	if (_AttackCharge < 1.0f)
+	{
+		_AttackCharge = 1.0f;
+	}
+	
+	KnockAway *= _AttackCharge * _OtherWeaponData->KnockbackMultiplier;
+	
+	// Limit the knockback to MaxKnockBackVelocity
+	if (KnockAway.Size() > _OtherWeaponData->MaxKnockback) 
+	{
+		KnockAway = KnockAway.GetSafeNormal() * _OtherWeaponData->MaxKnockback; 
+	}
+
+	ItemComponent->Mesh->AddImpulse(KnockAway * GetHitMultiplier);
+	UKismetSystemLibrary::PrintString(GetWorld(),"Hit Item");
+}

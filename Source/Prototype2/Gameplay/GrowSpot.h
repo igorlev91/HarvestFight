@@ -78,6 +78,7 @@ public:
 	ABeehive* Beehive = nullptr;
 
 	/* Variables for stealing */
+	UPROPERTY()
 	APrototype2Character* CurrentPlayerStealing = nullptr;
 	float HoldInteractTotalDuration = 5.0f;
 	float HoldInteractTimer = 0.0f;
@@ -121,7 +122,7 @@ protected:
 	void Multi_MakePlantConcrete();
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_MakePlantPoison();
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_BrakePlantConcrete();
 	void SetPlantReadySparkle(bool _bIsActive);
 	UFUNCTION(NetMulticast, Unreliable)
