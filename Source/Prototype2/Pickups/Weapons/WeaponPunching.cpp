@@ -9,6 +9,9 @@
 
 void UWeaponPunching::ChargeAttack(APrototype2Character* _Player)
 {
+	if (!IsValid(_Player))
+		return;
+	
 	Super::ChargeAttack(_Player);
 }
 
@@ -34,13 +37,16 @@ void UWeaponPunching::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _
 
 void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,  float _AttackChargeAmount, bool bIsSprinting)
 {
+	if (!IsValid(_Player))
+		return;
+	
 	// Scale the actual area of effect to be larger than what the indicator shows 
 	_AttackSphereRadius *= _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
 	
 	Super::ExecuteAttack(_AttackSphereRadius, _Player, _AttackChargeAmount, bIsSprinting);
 	
 	// Get a vector infront of the character for the attack sphere to spawn at
-	const FVector InFrontOfPlayer =_Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
+	const FVector InFrontOfPlayer = _Player->GetActorLocation() + (_Player->GetActorForwardVector() * _AttackSphereRadius) + (_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->WeaponReach);
 	
 	// create a collision sphere
 	const FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(_AttackSphereRadius);
@@ -77,29 +83,36 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
-					CheckIfCrownHit(_Player, HitPlayerCast);
+					//HitPlayerCast->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					//Server_ExecuteAttack(HitPlayerCast, ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					_Player->Server_HitPlayer(HitPlayerCast, ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					_Player->Server_CheckIfCrownHit(HitPlayerCast);
+					if (HitPlayerCast->GetHasCrown())
+					{
+						_Player->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+					}
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
-			}
-			else if (auto HitPickupItem = Cast<APickUpItem>(HitResult.GetActor()))
-			{
-				HitPickupItem->GetHit(ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+				//HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+				_Player->Server_HitWinterSellBin(HitSellBinCast, _AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
 			}
 
 			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
 			{
-				GrowSpot->DegradeConcrete();
+				//if (GrowSpot->DegradeConcrete())
+				//{
+				//	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->HitConcreteCue);
+				//}
+				_Player->Server_HitConcrete(GrowSpot);
 			}
 		}
 	}
 
 	// make UI pop out
-	//_Player->OnExecuteAttackDelegate.Broadcast();
-	Client_BroadcastAttackToHUD(_Player);
+	_Player->OnExecuteAttackDelegate.Broadcast();
+	//Client_BroadcastAttackToHUD(_Player);
 	
 	// Play attack audio
 	_Player->PlayWeaponSound(_Player->CurrentWeaponSeedData->WeaponData->AttackAudio);
@@ -107,6 +120,9 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 
 void UWeaponPunching::UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount)
 {
+	if (!IsValid(_Player))
+		return;
+	
 	Super::UpdateAOEIndicator(_Player, _AttackChargeAmount);
 	
 	float AttackSphereRadius = _Player->CurrentWeaponSeedData->WeaponData->BaseAttackRadius + _AttackChargeAmount * _Player->CurrentWeaponSeedData->WeaponData->AOEMultiplier;	

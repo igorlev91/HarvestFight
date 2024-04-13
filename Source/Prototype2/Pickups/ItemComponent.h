@@ -31,9 +31,10 @@ public:
 	void SetStencilEnabled(bool _StencilEnabled);
 	
 public:
-
-	UPROPERTY(Replicated, EditAnywhere)
-	bool bDoBeginPlay = true;;
+	/* Delegate to tell animation blueprint when the player is at endgame podium */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGoldChanged);
+	UPROPERTY()
+	FOnGoldChanged OnGoldChangedDelegate;
 	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
@@ -42,7 +43,7 @@ public:
 	void OnRep_bGold();
 	
 	UPROPERTY(ReplicatedUsing = OnRep_bGold, EditAnywhere)
-	bool bGold{false};
+	bool bGold;
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInitialized{};

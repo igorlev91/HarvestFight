@@ -15,7 +15,10 @@ APickUpItem::APickUpItem()
 	bReplicates = true;
 	
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
-	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Item Squash and stretch"));
+	
+	GoldSoundComponent = CreateDefaultSubobject<UAudioComponent>("GoldAudioCompoent");
+	GoldSoundComponent->SetupAttachment(RootComponent);
 }
 
 void APickUpItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -30,7 +33,13 @@ void APickUpItem::BeginPlay()
 {
 	Super::BeginPlay();
 	SetReplicateMovement(true);
+
+	ItemComponent->Mesh->SetSimulatePhysics(false);
+	
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	SSComponent->OwningItem = this;
+
+	ItemComponent->OnGoldChangedDelegate.AddDynamic(this, &APickUpItem::GoldChanged);
 }
 
 // Called every frame
@@ -44,21 +53,49 @@ void APickUpItem::Tick(float DeltaTime)
 	}
 }
 
-void APickUpItem::Client_Pickup()
+void APickUpItem::Client_Pickup(class APrototype2Character* _Player)
 {
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
 
-	//SSComponent->Boing();
+	SSComponent->Disable();
+
+	/* UPDATE PICKUP UI */
+	if (IsValid(_Player) == false)
+		return;
+	
+	if (IsValid(ServerData.SeedData) == false)
+		return;
+
+	if (ItemComponent->bGold)
+	{
+		if (ServerData.SeedData->PlantData)
+		{
+			_Player->UpdatePickupUI(ServerData.SeedData->PlantData->GoldPlantIcon);
+		}
+		else if (ServerData.SeedData->WeaponData)
+		{
+			_Player->UpdatePickupUI(ServerData.SeedData->WeaponData->GoldWeaponIcon);
+		}
+	}
+	else
+	{
+		if (ServerData.SeedData->PlantData)
+		{
+			_Player->UpdatePickupUI(ServerData.SeedData->PlantData->PlantIcon);
+		}
+		else if (ServerData.SeedData->WeaponData)
+		{
+			_Player->UpdatePickupUI(ServerData.SeedData->WeaponData->WeaponIcon);
+		}
+	}
 }
 
 void APickUpItem::Client_Drop()
 {
 	ItemComponent->Mesh->SetRenderCustomDepth(false);
-
-	//SSComponent->Boing();
 }
 
-void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
+void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType, bool _PreFertilised)
 {
 	ServerData.SeedData = _Data;
 	ServerData.PickupActor = _PickupType;
@@ -77,10 +114,28 @@ void APickUpItem::SetSeedData(USeedData* _Data, EPickupActor _PickupType)
 		}
 	default:
 		{
-			ItemComponent->InitializeSeed(_Data->BabyMaterials, _Data->BabyMesh);
+			if (_PreFertilised)
+			{
+				ItemComponent->bGold = true;
+				ItemComponent->InitializeSeed(_Data->BabyGoldMaterials, _Data->BabyMesh);
+			}
+			else
+				ItemComponent->InitializeSeed(_Data->BabyMaterials, _Data->BabyMesh);
 			break;
 		}
 	}
+}
+
+USeedData* APickUpItem::GetSeedData()
+{
+	USeedData* OutSeedData{nullptr};
+
+	if (IsValid(ServerData.SeedData))
+	{
+		OutSeedData = ServerData.SeedData;
+	}
+	
+	return OutSeedData;
 }
 
 void APickUpItem::OnRep_ServerData(FServerData& _Data)
@@ -102,12 +157,14 @@ void APickUpItem::OnRep_ServerData(FServerData& _Data)
 		}
 	default:
 		{
-			ItemComponent->InitializeSeed(_Data.SeedData->BabyMaterials, _Data.SeedData->BabyMesh);
+			if (ItemComponent->bGold)
+				ItemComponent->InitializeSeed(_Data.SeedData->BabyGoldMaterials, _Data.SeedData->BabyMesh);
+			else
+				ItemComponent->InitializeSeed(_Data.SeedData->BabyMaterials, _Data.SeedData->BabyMesh);
 			break;
 		}
 	}
-
-
+	
 	bInitialized = true;
 }
 
@@ -137,4 +194,26 @@ void APickUpItem::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeapon
 
 	ItemComponent->Mesh->AddImpulse(KnockAway * GetHitMultiplier);
 	UKismetSystemLibrary::PrintString(GetWorld(),"Hit Item");
+}
+
+void APickUpItem::GoldChanged()
+{
+	if (ServerData.PickupActor != EPickupActor::PlantActor)
+		return;
+
+	if (!GoldSoundComponent)
+		return;
+	
+	if (!ItemComponent)
+		return;
+
+	if (ItemComponent->bGold)
+	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "Played Gold Sound");
+		GoldSoundComponent->Play();
+	}
+	else
+	{
+		GoldSoundComponent->Stop();
+	}
 }

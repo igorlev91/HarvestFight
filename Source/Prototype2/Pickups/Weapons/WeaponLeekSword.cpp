@@ -13,14 +13,14 @@ void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* 
 	
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargePunchingAttack)
+		if (_Player->AnimationData->FullChargeLeekAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeLeekAttack);
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalPunchingAttack)
+		if (_Player->AnimationData->NormalLeekAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalLeekAttack);
 		}
@@ -29,6 +29,9 @@ void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* 
 
 void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player,  float _AttackChargeAmount, bool bIsSprinting)
 {
+	if (!IsValid(_Player))
+		return;
+	
 	// Scale the actual area of effect to be larger than what the indicator shows 
 	_AttackSphereRadius *= _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
 	
@@ -62,28 +65,36 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 			{
 				if (HitPlayerCast != _Player)
 				{
-					HitPlayerCast->GetHit(_AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
-					CheckIfCrownHit(_Player, HitPlayerCast);
+					//HitPlayerCast->GetHit(_AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					//CheckIfCrownHit(_Player, HitPlayerCast);
+					_Player->Server_HitPlayer(HitPlayerCast, _AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
+					_Player->Server_CheckIfCrownHit(HitPlayerCast);
+					if (HitPlayerCast->GetHasCrown())
+					{
+						_Player->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+					}
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))
 			{
-				HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+				//HitSellBinCast->GetHit(_AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
+				_Player->Server_HitWinterSellBin(HitSellBinCast, _AttackChargeAmount, _Player->MaxAttackCharge, _Player->GetActorLocation());
 			}
-			else if (auto HitPickupItem = Cast<APickUpItem>(HitResult.GetActor()))
-			{
-				HitPickupItem->GetHit(_AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
-			}
+
 			if (auto GrowSpot = Cast<AGrowSpot>(HitResult.GetActor()))
 			{
-				GrowSpot->DegradeConcrete();
+				//if (GrowSpot->DegradeConcrete())
+				//{
+				//	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->HitConcreteCue);
+				//}
+				_Player->Server_HitConcrete(GrowSpot);
 			}
 		}
 	}
 
 	// make UI pop out
-	//_Player->OnExecuteAttackDelegate.Broadcast();
-	Client_BroadcastAttackToHUD(_Player);
+	_Player->OnExecuteAttackDelegate.Broadcast();
+	//Client_BroadcastAttackToHUD(_Player);
 	
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
@@ -92,7 +103,6 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 	{
 		_Player->DropWeapon();
 
-		//AttackTrail_NiagaraComponent->Deactivate();
 		_Player->DeActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 	
@@ -105,6 +115,9 @@ void UWeaponLeekSword::ExecuteAttack(float _AttackSphereRadius, APrototype2Chara
 
 void UWeaponLeekSword::UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount)
 {
+	if (!IsValid(_Player))
+		return;
+	
 	Super::UpdateAOEIndicator(_Player, _AttackChargeAmount);
 	
 	_Player->AttackAreaIndicatorMesh->SetHiddenInGame(false);

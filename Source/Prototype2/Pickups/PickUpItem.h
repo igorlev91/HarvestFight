@@ -31,7 +31,7 @@ struct FServerData
 	class USeedData* SeedData{nullptr};
 
 	UPROPERTY(EditAnywhere)
-	EPickupActor PickupActor;
+	EPickupActor PickupActor = EPickupActor::SeedActor;
 };
 
 class APrototype2Character;
@@ -49,13 +49,16 @@ public:
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void Client_Pickup();
+	virtual void Client_Pickup(class APrototype2Character* _Player);
 	
 	virtual void Client_Drop();
 	virtual void Server_Drop() {}
 
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
-	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
+	UFUNCTION()
+	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType, bool _PreFertilised = false);
+	
+	class USeedData* GetSeedData();
 
 	UFUNCTION()
 	void OnRep_ServerData(FServerData& _Data);
@@ -63,14 +66,17 @@ public:
 	UFUNCTION()
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
 
+	UFUNCTION()
+	void GoldChanged();
+	
 	UPROPERTY()
 	float GetHitMultiplier = 10.0f;
 	
 	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere)
 	UItemComponent* ItemComponent;
 
-	//sUPROPERTY(EditAnywhere)
-	//sclass USquashAndStretch* SSComponent;
+	UPROPERTY(VisibleAnywhere)
+	class USquashAndStretch* SSComponent;
 
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_ServerData)
 	FServerData ServerData;
@@ -78,6 +84,8 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	bool bInitialized{};
 	
+	UPROPERTY(EditAnywhere, Category="SFX")
+	UAudioComponent* GoldSoundComponent;
 protected:
 	/* Called when the game starts or when spawned */
 	virtual void BeginPlay() override;

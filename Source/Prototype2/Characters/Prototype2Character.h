@@ -11,6 +11,7 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Pickups/PickUpItem.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Character.generated.h"
 
 class APrototype2PlayerController;
@@ -38,9 +39,31 @@ enum class EParticleSystems : uint8
 	SmiteElectrifyWarning,
 	SmiteStaticLightning,
 	AssertDominance,
+	Slow,
 	Test,
 
 	END
+};
+
+USTRUCT()
+struct FExecuteAttackInfo
+{
+	GENERATED_BODY()
+	float AttackSphereRadius = 0.0f;
+	float AttackChargeAmount = 0.0f;
+	bool bIsSprinting = false;
+};
+
+USTRUCT()
+struct FServerEmoteData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	EEmote LastPlayedEmote{EEmote::NONE};
+
+	UPROPERTY(VisibleAnywhere)
+	float EmoteTime{};
 };
 
 UCLASS(config=Game)
@@ -60,6 +83,9 @@ public:
 	UFUNCTION(Client, Unreliable)
 	void Client_AddHUD();
 
+	UFUNCTION()
+	void SetFOV();
+	
 	/* PlayerHUD reference */
 	UPROPERTY(VisibleAnywhere)
 	UWidget_PlayerHUD* PlayerHUDRef;
@@ -84,6 +110,8 @@ protected:
 	/* Constructor */
 	APrototype2Character();	
 
+	virtual void Destroyed() override;
+	
 	/* For networking */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -119,6 +147,8 @@ protected:
 	void InitNiagraComponents();
 	UFUNCTION()
 	void InitMiscComponents();
+	UFUNCTION()
+	void InitFOV();
 
 	void SyncCharacterColourWithPlayerState();
 
@@ -236,11 +266,14 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:	
 	/* Used to stop player input moving the player */
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	bool bAllowMovementFromInput = true;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	bool bIsHoldingInteract = false;
+	UPROPERTY(ReplicatedUsing=OnRep_SetSimulatedProxyAimingMovement)
+	bool bIsAiming = false;
+	
+	//UPROPERTY(Replicated, VisibleAnywhere)
+	//bool bIsHoldingInteract = false;
 
 	
 protected:
@@ -264,17 +297,6 @@ protected:
 	/* Release Attack */
 	void ReleaseAttack();
 	
-	/* Pickup/Plant/Sell */
-	void Interact();
-	UFUNCTION(Server, Reliable)
-	void Server_Interact();
-
-	/* For holding interact functionality*/
-	void HoldInteract();
-	
-	/* For the releasing of holding interact functionality*/
-	void ReleaseHoldInteract();
-	
 	/* UI */
 	void OpenIngameMenu();
 	void ShowRadialEmoteMenu();
@@ -286,6 +308,20 @@ protected:
 	///													Interact													 ///
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
+	/* Pickup/Plant/Sell */
+	void Interact(bool _Direct = true);
+	
+	UFUNCTION()
+	void OnUpdate_InteractTimeline(float _Progress);
+
+	UFUNCTION()
+	void OnFinish_InteractTimeline();
+	
+	void ReleaseInteract();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_Interact(AActor* _Item);
+	
 	/* Pickup function for doing stuff that doens't need rpc/multi, but calls the rpc which calls multi */
 	void PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
@@ -306,6 +342,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
+	UFUNCTION()
+	void PickupItemV2(APickUpItem* _Item);
+
+	UFUNCTION()
+	void ClientPickupV2(APickUpItem* _Item);
+	
 	/* Client RPC for dropping items */
 	UFUNCTION(Client, Reliable)
 	void Client_DropItem();
@@ -313,31 +355,37 @@ public:
 	/* RPC for dropping items */
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem(float WhoopsyStrength = 500.0f);
-	
-	/* For holding interact functionality*/
-	UFUNCTION(Server, Reliable)
-	void Server_HoldInteract();
-	
-	/* For the releasing of holding interact functionality*/
-	UFUNCTION(Server, Reliable)
-	void Server_ReleaseHoldInteract();
-
-	/* Delegate for claiming plot on hold interact */
-	UFUNCTION(Client, Reliable)
-	void Client_OnClaimingPlot(float _CurrentClaimTime, float _TotalClaimDuration);
-	/* Delegate for claiming plot on hold interact */
-	UFUNCTION(Client, Reliable)
-	void Client_OnStoppedClaimingPlot();
 
 	UFUNCTION()
-	void OnHeldItemChanged();
+	void OnRep_HeldItem();
+
+	UFUNCTION()
+	bool IsHolding(UClass* _ObjectType);
+
+	UFUNCTION()
+	class USeedData* GetHeldItemData();
+
+	
+	UFUNCTION()
+	void ClearPickupUI();
+	
+	UFUNCTION()
+	void UpdatePickupUI(UTexture2D* _Icon);
+
+	UFUNCTION()
+	void AddCoins(int32 _Amount);
+
+
 	
 	/* Currently held item */
-	UPROPERTY(ReplicatedUsing=OnHeldItemChanged, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(ReplicatedUsing=OnRep_HeldItem, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
+
+	UPROPERTY(VisibleAnywhere)
+	class APickUpItem* LastHeldItem{nullptr};
 	
 	/* The closest interactable item for HUD showing popup text */
-	class IInteractInterface* ClosestInteractableItem;
+	class IInteractInterface* ClosestInteractableItem{nullptr};
 
 	/* Closest Interactable Actor for player interacting with things */
 	UPROPERTY(VisibleAnywhere)
@@ -346,7 +394,9 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	class ARadialPlot* ClaimedPlot{};
 
-protected:
+	UPROPERTY(VisibleAnywhere)
+	class UTimelineComponent* InteractTimeline;
+public:
 	/* Multicast dropping an item */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DropItem();
@@ -355,14 +405,20 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetBazookaPickup(bool _bIsHoldingBazooka);
+	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float InteractRadius = 150.0f;
+
+	UFUNCTION()
+	void OnRep_InteractTimer();
 	
 	/* Interact timer */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimerTime = 1.0f;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	float InteractTimer{};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -376,6 +432,27 @@ public:
 	/* Called when hit by another player */
 	UFUNCTION(BlueprintCallable)
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	UFUNCTION()
+	void CalculateAndApplyHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+
+	/* Force Feedback (Controller Vibration) */
+	UFUNCTION(Client, Reliable)
+	void Client_GetHitForceFeedback();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnGetHitForceFeedback();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_CheckIfCrownHit(APrototype2Character* _HitPlayer);
+	UFUNCTION(Server, Reliable)
+	void Server_HitWinterSellBin(class ASellBin_Winter* _HitWinterSellBin, float _AttackCharge, float _MaxAttackCharge, FVector _AttackerLocation);
+	UFUNCTION(Server, Reliable)
+	void Server_HitConcrete(AGrowSpot* _HitGrowSpot);
+
+	/* Called from weapon component on attacking player when another player is hit */
+	UFUNCTION(Server, Reliable)
+	void Server_HitPlayer(APrototype2Character* _HitPlayer, float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	
+	/* Smite */
 	void InitiateSmite(float _AttackCharge, UWeaponData* _OtherWeaponData);
 	void GetSmited();
 	
@@ -403,28 +480,29 @@ public:
 	 * Drops item if holding one, and sockets weapon to attacking socket
 	 */
 	UFUNCTION(Server, Reliable)
-	void Server_ChargeAttack();
+	void Server_ChargeAttack(bool _bCharging);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ChargeAttack(bool _bCharging);
 
+	UFUNCTION()
+	void LungeAttack(FVector _LungeVector);
+	UFUNCTION(Server, Reliable)
+	void Server_LungeAttack(FVector _LungeVector);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_LungeAttack(FVector _LungeVector);
+	
 	void SetPlayerAimingMovement(bool _bIsAiming);
+	UFUNCTION()
+	void OnRep_SetSimulatedProxyAimingMovement();
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerAimingMovement(bool _bIsAiming);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetPlayerAimingMovement(bool _bIsAiming);
-	UFUNCTION(Client, Reliable)
-	void Client_SetPlayerAimingMovement(bool _bIsAiming);
+	//UFUNCTION(NetMulticast, Reliable)
+	//void Multi_SetPlayerAimingMovement(bool _bIsAiming);
 
 	UFUNCTION(Server, Reliable)
 	void Server_CancelChargeAttack();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_CancelChargeAttack();
-
-	/* RPC for when attack key is released */
-	UFUNCTION(Server, Reliable)
-	void Server_ReleaseAttack(FVector _CachedActorLocation, FVector _CachedForwardVector);
-
-	/* Multicast for when attack key is released */
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ReleaseAttack();
 
 	/* Mutlicast for dropping a weapon */
 	UFUNCTION(NetMulticast, Reliable)
@@ -437,10 +515,11 @@ public:
 	
 	/* Execute Attack */
 	void ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
-	
-	/* RPC for executing attack*/
-	UFUNCTION(Server, Reliable)
-	void Server_ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
+
+	UFUNCTION()
+	void DelayedExecuteAttack();
+	UPROPERTY()
+	FExecuteAttackInfo ExecuteAttackInfo;
 	
 	UFUNCTION(Client, Reliable)
 	void Client_BroadcastOvercharge();
@@ -455,21 +534,24 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetAOEIndicatorVisibility(bool _bIsVisible);
-	
+
+	/* Throw Item functionality */
+	UFUNCTION()
 	void ThrowItem();
 	UFUNCTION(Server, Reliable)
-	void Server_ThrowItem();
+	void Server_ThrowItem(FVector _ForwardVector, float _PlayerSpeed);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ThrowItem();
+	UFUNCTION()
+	void CalculateThrowVectorAndLaunch(FVector _ForwardVector, float _PlayerSpeed);
 	UPROPERTY(EditDefaultsOnly)
 	float ThrowItemStrength = 500.0f;
 	
 	UFUNCTION(Server, Reliable)
 	void Server_ApplyHoneyGoopSlow();
-	
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	bool bShouldWeaponFlashRed;
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	float WeaponFlashTimer;
 	float WeaponFlashDuration = 0.2f;
 	
@@ -484,7 +566,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsChargingAttack;
 
-	UPROPERTY(ReplicatedUsing=OnRep_ChargeStateChanged)
+	UPROPERTY()
 	bool bChargeAnimationState;
 
 	/* Maximum amount of Attack Charge */
@@ -504,7 +586,7 @@ public:
 	float AutoAttackDuration = 2.0f;
 		
 	/* Weapon degrading */
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int WeaponCurrentDurability;
 
 	/* Default Weapon Data Asset is no weapon (punching with fists) */
@@ -521,10 +603,23 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* WeaponMesh;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	class UStaticMesh* BazookaMesh;
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	UMaterialInstance* BazookaGoldMaterial;
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	UMaterialInstance* BazookaNormalMaterial;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Bazooka")
+	bool bIsHoldingBazooka;
 
+	UPROPERTY(EditDefaultsOnly)
+	USceneComponent* ProjectileSpawnPoint;
+	
 protected:
 	/* Invincible timer - how long the player can't be hit after being hit*/
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(Replicated, EditDefaultsOnly)
 	float InvincibilityTimer = 0.0f;
 	UPROPERTY(EditDefaultsOnly)
 	float InvincibilityDuration = 0.5f;
@@ -561,6 +656,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetSprintState(bool _NewSprintAnimationState);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetSprintState(bool _NewSprintAnimationState);
 	
 	/* Public access to update speed */
 	UFUNCTION()
@@ -568,12 +665,15 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_RefreshCurrentMaxSpeed();
+
+	UFUNCTION()
+	void HandleNotSprinting(float _DeltaSeconds);
 	
 	/* Sprint */
 	UPROPERTY(VisibleAnywhere)
 	bool bSprinting{false};
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
 	bool bSprintAnimationState = false;
 	
 	UPROPERTY()
@@ -602,7 +702,7 @@ protected:
 	float SprintTime = 2.0f;
 	/* Timer for handling sprint */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float SprintTimer{};
+	float SprintTimer = 2.0f;
 
 	/* Delay before sprint regens*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
@@ -612,17 +712,9 @@ protected:
 	
 	/* Allows telling the player HUD one time that sprint is ready*/
 	UPROPERTY()
-	bool bHasNotifiedCanSprint = false;
+	bool bHasNotifiedCanSprint = true;
 	UPROPERTY()
 	bool bCanSprint = true;
-	
-	///* Rate scales for adjusting animation speed */
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float WalkRateScale = 1.5f;
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float GoldSlowRateScale = 0.7f;
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float SprintRateScaleScalar = 1.5f;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Delegates												 ///
@@ -728,7 +820,11 @@ public:
 	UFUNCTION()
 	bool HasIdealRole();
 
+	UFUNCTION()
 	bool GetHasCrown();
+
+	UFUNCTION()
+	int32 GetPlayerID();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														VFX		 												 ///
@@ -764,8 +860,11 @@ public:
 	void PlayEmote(EEmote _Emote);
 	UFUNCTION(Server, Reliable)
 	void Server_PlayEmote(EEmote _Emote);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayEmote(EEmote _Emote);
+
+	UFUNCTION()
+	void OnRep_LastServerEmote();
+	UPROPERTY(ReplicatedUsing=OnRep_LastServerEmote, VisibleAnywhere)
+	FServerEmoteData ServerEmoteData{};
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UVFXComponent* VFXComponent;
@@ -785,7 +884,7 @@ public:
 	ASellBin* SellBin;
 
 	/* Variables needed for VFX */
-	UPROPERTY(ReplicatedUsing=OnRep_UpdateAOE, EditAnywhere, Category = VFX) 
+	UPROPERTY(EditAnywhere, Category = VFX) 
 	UStaticMeshComponent* AttackAreaIndicatorMesh;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* WalkPoof_NiagaraComponent;
@@ -799,10 +898,14 @@ public:
 	class UNiagaraComponent* Attack_NiagaraComponent;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* Dizzy_NiagaraComponent;
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraComponent* Slow_NiagaraComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = VFX)
 	class UNiagaraComponent* Smite_NiagaraComponent;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteShockWave_NiagaraComponent;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* SmiteShockWaveOnly_NiagaraComponent;
 	UPROPERTY(EditAnywhere, Category = VFX)
 	class UNiagaraComponent* SmiteElectrifyWarning_NiagaraComponent;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
@@ -810,6 +913,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* AssertDominance_NiagaraComponent;
 
+	void ToggleIceSlidingVFX(bool _IsEnabled);
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
+	class UNiagaraComponent* IceSliding_Left_NiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
+	class UNiagaraComponent* IceSliding_Right_NiagaraComponent;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														SFX		 												 ///
@@ -817,40 +927,79 @@ public:
 public:
 	/* Plays audio */
 	void PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation = nullptr);
+	UFUNCTION(Client, Unreliable)
+	void Client_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation = nullptr);
 	UFUNCTION(Server, Unreliable)
 	void Server_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
-
+	
 	void PlayWeaponSound(USoundCue* _SoundToPlay);
+	UFUNCTION(Client, Reliable)
+	void Client_PlayWeaponSound(USoundCue* _SoundToPlay);	
 	UFUNCTION(Server, Reliable)
 	void Server_PlayWeaponSound(USoundCue* _SoundToPlay);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayWeaponSound(USoundCue* _SoundToPlay);
-	
-	/* Audio */
-	UPROPERTY(EditAnywhere)
-	USoundAttenuation* SoundAttenuationSettings;
-	UPROPERTY(EditAnywhere)
-	USoundCue* ChargeCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* ExecuteCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* PickUpCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* DropCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* SellCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* PlantCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* GetHitCue;
-	UPROPERTY(EditAnywhere)
-	USoundCue* MandrakeScreamCue;
 
+	void Grunt();
+	UFUNCTION(Server, Reliable)
+	void Server_Grunt();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Grunt();
+	
+	UFUNCTION(BlueprintCallable)
+	void PlayFallSound();
+		
+	/* Audio */
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundAttenuation* AltarAttenuationSettings;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundAttenuation* SoundAttenuationSettings;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* ChargeCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* PickUpCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* GruntCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* SellCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* PlantCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* GetHitCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* SmiteCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* SacrificeCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* JumpCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* LaunchPadCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* AirVentPadCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* FallOnButtCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* HitConcreteCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* ProjectileSoundCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* WeaponDestroyedCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* FallCue;
+	
 	/* One audio component for charge/attack/get hit sounds*/
 	UPROPERTY(EditDefaultsOnly)
 	UAudioComponent* WeaponAudioComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAudioComponent* GruntAudioComponent1;
+	UPROPERTY(EditDefaultsOnly)
+	UAudioComponent* GruntAudioComponent2;
+	
+	UPROPERTY(BlueprintReadOnly)
+	UAudioComponent* FallAudioComponent;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///													Animation 													 ///
@@ -875,7 +1024,7 @@ protected:
 	/* When player has landed after falling */
 	void LandAfterfalling();
 	
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	float FallTimer;
 	UPROPERTY(EditDefaultsOnly)
 	float FallTimerThreshold = 2.0f;
@@ -961,5 +1110,6 @@ public:
 	void DebugSomething();
 	
 };
+
 
 
