@@ -7,6 +7,7 @@
 #include "Prototype2/InteractInterface.h"
 #include "Widget_PlayerHUD.generated.h"
 
+class UBorder;
 class UPlantData;
 
 UCLASS(Blueprintable)
@@ -17,9 +18,15 @@ class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 	/* Public Functions */
 public:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
 
-	class APrototype2Gamestate* GameStateReference;
+	UPROPERTY()
+	class APrototype2Gamestate* GameStateReference{nullptr};
+
+	UPROPERTY()
+	class UPrototypeGameInstance* GameInstance{nullptr};
 
 	/* Toggle ingame menu on/off */
 	UFUNCTION(BlueprintCallable)
@@ -64,6 +71,15 @@ public:
 
 	void UpdateMapChoice(class UWidget_MapChoice* _MapChoiceWidget);
 	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
+
+	UFUNCTION(BlueprintCallable)
+	void SetFreeForAllScoreUI();
+
+	
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
+
+	
 	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -91,27 +107,27 @@ public:
 	/* Player UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player1Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player1ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player2Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player2ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player3Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player3ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player4Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player4ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player5Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player5ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player6Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player6ExtraCoins;
 
 	/* Player Icons */
@@ -192,7 +208,7 @@ public:
 	UTextBlock* P6Name;
 
 	/* Array of all rings */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<UImage*> Crowns;
 	
 	/* Player rings */
@@ -216,19 +232,19 @@ public:
 	/* Team UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team1Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP3;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team2Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP3;
 
 	/* Team overlays */
@@ -260,7 +276,7 @@ public:
 	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
 	UTextBlock* InteractionText; 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* InteractionButtonImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UHorizontalBox* InteractionUI;
@@ -268,6 +284,10 @@ public:
 	UTexture2D* ETexture1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* ETexture2;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* EGamepadTexture1;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* EGamepadTexture2;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	bool bInteractionButtonShowing{false};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -300,5 +320,25 @@ public:
 	///* Blitz Mode Map Choice Widget*/
 	//UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	//UWidget_MapChoice* WBP_MapChoiceBlitz;
+
+	// NEW STARS ON PICKUP UI
+	UFUNCTION()
+	void HandleStarVisibility(APrototype2Character* Owner);
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UOverlay* O_Stars;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UImage* I_Stars;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> StarTextures{nullptr, nullptr, nullptr, nullptr, nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsGamepad = false;
+
+	/* Black screen timer */
+	float BlackScreenTimer = 3.0f;
 };
+
+
+
