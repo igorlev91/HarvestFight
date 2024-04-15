@@ -22,6 +22,7 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	/* Updates playerstate to being ready & turns on ready UI*/
@@ -36,10 +37,7 @@ public:
 	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
 
 	UFUNCTION()
-	void SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
-
-	UFUNCTION(Client, Reliable)
-	void Client_SetOwningController(int32 _PlayerID,class APrototype2PlayerController* _Owner);
+	void SetOwningController(class ALobbyPlayerController* _Owner);
 
 	UFUNCTION()
 	void InitTeams();
@@ -47,8 +45,15 @@ public:
 	UFUNCTION()
 	void UpdateTeams();
 
+
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
+
 	/* Public Variables */
 public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class ALobbyPlayerState* OwningPlayerState;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Ready Button")
 	UButton* ReadyButton;
@@ -56,19 +61,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Cancel Button")
 	UButton* CancelButton;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UCircularThrobber* Throbber_CharacterLoading{nullptr};
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ALobbyGamestate* GameStateReference;
 	
 	/* Classic Mode Map Choice Widget */
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoice;
 	
 	/* Brawl Mode Map Choice Widget*/
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoiceBrawl;
 
 	/* Blitz Mode Map Choice Widget*/
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoiceBlitz;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))
@@ -250,7 +258,8 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UOverlay* P6KickOverlay;
 	
-
+	/* Black screen timer */
+	float BlackScreenTimer = 3.0f;
 
 	
 	/* Widget Variables related to button pulsing/size changes */
@@ -279,6 +288,10 @@ public:
 	// Confirm settings 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmSetting();
+
+	// Confirm settings 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleAvailableSettings();
 	
 	// Game Mode
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -373,4 +386,24 @@ public:
 	void UpdateCementText();
 	UFUNCTION(BlueprintCallable)
 	void SetCementControl();
+	
+	// Cement - Whether cement spawns for maps that have it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* SelfCement_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DefaultSelfCementSetting = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool TempSelfCementSetting = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool SelfCementSetting = false;
+
+	UFUNCTION()
+	void OnSelfCementControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateSelfCementText();
+	UFUNCTION(BlueprintCallable)
+	void SetSelfCementControl();
+
+	
 };

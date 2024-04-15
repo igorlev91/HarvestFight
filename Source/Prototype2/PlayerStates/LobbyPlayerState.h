@@ -27,14 +27,28 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	FString PlayerName{};
-	
+
+	UFUNCTION()
 	void SetIsReady(bool _bIsReady);
+	UFUNCTION(Server, Reliable)
+	void Server_SetIsReady(bool _bIsReady);
 
+	UFUNCTION()
+	void VoteMap(EFarm _Map);
+	UFUNCTION(Server, Reliable)
+	void Server_VoteMap(EFarm _Map);
+	
+	UFUNCTION()
 	void UpdateCharacterMaterial(FCharacterDetails _Details);
+	UFUNCTION(Server, Reliable)
+	void Server_UpdateCharacterMaterial(FCharacterDetails _Details);
 
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
+	UFUNCTION()
+	void OnRep_CharacterDetails();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_CharacterDetails, EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails Details;
-
+	
 	/* Player UI Textures */
 public:
 	UPROPERTY(EditAnywhere)
@@ -49,4 +63,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<UTexture2D*> DuckTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 	
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> BeeTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 };

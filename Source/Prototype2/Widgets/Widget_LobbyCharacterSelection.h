@@ -21,9 +21,12 @@ public:
 	
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
+	UFUNCTION()
+	void UpdateButtonVisibility();
+	
 	/* Updates the UI character image based on the selected character */
 	UFUNCTION(BlueprintCallable)
-	void UpdateCharacterImage(class APrototype2PlayerController* _Owner);
+	void UpdateCharacterImage();
 
 	/**
 	 * @brief Changes the character colour
@@ -31,6 +34,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ChangeCharacterColour(bool _bIsTowardsRight);
+
+	UFUNCTION(BlueprintCallable)
+	bool ChangeTeamsCharacterColour(bool _bIsTowardsRight);
 
 	/**
 	 * @brief Changes the character model
@@ -40,29 +46,26 @@ public:
 	void ChangeCharacter(bool _bIsTowardsRight);
 
 	UFUNCTION(BlueprintCallable)
-	void SetCharacterColourFromSelection(int32 _NumberOfColors);
+	void SetCharacterColourFromSelection();
 
 	UFUNCTION(BlueprintCallable)
-	void SetCharacterModelFromSelection(int32 _NumberOfCharacters);
+	void SetCharacterModelFromSelection();
 
 	UFUNCTION()
 	bool HasSamePlayerColour();
 
 	UFUNCTION()
-	void SetOwningController(int32 _PlayerID, class APrototype2PlayerController* _Owner);
+	void SetOwningController(class ALobbyPlayerController* _Owner);
 
 	UFUNCTION()
 	void SetPlayerID(int32 _PlayerID);
 
-	UFUNCTION()
-	int32 GetNumberOfRedPlayers();
-	UFUNCTION()
-	int32 GetNumberOfBluePlayers();
-
 	UFUNCTION(BlueprintCallable)
-	void UpdateTeamsCharacterColourFromSelection(int32 _Color, int32 _PlayerID);
-	
-	/* Public Variables */
+	bool CanChangeTeams();
+
+	TArray<EColours> GetAvailableColours();
+
+	void UpdateWidgetSwitchers();
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class ALobbyGamestate* GameStateReference;
@@ -78,14 +81,40 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UButton* Button_RightColour;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UButton* Button_LeftCharacter;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UButton* Button_RightCharacter;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidgetSwitcher* Switch_CharacterLeft;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidgetSwitcher* Switch_CharacterRight;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidgetSwitcher* Switch_ColorLeft;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UWidgetSwitcher* Switch_ColorRight;
+	
+
 	UPROPERTY()
 	bool bTeams{};
+
+	UPROPERTY(VisibleAnywhere)
+	bool bLocalReady{};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bPlayerstateUpdated{};
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<ESlateVisibility> PreviousColorButtonVisibilities;
+
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails IdealDetails{};
 
 	UPROPERTY(EditAnywhere)
-	int32 NumberOfCharacters{4};
+	int32 NumberOfCharacters{5};
 
 	UPROPERTY(EditAnywhere)
 	UColourData* SkinColourData{nullptr};
@@ -94,7 +123,7 @@ public:
 	class USkinData* SkinData{nullptr};
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class APrototype2PlayerController* OwningController{nullptr};
+	class ALobbyPlayerController* OwningController{nullptr};
 
 	/* Private Variables */
 	bool HasChosenNewColour{false};

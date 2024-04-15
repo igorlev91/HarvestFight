@@ -3,31 +3,24 @@
 #include "Prototype2/Characters/LobbyCharacter.h"
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/Controllers/LobbyPlayerController.h"
+#include "Prototype2/HUDS/LobbyHUD.h"
 
 ALobbyPlayerState::ALobbyPlayerState()
 {
-	//CharacterColour = (ECharacterColours)((rand() % 3) + 1);
 }
 
 void ALobbyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
+	// Initialize HOST Skin
+	if (HasAuthority())
 	{
-		FString Name{};
-		auto OnlineSubsystem = IOnlineSubsystem::Get();
-		if (OnlineSubsystem)
+		if (auto LocalPlayerController = GetWorld()->GetFirstPlayerController<ALobbyPlayerController>())
 		{
-			if (auto Interface = OnlineSubsystem->GetIdentityInterface())
-			{
-				if (auto uniqueID = GetUniqueId().GetUniqueNetId())
-				{
-					Name = Interface->GetPlayerNickname(*uniqueID);
-				}
-			}
+			LocalPlayerController->GetHUD<ALobbyHUD>()->OnRep_CharacterDetails(Details);
 		}
-		GameInstance->FinalPlayerDetails.FindOrAdd(Name, FCharacterDetails{});
 	}
 }
 
@@ -43,34 +36,89 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 void ALobbyPlayerState::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
-
-	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		FString Name{};
-		auto OnlineSubsystem = IOnlineSubsystem::Get();
-		if (OnlineSubsystem)
-		{
-			if (auto Interface = OnlineSubsystem->GetIdentityInterface())
-			{
-				if (auto uniqueID = GetUniqueId().GetUniqueNetId())
-				{
-					Name = Interface->GetPlayerNickname(*uniqueID);
-				}
-			}
-		}
-		GameInstance->UniqueNetIDName = Name;
-	}
 }
 
 void ALobbyPlayerState::SetIsReady(bool _bIsReady)
 {
+	if (HasAuthority())
+	{
+		IsReady = _bIsReady;
+
+		ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+		if (IsValid(GameState))
+		{
+			GameState->CheckAllReady();
+		}
+	}
+	else
+	{
+		Server_SetIsReady(_bIsReady);
+	}
+}
+
+void ALobbyPlayerState::VoteMap(EFarm _Map)
+{
+	if (HasAuthority())
+	{
+		ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+		if (IsValid(GameState))
+		{
+			GameState->VoteMap(_Map);
+		}
+	}
+	else
+	{
+		Server_VoteMap(_Map);
+	}
+}
+
+void ALobbyPlayerState::Server_VoteMap_Implementation(EFarm _Map)
+{
+	ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (IsValid(GameState))
+	{
+		GameState->VoteMap(_Map);
+	}
+}
+
+void ALobbyPlayerState::Server_SetIsReady_Implementation(bool _bIsReady)
+{
 	IsReady = _bIsReady;
+
+	ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (IsValid(GameState))
+	{
+		GameState->CheckAllReady();
+	}
 }
 
 void ALobbyPlayerState::UpdateCharacterMaterial(FCharacterDetails _Details)
 {
-	Details = _Details;
+	if (HasAuthority())
+	{
+		Details = _Details;
+		OnRep_CharacterDetails();
+	}
+	else
+	{
+		Server_UpdateCharacterMaterial(_Details);
+	}
+}
 
-	// Print
-	//UE_LOG(LogTemp, Warning, TEXT("Player %s Colour Changed: %s"), *FString::FromInt(Player_ID), *FString::FromInt((int)CharacterColour));
+void ALobbyPlayerState::Server_UpdateCharacterMaterial_Implementation(FCharacterDetails _Details)
+{
+	Details = _Details;
+}
+
+void ALobbyPlayerState::OnRep_CharacterDetails()
+{
+	auto LocalPlayerController = GetWorld()->GetFirstPlayerController();
+	if (IsValid(LocalPlayerController) == false)
+		return;
+
+	auto LocalLobbyHUD = LocalPlayerController->GetHUD<ALobbyHUD>();
+	if (IsValid(LocalLobbyHUD) == false)
+		return;
+
+	LocalLobbyHUD->OnRep_CharacterDetails(Details);
 }

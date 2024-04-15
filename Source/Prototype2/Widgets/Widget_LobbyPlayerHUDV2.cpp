@@ -14,6 +14,7 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/Controllers/LobbyPlayerController.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
@@ -36,7 +37,7 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateGameModeText();
 	
 	/* Set game speed control */
-	GameLength_Control->OptionText->SetText(FText::FromString("Game Speed"));
+	GameLength_Control->OptionText->SetText(FText::FromString("Game Length"));
 	UpdateGameSpeedText();
 
 	/* Set stealing control */
@@ -44,12 +45,16 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateStealingText();
 
 	/* Set fertiliser control */
-	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn (if available)"));
+	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn"));
 	UpdateFertiliserText();
 
 	/* Set cement control */
-	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn (if available)"));
+	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn"));
 	UpdateCementText();
+
+	/* Set self cementing control */
+	SelfCement_Control->OptionText->SetText(FText::FromString("Own Plot Cementing"));
+	UpdateSelfCementText();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeConstruct()
@@ -92,14 +97,21 @@ void UWidget_LobbyPlayerHUDV2::NativeConstruct()
 		Cement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
 		Cement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
 	}
+
+	/* Self Cement control buttons */
+	if (SelfCement_Control)
+	{
+		SelfCement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
+		SelfCement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
+	}
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
+	
 	/* Set gamestate reference */
-	if (auto* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	if (ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		GameStateReference = GameState;
 	}
@@ -179,22 +191,36 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	KickOverlays.Add(P4KickOverlay);
 	KickOverlays.Add(P5KickOverlay);
 	KickOverlays.Add(P6KickOverlay);
+
+	InitTeams();
+
+	RemoveLoadingScreen();
+}
+
+void UWidget_LobbyPlayerHUDV2::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	ShowLoadingScreen();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (!GameStateReference)
+	if (BlackScreenTimer > 0)
 	{
-		return;
+		BlackScreenTimer -= InDeltaTime;
+		RemoveLoadingScreen();
 	}
-
-	InitTeams();
+	
+	
+	OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (!IsValid(OwningPlayerState))
+		return;
+	
+	//InitTeams();
 	UpdateTeams();
-
-	//UE_LOG(LogTemp, Warning, TEXT("Team 1 size: %d"), GameStateReference->Server_TeamOne.Num());
-	//UE_LOG(LogTemp, Warning, TEXT("Team 2 size: %d"), GameStateReference->Server_TeamTwo.Num());
 	
 	/* Make all player overlays hidden on start of frame */
 	for (int i = 1; i < Overlays.Num(); i++)
@@ -206,14 +232,13 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	{
 		if (auto Player = GameStateReference->Server_Players[i])
 		{
-			
-			if (GetOwningPlayerState() == Player)
+			if (OwningPlayerState == Player)
 			{
 				YouOverlays[i]->SetVisibility(ESlateVisibility::Visible);
 			}
-			if (GetOwningPlayerState()->HasAuthority())
+			if (OwningPlayerState->HasAuthority())
 			{
-				if (GetOwningPlayerState() != Player)
+				if (OwningPlayerState != Player)
 					KickOverlays[i]->SetVisibility(ESlateVisibility::Visible);
 			}
 			
@@ -259,6 +284,11 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
 						break;
 					}
+				case ECharacters::BEE:
+					{
+						Icons[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
+						break;
+					}
 				default:
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_LobbyPlayerHUDV2: Unable to determine character type"));
@@ -295,6 +325,7 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 	/* Showing map choice widget */
 	if (GameStateReference->ShouldShowMapChoices())
 	{
+		
 		if (GameStateReference->GetGameMode() == 0) // Normal Game mode
 		{
 			UpdateMapChoice(WBP_MapChoice);
@@ -331,37 +362,25 @@ void UWidget_LobbyPlayerHUDV2::SetReady()
 {
 	if (auto PlayerState = Cast<ALobbyPlayerState>(GetOwningPlayerState()))
 	{
-		auto PlayerID = PlayerState->Player_ID;
-		
-		if (GameStateReference->Server_Players.Num() >= PlayerID)
-		{
-			if (auto PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
-			{
-				PlayerController->SetIsReady(PlayerID, true);
-			}
+		PlayerState->SetIsReady(true);
+		ReadyButton->SetVisibility(ESlateVisibility::Hidden);
+		CancelButton->SetVisibility(ESlateVisibility::Visible);
 
-			ReadyButton->SetVisibility(ESlateVisibility::Hidden);
-			CancelButton->SetVisibility(ESlateVisibility::Visible);
-		}
+		// TOGGLE CHARACTER CHANGING VISIBILITY
+		WBP_LobbyCharacterSelection->bLocalReady = true;
 	}
 }
 
 void UWidget_LobbyPlayerHUDV2::SetCancel()
 {
-	if (auto* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
+	if (auto PlayerState = Cast<ALobbyPlayerState>(GetOwningPlayerState()))
 	{
-		auto PlayerID = PlayerController->GetPlayerState<ALobbyPlayerState>()->Player_ID;
+		PlayerState->SetIsReady(false);
+		ReadyButton->SetVisibility(ESlateVisibility::Visible);
+		CancelButton->SetVisibility(ESlateVisibility::Hidden);
 		
-		if (GameStateReference->Server_Players.Num() >= PlayerID)
-		{
-			if (auto* playerState = Cast<ALobbyPlayerState>(GameStateReference->Server_Players[PlayerID]))
-			{
-				PlayerController->SetIsReady(PlayerID, false);
-
-				ReadyButton->SetVisibility(ESlateVisibility::Visible);
-				CancelButton->SetVisibility(ESlateVisibility::Hidden);
-			}
-		}
+		// TOGGLE CHARACTER CHANGING VISIBILITY
+		WBP_LobbyCharacterSelection->bLocalReady = false;
 	}
 }
 
@@ -375,6 +394,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetClockworkFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->RandomLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetRandomFarm()))); // Increase vote counter for map
 
 	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->GetFarm() > 0) // Normal farm
@@ -401,38 +421,56 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->GetRandomFarm() > 0) // Random farm
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
 {
 	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
-	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
+	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= -0.5f)
 	{
-		_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
-		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		//_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
+		//_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		if (GameStateReference->GetMapChoiceTotalLengthSeconds() > -1.0f && GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
+			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("0")));
+		else
+			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("")));
 	}
 }
 
-void UWidget_LobbyPlayerHUDV2::SetOwningController(int32 _PlayerID,APrototype2PlayerController* _Owner)
+void UWidget_LobbyPlayerHUDV2::SetOwningController(ALobbyPlayerController* _Owner)
 {
-	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
+	WBP_LobbyCharacterSelection->SetOwningController(_Owner);
 }
 
 void UWidget_LobbyPlayerHUDV2::InitTeams()
 {
-	if (bTeams && !WBP_LobbyCharacterSelection->bTeams)
+	if (bTeams)
 	{
 		TeamAText->SetVisibility(ESlateVisibility::Visible);
 		TeamBText->SetVisibility(ESlateVisibility::Visible);
 		
 		WBP_LobbyCharacterSelection->Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
-		WBP_LobbyCharacterSelection->Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
+		if (WBP_LobbyCharacterSelection->PreviousColorButtonVisibilities.Num() <= 0)
+		{
+			WBP_LobbyCharacterSelection->PreviousColorButtonVisibilities.Add(WBP_LobbyCharacterSelection->Button_LeftColour->GetVisibility());
+			WBP_LobbyCharacterSelection->PreviousColorButtonVisibilities.Add(WBP_LobbyCharacterSelection->Button_RightColour->GetVisibility());
+		}
+		else
+		{
+			WBP_LobbyCharacterSelection->PreviousColorButtonVisibilities[0] = WBP_LobbyCharacterSelection->Button_LeftColour->GetVisibility();
+			WBP_LobbyCharacterSelection->PreviousColorButtonVisibilities[1] = WBP_LobbyCharacterSelection->Button_RightColour->GetVisibility();
+		}
 		
 		WBP_LobbyCharacterSelection->bTeams = bTeams;
 		if (ColourData)
 		{
-			TeamAText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamOneColour]);
-			TeamBText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamTwoColour]);
+			TeamAText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamsDetails.TeamOneColour]);
+			TeamBText->SetColorAndOpacity(ColourData->PureColours[(int32)GameStateReference->TeamsDetails.TeamTwoColour]);
 		}
 
 		BackgroundImageT1->SetOpacity(0.4f);
@@ -463,18 +501,18 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	FontInfo = TeamAText->GetFont();
 	FontInfo.OutlineSettings = TeamAText->GetFont().OutlineSettings;
 	FontInfo.OutlineSettings.OutlineColor = FLinearColor::White;
-	TeamAText->SetText(FText::FromString(GameStateReference->TeamOneName));
-	TeamBText->SetText(FText::FromString(GameStateReference->TeamTwoName));
+	TeamAText->SetText(FText::FromString(GameStateReference->TeamsDetails.TeamOneName));
+	TeamBText->SetText(FText::FromString(GameStateReference->TeamsDetails.TeamTwoName));
 	
-	if (GameStateReference->TeamOneColour == EColours::BLACK)
+	if (GameStateReference->TeamsDetails.TeamOneColour == EColours::BLACK)
 		TeamAText->SetFont(FontInfo);
-	if (GameStateReference->TeamTwoColour == EColours::BLACK)
+	if (GameStateReference->TeamsDetails.TeamTwoColour == EColours::BLACK)
 		TeamBText->SetFont(FontInfo);
 	
 	/* Update team 1 positions in vertical box */
-	for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
+	for (int i = 0; i < GameStateReference->TeamsDetails.Server_TeamOne.Num(); i++)
 	{
-		if (auto Player = GameStateReference->Server_TeamOne[i])
+		if (auto Player = GameStateReference->TeamsDetails.Server_TeamOne[i])
 		{
 			switch (Player->Player_ID)
 			{
@@ -546,9 +584,9 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	VerticalBoxLeft->InvalidateLayoutAndVolatility();
 
 	/* Update team 2 positions in vertical box */
-	for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
+	for (int i = 0; i < GameStateReference->TeamsDetails.Server_TeamTwo.Num(); i++)
 	{
-		if (auto Player = GameStateReference->Server_TeamTwo[i])
+		if (auto Player = GameStateReference->TeamsDetails.Server_TeamTwo[i])
 		{
 			switch (Player->Player_ID)
 			{
@@ -625,6 +663,38 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 
+void UWidget_LobbyPlayerHUDV2::RemoveLoadingScreen()
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (!GameInstance)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("No game instance"));
+		return;
+	}
+
+	if (!GameInstance->BlackScreenWidget)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("No black screen widget"));
+		return;
+	}
+	
+	GameInstance->RemoveLoadingScreen(GameInstance->BlackScreenWidget);
+}
+
+void UWidget_LobbyPlayerHUDV2::ShowLoadingScreen()
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (!GameInstance)
+		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
+	
+	GameInstance->ShowLoadingScreen(GameInstance->BlackScreenWidget, 0);
+}
+
 void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 {
 	TempGameSpeed = DefaultGameSpeed;
@@ -639,10 +709,16 @@ void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 	TempCementSetting = DefaultCementSetting;
 	UpdateCementText();
 	SetCementControl();
+	TempSelfCementSetting = DefaultSelfCementSetting;
+	UpdateSelfCementText();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ResetSetting()
 {
+	TempHHGameMode = HHGameMode;
+	UpdateGameModeText();
+	SetGameModeControl();
 	TempGameSpeed = GameSpeed;
 	UpdateGameSpeedText();
 	SetGameSpeedControl();
@@ -655,6 +731,9 @@ void UWidget_LobbyPlayerHUDV2::ResetSetting()
 	TempCementSetting = CementSetting;
 	UpdateCementText();
 	SetCementControl();
+	TempSelfCementSetting = SelfCementSetting;
+	UpdateSelfCementText();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
@@ -663,6 +742,7 @@ void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
 	SetStealingControl();
 	SetFertiliserControl();
 	SetCementControl();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
@@ -690,6 +770,8 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
 			break;
 		}
 	}
+
+	ToggleAvailableSettings();
 
 	UpdateGameModeText();
 }
@@ -719,7 +801,7 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlRightButtonPressed()
 			break;
 		}
 	}
-
+	ToggleAvailableSettings();
 	UpdateGameModeText();
 }
 
@@ -906,8 +988,21 @@ void UWidget_LobbyPlayerHUDV2::SetCementControl()
 	CementSetting = TempCementSetting;
 }
 
-void UWidget_LobbyPlayerHUDV2::Client_SetOwningController_Implementation(int32 _PlayerID,
-                                                                         APrototype2PlayerController* _Owner)
+void UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed()
 {
-	WBP_LobbyCharacterSelection->SetOwningController(_PlayerID, _Owner);
+	TempSelfCementSetting = !TempSelfCementSetting;
+	UpdateSelfCementText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateSelfCementText()
+{
+	if (TempSelfCementSetting)
+		SelfCement_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		SelfCement_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_LobbyPlayerHUDV2::SetSelfCementControl()
+{
+	SelfCementSetting = TempSelfCementSetting;
 }

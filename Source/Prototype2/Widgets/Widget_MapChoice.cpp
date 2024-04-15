@@ -6,6 +6,7 @@
 #include "Prototype2/Controllers/Prototype2PlayerController.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 
 void UWidget_MapChoice::EnableMapChoice()
 {
@@ -18,13 +19,12 @@ void UWidget_MapChoice::SelectLevel(EFarm _Level)
 	{
 		bHasMapBeenSelected = true;
 
-		if (auto* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer()))
-		{
-			PlayerController->VoteMap(_Level);
-
-			UE_LOG(LogTemp, Warning, TEXT("Select Level Called"));
-		}
+		if (ALobbyPlayerState* LobbyState = GetOwningPlayerState<ALobbyPlayerState>())
+			LobbyState->VoteMap(_Level);
+		else if (APrototype2PlayerState* GamePlayerState = GetOwningPlayerState<APrototype2PlayerState>())
+			GamePlayerState->VoteMap(_Level);
 	}
 }
+
 
 
