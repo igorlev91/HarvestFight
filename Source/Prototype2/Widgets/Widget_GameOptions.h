@@ -30,6 +30,11 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
+	/* Delegate to tell player when to update its FOV when setting is changed */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFOVChanged);
+	UPROPERTY()
+	FOnFOVChanged OnFOVChangedDelegate;
+	
 	/* Public Variables */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UButton* GraphicsButton;
@@ -45,6 +50,12 @@ public:
 
 	UFUNCTION()
 	void UpdateGameInstanceVariables();
+
+	UFUNCTION(BlueprintCallable)
+	void LoadSettings();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnChangedCursorSetting();
 	
 	/* Child ControlWidgets */
 
@@ -111,6 +122,34 @@ public:
 	UFUNCTION()
 	void OnFramerateLimitControlRightButtonPressed();
 
+	// FOV control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* FOV_Control;
+
+	int32 TempFOV;
+
+	UFUNCTION()
+	void OnFOVControlLeftButtonPressed();
+	UFUNCTION()
+	void OnFOVControlRightButtonPressed();
+	UFUNCTION()
+	void SetFOVQualitySettingText();
+
+	// Master graphics quality control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* MasterGraphicsQuality_Control;
+
+	int32 TempMasterGraphics;
+
+	UFUNCTION()
+	void OnMasterGraphicsControlLeftButtonPressed();
+	UFUNCTION()
+	void OnMasterGraphicsControlRightButtonPressed();
+	UFUNCTION()
+	void SetMasterGraphicsQualitySettingText();
+	UFUNCTION()
+	void MatchGraphicsQualitySettings();
+	
 	// Texture quality control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* TextureQuality_Control;
@@ -268,11 +307,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* PlayerStencil_Control;
 
+	bool bTempPlayerStencil;
+
 	UFUNCTION()
 	void OnPlayerStencilControlButtonPressed();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* EnemyStencilAlwaysRed_Control;
+
+	bool bTempEnemyAlwaysRed;
 
 	UFUNCTION()
 	void OnEnemyStencilAlwaysRedControlButtonPressed();
@@ -282,6 +325,8 @@ public:
 	// Offscreen Indicators control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* UIOffscreenIndicators_Control;
+
+	int32 TempUIIndicators;
 
 	UFUNCTION()
 	void OnUIOffscreenIndicatorsControlLeftButtonPressed();
@@ -294,12 +339,95 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* UIOffscreenIndicatorSize_Control;
 
+	bool bTempUIIndicatorSizeLarge;
+
 	UFUNCTION()
-	void OnUIOffscreenIndicatorSizeControlLeftButtonPressed();
-	UFUNCTION()
-	void OnUIOffscreenIndicatorSizeControlRightButtonPressed();
+	void OnUIOffscreenIndicatorSizeControlButtonPressed();
 	UFUNCTION()
 	void SetUIOffscreenIndicatorSizeSettingText();
+
+	// Player Names ingame UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* PlayerNames_Control;
+
+	bool bTempPlayerNames;
+
+	UFUNCTION()
+	void OnPlayerNamesControlButtonPressed();
+	UFUNCTION()
+	void SetPlayerNamesSettingText();
+
+	// Plant value floating UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* PlantValueFloatingUI_Control;
+
+	bool bPlantValueFloatingUI;
+
+	UFUNCTION()
+	void OnPlantValueFloatingUIControlButtonPressed();
+	UFUNCTION()
+	void SetPlantValueFloatingUISettingText();
+
+	// Plant value floating UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* SprintBar_Control;
+
+	bool bSprintBarUI;
+
+	UFUNCTION()
+	void OnSprintBarUIControlButtonPressed();
+	UFUNCTION()
+	void SetSprintBarUISettingText();
+
+	// First time tutorials
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* QuickTipTutorials_Control;
+
+	bool bQuickTipTutorials;
+
+	UFUNCTION()
+	void OnQuickTipTutorialsControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void QuickTipTutorialsReset();
+	UFUNCTION()
+	void SetQuickTipTutorialsSettingText();
+
+	// Mouse sensitivity control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* MouseSensitivityScale_Control;
+
+	int32 TempMouseSensitivityScale;
+
+	UFUNCTION()
+	void OnMouseSensitivityScaleControlLeftButtonPressed();
+	UFUNCTION()
+	void OnMouseSensitivityScaleControlRightButtonPressed();
+	UFUNCTION()
+	void SetMouseSensitivityScaleSettingText();
+
+	// Mouse sensitivity control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* CustomMouseCursor_Control;
+	
+	bool TempCustomMouseCursor;
+	
+	UFUNCTION()
+	void OnCustomMouseCursorControlButtonPressed();
+	UFUNCTION()
+	void SetCustomMouseCursorSettingText();
+
+	// Controller menu sensitivity control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* ControllerMenuSensitivityScale_Control;
+
+	int32 TempControllerMenuSensitivityScale;
+
+	UFUNCTION()
+	void OnControllerMenuSensitivityScaleControlLeftButtonPressed();
+	UFUNCTION()
+	void OnControllerMenuSensitivityScaleControlRightButtonPressed();
+	UFUNCTION()
+	void SetControllerMenuSensitivityScaleSettingText();
 
 private:
 	/* Private Functions */

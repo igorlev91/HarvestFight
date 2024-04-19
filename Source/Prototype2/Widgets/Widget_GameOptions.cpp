@@ -36,6 +36,8 @@ void UWidget_GameOptions::NativePreConstruct()
 	VSync_Control->OptionText->SetText(FText::FromString("VSync"));
 	HDRDisplay_Control->OptionText->SetText(FText::FromString("HDR Display"));
 	FramerateLimit_Control->OptionText->SetText(FText::FromString("Framerate Limit"));
+	FOV_Control->OptionText->SetText(FText::FromString("Field of View"));
+	MasterGraphicsQuality_Control->OptionText->SetText(FText::FromString("Master Quality Preset"));
 	TextureQuality_Control->OptionText->SetText(FText::FromString("Texture Quality"));
 	FoliageQuality_Control->OptionText->SetText(FText::FromString("Foliage Quality"));
 	ShadingQuality_Control->OptionText->SetText(FText::FromString("Shading Quality"));
@@ -59,34 +61,22 @@ void UWidget_GameOptions::NativePreConstruct()
 	/* UI */
 	UIOffscreenIndicators_Control->OptionText->SetText(FText::FromString("Waypoint Indicators"));
 	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
+	PlayerNames_Control->OptionText->SetText(FText::FromString("Player Names"));
+	PlantValueFloatingUI_Control->OptionText->SetText(FText::FromString("Plant Floating Value Stars"));
+	SprintBar_Control->OptionText->SetText(FText::FromString("Central Sprint Bar"));
+	QuickTipTutorials_Control->OptionText->SetText(FText::FromString("Reset Quick Tips"));
+
+	/* Control (mouse/controller) */
+	MouseSensitivityScale_Control->OptionText->SetText(FText::FromString("Mouse/Controller Sensitivity"));
+	CustomMouseCursor_Control->OptionText->SetText(FText::FromString("Custom Mouse Cursor"));
+	ControllerMenuSensitivityScale_Control->OptionText->SetText(FText::FromString("Controller Menu Sensitivity"));
 }
 
 void UWidget_GameOptions::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	/* Load settings */
-	if (HHGameGameUserSettings)
-	{
-		HHGameGameUserSettings->LoadSettings(true);
-		OnLoadAudioSettings(	(float)HHGameGameUserSettings->GetMasterVolume()/10,
-							(float)HHGameGameUserSettings->GetAmbienceVolume()/10,
-							(float)HHGameGameUserSettings->GetSFXVolume()/10,
-							(float)HHGameGameUserSettings->GetMusicVolume()/10);
-		
-		UE_LOG(LogTemp, Warning, TEXT("Loaded Master Volume: %d"), HHGameGameUserSettings->GetMasterVolume());
-		UE_LOG(LogTemp, Warning, TEXT("Loaded Music Volume: %d"), HHGameGameUserSettings->GetMusicVolume());
-		UE_LOG(LogTemp, Warning, TEXT("Loaded Ambience Volume: %d"), HHGameGameUserSettings->GetAmbienceVolume());
-		UE_LOG(LogTemp, Warning, TEXT("Loaded SFX Volume: %d"), HHGameGameUserSettings->GetSFXVolume());
-
-		UE_LOG(LogTemp, Warning, TEXT("Loaded Framerate: %f"), HHGameGameUserSettings->GetFrameRateLimit());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Could not load settings"));
-	}
-	UpdateGameInstanceVariables();
-	SetOptionsText();
+	LoadSettings();
 	
 	/* Graphics control buttons */
 	if (FullScreen_Control)
@@ -125,6 +115,18 @@ void UWidget_GameOptions::NativeConstruct()
 		FramerateLimit_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnFramerateLimitControlRightButtonPressed);
 	}
 
+	if (FOV_Control)
+	{
+		FOV_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnFOVControlLeftButtonPressed);
+		FOV_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnFOVControlRightButtonPressed);
+	}
+
+	if (MasterGraphicsQuality_Control)
+	{
+		MasterGraphicsQuality_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMasterGraphicsControlLeftButtonPressed);
+		MasterGraphicsQuality_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMasterGraphicsControlRightButtonPressed);
+	}
+	
 	if (TextureQuality_Control)
 	{
 		TextureQuality_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnTextureQualityControlLeftButtonPressed);
@@ -226,8 +228,49 @@ void UWidget_GameOptions::NativeConstruct()
 
 	if (UIOffscreenIndicatorSize_Control)
 	{
-		UIOffscreenIndicatorSize_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlLeftButtonPressed);
-		UIOffscreenIndicatorSize_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlRightButtonPressed);
+		UIOffscreenIndicatorSize_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlButtonPressed);
+		UIOffscreenIndicatorSize_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlButtonPressed);
+	}
+
+	if (PlayerNames_Control)
+	{
+		PlayerNames_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
+		PlayerNames_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
+	}
+
+	if (PlantValueFloatingUI_Control)
+	{
+		PlantValueFloatingUI_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
+		PlantValueFloatingUI_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
+	}
+
+	if (SprintBar_Control)
+	{
+		SprintBar_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
+		SprintBar_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
+	}
+
+	if (QuickTipTutorials_Control)
+	{
+		QuickTipTutorials_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
+		QuickTipTutorials_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
+	}
+
+	/* Control (mouse/controller sensitivity) */
+	if (MouseSensitivityScale_Control)
+	{
+		MouseSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed);
+		MouseSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed);
+	}
+	if (CustomMouseCursor_Control)
+	{
+		CustomMouseCursor_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
+		CustomMouseCursor_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
+	}
+	if (ControllerMenuSensitivityScale_Control)
+	{
+		ControllerMenuSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed);
+		ControllerMenuSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed);
 	}
 
 	if (ConfirmButton)
@@ -241,7 +284,31 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	/* Apply settings */
 	if (!HHGameGameUserSettings)
 		return;
+
+	HHGameGameUserSettings->FieldOfView = TempFOV;
+	HHGameGameUserSettings->MasterGraphics = TempMasterGraphics;
+	HHGameGameUserSettings->bPlayerStencil = bTempPlayerStencil;
+	HHGameGameUserSettings->bEnemyAlwaysRed = bTempEnemyAlwaysRed;
+	HHGameGameUserSettings->UIIndicators = TempUIIndicators;
+	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
+	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
+	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
+	HHGameGameUserSettings->SprintBar = bSprintBarUI;
+	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
+	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
+	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
+
+	//HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
+	if (bQuickTipTutorials)
+	{
+		HHGameGameUserSettings->QuickTipLobbyTutorials = 0;
+		HHGameGameUserSettings->QuickTipClassicTutorials = 0;
+		HHGameGameUserSettings->QuickTipBrawlTutorials = 0;
+		HHGameGameUserSettings->QuickTipBlitzTutorials = 0;
+	}
 	
+	OnFOVChangedDelegate.Broadcast();
+	OnChangedCursorSetting();
 	HHGameGameUserSettings->ApplySettings(true);
 
 	UpdateGameInstanceVariables();
@@ -347,7 +414,8 @@ void UWidget_GameOptions::SetOptionsText()
 			break;
 		}
 	}
-
+	SetFOVQualitySettingText();
+	SetMasterGraphicsQualitySettingText();
 	SetTextureQualitySetting();
 	SetFoliageQualitySetting();
 	SetShadingQualitySetting();
@@ -384,6 +452,13 @@ void UWidget_GameOptions::SetOptionsText()
 
 	SetUIOffscreenIndicatorsSetting();
 	SetUIOffscreenIndicatorSizeSettingText();
+	SetPlayerNamesSettingText();
+	SetPlantValueFloatingUISettingText();
+	SetSprintBarUISettingText();
+	SetQuickTipTutorialsSettingText();
+	SetMouseSensitivityScaleSettingText();
+	SetCustomMouseCursorSettingText();
+	SetControllerMenuSensitivityScaleSettingText();
 }
 
 void UWidget_GameOptions::UpdateGameInstanceVariables()
@@ -393,6 +468,46 @@ void UWidget_GameOptions::UpdateGameInstanceVariables()
 
 	/* Game Options */
 	GameInstanceReference->bPlayerStentil = HHGameGameUserSettings->GetPlayerStencil();
+}
+
+void UWidget_GameOptions::LoadSettings()
+{
+	/* Load settings */
+	if (HHGameGameUserSettings)
+	{
+		HHGameGameUserSettings->LoadSettings(true);
+		OnLoadAudioSettings(	(float)HHGameGameUserSettings->GetMasterVolume()/10,
+								(float)HHGameGameUserSettings->GetAmbienceVolume()/10,
+								(float)HHGameGameUserSettings->GetSFXVolume()/10,
+								(float)HHGameGameUserSettings->GetMusicVolume()/10);
+		
+		//UE_LOG(LogTemp, Warning, TEXT("Loaded Master Volume: %d"), HHGameGameUserSettings->GetMasterVolume());
+		//UE_LOG(LogTemp, Warning, TEXT("Loaded Music Volume: %d"), HHGameGameUserSettings->GetMusicVolume());
+		//UE_LOG(LogTemp, Warning, TEXT("Loaded Ambience Volume: %d"), HHGameGameUserSettings->GetAmbienceVolume());
+		//UE_LOG(LogTemp, Warning, TEXT("Loaded SFX Volume: %d"), HHGameGameUserSettings->GetSFXVolume());
+
+		//UE_LOG(LogTemp, Warning, TEXT("Loaded Framerate: %f"), HHGameGameUserSettings->GetFrameRateLimit());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not load settings"));
+	}
+	bTempPlayerStencil = HHGameGameUserSettings->bPlayerStencil;
+	bTempEnemyAlwaysRed = HHGameGameUserSettings->bEnemyAlwaysRed;
+	TempUIIndicators = HHGameGameUserSettings->UIIndicators;
+	bTempUIIndicatorSizeLarge = HHGameGameUserSettings->UIIndicatorSizeLarge;
+	bTempPlayerNames = HHGameGameUserSettings->PlayerNames;
+	bPlantValueFloatingUI = HHGameGameUserSettings->PlantValueFloatingUI;
+	bSprintBarUI = HHGameGameUserSettings->SprintBar;
+	bQuickTipTutorials = HHGameGameUserSettings->QuickTipTutorials;
+	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
+	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
+	TempFOV = HHGameGameUserSettings->FieldOfView;
+	TempControllerMenuSensitivityScale = HHGameGameUserSettings->ControllerMenuSensitivityScale;
+	TempCustomMouseCursor = HHGameGameUserSettings->CustomMouseCursor;
+	UpdateGameInstanceVariables();
+	SetOptionsText();
+	
 }
 
 void UWidget_GameOptions::OnFullScreenControlLeftButtonPressed()
@@ -717,6 +832,123 @@ void UWidget_GameOptions::OnFramerateLimitControlRightButtonPressed()
 	}
 }
 
+void UWidget_GameOptions::OnFOVControlLeftButtonPressed()
+{
+	if (TempFOV > 90)
+		TempFOV -= 5;
+	else if (TempFOV <= 90)
+		TempFOV = 120;
+
+	SetFOVQualitySettingText();
+		
+	//OnFOVChangedDelegate.Broadcast();
+}
+
+void UWidget_GameOptions::OnFOVControlRightButtonPressed()
+{
+	if (TempFOV <= 120)
+		TempFOV += 5;
+	if (TempFOV > 120)
+		TempFOV = 90;
+
+	SetFOVQualitySettingText();
+	
+	//OnFOVChangedDelegate.Broadcast();
+}
+
+void UWidget_GameOptions::SetFOVQualitySettingText()
+{
+	FOV_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempFOV)));
+}
+
+void UWidget_GameOptions::OnMasterGraphicsControlLeftButtonPressed()
+{
+	if (TempMasterGraphics > 0)
+		TempMasterGraphics -= 1;
+	else if (TempMasterGraphics == 0)
+		TempMasterGraphics = 3;
+
+	SetMasterGraphicsQualitySettingText();
+}
+
+void UWidget_GameOptions::OnMasterGraphicsControlRightButtonPressed()
+{
+	if (TempMasterGraphics < 4)
+		TempMasterGraphics += 1;
+	if (TempMasterGraphics >= 4)
+		TempMasterGraphics = 0;
+
+	SetMasterGraphicsQualitySettingText();
+}
+
+void UWidget_GameOptions::SetMasterGraphicsQualitySettingText()
+{
+	switch (TempMasterGraphics)
+	{
+	case 0:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("Potato"));
+			break;
+		}
+	case 1:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("Medium"));
+			break;
+		}
+	case 2:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("High"));
+			break;
+		}
+	case 3:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("Epic"));
+			break;
+		}
+	case 4:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("Custom"));
+			break;
+		}
+	default:
+		{
+			MasterGraphicsQuality_Control->OptionValueText->SetText(FText::FromString("Default Medium"));
+		}
+	}
+
+	MatchGraphicsQualitySettings();
+}
+
+void UWidget_GameOptions::MatchGraphicsQualitySettings()
+{
+	if (TempMasterGraphics != 4)
+	{
+		HHGameGameUserSettings->SetTextureQuality(TempMasterGraphics);
+		SetTextureQualitySetting();
+		HHGameGameUserSettings->SetFoliageQuality(TempMasterGraphics);
+		SetFoliageQualitySetting();
+		HHGameGameUserSettings->SetShadingQuality(TempMasterGraphics);
+		SetShadingQualitySetting();
+		HHGameGameUserSettings->SetShadowQuality(TempMasterGraphics);
+		SetShadowQualitySetting();
+		HHGameGameUserSettings->SetPostProcessingQuality(TempMasterGraphics);
+		SetPostProcessingQualitySetting();
+		HHGameGameUserSettings->SetAntiAliasingQuality(TempMasterGraphics);
+		SetAntiAliasingQualitySetting();
+		HHGameGameUserSettings->SetGlobalIlluminationQuality(TempMasterGraphics);
+		SetGlobalIlluminationQualitySetting();
+		HHGameGameUserSettings->SetReflectionQuality(TempMasterGraphics);
+		SetReflectionQualitySetting();
+
+		if (TempMasterGraphics == 3)	
+			HHGameGameUserSettings->SetVisualEffectQuality(3);
+		else
+			HHGameGameUserSettings->SetVisualEffectQuality(2);
+	
+		SetVisualEffectQualitySetting();
+	}
+}
+
 void UWidget_GameOptions::OnTextureQualityControlLeftButtonPressed()
 {
 	if (!HHGameGameUserSettings)
@@ -726,6 +958,9 @@ void UWidget_GameOptions::OnTextureQualityControlLeftButtonPressed()
 		HHGameGameUserSettings->SetTextureQuality(HHGameGameUserSettings->GetTextureQuality() - 1);
 	else if (HHGameGameUserSettings->GetTextureQuality() == 0)
 		HHGameGameUserSettings->SetTextureQuality(3);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetTextureQualitySetting();
 }
@@ -739,6 +974,9 @@ void UWidget_GameOptions::OnTextureQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetTextureQuality(HHGameGameUserSettings->GetTextureQuality() + 1);
 	if (HHGameGameUserSettings->GetTextureQuality() >= 4)
 		HHGameGameUserSettings->SetTextureQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetTextureQualitySetting();
 }
@@ -758,6 +996,9 @@ void UWidget_GameOptions::OnFoliageQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetFoliageQuality() == 0)
 		HHGameGameUserSettings->SetFoliageQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
+
 	SetFoliageQualitySetting();
 }
 
@@ -767,6 +1008,9 @@ void UWidget_GameOptions::OnFoliageQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetFoliageQuality(HHGameGameUserSettings->GetFoliageQuality() + 1);
 	if (HHGameGameUserSettings->GetFoliageQuality() >= 4)
 		HHGameGameUserSettings->SetFoliageQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetFoliageQualitySetting();
 }
@@ -786,6 +1030,8 @@ void UWidget_GameOptions::OnShadingQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetShadingQuality() == 0)
 		HHGameGameUserSettings->SetShadingQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetShadingQualitySetting();
 }
@@ -796,6 +1042,9 @@ void UWidget_GameOptions::OnShadingQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetShadingQuality(HHGameGameUserSettings->GetShadingQuality() + 1);
 	if (HHGameGameUserSettings->GetShadingQuality() >= 4)
 		HHGameGameUserSettings->SetShadingQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetShadingQualitySetting();
 }
@@ -815,6 +1064,9 @@ void UWidget_GameOptions::OnShadowQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetShadowQuality() == 0)
 		HHGameGameUserSettings->SetShadowQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
+
 	SetShadowQualitySetting();
 }
 
@@ -827,6 +1079,9 @@ void UWidget_GameOptions::OnShadowQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetShadowQuality(HHGameGameUserSettings->GetShadowQuality() + 1);
 	if (HHGameGameUserSettings->GetShadowQuality() >= 4)
 		HHGameGameUserSettings->SetShadowQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetShadowQualitySetting();
 }
@@ -846,6 +1101,9 @@ void UWidget_GameOptions::OnPostProcessingQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetPostProcessingQuality() == 0)
 		HHGameGameUserSettings->SetPostProcessingQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
+
 	SetPostProcessingQualitySetting();
 }
 
@@ -858,6 +1116,9 @@ void UWidget_GameOptions::OnPostProcessingQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetPostProcessingQuality(HHGameGameUserSettings->GetPostProcessingQuality() + 1);
 	if (HHGameGameUserSettings->GetPostProcessingQuality() >= 4)
 		HHGameGameUserSettings->SetPostProcessingQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetPostProcessingQualitySetting();
 }
@@ -877,6 +1138,9 @@ void UWidget_GameOptions::OnAntiAliasingQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetAntiAliasingQuality() == 0)
 		HHGameGameUserSettings->SetAntiAliasingQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
+
 	SetAntiAliasingQualitySetting();
 }
 
@@ -889,6 +1153,9 @@ void UWidget_GameOptions::OnAntiAliasingQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetAntiAliasingQuality(HHGameGameUserSettings->GetAntiAliasingQuality() + 1);
 	if (HHGameGameUserSettings->GetAntiAliasingQuality() >= 4)
 		HHGameGameUserSettings->SetAntiAliasingQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetAntiAliasingQualitySetting();
 }
@@ -907,6 +1174,9 @@ void UWidget_GameOptions::OnGlobalIlluminationQualityControlLeftButtonPressed()
 		HHGameGameUserSettings->SetGlobalIlluminationQuality(HHGameGameUserSettings->GetGlobalIlluminationQuality() - 1);
 	else if (HHGameGameUserSettings->GetGlobalIlluminationQuality() == 0)
 		HHGameGameUserSettings->SetGlobalIlluminationQuality(3);
+		
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetGlobalIlluminationQualitySetting();
 }
@@ -920,6 +1190,9 @@ void UWidget_GameOptions::OnGlobalIlluminationQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetGlobalIlluminationQuality(HHGameGameUserSettings->GetGlobalIlluminationQuality() + 1);
 	if (HHGameGameUserSettings->GetGlobalIlluminationQuality() >= 4)
 		HHGameGameUserSettings->SetGlobalIlluminationQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetGlobalIlluminationQualitySetting();
 }
@@ -939,6 +1212,9 @@ void UWidget_GameOptions::OnReflectionQualityControlLeftButtonPressed()
 	else if (HHGameGameUserSettings->GetReflectionQuality() == 0)
 		HHGameGameUserSettings->SetReflectionQuality(3);
 
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
+
 	SetReflectionQualitySetting();
 }
 
@@ -951,6 +1227,9 @@ void UWidget_GameOptions::OnReflectionQualityControlRightButtonPressed()
 		HHGameGameUserSettings->SetReflectionQuality(HHGameGameUserSettings->GetReflectionQuality() + 1);
 	if (HHGameGameUserSettings->GetReflectionQuality() >= 4)
 		HHGameGameUserSettings->SetReflectionQuality(0);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetReflectionQualitySetting();
 }
@@ -969,6 +1248,9 @@ void UWidget_GameOptions::OnVisualEffectQualityControlButtonPressed()
 		HHGameGameUserSettings->SetVisualEffectQuality(2);
 	else
 		HHGameGameUserSettings->SetVisualEffectQuality(3);
+
+	TempMasterGraphics = 4;
+	SetMasterGraphicsQualitySettingText();
 
 	SetVisualEffectQualitySetting();
 }
@@ -1106,60 +1388,54 @@ void UWidget_GameOptions::OnSFXVolumeControlRightButtonPressed()
 
 void UWidget_GameOptions::OnPlayerStencilControlButtonPressed()
 {
-	if (!HHGameGameUserSettings)
-		return;
-	
-	if (HHGameGameUserSettings->GetPlayerStencil() == true)
+	if (bTempPlayerStencil == true)
 	{
 		PlayerStencil_Control->OptionValueText->SetText(FText::FromString("Off"));
-		HHGameGameUserSettings->SetPlayerStencil(false);
+		bTempPlayerStencil = false;
 	}
 	else
 	{
 		PlayerStencil_Control->OptionValueText->SetText(FText::FromString("On"));
-		HHGameGameUserSettings->SetPlayerStencil(true);
+		bTempPlayerStencil = true;
 	}
 }
 
 void UWidget_GameOptions::OnEnemyStencilAlwaysRedControlButtonPressed()
 {
-	if (!HHGameGameUserSettings)
-		return;
-	
-	if (HHGameGameUserSettings->bEnemyAlwaysRed == true)
+	if (bTempEnemyAlwaysRed == true)
 	{
 		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("Off"));
-		HHGameGameUserSettings->bEnemyAlwaysRed = false;
+		bTempEnemyAlwaysRed = false;
 	}
 	else
 	{
 		EnemyStencilAlwaysRed_Control->OptionValueText->SetText(FText::FromString("On"));
-		HHGameGameUserSettings->bEnemyAlwaysRed = true;
+		bTempEnemyAlwaysRed = true;
 	}
 }
 
 void UWidget_GameOptions::OnUIOffscreenIndicatorsControlLeftButtonPressed()
 {
-	switch (HHGameGameUserSettings->GetUIIndicators())
+	switch (TempUIIndicators)
 	{
 	case EIndicatorUISetting::ON:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::OFF);
+			TempUIIndicators = (int32)EIndicatorUISetting::OFF;
 			break;
 		}
 	case EIndicatorUISetting::ONSIDESONLY:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			TempUIIndicators = (int32)EIndicatorUISetting::ON;
 			break;
 		}
 	case EIndicatorUISetting::OFF:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ONSIDESONLY);
+			TempUIIndicators = (int32)EIndicatorUISetting::ONSIDESONLY;
 			break;
 		}
 	default:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			TempUIIndicators = (int32)EIndicatorUISetting::ON;
 			break;
 		}
 	}
@@ -1169,26 +1445,26 @@ void UWidget_GameOptions::OnUIOffscreenIndicatorsControlLeftButtonPressed()
 
 void UWidget_GameOptions::OnUIOffscreenIndicatorsControlRightButtonPressed()
 {
-	switch (HHGameGameUserSettings->GetUIIndicators())
+	switch (TempUIIndicators)
 	{
 	case EIndicatorUISetting::ON:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ONSIDESONLY);
+			TempUIIndicators = (int32)EIndicatorUISetting::ONSIDESONLY;
 			break;
 		}
 	case EIndicatorUISetting::ONSIDESONLY:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::OFF);
+			TempUIIndicators = (int32)EIndicatorUISetting::OFF;
 			break;
 		}
 	case EIndicatorUISetting::OFF:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			TempUIIndicators = (int32)EIndicatorUISetting::ON;
 			break;
 		}
 	default:
 		{
-			HHGameGameUserSettings->SetUIIndicators(EIndicatorUISetting::ON);
+			TempUIIndicators = (int32)EIndicatorUISetting::ON;
 			break;
 		}
 	}
@@ -1198,16 +1474,16 @@ void UWidget_GameOptions::OnUIOffscreenIndicatorsControlRightButtonPressed()
 
 void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 {
-	switch (HHGameGameUserSettings->GetUIIndicators())
+	switch (TempUIIndicators)
 	{
 	case EIndicatorUISetting::ON:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
 			break;
 		}
 	case EIndicatorUISetting::ONSIDESONLY:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On (window edge only)"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On - Fade"));
 			break;
 		}
 	case EIndicatorUISetting::OFF:
@@ -1217,36 +1493,184 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 		}
 	default:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
 			break;
 		}
 	}
 }
 
-void UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlLeftButtonPressed()
+void UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlButtonPressed()
 {
-	bool bLargeSize = HHGameGameUserSettings->GetUIIndicatorSizeLarge();
-	bLargeSize = !bLargeSize;
-	HHGameGameUserSettings->SetUIIndicatorSizeLarge(bLargeSize);
+	//bool bLargeSize = bTempUIIndicatorSizeLarge;
+	//bLargeSize = !bLargeSize;
+	//bTempUIIndicatorSizeLarge = bLargeSize;
 
-	SetUIOffscreenIndicatorSizeSettingText();
-}
 
-void UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlRightButtonPressed()
-{
-	bool bLargeSize = HHGameGameUserSettings->GetUIIndicatorSizeLarge();
-	bLargeSize = !bLargeSize;
-	HHGameGameUserSettings->SetUIIndicatorSizeLarge(bLargeSize);
+	if (bTempUIIndicatorSizeLarge == true)
+		bTempUIIndicatorSizeLarge = false;
+	else
+		bTempUIIndicatorSizeLarge = true;
 
 	SetUIOffscreenIndicatorSizeSettingText();
 }
 
 void UWidget_GameOptions::SetUIOffscreenIndicatorSizeSettingText()
 {
-	if (HHGameGameUserSettings->GetUIIndicatorSizeLarge() == true)
+	if (bTempUIIndicatorSizeLarge == true)
 		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Large"));
 	else
 		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Small"));
+}
+
+void UWidget_GameOptions::OnPlayerNamesControlButtonPressed()
+{
+	if (bTempPlayerNames == true)
+		bTempPlayerNames = false;
+	else
+		bTempPlayerNames = true;
+
+	SetPlayerNamesSettingText();
+}
+
+void UWidget_GameOptions::SetPlayerNamesSettingText()
+{
+	if (bTempPlayerNames == true)
+		PlayerNames_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		PlayerNames_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed()
+{
+	if (bPlantValueFloatingUI == true)
+		bPlantValueFloatingUI = false;
+	else
+		bPlantValueFloatingUI = true;
+
+	SetPlantValueFloatingUISettingText();
+}
+
+void UWidget_GameOptions::SetPlantValueFloatingUISettingText()
+{
+	if (bPlantValueFloatingUI == true)
+		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnSprintBarUIControlButtonPressed()
+{
+	if (bSprintBarUI == true)
+		bSprintBarUI = false;
+	else
+		bSprintBarUI = true;
+
+	SetSprintBarUISettingText();
+}
+
+void UWidget_GameOptions::SetSprintBarUISettingText()
+{
+	if (bSprintBarUI == true)
+		SprintBar_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		SprintBar_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed()
+{
+	if (bQuickTipTutorials == true)
+		bQuickTipTutorials = false;
+	else
+		bQuickTipTutorials = true;
+
+	SetQuickTipTutorialsSettingText();
+}
+
+void UWidget_GameOptions::QuickTipTutorialsReset()
+{
+	if (bQuickTipTutorials)
+	{
+		bQuickTipTutorials = false;
+		SetQuickTipTutorialsSettingText();
+		HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
+		HHGameGameUserSettings->ApplySettings(true);
+	}
+}
+
+void UWidget_GameOptions::SetQuickTipTutorialsSettingText()
+{
+	if (bQuickTipTutorials == true)
+		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed()
+{
+	if (TempMouseSensitivityScale >= 1)
+		TempMouseSensitivityScale -= 1;
+	if (TempMouseSensitivityScale < 1)
+		TempMouseSensitivityScale = 10;
+
+	SetMouseSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed()
+{
+	if (TempMouseSensitivityScale < 11)
+		TempMouseSensitivityScale += 1;
+	if (TempMouseSensitivityScale >= 11)
+		TempMouseSensitivityScale = 1;
+
+	SetMouseSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::SetMouseSensitivityScaleSettingText()
+{
+	MouseSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempMouseSensitivityScale)));
+}
+
+void UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed()
+{
+	if (TempCustomMouseCursor)
+		TempCustomMouseCursor = false;
+	else
+		TempCustomMouseCursor = true;
+	
+	SetCustomMouseCursorSettingText();
+}
+
+void UWidget_GameOptions::SetCustomMouseCursorSettingText()
+{
+	if (TempCustomMouseCursor)
+		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed()
+{
+	if (TempControllerMenuSensitivityScale >= 1)
+		TempControllerMenuSensitivityScale -= 1;
+	if (TempControllerMenuSensitivityScale < 1)
+		TempControllerMenuSensitivityScale = 10;
+
+	SetControllerMenuSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed()
+{
+	if (TempControllerMenuSensitivityScale < 11)
+		TempControllerMenuSensitivityScale += 1;
+	if (TempControllerMenuSensitivityScale >= 11)
+		TempControllerMenuSensitivityScale = 1;
+
+	SetControllerMenuSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::SetControllerMenuSensitivityScaleSettingText()
+{
+	ControllerMenuSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempControllerMenuSensitivityScale)));
 }
 
 void UWidget_GameOptions::SetQualityLevelText(UWidget_OptionSelector* _OptionSelectorWidget, int32 _QualityValue)
