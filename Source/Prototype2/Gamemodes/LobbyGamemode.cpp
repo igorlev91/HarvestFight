@@ -7,6 +7,8 @@
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/ColourData.h"
+#include "Prototype2/DataAssets/RandomNameData.h"
+#include "Prototype2/DataAssets/TeamNames.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
@@ -24,51 +26,97 @@ ALobbyGamemode::ALobbyGamemode()
 	}
 
 	bUseSeamlessTravel = false;
+	bStartPlayersAsSpectators = false;
+	bPauseable = false;
+}
 
+void ALobbyGamemode::PostLoad()
+{
+	Super::PostLoad();
 }
 
 void ALobbyGamemode::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 {
 	Super::PostLogin(_NewPlayer);
 
-	auto PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>();
-	if (!PlayerStateReference)
+	UpdateSessionJoinability();
+
+	ALobbyPlayerState* PlayerStateReference = _NewPlayer->GetPlayerState<ALobbyPlayerState>();
+	if (!IsValid(PlayerStateReference))
 		return;
 	
 	ALobbyGamestate* GameStateReference = GetGameState<ALobbyGamestate>();
-	if (!GameStateReference)
+	if (!IsValid(GameStateReference))
 		return;
 	
-	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
-	if (!GameInstance)
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	if (!IsValid(GameInstance))
 		return;
 
+	if (GameStateReference->Server_Players.Num() <= 0)
+	{
+		GameInstance->ResetCachedPlayerDetails();
+	
+		FTeamsDetails NewTeamDetails{};
+		
+		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
+		if (RandomColour == (int)EColours::RED)
+			RandomColour++;
+		NewTeamDetails.TeamOneColour = (EColours)RandomColour;
+	
+		do
+		{
+			RandomColour = rand() % ((int)EColours::MAXCOLOURS);
+			if (RandomColour == (int)EColours::RED)
+				RandomColour++;
+		}
+		while ((EColours)RandomColour == NewTeamDetails.TeamOneColour);
+		NewTeamDetails.TeamTwoColour = (EColours)RandomColour;
+
+		NewTeamDetails.TeamOneName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names.Num()];
+		NewTeamDetails.TeamTwoName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names.Num()];
+
+		GameStateReference->TeamsDetails = NewTeamDetails;
+
+		GameInstance->FinalTeamAColour = NewTeamDetails.TeamOneColour;
+		GameInstance->FinalTeamBColour = NewTeamDetails.TeamTwoColour;
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
-	FCharacterDetails TeamAssociatedDefaultDetails{};
-	if (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
+	
+	if /* Teams */ (GameInstance->bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
 	{
-		if (GameStateReference->Server_TeamOne.Num() <= GameStateReference->Server_TeamTwo.Num())
+		if (GameStateReference->TeamsDetails.Server_TeamOne.Num() <= GameStateReference->TeamsDetails.Server_TeamTwo.Num())
 		{
-			TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamOneColour);
-			PlayerStateReference->Details = TeamAssociatedDefaultDetails;
-			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamAColour);
+			GameStateReference->TeamsDetails.Server_TeamOne.Add(PlayerStateReference);
 		}
 		else
 		{
-			TeamAssociatedDefaultDetails = CreateDetailsFromColourEnum(GameStateReference->TeamTwoColour);
-			PlayerStateReference->Details = TeamAssociatedDefaultDetails;
-			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamBColour);
+			GameStateReference->TeamsDetails.Server_TeamTwo.Add(PlayerStateReference);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Player %s Joined Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+		
+		UE_LOG(LogTemp, Warning, TEXT("%s Joined Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int16)PlayerStateReference->Details.Colour));
+	}
+	else /* NOT Teams */
+	{
+		if /* RE-JOINING */ (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
+		{
+			PlayerStateReference->Details = GameInstance->FinalPlayerDetails[PlayerStateReference->GetPlayerName()];
+			UE_LOG(LogTemp, Warning, TEXT("%s Details Found. Color: %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int16)PlayerStateReference->Details.Colour));
+		}
+		else /* NEW PLAYER */
+		{
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference));
+		}
 	}
 
 	GameStateReference->Server_Players.Add(PlayerStateReference);
@@ -92,13 +140,19 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 	if (!PrototypeGameInstance)
 		return;
 
+	UpdateSessionJoinability(PrototypeGameInstance->FinalConnectionCount);
+		
+	UE_LOG(LogTemp, Warning, TEXT("%s Attempted To Disconnect"), *PlayerStateReference->GetPlayerName());
+
 	LobbyGamestate->Server_Players.Remove(PlayerStateReference);
-	LobbyGamestate->Server_TeamOne.Remove(PlayerStateReference);
-	LobbyGamestate->Server_TeamTwo.Remove(PlayerStateReference);
-	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
-	{
-		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
-	}
+	LobbyGamestate->TeamsDetails.Server_TeamOne.Remove(PlayerStateReference);
+	LobbyGamestate->TeamsDetails.Server_TeamTwo.Remove(PlayerStateReference);
+	
+	//if (PrototypeGameInstance->FinalPlayerDetails.Find(PlayerStateReference->GetPlayerName()))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s Disconnected From The Game!"), *PlayerStateReference->GetPlayerName());
+	//	PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->GetPlayerName());
+	//}
 	
 	UpdateAllPlayerInfo(LobbyGamestate, PrototypeGameInstance);
 }
@@ -112,118 +166,41 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 {
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
-		int32 SomePlayerID = i;
-		FString SomePlayerName{};
+		if (!IsValid(_GameStateReference->Server_Players[i]))
+			continue;
 		
+		int32 SomePlayerID = i;
+		FString SomePlayerName{"UNASSIGNED"};
+
 		if (auto SteamSubsystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM))
 		{
-			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
-			if (IdentityInterface.IsValid())
+			SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
+					
+			if (_gameInstanceReference->FinalPlayerDetails.Contains(SomePlayerName))
 			{
-				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
-				if (UserId.IsValid())
-				{
-					SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
-					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString()) = _GameStateReference->Server_Players[i]->Details;
-				}
+				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[SomePlayerName];
 			}
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
-			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
-			if (IdentityInterface.IsValid())
+			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{
-				auto UserId = _GameStateReference->Server_Players[i]->GetUniqueId().GetUniqueNetId();
-				if (UserId.IsValid())
-				{
-					SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
-					_gameInstanceReference->FinalPlayerDetails.FindOrAdd(UserId->ToString()) = _GameStateReference->Server_Players[i]->Details;
-				}
+				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[_GameStateReference->Server_Players[i]->GetPlayerName()];
 			}
+			SomePlayerName = _GameStateReference->Server_Players[i]->Details.RandomizedName;
 		}
 		
-		if (ALobbyPlayerState* CasterPlayerState = Cast<ALobbyPlayerState>(_GameStateReference->Server_Players[i]))
-		{
-			CasterPlayerState->Player_ID = SomePlayerID;
-			CasterPlayerState->PlayerName = SomePlayerName;
+		_GameStateReference->Server_Players[i]->Player_ID = SomePlayerID;
+		_GameStateReference->Server_Players[i]->PlayerName = SomePlayerName;
 
-			/* Limit player name if too long and adding ... to the end */
-			if (CasterPlayerState->PlayerName.Len() >= 10)
-			{
-				CasterPlayerState->PlayerName = CasterPlayerState->PlayerName.Left(FMath::Min(CasterPlayerState->PlayerName.Len(), 8));
-				CasterPlayerState->PlayerName = CasterPlayerState->PlayerName + "...";
-			}
+		/* Limit player name if too long and adding ... to the end */
+		if (_GameStateReference->Server_Players[i]->PlayerName.Len() >= 10)
+		{
+			_GameStateReference->Server_Players[i]->PlayerName = _GameStateReference->Server_Players[i]->PlayerName.Left(FMath::Min(_GameStateReference->Server_Players[i]->PlayerName.Len(), 8));
+			_GameStateReference->Server_Players[i]->PlayerName = _GameStateReference->Server_Players[i]->PlayerName + "...";
 		}
 	}
 }
 
-
-FCharacterDetails ALobbyGamemode::CreateDetailsFromColourEnum(EColours _Colour)
-{
-	FCharacterDetails IdealDetails{};
-	IdealDetails.Colour = _Colour;
-	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];
-
-	switch(_Colour)
-	{
-	case EColours::RED:
-		{
-			if (SkinColourData->Reds.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterColour = SkinColourData->Reds[(int16)IdealDetails.Character];
-
-			if (SkinColourData->SubReds.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterSubColour = SkinColourData->SubReds[(int16)IdealDetails.Character];
-			
-			break;
-		}
-	case EColours::BLUE:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Blue;
-			IdealDetails.CharacterSubColour = SkinColourData->SubBlue;
-			break;
-		}
-	case EColours::GREEN:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Green;
-			IdealDetails.CharacterSubColour = SkinColourData->SubGreen;
-			break;
-		}
-	case EColours::YELLOW:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Yellow;
-			IdealDetails.CharacterSubColour = SkinColourData->SubYellow;
-			break;
-		}
-	case EColours::PURPLE:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Purple;
-			IdealDetails.CharacterSubColour = SkinColourData->SubPurple;
-			break;
-		}
-	case EColours::ORANGE:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Orange;
-			IdealDetails.CharacterSubColour = SkinColourData->SubOrange;
-			break;
-		}
-	case EColours::BLACK:
-		{
-			IdealDetails.CharacterColour = SkinColourData->Black;
-			IdealDetails.CharacterSubColour = SkinColourData->SubBlack;
-			break;
-		}
-	default:
-		{
-			if (SkinColourData->Whites.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterColour = SkinColourData->Whites[(int16)IdealDetails.Character];
-
-			if (SkinColourData->SubWhites.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterSubColour = SkinColourData->SubWhites[(int16)IdealDetails.Character];
-			break;
-		}
-	}
-
-	return IdealDetails;
-}
 
 

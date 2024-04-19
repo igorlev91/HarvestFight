@@ -10,6 +10,9 @@
 #include "Prototype2/Widgets/Widget_IngameMenu.h"
 #include "Prototype2/Widgets/Widget_MapChoice.h"
 #include "Prototype2/DataAssets/TeamNames.h"
+#include "Prototype2/HUDS/LobbyHUD.h"
+#include "Prototype2/Widgets/Widget_LobbyCharacterSelection.h"
+#include "Prototype2/Widgets/Widget_LobbyPlayerHUDV2.h"
 
 ALobbyGamestate::ALobbyGamestate()
 {
@@ -22,35 +25,41 @@ ALobbyGamestate::ALobbyGamestate()
 }
 
 
+void ALobbyGamestate::OnRep_TeamsDetails()
+{
+	/*if (!bTeams)
+		return;
+	
+	ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (IsValid(MyCharacter))
+	{
+		ALobbyCharacter* MyCastedCharacter = Cast<ALobbyCharacter>(MyCharacter);
+		if (IsValid(MyCastedCharacter))
+		{
+			if (IsValid(MyCastedCharacter->HUD))
+			{
+				if (TeamsDetails.Server_TeamOne.Contains(MyCastedCharacter->GetPlayerState<ALobbyPlayerState>()))
+				{
+					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(true);
+				}
+				else
+				{
+					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(false);
+				}
+			}
+		}
+	}*/
+}
+
 void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
-	if (HasAuthority())
-	{
-		int RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
-		if (RandomColour == (int)EColours::RED)
-			RandomColour++;
-		TeamOneColour = (EColours)RandomColour;
-	
-		do
-		{
-			RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
-			if (RandomColour == (int)EColours::RED)
-				RandomColour++;
-		}
-		while ((EColours)RandomColour == TeamOneColour);
-		TeamTwoColour = (EColours)RandomColour;
-
-		TeamOneName = TeamNamesData->TeamNames[TeamOneColour].Names[rand() % TeamNamesData->TeamNames[TeamOneColour].Names.Num()];
-		TeamTwoName = TeamNamesData->TeamNames[TeamTwoColour].Names[rand() % TeamNamesData->TeamNames[TeamTwoColour].Names.Num()];
-	}
 }
 
 void ALobbyGamestate::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	/* Pre set backup level */
 	if (GameMode == 0) // Normal Mode
 		MapChoice = FriendlyFarmClassicLarge;
@@ -69,37 +78,8 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 	TickTimers(_DeltaSeconds);
 
 	UpdateTeams();
-}
 
-void ALobbyGamestate::SetIsReady(int32 _Player, bool _bIsReady)
-{
-	if (Server_Players.Num() > _Player)
-	{
-		if (auto PlayerState = Server_Players[_Player])
-		{
-			PlayerState->SetIsReady(_bIsReady);
-		}
-	}
-
-	bool isEveryoneReady{true};
-	for(auto PlayerState : Server_Players)
-	{
-		if (!PlayerState->IsReady)
-			isEveryoneReady = false;
-	}
-	
-	if (isEveryoneReady && Server_Players.Num() >= 1)
-	{
-		bShouldServerTravel = true;
-		LobbyLengthSeconds = 2.0f;
-	}
-	else
-	{
-		bShouldServerTravel = false;
-		bIsCountingDown = false;
-		bPreviousServerTravel = false;
-		LobbyLengthSeconds = 2.0f;
-	}
+	ServerTravel(_DeltaSeconds);
 }
 
 void ALobbyGamestate::VoteMap(EFarm _Level)
@@ -124,16 +104,9 @@ void ALobbyGamestate::VoteMap(EFarm _Level)
 	{
 		ClockworkFarm += 1;
 	}
-}
-
-void ALobbyGamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
-{
-	for(auto LobbyPlayerState : Server_Players)
+	else if (_Level == EFarm::RANDOMFARM)
 	{
-		if(LobbyPlayerState->Player_ID == _Player)
-		{
-			LobbyPlayerState->Details = _CharacterDetails;
-		}
+		RandomFarm += 1;
 	}
 }
 
@@ -177,6 +150,11 @@ int32 ALobbyGamestate::GetClockworkFarm() const
 	return ClockworkFarm;
 }
 
+int32 ALobbyGamestate::GetRandomFarm() const
+{
+	return RandomFarm;
+}
+
 bool ALobbyGamestate::HasMapBeenChosen() const
 {
 	return bMapChosen;
@@ -185,16 +163,6 @@ bool ALobbyGamestate::HasMapBeenChosen() const
 int32 ALobbyGamestate::GetMapChoiceTotalLengthSeconds() const
 {
 	return MapChoiceTotalLengthSeconds;
-}
-
-void ALobbyGamestate::SetGameMode(int32 _Mode)
-{
-	GameMode = _Mode;
-}
-
-int32 ALobbyGamestate::GetGameMode()
-{
-	return GameMode;
 }
 
 void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -212,22 +180,21 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, HoneyFarm);
 	DOREPLIFETIME(ALobbyGamestate, FloatingIslandFarm);
 	DOREPLIFETIME(ALobbyGamestate, ClockworkFarm);
+	DOREPLIFETIME(ALobbyGamestate, RandomFarm);
 
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceTotalLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
 	DOREPLIFETIME(ALobbyGamestate, bHasCountedDown);
+	DOREPLIFETIME(ALobbyGamestate, MapChoice);
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
-	DOREPLIFETIME(ALobbyGamestate, GameMode);
-
-	DOREPLIFETIME(ALobbyGamestate, Server_TeamOne); 
-	DOREPLIFETIME(ALobbyGamestate, Server_TeamTwo);
-	DOREPLIFETIME(ALobbyGamestate, TeamOneColour);
-	DOREPLIFETIME(ALobbyGamestate, TeamTwoColour);
-	DOREPLIFETIME(ALobbyGamestate, TeamOneName);
-	DOREPLIFETIME(ALobbyGamestate, TeamTwoName);
+	
+	DOREPLIFETIME(ALobbyGamestate, TeamsDetails);
 	DOREPLIFETIME(ALobbyGamestate, bHasAllPlayersVoted);
+
+	DOREPLIFETIME(ALobbyGamestate, bCanTravel);
+	
 }
 
 void ALobbyGamestate::PickMapToPlay()
@@ -239,7 +206,7 @@ void ALobbyGamestate::PickMapToPlay()
 	if (bMapChosen == false)
 	{
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
-		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm) // Normal farm gets most votes
+		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm && Farm >= RandomFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -258,7 +225,7 @@ void ALobbyGamestate::PickMapToPlay()
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start friendly farm map but incorrect mode attached"));
 			
 		}
-		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
+		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm && WinterFarm >= RandomFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -276,7 +243,7 @@ void ALobbyGamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start winter map but incorrect mode attached"));
 		}
-		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm) // Honey farm gets most votes
+		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm && HoneyFarm >= RandomFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -292,7 +259,7 @@ void ALobbyGamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start honey map but incorrect mode attached"));
 		}
-		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm) // floating islands farm gets most votes
+		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm && FloatingIslandFarm >= RandomFarm) // floating islands farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = FloatingIslandsClassic;
@@ -303,16 +270,25 @@ void ALobbyGamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start floating farm map but incorrect mode attached"));
 		}
-		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
+		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm && ClockworkFarm >= RandomFarm) // clockwork farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = ClockworkClassic;
+			{
+				if (Server_Players.Num() <= 4)	
+					MapChoice = ClockworkClassicMedium;
+				else
+					MapChoice = ClockworkClassicLarge;
+			}
 			else if (GameMode == 1) // Brawl Mode
 			{
 				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm brawl mode attempted to start")); // No brawl mode for ClockworkFarm
 			}
 			else
-				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm blitz mode attempted to start")); // No blitz mode for ClockworkFarm
+				MapChoice = ClockworkBlitz;
+		}
+		else if (RandomFarm > Farm && RandomFarm > WinterFarm && RandomFarm > HoneyFarm && RandomFarm > FloatingIslandFarm && RandomFarm > ClockworkFarm) // floating islands farm gets most votes
+		{
+			PickRandomMap();
 		}
 		else // Pick a random map from highest votes
 		{
@@ -428,7 +404,7 @@ void ALobbyGamestate::PickMapToPlay()
 						case 2:
 							{
 								if (GameMode == 0) // Honey Classic Mode
-									{
+								{
 									if (Server_Players.Num() <= 2)	
 										MapChoice = HoneyClassicSmall;
 									else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
@@ -436,17 +412,17 @@ void ALobbyGamestate::PickMapToPlay()
 									else
 										MapChoice = HoneyClassicLarge;
 									UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
-									}
+								}
 								else if (GameMode == 1) // Honey Brawl Mode
-									{
+								{
 									MapChoice = HoneyBrawl;
 									UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
-									}
+								}
 								else if (GameMode == 2) // Floating island Blitz Mode
-									{
-										MapChoice = FloatingIslandsBlitz;
-										UE_LOG(LogTemp, Warning, TEXT("Floating Island Farm Map Chosen"));
-									}
+								{
+									MapChoice = FloatingIslandsBlitz;
+									UE_LOG(LogTemp, Warning, TEXT("Floating Island Farm Map Chosen"));
+								}
 								else
 									UE_LOG(LogTemp, Warning, TEXT("Error: Attempted to access incorrect split vote map - case 2"));
 
@@ -467,7 +443,22 @@ void ALobbyGamestate::PickMapToPlay()
 						case 4:
 							{
 								/* Clockwork map choice */
-								MapChoice = ClockworkClassic;
+								if (GameMode == 0) // Normal Mode
+								{
+									if (Server_Players.Num() <= 4)	
+										MapChoice = ClockworkClassicMedium;
+									else
+										MapChoice = ClockworkClassicLarge;
+								}
+								else if (GameMode == 1) // Brawl Mode
+								{
+									UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm brawl mode attempted to start")); // No brawl mode for ClockworkFarm
+								}
+								else
+								{
+									MapChoice = ClockworkBlitz;
+								}
+								
 								UE_LOG(LogTemp, Warning, TEXT("Clockwork Map Chosen"));
 								break;
 							}
@@ -484,10 +475,187 @@ void ALobbyGamestate::PickMapToPlay()
 	}
 }
 
+void ALobbyGamestate::PickRandomMap()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Random Map button received highest vote. Randomising level based on game mode"));
+	
+	switch (GameMode)
+	{
+	case 0: // Classic
+		{
+			int32 RandomNumber = FMath::RandRange(0, 4);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = FriendlyFarmClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = FriendlyFarmClassicMedium;
+					else
+						MapChoice = FriendlyFarmClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
+					break;
+				}
+			case 1:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = FrostyFieldsClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = FrostyFieldsClassicMedium;
+					else
+						MapChoice = FrostyFieldsClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
+					break;
+				}
+			case 2:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = HoneyClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = HoneyClassicMedium;
+					else
+						MapChoice = HoneyClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = FloatingIslandsClassic;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating Island Farm Map Chosen"));
+					break;
+				}
+			case 4:
+				{
+					if (Server_Players.Num() <= 4)	
+						MapChoice = ClockworkClassicMedium;
+					else
+						MapChoice = ClockworkClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Clockwork Farm Map Chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached. Large classic friendly farm chosen"));
+					break;
+				}
+			}
+			
+			break;
+		}
+	case 1: // Brawl
+		{
+			int32 RandomNumber = FMath::RandRange(0, 3);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					MapChoice = FriendlyFarmBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly farm brawl map chosen"));
+					break;
+				}
+			case 1:
+				{
+					MapChoice = FrostyFieldsBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter farm brawl map chosen"));
+					break;
+				}
+			case 2:
+				{
+					MapChoice = HoneyBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Honey farm brawl map chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = FloatingIslandsBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating island farm brawl map chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached. Friendly farm brawl map selected"));
+					break;
+				}
+			}
+			break;
+		}
+	case 2: // Blitz
+		{
+			int32 RandomNumber = FMath::RandRange(0, 3);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					MapChoice = FriendlyFarmBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly farm blitz map chosen"));
+					break;
+				}
+			case 1:
+				{
+					MapChoice = FrostyFieldsBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter island farm blitz map chosen"));
+					break;
+				}
+			case 2:
+				{
+					MapChoice = FloatingIslandsBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating island farm blitz map chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = ClockworkBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Clockwork farm blitz map chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached, Friendly farm blitz map chosen"));
+					break;
+				}
+			}
+			break;
+		}
+	default:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Default case reached, incorrect gamemode reached"));
+			break;
+		}
+	}
+}
+
 void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 {
 	if (HasAuthority())
 	{
+		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+		
 		if (bPreviousServerTravel != bShouldServerTravel)
 		{
 			bPreviousServerTravel = bShouldServerTravel;
@@ -527,7 +695,7 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 						
 						MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 
-						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm + ClockworkFarm;
+						const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm + ClockworkFarm + RandomFarm;
 						if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
 						{
 							bHasAllPlayersVoted = true;
@@ -541,46 +709,30 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 						{
 							bIsCountingDown = false;
 
-							
-
 							/* Map selection unless chaos */
 							if (GameMode == 3)
 								MapChoice = "/Game/Maps/Level_FF_Chaos";
 							else
 								PickMapToPlay();
-						
-							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+							
+							GameInstance->FinalPlayerDetails.Empty();
+							for(auto Player : Server_Players)
 							{
-								GameInstance->FinalConnectionCount = Server_Players.Num();
-
-								for(auto Player : Server_Players)
-								{
-									FString SomePlayerName{"UNASSIGNED"};
-									if (auto NullSubsystem = IOnlineSubsystem::Get())
-									{
-										IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
-										if (IdentityInterface.IsValid())
-										{
-											TSharedPtr<const FUniqueNetId> UserId = Player->GetUniqueId().GetUniqueNetId();
-											if (UserId.IsValid())
-											{
-												SomePlayerName = UserId->ToString();
-											}
-										}
-									}
-									GameInstance->FinalPlayerDetails.Add(SomePlayerName, Player->Details);
-								}
-
-								GameInstance->TeamOneName = TeamOneName;
-								GameInstance->TeamTwoName = TeamTwoName;
-								GameInstance->bTeams = bTeams;
-								GameInstance->FinalTeamACount = Server_TeamOne.Num();
-								GameInstance->FinalTeamBCount = Server_TeamTwo.Num();
-								GameInstance->FinalTeamAColour = TeamOneColour;
-								GameInstance->FinalTeamBColour = TeamTwoColour;
+								GameInstance->FinalPlayerDetails.Add({Player->GetPlayerName(), Player->Details});
+								UE_LOG(LogTemp, Warning, TEXT("%s Added To FinalDetails With Color: %s"), *Player->GetPlayerName(), *FString::FromInt((int16)Player->Details.Colour));
 							}
-							//UGameplayStatics::OpenLevel(GetWorld(), FName(MapChoice), true, "listen?bIsLanMatch=1");
-							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+
+							GameInstance->FinalConnectionCount = Server_Players.Num();
+							GameInstance->bTeams = bTeams;
+							GameInstance->TeamOneName = TeamsDetails.TeamOneName;
+							GameInstance->TeamTwoName = TeamsDetails.TeamTwoName;
+							GameInstance->FinalTeamACount = TeamsDetails.Server_TeamOne.Num();
+							GameInstance->FinalTeamBCount = TeamsDetails.Server_TeamTwo.Num();
+							GameInstance->FinalTeamAColour = TeamsDetails.TeamOneColour;
+							GameInstance->FinalTeamBColour = TeamsDetails.TeamTwoColour;
+
+							//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+							bCanTravel = true;
 						}
 					}
 					
@@ -601,32 +753,32 @@ void ALobbyGamestate::UpdateTeams()
 		return;
 
 	/* Team 1 */
-	if (Server_TeamOne.Num() > 0)
+	if (TeamsDetails.Server_TeamOne.Num() > 0)
 	{
-		for (int i = 0; i < Server_TeamOne.Num(); i++)
+		for (int i = 0; i < TeamsDetails.Server_TeamOne.Num(); i++)
 		{
-			if (auto Player = Server_TeamOne[i])
+			if (auto Player = TeamsDetails.Server_TeamOne[i])
 			{
-				if (Player->Details.Colour == TeamTwoColour)
+				if (Player->Details.Colour == TeamsDetails.TeamTwoColour)
 				{
-					Server_TeamTwo.Add(Player);
-					Server_TeamOne.RemoveAt(i);
+					TeamsDetails.Server_TeamTwo.Add(Player);
+					TeamsDetails.Server_TeamOne.RemoveAt(i);
 					i--;
 				}
 			}
 		}
 	}
 	/* Team 2 */
-	if (Server_TeamTwo.Num() > 0)
+	if (TeamsDetails.Server_TeamTwo.Num() > 0)
 	{
-		for (int i = 0; i < Server_TeamTwo.Num(); i++)
+		for (int i = 0; i < TeamsDetails.Server_TeamTwo.Num(); i++)
 		{
-			if (auto Player = Server_TeamTwo[i])
+			if (auto Player = TeamsDetails.Server_TeamTwo[i])
 			{
-				if (Player->Details.Colour == TeamOneColour)
+				if (Player->Details.Colour == TeamsDetails.TeamOneColour)
 				{
-					Server_TeamOne.Add(Player);
-					Server_TeamTwo.RemoveAt(i);
+					TeamsDetails.Server_TeamOne.Add(Player);
+					TeamsDetails.Server_TeamTwo.RemoveAt(i);
 					i--;
 				}
 			}
@@ -634,15 +786,28 @@ void ALobbyGamestate::UpdateTeams()
 	}
 }
 
-void ALobbyGamestate::UpdateCharacterMaterial(int32 _Player,FCharacterDetails _Details)
+void ALobbyGamestate::ServerTravel(float _DeltaSeconds)
 {
-	if (Server_Players.Num() > _Player)
+	if (!HasAuthority())
+		return;
+	
+	if (bCanTravel == false)
+		return;
+
+	MapTravelTimer -= _DeltaSeconds;
+
+	if (MapTravelTimer <= 0)
 	{
-		if (auto playerState = Server_Players[_Player])
-		{
-			playerState->UpdateCharacterMaterial(_Details);
-		}
+		bCanTravel = false;
+		GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 	}
+}
+
+void ALobbyGamestate::OnRep_CanTravel()
+{
+	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	GameInstance->FinalConnectionCount = Server_Players.Num();
+	GameInstance->bTeams = bTeams;
 }
 
 int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter) const
@@ -678,6 +843,29 @@ int32 ALobbyGamestate::GetNumberOfCharacterColoursTaken(FCharacterDetails _Detai
 	}
 	
 	return characterColourCount;
+}
+
+void ALobbyGamestate::CheckAllReady()
+{
+	bool isEveryoneReady{true};
+	for(auto PlayerState : Server_Players)
+	{
+		if (!PlayerState->IsReady)
+			isEveryoneReady = false;
+	}
+	
+	if (isEveryoneReady && Server_Players.Num() >= 1)
+	{
+		bShouldServerTravel = true;
+		LobbyLengthSeconds = 2.0f;
+	}
+	else
+	{
+		bShouldServerTravel = false;
+		bIsCountingDown = false;
+		bPreviousServerTravel = false;
+		LobbyLengthSeconds = 2.0f;
+	}
 }
 
 

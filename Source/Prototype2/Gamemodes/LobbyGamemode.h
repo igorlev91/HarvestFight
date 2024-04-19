@@ -17,6 +17,8 @@ public:
 	/* Constructor */
 	ALobbyGamemode();
 
+	virtual void PostLoad() override;
+
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere)
@@ -24,11 +26,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<USkeletalMesh*> PlayerMeshes;
-
-	//
-	UPROPERTY(EditAnywhere)
-	class UColourData* SkinColourData{nullptr};
-
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTeams{};
 private:
@@ -42,8 +40,6 @@ private:
 	virtual void Tick(float _DeltaSeconds) override;
 
 	void UpdateAllPlayerInfo(class ALobbyGamestate* _GameStateReference, class UPrototypeGameInstance* _gameInstanceReference);
-
-	FCharacterDetails CreateDetailsFromColourEnum(EColours _Colour);
 private:
 	/* For holding all the costumes */
 

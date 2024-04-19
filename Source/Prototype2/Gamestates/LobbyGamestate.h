@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HHGameStateBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "LobbyGamestate.generated.h"
@@ -17,11 +18,32 @@ enum class EFarm : uint8
 	WINTERFARM,
 	HONEYFARM,
 	FLOATINGISLANDSFARM,
-	CLOCKWORKFARM
+	CLOCKWORKFARM,
+	RANDOMFARM
+};
+
+USTRUCT(BlueprintType)
+struct FTeamsDetails
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	EColours TeamOneColour = EColours::BLUE;
+	UPROPERTY(VisibleAnywhere)
+	EColours TeamTwoColour = EColours::GREEN;
+	UPROPERTY(VisibleAnywhere)
+	FString TeamOneName = "Team One";
+	UPROPERTY(VisibleAnywhere)
+	FString TeamTwoName = "Team Two";
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamOne{};
+	UPROPERTY(VisibleAnywhere)
+	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamTwo{};
 };
 
 UCLASS()
-class PROTOTYPE2_API ALobbyGamestate : public AGameStateBase
+class PROTOTYPE2_API ALobbyGamestate : public AHHGameStateBase
 {
 	GENERATED_BODY()
 
@@ -29,16 +51,12 @@ class PROTOTYPE2_API ALobbyGamestate : public AGameStateBase
 public:
 	ALobbyGamestate();
 	
-
-	void UpdateCharacterMaterial(int32 _Player,FCharacterDetails _Details);
-
 	int32 GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)  const;
 	int32 GetNumberOfCharacterColoursTaken(FCharacterDetails _Details)  const;
 
-	void SetIsReady(int32 _Player, bool _bIsReady);
+	void CheckAllReady();
 
 	void VoteMap(EFarm _Level);
-	void UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails);
 
 	void SetMaxPlayersOnServer(int32 _maxPlayersOnServer);
 	int32 GetMaxPlayersOnServer() const;
@@ -49,14 +67,10 @@ public:
 	int32 GetHoneyFarm() const;
 	int32 GetFloatingIslandFarm() const;
 	int32 GetClockworkFarm() const;
+	int32 GetRandomFarm() const;
 
 	bool HasMapBeenChosen() const;
 	int32 GetMapChoiceTotalLengthSeconds() const;
-
-	UFUNCTION(BlueprintCallable)
-	void SetGameMode(int32 _Mode);
-
-	int32 GetGameMode();
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
@@ -65,23 +79,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bTeams{};
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	EColours TeamOneColour;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	EColours TeamTwoColour;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	FString TeamOneName;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	FString TeamTwoName;
+	UPROPERTY(VisibleAnywhere)
+	bool bInitializedOnRepTeams{};
+
+	UFUNCTION()
+	void OnRep_TeamsDetails();
+
+	UPROPERTY(ReplicatedUsing=OnRep_TeamsDetails, VisibleAnywhere)
+	FTeamsDetails TeamsDetails{};
+	
 	UPROPERTY(VisibleAnywhere)
 	class UTeamNames* TeamNamesData;
-	
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamOne;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	TArray<TObjectPtr<class ALobbyPlayerState>> Server_TeamTwo;
-
-
 	
 	/* Private Functions */
 private:
@@ -94,9 +102,14 @@ private:
 	/* Picks a random map to play for the list of those maps most voted for */
 	void PickMapToPlay();
 
+	void PickRandomMap();
+
 	void TickTimers(float _DeltaSeconds);
 
 	void UpdateTeams();
+
+	void ServerTravel(float _DeltaSeconds);
+
 	
 	/* Private Variables */
 private:
@@ -121,7 +134,7 @@ private:
 	// Map choice
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bShowMapChoice{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	FString MapChoice{"Level_Main"};
 
 	// Timer between map choice and starting gameplay
@@ -143,16 +156,22 @@ private:
 	int32 FloatingIslandFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 ClockworkFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 RandomFarm{0};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	int32 GameMode{};
-
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bHasAllPlayersVoted{};
 
+	UFUNCTION()
+	void OnRep_CanTravel();
+	UPROPERTY(ReplicatedUsing=OnRep_CanTravel, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	bool bCanTravel{false};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	float MapTravelTimer{3.0f};
 
 	/* Maps */
 
@@ -178,10 +197,12 @@ private:
 	//FString HoneyBlitz = "/Game/Maps/Level_Honey_Blitz"; // No honey blitz
 
 	// Floating Islands
-	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIslandV2_Flat_Attack";
+	FString FloatingIslandsClassic = "/Game/Maps/Upcoming/Level_SkyIslandV2_Flat";
 	FString FloatingIslandsBrawl = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Brawl_Attack";
 	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Blitz_Attack";
 	
 	// Floating Islands
-	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
+	FString ClockworkClassicLarge = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
+	FString ClockworkClassicMedium = "/Game/Maps/Upcoming/Level_Clockwork_4_Player";
+	FString ClockworkBlitz = "/Game/Maps/Upcoming/Level_Clockwork_Blitz";
 };
