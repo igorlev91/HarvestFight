@@ -15,6 +15,7 @@
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/DataAssets/RandomNameData.h"
 #include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/Gameplay/RandomEventManager.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
@@ -48,9 +49,10 @@ void APrototype2GameMode::BeginPlay()
 		}
 	}
 
+	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	
 	if (auto Gamestate = GetGameState<APrototype2Gamestate>())
 	{
-		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
 		GameStateRef = Gamestate;
 		Gamestate->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
 		Gamestate->TeamOneName = GameInstance->TeamOneName;
@@ -93,53 +95,109 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 	if (!IsValid(GameInstance))
 		return;
 
-	PlayersTpdToPreGameArena_Teams.Add(false);
+	UpdateSessionJoinability(GameInstance->FinalConnectionCount);
 	
 	GameStateReference->Server_Players.Add(PlayerStateReference);
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 	GameStateReference->SetFinalConnectionCount(GameInstance->FinalConnectionCount);
-	
-	UpdatePlayerInfo(GameStateReference, GameInstance, PlayerStateReference);
 	
 	APrototype2Character* Character = Cast<APrototype2Character>(_NewPlayer->GetCharacter());
 	if (!IsValid(Character))
 		return;
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
-\
+
+	if (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
+	{
+		PlayerStateReference->Details = GameInstance->FinalPlayerDetails[PlayerStateReference->GetPlayerName()];
+		UE_LOG(LogTemp, Warning, TEXT("%s Details Found. Color: %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int16)PlayerStateReference->Details.Colour));
+	}
+	
 	FVector SpawnOffset{0.0f, 0.0f , 300.0f};
 	
-	if (GameInstance->bTeams)
+	if  /* TEAMS */ (GameInstance->bTeams) 
 	{
-		if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamAColour)
+		if /* JOINING FROM LOBBY */ (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
 		{
-			GameStateReference->Server_TeamOne.Add(PlayerStateReference);
-			if (PreGameArenas.Num() > 0)
+			if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamAColour)
 			{
-				Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
-				UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena A"), *FString::FromInt(GameStateReference->Server_Players.Num()));
+				UE_LOG(LogTemp, Warning, TEXT("%s Joined Team A"), *PlayerStateReference->GetPlayerName());
+				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+				if (PreGameArenas.Num() > 0)
+				{
+					Character->SetActorLocation(PreGameArenas[0]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
+					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena A"), *PlayerStateReference->GetPlayerName());
+				}
+			}
+			else if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamBColour)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s Joined Team B"), *PlayerStateReference->GetPlayerName());
+				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
+				if (PreGameArenas.Num() > 0)
+				{
+					Character->SetActorLocation(PreGameArenas[1]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
+					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena B"), *PlayerStateReference->GetPlayerName());
+				}
 			}
 		}
-		else if (PlayerStateReference->Details.Colour == GameInstance->FinalTeamBColour)
+		else /* JOINING MID-GAME */
 		{
-			GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
-			if (PreGameArenas.Num() > 0)
+			if (GameStateReference->Server_TeamOne.Num() <= GameStateReference->Server_TeamTwo.Num())
 			{
-				Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
-				UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena B"), *FString::FromInt(GameStateReference->Server_Players.Num()));
+				UE_LOG(LogTemp, Warning, TEXT("%s Joined Team A (MID-GAME)"), *PlayerStateReference->GetPlayerName());
+				PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamAColour);
+				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
+				if (PreGameArenas.Num() > 0)
+				{
+					Character->SetActorLocation(PreGameArenas[0]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
+					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena A"), *PlayerStateReference->GetPlayerName());
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s Joined Team B (MID-GAME)"), *PlayerStateReference->GetPlayerName());
+				PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamBColour);
+				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
+				if (PreGameArenas.Num() > 0)
+				{
+					Character->SetActorLocation(PreGameArenas[1]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
+					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena B"), *PlayerStateReference->GetPlayerName());
+				}
 			}
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("Player %s Is On Team %s"), *FString::FromInt(GameStateReference->Server_Players.Num()), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+		UE_LOG(LogTemp, Warning, TEXT("%s Is On Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+	}
+	else /* NOT TEAMS */
+	{
+		if /* JOINING FROM LOBBY */ (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
+		{
+		}
+		else /* JOINING MID-GAME */
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s Joined (MID-GAME)"), *PlayerStateReference->GetPlayerName());
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference));
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("%s Is On No Team"), *PlayerStateReference->GetPlayerName());
+		
+		if (DefaultPreGameArena)
+		{
+			Character->SetActorLocation(DefaultPreGameArena->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
+			UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena (Solo)"), *PlayerStateReference->GetPlayerName());
+		}
+	}
+
+	if (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
+	{
 	}
 	else
 	{
-		if (DefaultPreGameArena)
-		{
-			Character->SetActorLocation(DefaultPreGameArena->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
-			UE_LOG(LogTemp, Warning, TEXT("Player %s Teleported To Arena (Solo)"), *FString::FromInt(GameStateReference->Server_Players.Num()));
-		}
+		UE_LOG(LogTemp, Warning, TEXT("%s Added To FinalPlayerDetails (JOINED MID-GAME)"), *PlayerStateReference->GetPlayerName());
+		GameInstance->FinalPlayerDetails.Add({PlayerStateReference->GetPlayerName(), PlayerStateReference->Details});
 	}
+
+	UpdateAllPlayerInfo(GameStateReference, GameInstance);
 }
 
 void APrototype2GameMode::Logout(AController* _Exiting)
@@ -157,15 +215,20 @@ void APrototype2GameMode::Logout(AController* _Exiting)
 	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!PrototypeGameInstance)
 		return;
+	
+	UpdateSessionJoinability(PrototypeGameInstance->FinalConnectionCount);
 
+	UE_LOG(LogTemp, Warning, TEXT("%s Attempted To Disconnect"), *PlayerStateReference->GetPlayerName());
+	
 	// Default
 	Prototype2Gamestate->Server_Players.Remove(PlayerStateReference);
 
 	// Local Details
-	if (PrototypeGameInstance->FinalPlayerDetails.Contains(PlayerStateReference->PlayerName))
-	{
-		PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->PlayerName);
-	}
+	//if (PrototypeGameInstance->FinalPlayerDetails.Find(PlayerStateReference->GetPlayerName()))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s Disconnected From The Game!"), *PlayerStateReference->GetPlayerName());
+	//	PrototypeGameInstance->FinalPlayerDetails.Remove(PlayerStateReference->GetPlayerName());
+	//}
 
 	// Teams
 	if (Prototype2Gamestate->Server_TeamOne.Contains(PlayerStateReference))
@@ -195,7 +258,7 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 			{
 				const FTransform EndGamePodiumTransform = EndGamePodium->GetTransform();
 				
-				EndGamePodium->Destroy();
+				EndGamePodium->Destroy(true);
 				EndGamePodium = nullptr;
 				EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(DataAssetWorldOverride->WorldOverrideData->EndGamePodium_Teams, EndGamePodiumTransform);
 			}
@@ -211,31 +274,14 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 		}
 	}
 	
-	if (DataAssetWorldOverride->WorldOverrideData && !KingCrown)
+	if (DataAssetWorldOverride->WorldOverrideData && !KingCrown && !bTeams)
 	{
 		if (DataAssetWorldOverride->WorldOverrideData->KingCrown)
 			KingCrown = GetWorld()->SpawnActor<ACrown>(DataAssetWorldOverride->WorldOverrideData->KingCrown);
 		else
 			KingCrown = GetWorld()->SpawnActor<ACrown>(ACrown::StaticClass());
-	}
 
-	if (KingCrown)
-	{
-		if (AutomaticCrownCheckTimer <= 0)
-		{
-			AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
-		
-		}
-		else
-		{
-			AutomaticCrownCheckTimer -= _DeltaSeconds;
-		}
-
-		if (bTeams)
-		{
-			KingCrown->Destroy();
-			KingCrown = nullptr;
-		}
+		GameStateRef->TheCrown = KingCrown;
 	}
 }
 
@@ -292,43 +338,36 @@ void APrototype2GameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 void APrototype2GameMode::UpdatePlayerInfo(APrototype2Gamestate* _GameStateReference,
 	UPrototypeGameInstance* _gameInstanceReference, APrototype2PlayerState* _PlayerState)
 {
+	if (_PlayerState)
+		return;
+	
+	int32 SomePlayerID = _GameStateReference->Server_Players.Num();
 	FString SomePlayerName{"UNASSIGNED"};
+
 	if (auto SteamSubsystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM))
 	{
-		IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
-		if (IdentityInterface.IsValid())
-		{
-			auto UserId = _PlayerState->GetUniqueId().GetUniqueNetId();
-			if (UserId.IsValid())
-			{
-				SomePlayerName = _PlayerState->GetPlayerName();
-					
-				if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
-				{
-					_PlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
-				}
-			}
-		}
+		SomePlayerName = _PlayerState->GetPlayerName();
 	}
 	else if (auto NullSubsystem = IOnlineSubsystem::Get())
 	{
-		IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
-		if (IdentityInterface.IsValid())
+		if (AvailableNames.Num() > 0)
 		{
-			auto UserId = _PlayerState->GetUniqueId().GetUniqueNetId();
-			if (UserId.IsValid())
-			{
-				SomePlayerName = "Player " + FString::FromInt(_GameStateReference->Server_Players.Num());
-					
-				if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
-				{
-					_PlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
-				}
-			}
+			SomePlayerName = AvailableNames[rand() % AvailableNames.Num()];
+			AvailableNames.Remove(SomePlayerName);
+		}
+		else
+		{
+			SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
 		}
 	}
+
+	if (_gameInstanceReference->FinalPlayerDetails.Contains(_PlayerState->GetPlayerName()))
+	{
+		_PlayerState->Details = _gameInstanceReference->FinalPlayerDetails[_PlayerState->GetPlayerName()];
+		UE_LOG(LogTemp, Warning, TEXT("%s Details Found. Color: %s"), *_PlayerState->GetPlayerName(), *FString::FromInt((int16)_PlayerState->Details.Colour));
+	}
 		
-	_PlayerState->Player_ID = _GameStateReference->Server_Players.Num();
+	_PlayerState->Player_ID = SomePlayerID;
 	_PlayerState->PlayerName = SomePlayerName;
 
 	/* Limit player name if too long and adding ... to the end */
@@ -343,8 +382,7 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 {
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
-		APrototype2PlayerState* CasterPlayerState = Cast<APrototype2PlayerState>(_GameStateReference->Server_Players[i]);
-		if (!CasterPlayerState)
+		if (!IsValid(_GameStateReference->Server_Players[i]))
 			continue;
 		
 		int32 SomePlayerID = i;
@@ -352,47 +390,30 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 
 		if (auto SteamSubsystem = IOnlineSubsystem::Get(STEAM_SUBSYSTEM))
 		{
-			IOnlineIdentityPtr IdentityInterface = SteamSubsystem->GetIdentityInterface();
-			if (IdentityInterface.IsValid())
-			{
-				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
-				if (UserId.IsValid())
-				{
-					SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
+			SomePlayerName = _GameStateReference->Server_Players[i]->GetPlayerName();
 					
-					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
-					{
-						CasterPlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
-					}
-				}
+			if (_gameInstanceReference->FinalPlayerDetails.Contains(SomePlayerName))
+			{
+				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[SomePlayerName];
 			}
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
-			IOnlineIdentityPtr IdentityInterface = NullSubsystem->GetIdentityInterface();
-			if (IdentityInterface.IsValid())
+			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{
-				auto UserId = CasterPlayerState->GetUniqueId().GetUniqueNetId();
-				if (UserId.IsValid())
-				{
-					SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
-					
-					if (_gameInstanceReference->FinalPlayerDetails.Contains(UserId->ToString()))
-					{
-						CasterPlayerState->Details = _gameInstanceReference->FinalPlayerDetails[UserId->ToString()];
-					}
-				}
+				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[_GameStateReference->Server_Players[i]->GetPlayerName()];
 			}
+			SomePlayerName = _GameStateReference->Server_Players[i]->Details.RandomizedName;
 		}
 		
-		CasterPlayerState->Player_ID = SomePlayerID;
-		CasterPlayerState->PlayerName = SomePlayerName;
+		_GameStateReference->Server_Players[i]->Player_ID = SomePlayerID;
+		_GameStateReference->Server_Players[i]->PlayerName = SomePlayerName;
 
 		/* Limit player name if too long and adding ... to the end */
-		if (CasterPlayerState->PlayerName.Len() >= 10)
+		if (_GameStateReference->Server_Players[i]->PlayerName.Len() >= 10)
 		{
-			CasterPlayerState->PlayerName = CasterPlayerState->PlayerName.Left(FMath::Min(CasterPlayerState->PlayerName.Len(), 8));
-			CasterPlayerState->PlayerName = CasterPlayerState->PlayerName + "...";
+			_GameStateReference->Server_Players[i]->PlayerName = _GameStateReference->Server_Players[i]->PlayerName.Left(FMath::Min(_GameStateReference->Server_Players[i]->PlayerName.Len(), 8));
+			_GameStateReference->Server_Players[i]->PlayerName = _GameStateReference->Server_Players[i]->PlayerName + "...";
 		}
 	}
 }

@@ -7,7 +7,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "Prototype2/Gameplay/Endgame/EndGamePodium.h"
 #include "Prototype2/Characters/Prototype2Character.h"
-#include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2GameMode.generated.h"
@@ -47,7 +46,7 @@ public:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	APreGameArena* DefaultPreGameArena{};
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess))
 	class ADataAssetWorldOverride* DataAssetWorldOverride{};
 	
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
