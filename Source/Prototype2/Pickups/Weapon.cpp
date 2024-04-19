@@ -10,8 +10,6 @@
 
 UWeapon::UWeapon()
 {
-	//Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	
 	SetIsReplicatedByDefault(true);
 }
 
@@ -29,7 +27,7 @@ void UWeapon::Client_ReleaseAttack_Implementation(bool _bIsFullCharge, APrototyp
 
 void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 {
-	if (!_Player)
+	if (!IsValid(_Player))
 		return;
 	
 	_Player->bAllowMovementFromInput = false;
@@ -42,22 +40,22 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 
 	if (_bIsFullCharge)
 	{
-		_Player->GetCharacterMovement()->Launch(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
+		_Player->LungeAttack(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
 	}
 }
 
 
 void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Player, float _AttackChargeAmount, bool _bSprinting)
 {
-	if (!_Player)
+	if (!IsValid(_Player))
 		return;
 	
 	_Player->WeaponFlashTimer = _Player->WeaponFlashDuration;
 	_Player->bShouldWeaponFlashRed = true;
 	_Player->bAllowMovementFromInput = true;
-	
-	Client_SetFollowingThroughToFalse(_Player);
 	_Player->bIsFollowingThroughAttack = false;
+	_Player->Grunt();
+
 }
 
 void UWeapon::CheckIfCrownHit(APrototype2Character* _Attacker, APrototype2Character* _Victim)
@@ -76,14 +74,14 @@ void UWeapon::CheckIfCrownHit(APrototype2Character* _Attacker, APrototype2Charac
 
 void UWeapon::Client_SetFollowingThroughToFalse_Implementation(APrototype2Character* _Player)
 {
-	if (_Player)
+	if (IsValid(_Player))
 		_Player->bIsFollowingThroughAttack = false;
 	
 }
 
 void UWeapon::Client_BroadcastAttackToHUD_Implementation(APrototype2Character* _Player)
 {
-	if (_Player)
+	if (IsValid(_Player))
 		_Player->OnExecuteAttackDelegate.Broadcast();
 }
 

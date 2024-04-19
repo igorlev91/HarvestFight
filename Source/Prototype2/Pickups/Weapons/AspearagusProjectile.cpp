@@ -50,6 +50,9 @@ AAspearagusProjectile::AAspearagusProjectile()
 	{
 		DestroyVFX = PoofVFX.Class;
 	}
+
+	DiveBombSFX = CreateDefaultSubobject<UAudioComponent>("DiveBombSFX");
+	DiveBombSFX->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -64,16 +67,40 @@ void AAspearagusProjectile::BeginPlay()
 		for(auto FoundItem : FoundItems)
 			SphereCollision->IgnoreActorWhenMoving(FoundItem, true);
 	}
+
+
 }
 
 // Called every frame
 void AAspearagusProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Set Gold Material (HOST)
+	{
+		if (IsValid(GoldMaterial) && AspearagusMesh->GetMaterial(0) != GoldMaterial)
+		{
+			AspearagusMesh->SetMaterial(0, GoldMaterial);
+		}
+	}
 }
 
 void AAspearagusProjectile::Destroyed()
 {
+	if (IsValid(DestroyVFX))
+	{
+		if (UWorld* World = GetWorld())
+		{
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
+		}
+	}
+	if (DestroyedCue)
+	{
+		// Gets destroyed automatically after played
+		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DestroyedCue, GetActorLocation());		
+	}
 	Super::Destroyed();
 	
 }
@@ -90,10 +117,8 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	if (APrototype2Character* HitPlayerCast = Cast<APrototype2Character>(OtherActor))
 	{
 		if (HitPlayerCast != OwningPlayer)
-		{
-			Destroy();
+		{	
 			HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
-
 			if (HitPlayerCast->GetHasCrown())
 			{
 				int32 PointsForHit = static_cast<int32>(OwningPlayer->AttackChargeAmount);
@@ -102,9 +127,10 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 					PointsForHit = 1;
 				}
 				OwningPlayer->PlayerStateRef->AddCoins(PointsForHit);
-				HitPlayerCast->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+				HitPlayerCast->Client_PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
 			}
 		}
+		Destroy(true);
 		return;
 	}
 
@@ -116,19 +142,12 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 		HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
 	}
 	
-	Multi_OnDestroy();
-	
-	Destroy();
+	Destroy(true);
 }
 
 
 void AAspearagusProjectile::Multi_OnDestroy_Implementation()
 {
-	if (DestroyVFX)
-	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
-	}
 }
 
 void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -137,8 +156,9 @@ void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 	DOREPLIFETIME(AAspearagusProjectile, AttackSphereRadius);
 	DOREPLIFETIME(AAspearagusProjectile, OwningPlayer);
-	DOREPLIFETIME(AAspearagusProjectile, AspearagusMesh);
 	DOREPLIFETIME(AAspearagusProjectile, ChargeAmount);
+	DOREPLIFETIME(AAspearagusProjectile, GoldMaterial);
+	DOREPLIFETIME(AAspearagusProjectile, StaticMesh);
 }
 
 void AAspearagusProjectile::OnRep_Initialization()
@@ -150,11 +170,42 @@ void AAspearagusProjectile::OnRep_Initialization()
 	}
 }
 
+void AAspearagusProjectile::OnRep_SetMesh()
+{
+	if (!IsValid(StaticMesh))
+		return;
+	
+	AspearagusMesh->SetStaticMesh(StaticMesh);
+}
+
+void AAspearagusProjectile::OnRep_GoldMaterial()
+{
+	AspearagusMesh->SetMaterial(0, GoldMaterial);
+}
+
+void AAspearagusProjectile::PlaySFX(USoundCue* _DiveBombSFX, USoundCue* _DestroyedSFX)
+{
+	if(HasAuthority())
+	{
+		Multi_PlaySFX(_DiveBombSFX, _DestroyedSFX);
+	}
+}
+
+void AAspearagusProjectile::Multi_PlaySFX_Implementation(USoundCue* _SFX, USoundCue* _DestroyedSFX)
+{
+	if (IsValid(_SFX))
+	{
+		DiveBombSFX->SetSound(_SFX);
+		DiveBombSFX->Play();
+	}
+	DestroyedCue = _DestroyedSFX;
+}
+
 void AAspearagusProjectile::Server_InitializeProjectile_Implementation(APrototype2Character* _Player,
                                                                        UStaticMesh* _Mesh, float _Speed, float _LifeTime, float _AttackSphereRadius, float _AttackChargeAmount)
 {
 	OwningPlayer = _Player;
-	AspearagusMesh->SetStaticMesh(_Mesh);
+	StaticMesh = _Mesh;
 	DeathTimer = _LifeTime;
 	AttackSphereRadius = _AttackSphereRadius * _Player->CurrentWeaponSeedData->WeaponData->ScaleOfAOELargerThanIndicator;
 	ChargeAmount = _AttackChargeAmount;
@@ -164,5 +215,8 @@ void AAspearagusProjectile::Server_InitializeProjectile_Implementation(APrototyp
 		SphereCollision->IgnoreActorWhenMoving(OwningPlayer, true);
 		OwningPlayer->MoveIgnoreActorAdd(this);
 	}
+
+	/* SET MESH ON SERVER */
+	OnRep_SetMesh();
 }
 

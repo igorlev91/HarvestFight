@@ -45,16 +45,24 @@ void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 {
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargePunchingAttack)
+		if (_Player->AnimationData->FullChargeAspearagusAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeAspearagusAttack);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(GetWorld(), "No Aspearagus Montage");
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalPunchingAttack)
+		if (_Player->AnimationData->NormalAspearagusAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalAspearagusAttack);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(GetWorld(), "No Aspearagus Montage");
 		}
 	}
 }
@@ -70,11 +78,13 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 
 	UE_LOG(LogTemp, Warning, TEXT("Spawn Aspearagus Projectile"));
 	
-	Server_SpawnProjectile(_Player, _AttackSphereRadius, _AttackChargeAmount);
+	//Server_SpawnProjectile(_Player, _Player->GetTransform(), _AttackSphereRadius, _AttackChargeAmount);
+	Server_SpawnProjectile(_Player, _Player->ProjectileSpawnPoint->GetComponentTransform(), _AttackSphereRadius, _AttackChargeAmount);
 	
 	// make UI pop out
-	Client_BroadcastAttackToHUD(_Player);
-
+	//Client_BroadcastAttackToHUD(_Player);
+	_Player->OnExecuteAttackDelegate.Broadcast();
+	
 	_Player->WeaponCurrentDurability--;
 	_Player->PlayerHUDRef->SetWeaponDurability(_Player->WeaponCurrentDurability);
 		
@@ -104,19 +114,19 @@ void UWeaponAspearagus::UpdateAOEIndicator(APrototype2Character* _Player, float 
 	_Player->AttackAreaIndicatorMesh->SetWorldLocation(DownVector);
 	_Player->AttackAreaIndicatorMesh->SetWorldRotation(_Player->GetActorRotation());
 	_Player->AttackAreaIndicatorMesh->SetRelativeScale3D({10000.0f, AttackSphereRadius,_AttackChargeAmount * 30.0f});// Magic number just to increase the height of the aoe indicator
-
 }
 
 void UWeaponAspearagus::Multi_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
 {
 }
 
-void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount)
+void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Character* _Player, FTransform _PlayerTransform, float _AttackSphereRadius, float _AttackChargeAmount)
 {
 	if (!_Player)
 		return;
-
-	FTransform ProjectileTransform = _Player->GetTransform();
+	
+	FTransform ProjectileTransform = _PlayerTransform;
+	
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
 	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>(Prefab, ProjectileTransform);
 	if (NewAspearagusProjectile)
@@ -124,5 +134,17 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 		NewAspearagusProjectile->SetReplicates(true);
 		NewAspearagusProjectile->Server_InitializeProjectile(_Player, _Player->CurrentWeaponSeedData->BabyMesh,
 												2800.0f, 3.0f, _AttackSphereRadius, _AttackChargeAmount);
+
+		if (_Player->CurrentWeaponSeedData->BabyGoldMaterials.Num() > 0)
+		{
+			if (_Player->WeaponMesh->GetMaterial(0) == _Player->CurrentWeaponSeedData->BabyGoldMaterials[0])
+			{
+				NewAspearagusProjectile->GoldMaterial = _Player->CurrentWeaponSeedData->BabyGoldMaterials[0];
+			}
+		}
+		if (IsValid(_Player) && IsValid(_Player->ProjectileSoundCue) && IsValid(_Player->WeaponDestroyedCue))
+		{
+			NewAspearagusProjectile->PlaySFX(_Player->ProjectileSoundCue, _Player->WeaponDestroyedCue);
+		}
 	}
 }
