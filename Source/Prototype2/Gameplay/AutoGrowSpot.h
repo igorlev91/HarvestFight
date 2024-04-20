@@ -15,8 +15,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
-	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual void OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 
+	UPROPERTY(EditAnywhere)
+	bool bWeaponOnly{false};
 	UPROPERTY(EditAnywhere)
 	float ReGrowInterval{3.0f};
 	UPROPERTY(VisibleAnywhere, Replicated)

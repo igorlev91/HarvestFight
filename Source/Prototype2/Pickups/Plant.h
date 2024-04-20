@@ -13,10 +13,9 @@ public:
 	APlant();
 	virtual void BeginPlay() override;
 	virtual void Interact(APrototype2Character* _Player) override;
-	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void Server_Drop() override;
 	virtual void Client_Drop() override;
@@ -36,9 +35,6 @@ public:
 	void Multi_OnDestroy();
 	
 	void Multi_ScalePlant();
-
-	UPROPERTY(Replicated)
-	bool bGrown{};
 	
 	UPROPERTY(EditAnywhere)
 	int32 NumberOfNearbyFlowers{};
@@ -50,6 +46,9 @@ public:
 	float InitialLifetime{30};
 	UPROPERTY(VisibleAnywhere)
 	float Lifetime{};
+
+	UPROPERTY(VisibleAnywhere)
+	float PlantScaleMultiplier{1.0f};
 	
 	UPROPERTY(EditAnywhere)
 	float WiltDelay{30};

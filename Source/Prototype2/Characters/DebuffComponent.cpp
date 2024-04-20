@@ -134,7 +134,7 @@ void UDebuffComponent::OnRep_ApplyDebuff()
 		}
 	case EDebuff::Slow:
 		{	
-			ToggleDizzyVFX(true);
+			Player->ActivateParticleSystemFromEnum(EParticleSystems::Slow);
 			Player->SetMaxWalkSpeed(SlowSpeed);
 			break;
 		}
@@ -148,9 +148,12 @@ void UDebuffComponent::OnRep_ApplyDebuff()
 	case EDebuff::None:
 		{
 			ToggleDizzyVFX(false);
+			Player->DeActivateParticleSystemFromEnum(EParticleSystems::Slow);
+			Player->bAllowMovementFromInput = true;
 			break;
 		}
 	}
+	Player->RefreshCurrentMaxSpeed();
 }
 
 void UDebuffComponent::Server_SetDebuff_Implementation(EDebuff _InDebuff, float _InDuration)

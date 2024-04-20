@@ -6,6 +6,22 @@
 #include "Prototype2/InteractInterface.h"
 #include "PlotSign.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPlotSignData
+{
+	GENERATED_BODY()
+
+		
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bHasBeenClaimed{};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector4 AssignedColour{};
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Character* CharacterWhoClaimed{nullptr};
+};
+
 UCLASS()
 class PROTOTYPE2_API APlotSign : public AActor, public IInteractInterface
 {
@@ -18,12 +34,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	class UStaticMeshComponent* GetMesh();
+	void SetMeshGrey();
 	
 public:	
 	virtual void Interact(APrototype2Character* _Player) override;
-	virtual void HoldInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 
 protected:
@@ -34,11 +50,18 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;
-	
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	bool bHasBeenClaimed{};
-		
-	float HoldInteractTotalDuration = 1.0f;
-	float HoldInteractTimer = 0.0f;
-	APrototype2Character* CurrentPlayerClaimingPlot = nullptr;
+
+	UFUNCTION()
+	void OnRep_bClaimed();
+
+	UPROPERTY(ReplicatedUsing=OnRep_bClaimed, EditAnywhere, BlueprintReadOnly)
+	FPlotSignData PlotSignData;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UMaterialInstance* UnclaimableMaterial{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ClaimCue{nullptr};
+	UPROPERTY(EditAnywhere)
+	class USoundAttenuation* ClaimAttenuation{nullptr};
 };

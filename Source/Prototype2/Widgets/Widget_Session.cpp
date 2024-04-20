@@ -3,6 +3,8 @@
 
 #include "Widget_Session.h"
 
+#include "Interfaces/OnlineSessionInterface.h"
+
 //#include "IPAddress.h"
 //#include "SocketSubsystem.h"
 //#include "Sockets.h"
@@ -144,3 +146,7 @@
 //
 //
 //
+void UWidget_Session::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+}

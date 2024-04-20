@@ -20,6 +20,37 @@ void UWidget_MainMenu::NativeOnInitialized()
 void UWidget_MainMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+}
 
-	HoverButton(bIsButtonHovered, ButtonToPulse, PulseTime, InDeltaTime, FVector2D(1.0f, 1.0f), ButtonScale);
+void UWidget_MainMenu::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	ShowLoadingScreen();
+}
+
+void UWidget_MainMenu::RemoveLoadingScreen()
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	
+	if (!GameInstance)
+		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
+		
+	GameInstance->RemoveLoadingScreen(GameInstance->BlackScreenWidget);
+}
+
+void UWidget_MainMenu::ShowLoadingScreen()
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	
+	if (!GameInstance)
+		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
+	
+	GameInstance->ShowLoadingScreen(GameInstance->BlackScreenWidget, 0);
 }

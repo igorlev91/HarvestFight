@@ -24,7 +24,8 @@ enum class ECharacters : uint8
 	COW = 0,
 	PIG = 1,
 	CHICKEN = 2,
-	DUCK = 3
+	DUCK = 3,
+	BEE = 4
 };
 
 UENUM(BlueprintType)
@@ -47,6 +48,7 @@ struct FCharacterDetails
 	GENERATED_BODY()
 
 public:
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ECharacters Character{ECharacters::COW};
 
@@ -64,6 +66,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector4 PureToneColour{0.571125,0.031896,0.016807,1};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString RandomizedName{"Farmer"};
 };
 
 UCLASS()
@@ -72,8 +77,17 @@ class PROTOTYPE2_API UPrototypeGameInstance : public UGameInstance
 	GENERATED_BODY()
 public:
 	UPrototypeGameInstance();
+	virtual void OnStart() override;
 	virtual void StartGameInstance() override;
-
+	
+	void ResetCachedPlayerDetails();
+	
+	void ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder);
+	void RemoveLoadingScreen(UUserWidget *Widget);
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UUserWidget* BlackScreenWidget{ nullptr };
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bPlayerStentil{ false };
 	
@@ -118,6 +132,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FString TeamTwoName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int HHMode{};
+public:
+	// Game
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstance*> PlayerMaterials{{},{},{},{}};
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
+	TArray<UMaterialInstanceDynamic*> PlayerMaterialsDynamic{};
+	UPROPERTY(EditDefaultsOnly)
+	TArray<class UAnimationData*> PlayerModels{{},{},{},{},{}};
+	//
+
+	// Lobby
+	UPROPERTY(EditDefaultsOnly)
+	UClass* LobbyAnimBP;
+	UPROPERTY(EditDefaultsOnly)
+	TArray<class USkeletalMesh*> LobbyPlayerModels{{},{},{},{}};
+	//
 };

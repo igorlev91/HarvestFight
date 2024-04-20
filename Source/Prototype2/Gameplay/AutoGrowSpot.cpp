@@ -18,25 +18,24 @@
 AAutoGrowSpot::AAutoGrowSpot()
 {
 	bReplicates = true;
-	bIsNormalGrowSpot = false;
 }
 
 void AAutoGrowSpot::BeginPlay()
 {
-	AGrowSpot::BeginPlay();
+	Super::BeginPlay();
 	
 	ReGrowTimer = ReGrowInterval;
 }
 
 void AAutoGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	AGrowSpot::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AAutoGrowSpot, ReGrowTimer);
 }
 
 void AAutoGrowSpot::Tick(float DeltaSeconds)
 {
-	AGrowSpot::Tick(DeltaSeconds);
+	Super::Tick(DeltaSeconds);
 		
 	if (!HasAuthority())
 		return;
@@ -48,7 +47,7 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 	}
 	if (ReGrowTimer <= 0)
 	{
-		if (!GrowingItemRef)
+		if (IsValid(ItemRef) == false)
 		{
 			if (auto Gamemode = UGameplayStatics::GetGameMode(GetWorld()))
 			{
@@ -58,7 +57,8 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 					{
 						ReGrowTimer = ReGrowInterval;
 						ASeed* NewSeed = Cast<ASeed>(GetWorld()->SpawnActor(ASeed::StaticClass()));
-						if (rand() % 3 == 0)
+						
+						if (bWeaponOnly)
 							NewSeed->ServerData.SeedData = DataAssetWorldOverride->WorldOverrideData->WeaponSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->WeaponSeeds.Num()];
 						else
 							NewSeed->ServerData.SeedData = DataAssetWorldOverride->WorldOverrideData->PlantSeeds[rand() % DataAssetWorldOverride->WorldOverrideData->PlantSeeds.Num()];
@@ -72,7 +72,13 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 	
 }
 
-bool AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
+void AAutoGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
+	int _PlayerID)
+{
+	OnDisplayInteractText_Unprotected(_InvokingWidget, _Owner);
+}
+
+EInteractMode AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	return IsInteractable_Unprotected(_Player);
 }

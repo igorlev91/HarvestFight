@@ -6,18 +6,17 @@
 #include "Components/SplineMeshComponent.h"
 
 ASellBin_Winter::ASellBin_Winter()
-	: ASellBin()
 {
 	bReplicates = true;
 
-	IcePlane = CreateDefaultSubobject<UStaticMeshComponent>("Ice Plane");
-	IcePlane->SetWorldLocation({-104.559325,-72.190911,-13.473242});
-	IcePlane->SetupAttachment(RootComponent);
-	
-	IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
-	IceBoundary->SetRelativeScale3D({1,1,8});
-	IceBoundary->SetWorldLocation({-104.559325,-72.190911,300});
-	IceBoundary->SetupAttachment(RootComponent);
+	//IcePlane = CreateDefaultSubobject<UStaticMeshComponent>("Ice Plane");
+	////IcePlane->SetWorldLocation({-104.559325,-72.190911,-13.473242});
+	//IcePlane->SetupAttachment(RootComponent);
+	//
+	//IceBoundary = CreateDefaultSubobject<UStaticMeshComponent>("Mesh Boundary");
+	//IceBoundary->SetRelativeScale3D({1,1,8});
+	////IceBoundary->SetWorldLocation({-104.559325,-72.190911,300});
+	//IceBoundary->SetupAttachment(RootComponent);
 
 	InterfaceType = EInterfaceType::SellBin;
 	
@@ -27,33 +26,36 @@ void ASellBin_Winter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetReplicateMovement(true);
-	
-	IcePlane->SetCollisionProfileName("NoCollision");
-	IcePlane->SetCollisionObjectType(ECC_WorldStatic);
-	IcePlane->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	IcePlane->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-	IcePlane->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-	IcePlane->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel1, ECR_Block);
-	if (IsValid(RootComponent))
-		IcePlane->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	IcePlane->SetMobility(EComponentMobility::Static);
-	IcePlane->SetIsReplicated(false);
 
-	IceBoundary->SetHiddenInGame(true);
-	IceBoundary->SetCollisionProfileName("NoCollision");
-	IceBoundary->SetCollisionObjectType(ECC_WorldStatic);
-	IceBoundary->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	IceBoundary->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
-	IceBoundary->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	IceBoundary->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	IceBoundary->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
-	IceBoundary->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-	if (IsValid(RootComponent))
-		IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	IceBoundary->SetMobility(EComponentMobility::Static);
-	IceBoundary->SetIsReplicated(false);
+	
+	//IcePlane->SetCollisionProfileName("NoCollision");
+	//IcePlane->SetCollisionObjectType(ECC_WorldStatic);
+	//IcePlane->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//IcePlane->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	//IcePlane->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	//IcePlane->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	//IcePlane->SetCollisionResponseToChannel(ECC_EngineTraceChannel1, ECR_Block);
+	//if (IsValid(IcePlane->GetAttachParent()))
+	//	IcePlane->DetachFromComponent(FDetachmentTransformRules:: KeepWorldTransform);
+	//IcePlane->SetMobility(EComponentMobility::Static);
+	//IcePlane->SetIsReplicated(false);
+//
+	//IceBoundary->SetHiddenInGame(true);
+	//IceBoundary->SetCollisionProfileName("NoCollision");
+	//IceBoundary->SetCollisionObjectType(ECC_PhysicsBody);
+	//IceBoundary->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Block);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+	//IceBoundary->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	//if (IsValid(IceBoundary->GetAttachParent()))
+	//	IceBoundary->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	//IceBoundary->SetMobility(EComponentMobility::Static);
+	//IceBoundary->SetIsReplicated(false);
+
+	SetReplicateMovement(true);
 
 	ItemComponent->Mesh->SetCollisionProfileName("Vehicle");
 	ItemComponent->Mesh->SetMassOverrideInKg(NAME_None, 100);

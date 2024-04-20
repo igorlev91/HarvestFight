@@ -8,12 +8,21 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/Pickups/PickUpItem.h"
 
+
 // Sets default values
 AFallOffRespawn::AFallOffRespawn()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	BaseRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Base Root Component"));
+	SetRootComponent(BaseRootComponent);
+	ClassicRespawnLocation1 = CreateDefaultSubobject<UArrowComponent>(TEXT("Respawn Location 1"));
+	ClassicRespawnLocation1->SetupAttachment(RootComponent);
+	ClassicRespawnLocation2 = CreateDefaultSubobject<UArrowComponent>(TEXT("Respawn Location 2"));
+	ClassicRespawnLocation2->SetupAttachment(RootComponent);
+	ClassicRespawnLocation3 = CreateDefaultSubobject<UArrowComponent>(TEXT("Respawn Location 3"));
+	ClassicRespawnLocation3->SetupAttachment(RootComponent);
 }
 
 void AFallOffRespawn::Multi_RemovePhysicsObjectsBelowHeight()
@@ -46,7 +55,21 @@ void AFallOffRespawn::Multi_RespawnPlayersBelowHeight()
 				}
 			}
 			
-			Player->SetActorLocation(RespawnLocation);
+			if (bIsClassicMode)
+			{
+				int32 RandomNumber = FMath::RandRange(0, 2);
+				if (RandomNumber == 0)
+					Player->SetActorLocation(ClassicRespawnLocation1->GetComponentLocation());
+				else if (RandomNumber == 1)
+					Player->SetActorLocation(ClassicRespawnLocation2->GetComponentLocation());
+				else
+					Player->SetActorLocation(ClassicRespawnLocation3->GetComponentLocation());
+			}
+			else
+			{
+				Player->SetActorLocation(RespawnLocation);
+			}
+			
 		}
 	}
 }

@@ -8,7 +8,7 @@
 #include "Widget_Tutorial.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API UWidget_Tutorial : public UUserWidget, public IWidgetUtilityInterface
+class PROTOTYPE2_API UWidget_Tutorial : public UUserWidget
 {
 	GENERATED_BODY()
 

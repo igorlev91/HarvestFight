@@ -43,48 +43,13 @@ void UWidget_PlayerNamesTeam2::NativeOnInitialized()
 	PlayerBackgrounds.Add(BackgroundT2_2);
 	PlayerBackgrounds.Add(BackgroundT2_3);
 	PlayerBackgrounds.Add(BackgroundT2_4);
+
+	UpdatePlayerNames();
 }
 
 void UWidget_PlayerNamesTeam2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-	
-	/* Team 1 */
-	if (GameStateReference->Server_TeamTwo.Num() < 4)
-	{
-		OverlayT2_4->SetVisibility(ESlateVisibility::Hidden);
-
-		if (GameStateReference->Server_TeamTwo.Num() < 3)
-		{
-			OverlayT2_3->SetVisibility(ESlateVisibility::Hidden);
-
-			if (GameStateReference->Server_TeamTwo.Num() < 2)
-			{
-				OverlayT2_2->SetVisibility(ESlateVisibility::Hidden);
-
-				if (GameStateReference->Server_TeamTwo.Num() < 1)
-				{
-					OverlayT2_1->SetVisibility(ESlateVisibility::Hidden);
-				}
-				else
-				{
-					OverlayT2_1->SetVisibility(ESlateVisibility::Visible);
-				}
-			}
-			else
-			{
-				OverlayT2_2->SetVisibility(ESlateVisibility::Visible);
-			}
-		}
-		else
-		{
-			OverlayT2_3->SetVisibility(ESlateVisibility::Visible);
-		}
-	}
-	else
-	{
-		OverlayT2_4->SetVisibility(ESlateVisibility::Visible);
-	}
 
 	for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
 	{
@@ -121,6 +86,11 @@ void UWidget_PlayerNamesTeam2::NativeTick(const FGeometry& MyGeometry, float InD
 						PlayerIconsTeam2[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
 						break;
 					}
+				case ECharacters::BEE:
+					{
+						PlayerIconsTeam2[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
+						break;
+					}
 				default:
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_PlayerNames: Unable to determine character type"));
@@ -148,5 +118,47 @@ void UWidget_PlayerNamesTeam2::NativeTick(const FGeometry& MyGeometry, float InD
 				}
 			}
 		}
+	}
+}
+
+void UWidget_PlayerNamesTeam2::UpdatePlayerNames()
+{
+	if (!GameStateReference)
+		return;
+
+	if (GameStateReference->Server_TeamTwo.Num() == 4)
+	{
+		OverlayT2_1->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_2->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_3->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_4->SetVisibility(ESlateVisibility::Visible);
+	}
+	else if (GameStateReference->Server_TeamTwo.Num() == 3)
+	{
+		OverlayT2_1->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_2->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_3->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_4->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else if (GameStateReference->Server_TeamTwo.Num() == 2)
+	{
+		OverlayT2_1->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_2->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_3->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_4->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else if (GameStateReference->Server_TeamTwo.Num() == 1)
+	{
+		OverlayT2_1->SetVisibility(ESlateVisibility::Visible);
+		OverlayT2_2->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_3->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_4->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else
+	{
+		OverlayT2_1->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_2->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_3->SetVisibility(ESlateVisibility::Hidden);
+		OverlayT2_4->SetVisibility(ESlateVisibility::Hidden);
 	}
 }

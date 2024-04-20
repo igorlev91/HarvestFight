@@ -94,8 +94,15 @@ void USquashAndStretch::Disable()
 
 void USquashAndStretch::Boing()
 {
+	if (BoingTimeline.IsPlaying())
+	{
+		BoingTimeline.SetNewTime(0.0f);
+		BoingTimeline.SetLooping(false);
+		BoingTimeline.Stop();
+
+		
+	}
 	BoingTimeline.SetLooping(false);
-	BoingTimeline.SetNewTime(0.0f);
 	BoingTimeline.PlayFromStart();
 }
 
@@ -114,11 +121,14 @@ void USquashAndStretch::SetMeshesToStretch(TArray<UStaticMeshComponent*> _Static
 
 void USquashAndStretch::SetMeshToStretch(UStaticMeshComponent* _StaticMesh)
 {
-	OwningItem = nullptr;
-	StaticMeshes.Empty();
-	StartScales.Empty();
-	StaticMeshes.Add(_StaticMesh);
-	StartScales.Add(_StaticMesh->GetComponentScale());
+	if (IsValid(_StaticMesh))
+	{
+		OwningItem = nullptr;
+		StaticMeshes.Empty();
+		StartScales.Empty();
+		StaticMeshes.Add(_StaticMesh);
+		StartScales.Add(_StaticMesh->GetComponentScale());
+	}
 }
 
 void USquashAndStretch::FindMeshesToStretch()
@@ -146,15 +156,12 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 {
 	if (OwningItem != nullptr)
 	{
-		for(int32 i = 0; i  < StaticMeshes.Num(); i++)
+		if (OwningItem->ServerData.SeedData)
 		{
-			if (OwningItem->ServerData.SeedData)
-			{
-				if (OwningItem->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
-					StaticMeshes[i]->SetWorldScale3D(FVector{2.0f,2.0f,2.0f} + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
-				else
-					StaticMeshes[i]->SetWorldScale3D(OwningItem->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
-			}
+			if (OwningItem->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
+				OwningItem->ItemComponent->Mesh->SetWorldScale3D(OwningItem->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+			else
+				OwningItem->ItemComponent->Mesh->SetWorldScale3D(OwningItem->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 		}
 		return;
 	}
@@ -165,18 +172,21 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 			for(int32 i = 0; i  < StaticMeshes.Num(); i++)
 			{
 				if (OwningSellBin->SellBinData)
-					StaticMeshes[i]->SetWorldScale3D(OwningSellBin->SellBinData->DesiredScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+				{
+					if (IsValid(StaticMeshes[i]))
+						StaticMeshes[i]->SetWorldScale3D(OwningSellBin->SellBinData->DesiredScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+				}
 			}
 		}
 		return;
 	}
 	if (OwningGrowSpot != nullptr)
 	{
-		if (OwningGrowSpot->GrowSpotData)
+		if (IsValid(OwningGrowSpot->GrowSpotData))
 		{
 			for(int32 i = 0; i  < StaticMeshes.Num(); i++)
 			{
-				if (OwningGrowSpot->GrowSpotData)
+				if (IsValid(StaticMeshes[i]))
 					StaticMeshes[i]->SetWorldScale3D(OwningGrowSpot->GrowSpotData->DesiredScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 			}
 		}
@@ -185,14 +195,15 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 	if (OwningFertiliserSpawner != nullptr)
 	{
 		StaticMeshes[0]->SetWorldScale3D(StartScales[0] + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
-		if (OwningFertiliserSpawner->SpawnedFertiliser)
+		if (IsValid(OwningFertiliserSpawner->SpawnedFertiliser))
 		{
-			if (OwningFertiliserSpawner->SpawnedFertiliser->ServerData.SeedData)
+			if (IsValid(OwningFertiliserSpawner->SpawnedFertiliser->ServerData.SeedData))
 			{
 				
 				for(int32 i = 1; i  < StaticMeshes.Num(); i++)
 				{
-					StaticMeshes[i]->SetWorldScale3D(OwningFertiliserSpawner->SpawnedFertiliser->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+					if (IsValid(StaticMeshes[i]))
+						StaticMeshes[i]->SetWorldScale3D(OwningFertiliserSpawner->SpawnedFertiliser->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 				}
 			}
 		}
@@ -201,12 +212,23 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 
 	for(int32 i = 0; i  < StaticMeshes.Num(); i++)
 	{
-		StaticMeshes[i]->SetWorldScale3D(StartScales[i] + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+		if (IsValid(StaticMeshes[i]))
+			StaticMeshes[i]->SetWorldScale3D(StartScales[i] + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 	}
 }
 
 void USquashAndStretch::OnBoingFinish()
 {
+}
+
+void USquashAndStretch::SetBoingMagnitude(float _newMagnitude)
+{
+	BoingSquashMag = _newMagnitude;
+}
+
+void USquashAndStretch::SetAxis(FVector _Axis)
+{
+	SSAxis = _Axis;
 }
 
 void USquashAndStretch::Server_SetMeshToStretch_Implementation(UStaticMeshComponent* _StaticMesh)

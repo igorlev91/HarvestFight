@@ -31,7 +31,7 @@ public:
 	virtual void UpdateAOEIndicator(APrototype2Character* _Player, float _AttackChargeAmount) override;
 	
 	UFUNCTION(Server, Reliable)
-	void Server_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
+	void Server_SpawnProjectile(APrototype2Character* _Player, FTransform _PlayerTransform, float _AttackSphereRadius, float _AttackChargeAmount);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SpawnProjectile(APrototype2Character* _Player, float _AttackSphereRadius, float _AttackChargeAmount);
 

@@ -1,4 +1,12 @@
-
+/* Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+(c) Media Design School
+File Name : APrototype2PlayerController.cp
+Description : Implementation for the player controller.
+Author/s : William Inman
+*/
 
 #include "Prototype2PlayerController.h"
 
@@ -58,22 +66,29 @@ void APrototype2PlayerController::Server_SetViewTarget_Networked_Implementation(
 void APrototype2PlayerController::Multi_SetViewTarget_Networked_Implementation(AActor* _ViewTarget)
 {
 	SetControlRotation({});
-	SetInputMode(FInputModeUIOnly{});
+	//SetInputMode(FInputModeUIOnly{});
 	bShowMouseCursor = true;
 	SetViewTargetWithBlend(_ViewTarget, 0.75f);
 }
 
 void APrototype2PlayerController::Server_SetIsReady_Implementation(int32 _Player, bool _bIsReady)
 {
-	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
-	{
-		GameStateCast->SetIsReady(_Player, _bIsReady);
-	}
+	//if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	//{
+	//	GameStateCast->SetIsReady(_Player, _bIsReady);
+	//}
 }
 
 void APrototype2PlayerController::VoteMap(EFarm _Level)
 {
-	Server_VoteMap(_Level);
+	if (HasAuthority())
+	{
+		
+	}
+	else
+	{
+		Server_VoteMap(_Level);
+	}
 }
 
 
@@ -101,10 +116,10 @@ void APrototype2PlayerController::UpdateCharacterMaterial(int32 _Player, FCharac
 
 void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(int32 _Player, FCharacterDetails _Details)
 {
-	if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
-	{
-		GameStateCast->UpdatePlayerDetails(_Player, _Details);
-	}
+	//if (ALobbyGamestate* GameStateCast = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld())))
+	//{
+	//	GameStateCast->UpdatePlayerDetails(_Player, _Details);
+	//}
 	if (APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
 	{
 		GameStateCast->UpdatePlayerDetails(_Player, _Details);
@@ -150,7 +165,7 @@ void APrototype2PlayerController::Server_UpdateCharacterMaterial_Implementation(
 
 void APrototype2PlayerController::SyncPlayerMaterial(int32 _PlayerID, FCharacterDetails _CharacterDetails)
 {
-	UpdateCharacterMaterial(_PlayerID, _CharacterDetails);
+	//UpdateCharacterMaterial(_PlayerID, _CharacterDetails);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Update Player %s Skin (%s)"), *FString::FromInt(_PlayerID), *_CharacterDetails.CharacterColour.ToString());
 	
@@ -168,14 +183,14 @@ void APrototype2PlayerController::SyncPlayerMaterial(int32 _PlayerID, FCharacter
 	{
 		if (auto NetID = LobbyPlayerState->GetUniqueId().GetUniqueNetId())
 		{
-			Name = IdentityInterface->GetPlayerNickname(*NetID);
+			Name = NetID->ToString();
 		}
 	}
 	else if (GamePlayerState)
 	{
 		if (auto NetID = GamePlayerState->GetUniqueId().GetUniqueNetId())
 		{
-			Name = IdentityInterface->GetPlayerNickname(*NetID);
+			Name = NetID->ToString();
 		}
 	}
 

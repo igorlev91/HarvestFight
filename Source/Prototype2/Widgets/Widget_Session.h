@@ -13,6 +13,8 @@ class PROTOTYPE2_API UWidget_Session : public UUserWidget
 {
 	GENERATED_BODY()
 
+public:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 /*public:
 	virtual void NativeOnInitialized() override;

@@ -25,7 +25,9 @@ public:
 	void FindMeshesToStretch();
 
 	bool IsActive() const;
-		
+
+	UPROPERTY(VisibleAnywhere)
+	class APickUpItem* OwningItem;
 protected:
 	void SquashAndStretch();
 
@@ -59,8 +61,7 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_SquashAndStretch(float _ServerCurrentTime);
 
-	UPROPERTY(VisibleAnywhere)
-	class APickUpItem* OwningItem;
+
 	UPROPERTY(VisibleAnywhere)
 	class ASellBin* OwningSellBin;
 	UPROPERTY(VisibleAnywhere)
@@ -101,4 +102,8 @@ protected:
 
 	UPROPERTY(meta = (AllowPrivateAccess))
 	bool bDoOnce{true};
+
+public:
+	void SetBoingMagnitude(float _newMagnitude);
+	void SetAxis(FVector _Axis);
 };

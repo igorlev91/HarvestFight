@@ -7,6 +7,7 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
+#include "Prototype2/Spawning/FertiliserSpawner.h"
 
 AFertiliser::AFertiliser()
 {
@@ -17,6 +18,21 @@ AFertiliser::AFertiliser()
 	{
 		DestroyVFX = PoofVFX.Class;
 	}
+}
+
+void AFertiliser::Destroyed()
+{
+	if (IsValid(DestroyVFX) && bShouldWilt)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
+		}
+	}
+	
+	Super::Destroyed();
 }
 
 void AFertiliser::Tick(float DeltaSeconds)
@@ -45,6 +61,11 @@ void AFertiliser::BeginPlay()
 
 	Lifetime = InitialLifetime;
 	WiltDelayTimer = WiltDelay;
+
+	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HasAuthority())
+		ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -15.0});
 }
 
 void AFertiliser::Interact(APrototype2Character* _Player)
@@ -53,10 +74,6 @@ void AFertiliser::Interact(APrototype2Character* _Player)
 
 	Multi_OnInteract();
 	bShouldWilt = false;
-}
-
-void AFertiliser::HoldInteract(APrototype2Character* _Player)
-{
 }
 
 void AFertiliser::ClientInteract(APrototype2Character* _Player)
@@ -82,10 +99,10 @@ void AFertiliser::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APro
 	}
 }
 
-bool AFertiliser::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode AFertiliser::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (!_Player)
-		return false;
+		return INVALID;
 
 	if (auto Controller = _Player->GetPlayerController())
 	{
@@ -95,13 +112,13 @@ bool AFertiliser::IsInteractable(APrototype2PlayerState* _Player)
 			{
 				if (!Casted->HeldItem || Casted->HeldItem != this)
 				{
-					return true;
+					return INSTANT;
 				}
 			}
 		}
 	}
 	
-	return false;
+	return INVALID;
 }
 
 void AFertiliser::Wilt(float DeltaTime)
@@ -122,8 +139,7 @@ void AFertiliser::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Multi_OnDestroy();
-				Destroy();
+				Destroy(true);
 			}
 		}
 	}
@@ -161,9 +177,13 @@ void AFertiliser::Server_Drop()
 
 void AFertiliser::Multi_OnDestroy_Implementation()
 {
-	if (DestroyVFX)
+	if (IsValid(DestroyVFX))
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (UWorld* World = GetWorld())
+		{
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 }

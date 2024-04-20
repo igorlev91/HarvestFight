@@ -8,7 +8,7 @@
 #include "Widget_MainMenu.generated.h"
 
 UCLASS()
-class PROTOTYPE2_API UWidget_MainMenu : public UUserWidget, public IWidgetUtilityInterface
+class PROTOTYPE2_API UWidget_MainMenu : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -17,6 +17,11 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
+
+	
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
 
 	/* Public Variables */
 public:
@@ -31,16 +36,16 @@ public:
 	class UButton* JoinButton;
 
 	/* Widget Variables related to button pulsing/size changes */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
-	bool bIsButtonHovered;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
-	int32 ButtonIndex;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	//bool bIsButtonHovered;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	//int32 ButtonIndex;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
 	FVector2D ButtonScale;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
-	class UButton* ButtonToPulse;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
-	float PulseTime;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	//class UButton* ButtonToPulse;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Button Variables")
+	//float PulseTime;
 
 
 };

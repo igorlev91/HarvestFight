@@ -76,14 +76,23 @@ public:
 			
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Leek")
 	UAnimMontage* NormalLeekAttack;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
+	UAnimSequence* IdleWithBazooka;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
+	UAnimSequence* RunWithBazooka;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
+	UAnimSequence* SprintWithBazooka;
 			
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aspearagus")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
 	UAnimSequence* ChargingAspearagusAttack;
 		
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aspearagus")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
 	UAnimMontage* FullChargeAspearagusAttack;
 			
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Aspearagus")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Bazooka")
 	UAnimMontage* NormalAspearagusAttack;
 				
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HoneyStick")

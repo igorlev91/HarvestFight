@@ -1,4 +1,12 @@
-
+/* Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+(c) Media Design School
+File Name : APrototype2PlayerController.h
+Description : Header for the player controller.
+Author/s : William Inman
+*/
 
 #pragma once
 

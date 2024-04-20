@@ -4,9 +4,48 @@
 
 UPrototypeGameInstance::UPrototypeGameInstance()
 {
+	static ConstructorHelpers::FClassFinder<UAnimInstance> FoundLobbyAnimBP(TEXT("/Game/AlphaCharacters/AnimBP_Lobby"));
+	if (FoundLobbyAnimBP.Class != NULL)
+	{
+		LobbyAnimBP = FoundLobbyAnimBP.Class;
+	}
+}
+
+
+void UPrototypeGameInstance::OnStart()
+{
+	Super::OnStart();
+	for(UMaterialInstance* Material : PlayerMaterials)
+	{
+		PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,nullptr));
+	}
 }
 
 void UPrototypeGameInstance::StartGameInstance()
 {
 	Super::StartGameInstance();
+}
+
+void UPrototypeGameInstance::ResetCachedPlayerDetails()
+{
+	FinalPlayerDetails.Empty();
+	FinalConnectionCount = 0;
+	MaxPlayersOnServer = 0;
+}
+
+void UPrototypeGameInstance::ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder)
+{
+	if (IsValid(this) && IsValid(Widget))
+	{
+		if (IsValid(GetGameViewportClient()))
+		{
+			GetGameViewportClient()->AddViewportWidgetContent(Widget->TakeWidget());
+		}
+	}
+}
+
+void UPrototypeGameInstance::RemoveLoadingScreen(UUserWidget *Widget)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Game instance - removed black screen transition"));
+	GetGameViewportClient()->RemoveViewportWidgetContent(Widget->TakeWidget());
 }

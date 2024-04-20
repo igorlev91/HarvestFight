@@ -22,8 +22,11 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	SetReplicatingMovement(true);
+
+	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HasAuthority())
+		SetReplicatingMovement(true);
 
 	Lifetime = InitialLifetime;
 	WiltDelayTimer = WiltDelay;
@@ -36,10 +39,6 @@ void APlant::Interact(APrototype2Character* _Player)
 
 	Multi_OnInteract();
 	bShouldWilt = false;
-}
-
-void APlant::HoldInteract(APrototype2Character* _Player)
-{
 }
 
 void APlant::ClientInteract(APrototype2Character* _Player)
@@ -66,15 +65,10 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, cla
 	}
 }
 
-bool APlant::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
-	if (!bGrown)
-	{
-		return false;
-	}
-	
 	if (!_Player)
-		return false;
+		return INVALID;
 
 	if (auto Controller = _Player->GetPlayerController())
 	{
@@ -84,13 +78,13 @@ bool APlant::IsInteractable(APrototype2PlayerState* _Player)
 			{
 				if (!Casted->HeldItem || Casted->HeldItem != this)
 				{
-					return true;
+					return INSTANT;
 				}
 			}
 		}
 	}
 	
-	return false;
+	return INVALID;
 }
 
 void APlant::Tick(float DeltaSeconds)
@@ -114,7 +108,6 @@ void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APlant, bShouldWilt);
 	DOREPLIFETIME(APlant, bPoisoned);
-	DOREPLIFETIME(APlant, bGrown);
 }
 
 void APlant::Wilt(float DeltaTime)
@@ -135,8 +128,7 @@ void APlant::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Multi_OnDestroy();
-				Destroy();
+				Destroy(true);
 			}
 		}
 	}
@@ -174,14 +166,9 @@ void APlant::Server_Destroy_Implementation()
 
 void APlant::Multi_ScalePlant()
 {
-	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale);
+	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale * PlantScaleMultiplier);
 }
 
 void APlant::Multi_OnDestroy_Implementation()
 {
-	if (DestroyVFX)
-	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
-	}
 }

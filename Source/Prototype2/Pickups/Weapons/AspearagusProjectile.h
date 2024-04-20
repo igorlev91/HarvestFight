@@ -15,6 +15,7 @@ class PROTOTYPE2_API AAspearagusProjectile : public AActor
 public:
 	// Sets default values for this actor's properties
 	AAspearagusProjectile();
+
 	
 	// Called every frame
 	virtual void BeginPlay() override;
@@ -41,9 +42,21 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_Initialization, VisibleAnywhere)
 	APrototype2Character* OwningPlayer;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AspearagusMesh;
 
+	UFUNCTION()
+	void OnRep_SetMesh();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_SetMesh, VisibleAnywhere)
+	class UStaticMesh* StaticMesh;
+
+	UFUNCTION()
+	void OnRep_GoldMaterial();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_GoldMaterial, VisibleAnywhere)
+	UMaterialInstance* GoldMaterial;
+	
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovement;
 	
@@ -57,4 +70,13 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> DestroyVFX{};
+
+	UFUNCTION()
+	void PlaySFX(USoundCue* _DiveBombSFX, USoundCue* _DestroyedSFX);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlaySFX(USoundCue* _SFX, USoundCue* _DestroyedSFX);
+	UPROPERTY()
+	UAudioComponent* DiveBombSFX;
+	UPROPERTY()
+	USoundCue* DestroyedCue;
 };

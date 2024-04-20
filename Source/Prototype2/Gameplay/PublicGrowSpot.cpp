@@ -14,11 +14,15 @@
 APublicGrowSpot::APublicGrowSpot()
 {
 	bReplicates = true;
-	bIsNormalGrowSpot = false;
 }
 
-bool APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
+void APublicGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
+	int32 _PlayerID)
 {
+	OnDisplayInteractText_Unprotected(_InvokingWidget, _Owner);
+}
 
+EInteractMode APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+{
 	return IsInteractable_Unprotected(_Player);
 }

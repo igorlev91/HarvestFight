@@ -16,6 +16,9 @@ class PROTOTYPE2_API UWidget_PlayerNamesTeam2 : public UUserWidget
 public:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+
+	UFUNCTION(BlueprintCallable)
+	void UpdatePlayerNames();
 	
 	class APrototype2Gamestate* GameStateReference;
 	

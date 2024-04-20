@@ -1,6 +1,10 @@
 
 #include "DataAssetWorldOverride.h"
 
+#include "WorldOverrideData.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+
 ADataAssetWorldOverride::ADataAssetWorldOverride()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -45,4 +49,22 @@ ADataAssetWorldOverride::ADataAssetWorldOverride()
 	PreGameArenaSpawnLocations[0]->SetWorldLocation({0.0f, 0.0f, 900});
 	PreGameArenaSpawnLocations[1]->SetWorldLocation({700.0f, 0.0f, 900});
 	PreGameArenaSpawnLocations[2]->SetWorldLocation({-700.0f, 0.0f, 900});
+
+}
+
+void ADataAssetWorldOverride::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (WorldOverrideData)
+	{
+		if (WorldOverrideData->Ambience)
+		{
+			UGameplayStatics::PlaySound2D(GetWorld(), WorldOverrideData->Ambience);
+		}
+		if (WorldOverrideData->Music)
+		{
+			UGameplayStatics::PlaySound2D(GetWorld(), WorldOverrideData->Music);
+		}
+	}
 }

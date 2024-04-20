@@ -42,7 +42,7 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	}
 	
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(HoneyPrefab, FVector(0, 0, 0), {});
-	Honey->ServerData.SeedData->PlantData = HoneyData;
+	Honey->SeedData->PlantData = HoneyData;
 	
 	TArray<AActor*> NearbyFlowerActors{};
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlant::StaticClass(), NearbyFlowerActors);
@@ -56,15 +56,15 @@ void ABeehive::Interact(APrototype2Character* _Player)
 		{
 			if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
 			{
-				if (NearbyFlower->ServerData.SeedData->BabyType == EPickupDataType::FlowerData)
+				if (NearbyFlower->SeedData->BabyType == EPickupDataType::FlowerData)
 				{
-					NumberOfNearbyFlowers += NearbyFlower->ServerData.SeedData->BabyStarValue;
+					NumberOfNearbyFlowers += NearbyFlower->SeedData->BabyStarValue;
 				}
 			}
 		}
 	}
 	
-	Honey->SetSeedData(Honey->ServerData.SeedData, EPickupActor::PlantActor);
+	Honey->SetSeedData(Honey->SeedData, EPickupActor::PlantActor);
 	Honey->NumberOfNearbyFlowers = NumberOfNearbyFlowers;
 	Honey->bGrown = true;
 	Honey->Multi_ScalePlant();
@@ -126,7 +126,7 @@ void ABeehive::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	if (TimeTillCollect > 0)
-		ItemComponent->Mesh->SetWorldScale3D(FMath::Lerp(ServerData.SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
+		ItemComponent->Mesh->SetWorldScale3D(FMath::Lerp(SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
 	
 
 	if (!HasAuthority())

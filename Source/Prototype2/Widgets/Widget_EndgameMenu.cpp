@@ -69,6 +69,20 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 				TeamName = GameStateReference->TeamOneName + "'s Win!";
 			else
 				TeamName = GameStateReference->TeamOneName + " Win!";
+			
+			TextGameWinner->SetColorAndOpacity(FLinearColor(
+				GameStateReference->Server_TeamOne[0]->Details.PureToneColour.X, 
+				GameStateReference->Server_TeamOne[0]->Details.PureToneColour.Y,
+				GameStateReference->Server_TeamOne[0]->Details.PureToneColour.Z,
+				1));
+
+			//if (GameStateReference->TeamOneColour == EColours::WHITE)
+			//{
+			//	FSlateFontInfo FontInfo{};
+			//	FontInfo = TextGameWinner->GetFont();
+			//	FontInfo.OutlineSettings = TextGameWinner->GetFont().OutlineSettings;
+			//	FontInfo.OutlineSettings.OutlineColor = FLinearColor::Black;
+			//}
 		}
 		else
 		{
@@ -76,41 +90,56 @@ void UWidget_EndgameMenu::UpdateWinnerText()
 				TeamName = GameStateReference->TeamTwoName + "'s Win!";
 			else
 				TeamName = GameStateReference->TeamTwoName + " Win!";
+
+			TextGameWinner->SetColorAndOpacity(FLinearColor(
+				GameStateReference->Server_TeamTwo[0]->Details.PureToneColour.X, 
+				GameStateReference->Server_TeamTwo[0]->Details.PureToneColour.Y,
+				GameStateReference->Server_TeamTwo[0]->Details.PureToneColour.Z,
+				1));
+			
+
+			//if (GameStateReference->TeamTwoColour == EColours::WHITE)
+			//{
+			//	FSlateFontInfo FontInfo{};
+			//	FontInfo = TextGameWinner->GetFont();
+			//	FontInfo.OutlineSettings = TextGameWinner->GetFont().OutlineSettings;
+			//	FontInfo.OutlineSettings.OutlineColor = FLinearColor::Black;
+			//}
 		}
 		TextGameWinner->SetText(FText::FromString(TeamName));
 	}
 	else
 	{
 		/* Calculating highest score */
-		int WinningScore{-1};
-		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
-		{
-			if (auto Player = GameStateReference->Server_Players[i])
-			{
-				if (Player->Coins > WinningScore)
-				{
-					WinningScore = Player->Coins;
-				}
-			}
-		}
-
-		/* Check if only one player has won, or multiple (draw) */
-		int32 WinnerCounter = 0;
-		/* Loop through players and see if they have same score as winning score */
-		for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
-		{
-			if (auto Player = GameStateReference->Server_Players[i])
-			{
-				if (Player->Coins == WinningScore)
-				{
-					WinnerCounter++;
-				}
-			}
-		}
+		//int WinningScore{-1};
+		//for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+		//{
+		//	if (auto Player = GameStateReference->Server_Players[i])
+		//	{
+		//		if (Player->Coins > WinningScore)
+		//		{
+		//			WinningScore = Player->Coins;
+		//		}
+		//	}
+		//}
+//
+		///* Check if only one player has won, or multiple (draw) */
+		//int32 WinnerCounter = 0;
+		///* Loop through players and see if they have same score as winning score */
+		//for (int i = 0; i < GameStateReference->Server_Players.Num(); i++)
+		//{
+		//	if (auto Player = GameStateReference->Server_Players[i])
+		//	{
+		//		if (Player->Coins == WinningScore)
+		//		{
+		//			WinnerCounter++;
+		//		}
+		//	}
+		//}
 
 		/* Update text to say Draw */
-		if (WinnerCounter > 1)
-			TextGameWinner->SetText(FText::FromString("DRAW!"));
+		//if (WinnerCounter > 1)
+		//	TextGameWinner->SetText(FText::FromString("DRAW!"));
 	}
 }
 
@@ -146,15 +175,13 @@ void UWidget_EndgameMenu::EnableEndgameMapChoice()
 	if (GameStateReference->bIsMapChoiceShowing == false)
 		return;
 	
-	if (UPrototypeGameInstance* GameInstanceCast = Cast<UPrototypeGameInstance>(GetGameInstance()))
-	{
-		if (GameInstanceCast->HHMode == 0)
-			WBP_MapChoice->SetVisibility(ESlateVisibility::Visible);
-		else if (GameInstanceCast->HHMode == 1)
-			WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Visible);
-		else
-			WBP_MapChoiceBlitz->SetVisibility(ESlateVisibility::Visible);
-	}
+	if (GameStateReference->GameMode == 0)
+		WBP_MapChoice->SetVisibility(ESlateVisibility::Visible);
+	else if (GameStateReference->GameMode == 1)
+		WBP_MapChoiceBrawl->SetVisibility(ESlateVisibility::Visible);
+	else
+		WBP_MapChoiceBlitz->SetVisibility(ESlateVisibility::Visible);
 }
+
 
 

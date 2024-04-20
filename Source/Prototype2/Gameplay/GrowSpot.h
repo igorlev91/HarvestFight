@@ -12,177 +12,203 @@
 #include "Prototype2/Pickups/Beehive.h"
 #include "GrowSpot.generated.h"
 
+USTRUCT()
+struct FFertilisationState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	bool bFertilised = false;
+	
+	UPROPERTY(VisibleAnywhere)
+	int32 ConcretedHealth = 0;
+};
+
 class APlant;
 class AGrowableWeapon;
 class ASeed;
 class AWeaponSeed;
+class APrototype2PlayerState;
+
+USTRUCT()
+struct FServerGrowspotDetails
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	APrototype2PlayerState* LastPlayerToInteract{nullptr};
+
+	UPROPERTY(VisibleAnywhere)
+	int32 CropStarValue{};
+	
+	UPROPERTY(VisibleAnywhere)
+	float LastTimeOfInteract{};
+};
+
 UCLASS()
 class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 {
-	friend class URandomEventManager;
+	friend class ABeehive;
 	GENERATED_BODY()
+
+protected:
+	friend class URandomEventManager;
 	
-public:	
+	/* INITIALIZATION */
 	AGrowSpot();
-	virtual void BeginPlay() override;
+	void InitComponents();
+	void InitAssignableVariables();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+
+	/* ACTOR OVERRIDES */
+	virtual void BeginPlay() override;
 	virtual void Tick(float _DeltaTime) override;
-	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
-	virtual bool IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
+	
+public:
+	/* INTERACTION */
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
+	EInteractMode IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
+	EInteractMode IsInteractable_Stealing(APrototype2PlayerState* _Player);
+	
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void Interact(APrototype2Character* _Player) override;
-	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
-
-	// stealing
-	virtual void HoldInteract(APrototype2Character* _Player) override;
-	bool Stealing_IsInteractable_Unprotected(APrototype2Character* _Player);
-	void Stealing_ClientInteract(APrototype2Character* _Player);
-	void Stealing_Interact(APrototype2Character* _Player);
-	void Stealing_OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID);
 	
+	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
+	void OnDisplayInteractText_Unprotected(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner);
+	
+	/* PLANT/GROW CONTROL */
 	void PlantASeed(ASeed* _SeedToPlant);
+	void PlantASeed(APickUpItem* _SeedToPlant);
+	
+	void GrowPlantOnTick(float _DeltaTime);
+	void CompleteGrowth();
+	void DestroyPlant();
+
+	/* CONCRETE */
+	bool DegradeConcrete();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlantASeed();
-	
-	void DestroyPlant();
-	void CompleteGrowth();
+	void Multi_DamageConcrete();
 
-	void DegradeConcrete();
-	UFUNCTION(Server, Reliable)
-	void Server_DegradeConcrete();
+	UFUNCTION()
+	void UpdateGrowUI();
+
+	UFUNCTION()
+	void UpdateGrowUIVisibility();
+
+	UFUNCTION()
+	bool CheckForSelfConcreting(APrototype2PlayerState* _Player);
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* GrowWidgetComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidget_3DGrowUI* GrowWidget;
 
 	UPROPERTY(EditAnywhere)
 	class UGrowSpotData* GrowSpotData;
-	
-	UPROPERTY(EditAnywhere)
-	UItemComponent* ItemComponent;
-	UPROPERTY(VisibleAnywhere)
-	FTimeline RiseTimeline{};
-	UPROPERTY(VisibleAnywhere)
-	float StartZHeight{};
-	UPROPERTY(EditAnywhere)
-	class UCurveFloat* RiseCurve{};
-	//UPROPERTY(EditAnywhere)
-	//class USquashAndStretch* SSComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	ARadialPlot* RadialPlot;
-	UPROPERTY(Replicated, VisibleAnywhere)
-	AActor* GrowingActor{};
-	UPROPERTY(Replicated, VisibleAnywhere)
-	APickUpItem* GrowingItemRef{};
+	class UStaticMeshComponent* Mesh;
+
+	UPROPERTY(VisibleAnywhere)
+	class UMaterialInstanceDynamic* PlotMaterial{};
+
+	void SpawnAPoof();
+
+	UFUNCTION()
+	void OnRep_ItemRef();
 	
-	UPROPERTY(Replicated, EditAnywhere)
-	FString OwningPlayerName{};
+	UPROPERTY(ReplicatedUsing=OnRep_ItemRef, VisibleAnywhere)
+	APickUpItem* ItemRef{};
+
+	UPROPERTY(VisibleAnywhere)
+	class APickUpItem* LastItemRef{nullptr};
+	
 	UPROPERTY(Replicated, EditAnywhere)
 	EColours OwningPlayerColor{};
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;
 
-	/* Variables for stealing */
-	UPROPERTY()
-	APrototype2Character* CurrentPlayerStealing = nullptr;
-	float HoldInteractTotalDuration = 5.0f;
-	float HoldInteractTimer = 0.0f;
+	UFUNCTION()
+	void OnRep_FertilisationState();
+	UPROPERTY(ReplicatedUsing=OnRep_FertilisationState, EditAnywhere)
+	FFertilisationState FertilisationState{};
 	
 protected:
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UFUNCTION()
+	void OnRep_GrowSpotState();
+	UPROPERTY(ReplicatedUsing=OnRep_GrowSpotState, VisibleAnywhere)
 	EGrowSpotState GrowSpotState = EGrowSpotState::Empty;
+	
 	UPROPERTY(Replicated, EditAnywhere)
 	float GrowTime{10};
 	UPROPERTY(Replicated, EditAnywhere)
 	float GrowTimer{};
-	UPROPERTY(Replicated, VisibleAnywhere)
-	int32 ConcretedHealth{};
-	UPROPERTY(EditAnywhere)
-	int32 ConcreteTotalHealth{5};
-	UPROPERTY(EditAnywhere)
-	float ConcretedDamageInterval{0.2f};
-	UPROPERTY(Replicated, VisibleAnywhere)
-	float ConcretedDamageTimer{};
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	bool bPoisoned{};
-	
 	UFUNCTION()
-	void RiseTimelineUpdate(float _Delta);
+	void OnRep_ServerGrowspotDetails();
+
+	UPROPERTY(ReplicatedUsing=OnRep_ServerGrowspotDetails, VisibleAnywhere)
+	FServerGrowspotDetails ServerGrowspotDetails{};
 	
-	void GrowPlantOnTick(float _DeltaTime);
 	void ScalePlantOnTick() const;
 
-	void MandrakePickupNoise(APrototype2Character* _Player);
-
-	void SetBeehive(ABeehive* _Beehive, float _GrowTime);
-	
-	void MakePlantGold();
-	UFUNCTION(Server, Reliable)
-	void Server_MakePlantGold();
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_MakePlantGold();
-	
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_MakePlantConcrete();
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_MakePlantPoison();
+	/* IF this plant is the highest value on this map, it will have a sound in the data asset to play */
+	UFUNCTION()
+	void HighValuePickupNoise();
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_BrakePlantConcrete();
-	void SetPlantReadySparkle(bool _bIsActive);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_SetPlantReadySparkle(bool _bIsActive);
+	void Multi_HighValuePickupNoise();
+	
+	void SetPlantReadySparkle(bool _bIsActive, bool _IsBeehive = false);
 	
 	//
 	// Fertilisation
 	//
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multi_UpdateMaterial();
-	void UpdateMaterial();
-
-
-
 	UPROPERTY(EditAnywhere)
-	UMaterialInstance* DefaultMaterial;
+	UMaterialInstance* TEMP_ConcreteMat;
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* GoldMaterial;
 
-	UPROPERTY(EditAnywhere)
-	UMaterialInstance* PoisonMaterial;
+	UPROPERTY(VisibleAnywhere)
+	class UBoxComponent* HitBox;
 
-	UPROPERTY(EditAnywhere)
-	UMaterialInstance* ConcreteMaterial;
-	
-	UPROPERTY(Replicated, EditAnywhere)
-	bool bIsFertilised;
+	UPROPERTY(VisibleAnywhere)
+	float ConcreteDamageTimer{};
 
-	UPROPERTY(EditAnywhere)
-	float FertiliseInteractDelay = 0.1;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	float FertiliseInteractDelayTimer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	class UBoxComponent* HitBox{nullptr};
-
-	bool bIsNormalGrowSpot = true;
 	//
 	//	SFX
 	//
 
+	UPROPERTY(VisibleAnywhere)
+	class USoundCue* PlantCue{nullptr};
+
+	UPROPERTY(VisibleAnywhere)
+	class USoundAttenuation* PlantAttenuation{nullptr};
+	
 	UPROPERTY(EditAnywhere)
-	USoundAttenuation* MandrakeAttenuationSettings;
+	USoundAttenuation* HighValueAttenuationSettings;
 	
 	//
 	// VFX
 	//
-	UPROPERTY(EditAnywhere, Category = VFX)
-	class UNiagaraSystem* PlantReadySystem;
-	UPROPERTY(Replicated, BlueprintReadWrite, EditAnywhere, Category = VFX)
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemSold, int32, _PlayerID, int32, _Score);
+	UPROPERTY(BlueprintAssignable)
+	FOnItemSold OnItemSoldDelegate;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* PlantReadyComponent;
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* PlantReadySystem{nullptr};
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class TSubclassOf<AActor> PoofSystem;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* ConcreteBreakComponent;
+
 	//
 	// Prefabs
 	//
@@ -197,5 +223,10 @@ protected:
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGrowableWeapon> WeaponPrefab;
-	
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Character* LastLocalPlayer{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	float UIVisiblityRadius{1000.0f};
 };

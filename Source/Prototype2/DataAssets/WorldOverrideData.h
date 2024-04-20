@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Sound/SoundCue.h"
 #include "WorldOverrideData.generated.h"
 
 class UWeaponData;
@@ -48,4 +49,9 @@ public:
 	int32 GameTimeMedium;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 GameTimeLong;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="SFX")
+	USoundCue* Ambience;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="SFX")
+	USoundCue* Music;
 };
