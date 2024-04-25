@@ -448,9 +448,6 @@ void AGrowSpot::BeginPlay()
 		ItemComponent->Mesh->SetWorldScale3D(GrowSpotData->DesiredScale);
 	}
 
-	//if (HasAuthority())
-	//	SSComponent->SetMeshToStretch(ItemComponent->Mesh);
-	
 	if (ItemComponent->Mesh)
 	{
 		ItemComponent->Mesh->SetIsReplicated(false);
@@ -466,22 +463,30 @@ void AGrowSpot::BeginPlay()
 	{
 		PlantReadyComponent->SetAsset(PlantReadySystem);
 	}
-	
-	// Server only below
-	if (!HasAuthority())
-		return;
 
-	ConcretedDamageTimer = ConcretedDamageInterval;
+
+	{ /* DYNAMIC MATERIAL */
+		
+		PlotMaterial = UMaterialInstanceDynamic::Create(ItemComponent->Mesh->GetMaterial(0), nullptr);
+		ItemComponent->Mesh->SetMaterial(0, PlotMaterial);
+	} /* DYNAMIC MATERIAL */
 	
-	if (RiseCurve)
-	{
-		StartZHeight = GetActorLocation().Z;
-		FOnTimelineFloat FloatEvent{};
-		FloatEvent.BindDynamic(this, &AGrowSpot::RiseTimelineUpdate);
-		RiseTimeline.AddInterpFloat(RiseCurve, FloatEvent);
-		RiseTimeline.SetPlayRate(2.0f);
-		RiseTimeline.PlayFromStart();
-	}
+	{ /* SERVER ONLY */
+		if (!HasAuthority())
+			return;
+
+		ConcretedDamageTimer = ConcretedDamageInterval;
+	
+		if (RiseCurve)
+		{
+			StartZHeight = GetActorLocation().Z;
+			FOnTimelineFloat FloatEvent{};
+			FloatEvent.BindDynamic(this, &AGrowSpot::RiseTimelineUpdate);
+			RiseTimeline.AddInterpFloat(RiseCurve, FloatEvent);
+			RiseTimeline.SetPlayRate(2.0f);
+			RiseTimeline.PlayFromStart();
+		}
+	} /* SERVER ONLY */
 }
 
 void AGrowSpot::GrowPlantOnTick(float _DeltaTime)
@@ -655,53 +660,39 @@ void AGrowSpot::UpdateMaterial()
 
 void AGrowSpot::Multi_UpdateMaterial_Implementation()
 {
-	if (ConcretedHealth > 0 && ConcreteMaterial)
+	if (ConcretedHealth > 0)
 		return;
 	else if (bIsFertilised && GoldMaterial)
 		ItemComponent->Mesh->SetMaterial(0, GoldMaterial);
 	else if (bPoisoned && PoisonMaterial)
 		ItemComponent->Mesh->SetMaterial(0, PoisonMaterial);
-	else if (DefaultMaterial)
-		ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
+	else if (PlotMaterial)
+		ItemComponent->Mesh->SetMaterial(0, PlotMaterial);
 }
 
 void AGrowSpot::OnRep_ConcreteHealth()
 {
+	if (IsValid(PlotMaterial))
+	{
+		PlotMaterial->SetScalarParameterValue(FName("ConcreteHealth"), ConcretedHealth);
+	}
+	
 	if (ConcretedHealth <= 0)
 	{
-		ItemComponent->Mesh->SetMaterial(0, DefaultMaterial);
-	
-		if (!IsValid(GrowingItemRef))
-			return;
-	
-		for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
-		{
-			if (GrowingItemRef->ServerData.SeedData->BabyMaterials.Num() > i)
-				GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyMaterials[i]);
-			else if (GrowingItemRef->ServerData.SeedData->BabyMaterials.Num() > 0)
-				GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, GrowingItemRef->ServerData.SeedData->BabyMaterials[0]);
-		}
-
 		if (GrowSpotState == EGrowSpotState::Grown)
 		{
-			GrowingItemRef->SSComponent->Enable();
 			PlantReadyComponent->Activate();
+
+			if (IsValid(GrowingItemRef))
+				GrowingItemRef->SSComponent->Enable();
 		}
 	}
-	else if (ConcretedHealth >= 4)
+	else if (ConcretedHealth >= 3)
 	{
-		ItemComponent->Mesh->SetMaterial(0, ConcreteMaterial);
 		PlantReadyComponent->DeactivateImmediate();
 
-		if (!IsValid(GrowingItemRef))
-			return;
-	
-		for (int i = 0; i < GrowingItemRef->ItemComponent->Mesh->GetNumMaterials(); i++)
-		{
-			GrowingItemRef->ItemComponent->Mesh->SetMaterial(i, ConcreteMaterial);
-		}
-
-		GrowingItemRef->SSComponent->Disable();
+		if (IsValid(GrowingItemRef))
+			GrowingItemRef->SSComponent->Disable();
 	}
 }
 
@@ -1310,211 +1301,6 @@ EInteractMode AGrowSpot::IsInteractable_Stealing(APrototype2PlayerState* _Player
 	
 	return INVALID;
 }
-
-//bool AGrowSpot::Stealing_IsInteractable_Unprotected(APrototype2Character* _Player)
-//{
-//	// if spotstate is NOT grown or if player has an item, return false
-//	if (GrowSpotState != EGrowSpotState::Grown ||
-//		_Player->HeldItem)
-//	{
-//		return false;
-//	}
-//
-//
-//	if (_Player->GameState)
-//	{
-//		if (!_Player->GameState->ExtraSettings.bStealing)
-//		{
-//			//UKismetSystemLibrary::PrintString(GetWorld(), "No Stealing!");
-//			return false;
-//		}
-//		else
-//		{
-//			//UKismetSystemLibrary::PrintString(GetWorld(), "Stealing Enabled!");
-//		}
-//	
-//	}
-//	else
-//	{
-//		//UKismetSystemLibrary::PrintString(GetWorld(), "No GameStateReference!");
-//	}
-//
-//	// if its a beehive, return false
-//	if (Cast<ABeehive>(GrowingActor))
-//		return false;
-//
-//	return true;
-//}
-//
-//void AGrowSpot::Stealing_ClientInteract(APrototype2Character* _Player)
-//{
-//	return;
-//}
-//
-//void AGrowSpot::Stealing_Interact(APrototype2Character* _Player)
-//{
-//	UKismetSystemLibrary::PrintString(GetWorld(), "THIEF!");
-//
-//	// Check if the player is trying to poison/concrete the growspot
-//	if (_Player->HeldItem)
-//	{
-//		if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Player->HeldItem))
-//		{
-//			if (auto FertData = Fertiliser->ServerData.SeedData->FertiliserData)
-//			{
-//				FertiliseInteractDelayTimer = FertiliseInteractDelay;
-//								
-//				switch (FertData->Type)
-//				{
-//					case EFertiliserType::GOLD:
-//						{
-//							break;
-//						}
-//					case EFertiliserType::CONCRETE:
-//						{
-//							if (IsValid(GrowingItemRef))
-//							{
-//								GrowingItemRef->ItemComponent->bGold = false;
-//							}
-//							bIsFertilised = false;
-//							if(auto ConcreteData = Cast<UConcreteBagData>(FertData))
-//								ConcretedHealth = ConcreteData->MaxStrength;
-//							Multi_MakePlantConcrete();
-//							break;
-//						}
-//					case EFertiliserType::POISON:
-//						{
-//							if (IsValid(GrowingItemRef))
-//							{
-//								GrowingItemRef->ItemComponent->bGold = false;
-//							}
-//							bIsFertilised = false;
-//							bPoisoned = true;
-//							if (APlant* SomePlant = Cast<APlant>(GrowingItemRef))
-//							{
-//								SomePlant->bPoisoned = true;
-//							}
-//							Multi_MakePlantPoison();			
-//							break;
-//						}
-//					default:
-//						break;
-//					}
-//			}
-//			_Player->PlayerStateRef->AddCoins(5);
-//			UpdateMaterial();
-//			_Player->DropItem();
-//			Fertiliser->Destroy();
-//			_Player->EnableStencil(false);
-//			return;
-//		}
-//	}
-//
-//	// Stop multiple players stealing this 
-//	if (CurrentPlayerStealing)
-//		return;
-//
-//	// Assign the stealing player pointer
-//	CurrentPlayerStealing = _Player;
-//	_Player->bIsHoldingInteract = true;
-//	HoldInteractTimer = 0.0f;
-//}
-//
-//void AGrowSpot::Stealing_OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
-//	int32 _PlayerID)
-//{
-//	switch (GrowSpotState)
-//	{
-//	case EGrowSpotState::Empty:
-//		{
-//			if(auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
-//			{
-//				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
-//				{
-//				case EFertiliserType::CONCRETE:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Concrete");
-//						break;
-//					}
-//				case EFertiliserType::POISON:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Poison");				
-//						break;
-//					}
-//				default:
-//					break;
-//				}
-//				
-//				_Owner->EnableStencil(true);
-//				return;
-//			}
-//			break;
-//		}
-//	case EGrowSpotState::Growing:
-//		{
-//			if (AFertiliser* Fertiliser = Cast<AFertiliser>(_Owner->HeldItem))
-//			{
-//				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
-//				{
-//				case EFertiliserType::CONCRETE:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Concrete");
-//						break;
-//					}
-//				case EFertiliserType::POISON:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Poison");				
-//						break;
-//					}
-//				default:
-//					break;
-//				}
-//
-//				_Owner->EnableStencil(true);
-//				return;
-//			}
-//			
-//			break;
-//		}
-//	case EGrowSpotState::Grown:
-//		{
-//			auto Fertiliser = Cast<AFertiliser>(_Owner->HeldItem);
-//			if (Fertiliser)
-//			{
-//				// Fert
-//				switch (Fertiliser->ServerData.SeedData->FertiliserData->Type)
-//				{
-//				case EFertiliserType::CONCRETE:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Concrete");
-//						break;
-//					}
-//				case EFertiliserType::POISON:
-//					{
-//						_InvokingWidget->SetHUDInteractText("Poison");				
-//						break;
-//					}
-//				default:
-//					break;
-//				}
-//				_Owner->EnableStencil(true);
-//				return;
-//			}
-//			else if (GrowingItemRef)
-//			{
-//				_InvokingWidget->SetHUDInteractText("Steal (Hold)");
-//				_Owner->EnableStencil(true);
-//				return;
-//			}
-//					
-//			break;
-//		}
-//	default:
-//		break;
-//	}
-//
-//	_Owner->EnableStencil(false);
-//}
 
 void AGrowSpot::SetBeehive(ABeehive* _Beehive, float _GrowTime)
 {

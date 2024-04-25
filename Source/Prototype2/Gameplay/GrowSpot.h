@@ -60,8 +60,9 @@ public:
 	float StartZHeight{};
 	UPROPERTY(EditAnywhere)
 	class UCurveFloat* RiseCurve{};
-	//UPROPERTY(EditAnywhere)
-	//class USquashAndStretch* SSComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UMaterialInstanceDynamic* PlotMaterial{};
 
 	UPROPERTY(VisibleAnywhere)
 	ARadialPlot* RadialPlot;
@@ -89,8 +90,6 @@ protected:
 	void OnRep_ConcreteHealth();
 	UPROPERTY(ReplicatedUsing=OnRep_ConcreteHealth, VisibleAnywhere)
 	int32 ConcretedHealth{};
-	UPROPERTY(EditAnywhere)
-	int32 ConcreteTotalHealth{5};
 	UPROPERTY(EditAnywhere)
 	float ConcretedDamageInterval{0.2f};
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -132,20 +131,12 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_UpdateMaterial();
 	void UpdateMaterial();
-
-
-
-	UPROPERTY(EditAnywhere)
-	UMaterialInstance* DefaultMaterial;
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* GoldMaterial;
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* PoisonMaterial;
-
-	UPROPERTY(EditAnywhere)
-	UMaterialInstance* ConcreteMaterial;
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	bool bIsFertilised;
