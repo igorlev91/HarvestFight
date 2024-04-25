@@ -11,7 +11,6 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Pickups/PickUpItem.h"
-#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Character.generated.h"
 
 class APrototype2PlayerController;
@@ -43,27 +42,6 @@ enum class EParticleSystems : uint8
 	Test,
 
 	END
-};
-
-USTRUCT()
-struct FExecuteAttackInfo
-{
-	GENERATED_BODY()
-	float AttackSphereRadius = 0.0f;
-	float AttackChargeAmount = 0.0f;
-	bool bIsSprinting = false;
-};
-
-USTRUCT()
-struct FServerEmoteData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleAnywhere)
-	EEmote LastPlayedEmote{EEmote::NONE};
-
-	UPROPERTY(VisibleAnywhere)
-	float EmoteTime{};
 };
 
 UCLASS(config=Game)
@@ -110,8 +88,6 @@ protected:
 	/* Constructor */
 	APrototype2Character();	
 
-	virtual void Destroyed() override;
-	
 	/* For networking */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -147,8 +123,6 @@ protected:
 	void InitNiagraComponents();
 	UFUNCTION()
 	void InitMiscComponents();
-	UFUNCTION()
-	void InitFOV();
 
 	void SyncCharacterColourWithPlayerState();
 
@@ -269,9 +243,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	bool bAllowMovementFromInput = true;
 
-	UPROPERTY(ReplicatedUsing=OnRep_SetSimulatedProxyAimingMovement)
-	bool bIsAiming = false;
-	
 	//UPROPERTY(Replicated, VisibleAnywhere)
 	//bool bIsHoldingInteract = false;
 
@@ -342,12 +313,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
-	UFUNCTION()
-	void PickupItemV2(APickUpItem* _Item);
-
-	UFUNCTION()
-	void ClientPickupV2(APickUpItem* _Item);
-	
 	/* Client RPC for dropping items */
 	UFUNCTION(Client, Reliable)
 	void Client_DropItem();
@@ -359,30 +324,10 @@ public:
 	UFUNCTION()
 	void OnRep_HeldItem();
 
-	UFUNCTION()
-	bool IsHolding(UClass* _ObjectType);
-
-	UFUNCTION()
-	class USeedData* GetHeldItemData();
-
-	
-	UFUNCTION()
-	void ClearPickupUI();
-	
-	UFUNCTION()
-	void UpdatePickupUI(UTexture2D* _Icon);
-
-	UFUNCTION()
-	void AddCoins(int32 _Amount);
-
-
 	
 	/* Currently held item */
 	UPROPERTY(ReplicatedUsing=OnRep_HeldItem, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
-
-	UPROPERTY(VisibleAnywhere)
-	class APickUpItem* LastHeldItem{nullptr};
 	
 	/* The closest interactable item for HUD showing popup text */
 	class IInteractInterface* ClosestInteractableItem{nullptr};
@@ -396,7 +341,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	class UTimelineComponent* InteractTimeline;
-public:
+protected:
 	/* Multicast dropping an item */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DropItem();
@@ -405,9 +350,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetBazookaPickup(bool _bIsHoldingBazooka);
-	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float InteractRadius = 150.0f;
@@ -434,12 +376,6 @@ public:
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
 	UFUNCTION()
 	void CalculateAndApplyHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
-
-	/* Force Feedback (Controller Vibration) */
-	UFUNCTION(Client, Reliable)
-	void Client_GetHitForceFeedback();
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnGetHitForceFeedback();
 	
 	UFUNCTION(Server, Reliable)
 	void Server_CheckIfCrownHit(APrototype2Character* _HitPlayer);
@@ -480,24 +416,15 @@ public:
 	 * Drops item if holding one, and sockets weapon to attacking socket
 	 */
 	UFUNCTION(Server, Reliable)
-	void Server_ChargeAttack(bool _bCharging);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ChargeAttack(bool _bCharging);
+	void Server_ChargeAttack();
 
-	UFUNCTION()
-	void LungeAttack(FVector _LungeVector);
-	UFUNCTION(Server, Reliable)
-	void Server_LungeAttack(FVector _LungeVector);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_LungeAttack(FVector _LungeVector);
-	
 	void SetPlayerAimingMovement(bool _bIsAiming);
-	UFUNCTION()
-	void OnRep_SetSimulatedProxyAimingMovement();
-	UFUNCTION(Server, Reliable)
-	void Server_SetPlayerAimingMovement(bool _bIsAiming);
+	//UFUNCTION(Server, Reliable)
+	//void Server_SetPlayerAimingMovement(bool _bIsAiming);
 	//UFUNCTION(NetMulticast, Reliable)
 	//void Multi_SetPlayerAimingMovement(bool _bIsAiming);
+	//UFUNCTION(Client, Reliable)
+	//void Client_SetPlayerAimingMovement(bool _bIsAiming);
 
 	UFUNCTION(Server, Reliable)
 	void Server_CancelChargeAttack();
@@ -515,11 +442,10 @@ public:
 	
 	/* Execute Attack */
 	void ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
-
-	UFUNCTION()
-	void DelayedExecuteAttack();
-	UPROPERTY()
-	FExecuteAttackInfo ExecuteAttackInfo;
+	
+	/* RPC for executing attack*/
+	UFUNCTION(Server, Reliable)
+	void Server_ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_BroadcastOvercharge();
@@ -536,7 +462,6 @@ public:
 	void Server_SetAOEIndicatorVisibility(bool _bIsVisible);
 
 	/* Throw Item functionality */
-	UFUNCTION()
 	void ThrowItem();
 	UFUNCTION(Server, Reliable)
 	void Server_ThrowItem(FVector _ForwardVector, float _PlayerSpeed);
@@ -549,6 +474,7 @@ public:
 	
 	UFUNCTION(Server, Reliable)
 	void Server_ApplyHoneyGoopSlow();
+	
 	UPROPERTY()
 	bool bShouldWeaponFlashRed;
 	UPROPERTY()
@@ -566,7 +492,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsChargingAttack;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing=OnRep_ChargeStateChanged)
 	bool bChargeAnimationState;
 
 	/* Maximum amount of Attack Charge */
@@ -603,23 +529,10 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* WeaponMesh;
-	
-	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
-	class UStaticMesh* BazookaMesh;
-	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
-	UMaterialInstance* BazookaGoldMaterial;
-	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
-	UMaterialInstance* BazookaNormalMaterial;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Bazooka")
-	bool bIsHoldingBazooka;
 
-	UPROPERTY(EditDefaultsOnly)
-	USceneComponent* ProjectileSpawnPoint;
-	
 protected:
 	/* Invincible timer - how long the player can't be hit after being hit*/
-	UPROPERTY(Replicated, EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly)
 	float InvincibilityTimer = 0.0f;
 	UPROPERTY(EditDefaultsOnly)
 	float InvincibilityDuration = 0.5f;
@@ -656,8 +569,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetSprintState(bool _NewSprintAnimationState);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_SetSprintState(bool _NewSprintAnimationState);
 	
 	/* Public access to update speed */
 	UFUNCTION()
@@ -665,15 +576,12 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_RefreshCurrentMaxSpeed();
-
-	UFUNCTION()
-	void HandleNotSprinting(float _DeltaSeconds);
 	
 	/* Sprint */
 	UPROPERTY(VisibleAnywhere)
 	bool bSprinting{false};
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bSprintAnimationState = false;
 	
 	UPROPERTY()
@@ -702,7 +610,7 @@ protected:
 	float SprintTime = 2.0f;
 	/* Timer for handling sprint */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float SprintTimer = 2.0f;
+	float SprintTimer{};
 
 	/* Delay before sprint regens*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
@@ -712,9 +620,17 @@ protected:
 	
 	/* Allows telling the player HUD one time that sprint is ready*/
 	UPROPERTY()
-	bool bHasNotifiedCanSprint = true;
+	bool bHasNotifiedCanSprint = false;
 	UPROPERTY()
 	bool bCanSprint = true;
+	
+	///* Rate scales for adjusting animation speed */
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float WalkRateScale = 1.5f;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float GoldSlowRateScale = 0.7f;
+	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
+	//float SprintRateScaleScalar = 1.5f;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Delegates												 ///
@@ -820,11 +736,7 @@ public:
 	UFUNCTION()
 	bool HasIdealRole();
 
-	UFUNCTION()
 	bool GetHasCrown();
-
-	UFUNCTION()
-	int32 GetPlayerID();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														VFX		 												 ///
@@ -860,11 +772,8 @@ public:
 	void PlayEmote(EEmote _Emote);
 	UFUNCTION(Server, Reliable)
 	void Server_PlayEmote(EEmote _Emote);
-
-	UFUNCTION()
-	void OnRep_LastServerEmote();
-	UPROPERTY(ReplicatedUsing=OnRep_LastServerEmote, VisibleAnywhere)
-	FServerEmoteData ServerEmoteData{};
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayEmote(EEmote _Emote);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UVFXComponent* VFXComponent;
@@ -913,13 +822,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* AssertDominance_NiagaraComponent;
 
-	void ToggleIceSlidingVFX(bool _IsEnabled);
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
-	class UNiagaraComponent* IceSliding_Left_NiagaraComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
-	class UNiagaraComponent* IceSliding_Right_NiagaraComponent;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														SFX		 												 ///
@@ -927,30 +829,17 @@ public:
 public:
 	/* Plays audio */
 	void PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation = nullptr);
-	UFUNCTION(Client, Unreliable)
-	void Client_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation = nullptr);
 	UFUNCTION(Server, Unreliable)
 	void Server_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
-	
+
 	void PlayWeaponSound(USoundCue* _SoundToPlay);
-	UFUNCTION(Client, Reliable)
-	void Client_PlayWeaponSound(USoundCue* _SoundToPlay);	
 	UFUNCTION(Server, Reliable)
 	void Server_PlayWeaponSound(USoundCue* _SoundToPlay);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayWeaponSound(USoundCue* _SoundToPlay);
-
-	void Grunt();
-	UFUNCTION(Server, Reliable)
-	void Server_Grunt();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Grunt();
 	
-	UFUNCTION(BlueprintCallable)
-	void PlayFallSound();
-		
 	/* Audio */
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundAttenuation* AltarAttenuationSettings;
@@ -959,15 +848,19 @@ public:
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* ChargeCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* ExecuteCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* PickUpCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* GruntCue;
+	USoundCue* DropCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* SellCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* PlantCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* GetHitCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* MandrakeScreamCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* SmiteCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
@@ -977,29 +870,13 @@ public:
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* LaunchPadCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* AirVentPadCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* FallOnButtCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* HitConcreteCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* ProjectileSoundCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* WeaponDestroyedCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* FallCue;
 	
 	/* One audio component for charge/attack/get hit sounds*/
 	UPROPERTY(EditDefaultsOnly)
 	UAudioComponent* WeaponAudioComponent;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAudioComponent* GruntAudioComponent1;
-	UPROPERTY(EditDefaultsOnly)
-	UAudioComponent* GruntAudioComponent2;
-	
-	UPROPERTY(BlueprintReadOnly)
-	UAudioComponent* FallAudioComponent;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///													Animation 													 ///
@@ -1110,6 +987,5 @@ public:
 	void DebugSomething();
 	
 };
-
 
 

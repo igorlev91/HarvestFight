@@ -3,20 +3,10 @@
 #include "HHGamemode.h"
 
 #include "Prototype2/DataAssets/ColourData.h"
-#include "Prototype2/DataAssets/RandomNameData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
-
-AHHGamemodeBase::AHHGamemodeBase()
-{
-	static ConstructorHelpers::FObjectFinder<URandomNameData> RandomLANNameData(TEXT("/Game/DataAssets/MiscData/DA_RandomNames"));
-	if (RandomLANNameData.Object != NULL)
-	{
-		RandomNameData = RandomLANNameData.Object;
-	}
-}
 
 void AHHGamemodeBase::UpdateSessionJoinability(int32 _MaxPlayers)
 {
@@ -40,39 +30,14 @@ void AHHGamemodeBase::UpdateSessionJoinability(int32 _MaxPlayers)
 	}
 }
 
-FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour, bool _RandomCharacter)
+FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour)
 {
 	FCharacterDetails IdealDetails{};
-
-	if (AvailableNames.Num() > 0)
+	UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
+	if (IsValid(SomeGameInstance))
 	{
-		IdealDetails.RandomizedName = AvailableNames[rand() % AvailableNames.Num()];
-		AvailableNames.Remove(IdealDetails.RandomizedName);
+		IdealDetails.AnimationData = SomeGameInstance->PlayerModels[(int16)IdealDetails.Character];
 	}
-	else if (IsValid(RandomNameData))
-	{
-		AvailableNames = RandomNameData->RandomNames;
-		if (AvailableNames.Num() > 0)
-		{
-			IdealDetails.RandomizedName = AvailableNames[rand() % AvailableNames.Num()];
-			AvailableNames.Remove(IdealDetails.RandomizedName);
-		}
-	}
-	
-	if (UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance()))
-	{
-		if (_RandomCharacter)
-		{
-			auto RandomCharacter = rand() % (SomeGameInstance->PlayerModels.Num());
-			IdealDetails.AnimationData = SomeGameInstance->PlayerModels[RandomCharacter];
-			IdealDetails.Character = (ECharacters)RandomCharacter;
-		}
-		else
-		{
-			IdealDetails.AnimationData = SomeGameInstance->PlayerModels[0];
-		}
-	}
-	
 	IdealDetails.Colour = _Colour;
 	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];
 
@@ -102,11 +67,8 @@ FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour,
 		}
 	case EColours::YELLOW:
 		{
-			if (SkinColourData->Yellows.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterColour = SkinColourData->Yellows[(int16)IdealDetails.Character];
-
-			if (SkinColourData->SubYellows.Num() > (int16)IdealDetails.Character)
-				IdealDetails.CharacterSubColour = SkinColourData->SubYellows[(int16)IdealDetails.Character];
+			IdealDetails.CharacterColour = SkinColourData->Yellow;
+			IdealDetails.CharacterSubColour = SkinColourData->SubYellow;
 			break;
 		}
 	case EColours::PURPLE:
@@ -164,7 +126,7 @@ EColours AHHGamemodeBase::GetFirstFreeColor(APlayerState* InPlayerState)
 		}
 
 		if (AvailableColours.Num() > 0)
-			return AvailableColours[rand() % AvailableColours.Num()];
+			return AvailableColours[0];
 	}
 
 	APrototype2Gamestate* NormalGamestate = GetGameState<APrototype2Gamestate>();
@@ -189,7 +151,7 @@ EColours AHHGamemodeBase::GetFirstFreeColor(APlayerState* InPlayerState)
 		}
 
 		if (AvailableColours.Num() > 0)
-			return AvailableColours[rand() % AvailableColours.Num()];
+			return AvailableColours[0];
 	}
 
 	return EColours::WHITE;

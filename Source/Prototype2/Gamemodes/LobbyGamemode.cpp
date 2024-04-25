@@ -7,8 +7,6 @@
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/ColourData.h"
-#include "Prototype2/DataAssets/RandomNameData.h"
-#include "Prototype2/DataAssets/TeamNames.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
@@ -30,14 +28,10 @@ ALobbyGamemode::ALobbyGamemode()
 	bPauseable = false;
 }
 
-void ALobbyGamemode::PostLoad()
-{
-	Super::PostLoad();
-}
-
 void ALobbyGamemode::BeginPlay()
 {
 	Super::BeginPlay();
+	GetGameInstance<UPrototypeGameInstance>()->FinalPlayerDetails.Empty();
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
@@ -58,53 +52,25 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	if (!IsValid(GameInstance))
 		return;
 
-	if (GameStateReference->Server_Players.Num() <= 0)
-	{
-		GameInstance->ResetCachedPlayerDetails();
-	
-		FTeamsDetails NewTeamDetails{};
-		
-		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
-		if (RandomColour == (int)EColours::RED)
-			RandomColour++;
-		NewTeamDetails.TeamOneColour = (EColours)RandomColour;
-	
-		do
-		{
-			RandomColour = rand() % ((int)EColours::MAXCOLOURS);
-			if (RandomColour == (int)EColours::RED)
-				RandomColour++;
-		}
-		while ((EColours)RandomColour == NewTeamDetails.TeamOneColour);
-		NewTeamDetails.TeamTwoColour = (EColours)RandomColour;
-
-		NewTeamDetails.TeamOneName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names.Num()];
-		NewTeamDetails.TeamTwoName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names.Num()];
-
-		GameStateReference->TeamsDetails = NewTeamDetails;
-
-		GameInstance->FinalTeamAColour = NewTeamDetails.TeamOneColour;
-		GameInstance->FinalTeamBColour = NewTeamDetails.TeamTwoColour;
-	}
-
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 	
-	if /* Teams */ (GameInstance->bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
+	if /* Teams */ (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
 	{
 		if (GameStateReference->TeamsDetails.Server_TeamOne.Num() <= GameStateReference->TeamsDetails.Server_TeamTwo.Num())
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamAColour);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamOneColour);
 			GameStateReference->TeamsDetails.Server_TeamOne.Add(PlayerStateReference);
 		}
 		else
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamBColour);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamTwoColour);
 			GameStateReference->TeamsDetails.Server_TeamTwo.Add(PlayerStateReference);
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("%s Joined Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int16)PlayerStateReference->Details.Colour));
+		
+		UE_LOG(LogTemp, Warning, TEXT("%s Joined Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int)PlayerStateReference->Details.Colour));
 	}
 	else /* NOT Teams */
 	{
@@ -139,8 +105,6 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!PrototypeGameInstance)
 		return;
-
-	UpdateSessionJoinability(PrototypeGameInstance->FinalConnectionCount);
 		
 	UE_LOG(LogTemp, Warning, TEXT("%s Attempted To Disconnect"), *PlayerStateReference->GetPlayerName());
 
@@ -183,11 +147,12 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
+			SomePlayerName = "Player " + FString::FromInt(i + 1);
+					
 			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{
 				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[_GameStateReference->Server_Players[i]->GetPlayerName()];
 			}
-			SomePlayerName = _GameStateReference->Server_Players[i]->Details.RandomizedName;
 		}
 		
 		_GameStateReference->Server_Players[i]->Player_ID = SomePlayerID;

@@ -73,51 +73,27 @@ APrototype2Character::APrototype2Character()
 	InitNiagraComponents();
 }
 
-void APrototype2Character::Destroyed()
-{
-	if (HasAuthority())
-	{
-		if (IsValid(HeldItem))
-		{
-			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			HeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
-
-			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
-			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-		}
-	}
-
-	HeldItem = nullptr;
-	OnRep_HeldItem();
-	
-	Super::Destroyed();
-}
-
 void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APrototype2Character, Weapon);
 	DOREPLIFETIME(APrototype2Character, HeldItem);
-	DOREPLIFETIME(APrototype2Character, InvincibilityTimer);
-	DOREPLIFETIME(APrototype2Character, ClaimedPlot);
-	DOREPLIFETIME(APrototype2Character, DebuffComponent);
-	DOREPLIFETIME(APrototype2Character, CurrentWeaponSeedData);
-	DOREPLIFETIME(APrototype2Character, CurrentWeaponAnimation);
-	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
-	DOREPLIFETIME(APrototype2Character, WeaponMesh);
-	DOREPLIFETIME(APrototype2Character, bIsAiming);
-	DOREPLIFETIME(APrototype2Character, ServerEmoteData);
-	//DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
-	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
+	DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
 	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
 	//DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
 	//DOREPLIFETIME(APrototype2Character, InteractTimer);
+	DOREPLIFETIME(APrototype2Character, ClaimedPlot);
+	DOREPLIFETIME(APrototype2Character, DebuffComponent);
 	//DOREPLIFETIME(APrototype2Character, bAllowMovementFromInput);
 	//DOREPLIFETIME(APrototype2Character, FallTimer);
+	DOREPLIFETIME(APrototype2Character, CurrentWeaponSeedData);
+	DOREPLIFETIME(APrototype2Character, CurrentWeaponAnimation);
+	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
 //	DOREPLIFETIME(APrototype2Character, bIsHoldingInteract);
 	//DOREPLIFETIME(APrototype2Character, WeaponFlashTimer);
 	//DOREPLIFETIME(APrototype2Character, bShouldWeaponFlashRed);
+	DOREPLIFETIME(APrototype2Character, WeaponMesh);
+	DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
 	
 	// Sprint
 	// DOREPLIFETIME(APrototype2Character, bHasNotifiedCanSprint);
@@ -152,7 +128,13 @@ void APrototype2Character::BeginPlay()
 	InitMeshAndCapsule();
 	InitWeapon();
 	InitShippingBin();
-	InitFOV();
+	SetFOV();
+	// Setup FOV after HUD has been created
+	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->OptionsMenu))
+	{
+		PlayerHUDRef->OptionsMenu->OnFOVChangedDelegate.AddDynamic(this, &APrototype2Character::SetFOV);
+	}
+
 }
 
 void APrototype2Character::DelayedBeginPlay()
@@ -167,7 +149,6 @@ void APrototype2Character::DelayedBeginPlay()
 			PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,this));
 		}
 	}
-	
 	InitPlayerNameWidgetComponent();
 	InitEmoteWidgetComponent();
 	SyncCharacterColourWithPlayerState();
@@ -278,28 +259,9 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	
 	//ToggleParticleSystems();
 	
-	//if (IsValid(smite))
-	//{
-	//	smite->Tick(_DeltaSeconds);
-	//}
-	
-	if (UHarvestHavocGameUserSettings* UserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings())
+	if (IsValid(smite))
 	{
-		if (UserSettings->PlayerNames == true)
-		{
-			if (IsLocallyControlled() && GameState->HasGameFinished() == false)
-			{
-				PlayerNameWidgetComponent->SetVisibility(false);
-			}
-			else
-			{
-				PlayerNameWidgetComponent->SetVisibility(true);
-			}
-		}
-		else
-		{
-			PlayerNameWidgetComponent->SetVisibility(false);
-		}
+		smite->Tick(_DeltaSeconds);
 	}
 }
 
@@ -353,14 +315,6 @@ void APrototype2Character::TogglePlayerStencil()
 
 void APrototype2Character::Move(const FInputActionValue& _Value)
 {
-	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->IngameMenu))
-	{
-		if (PlayerHUDRef->IngameMenu->GetVisibility() == ESlateVisibility::Visible)
-		{
-			return;
-		}
-	}
-
 	const FVector2D MovementVector = _Value.Get<FVector2D>();
 	//if (!Controller || bIsHoldingInteract)
 	//	return;
@@ -391,20 +345,9 @@ void APrototype2Character::Look(const FInputActionValue& _Value)
 	const FVector2D LookAxisVector = _Value.Get<FVector2D>();
 	if (!IsValid(Controller))
 		return;
-
-	UHarvestHavocGameUserSettings* HHGameGameUserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings();
-	if (HHGameGameUserSettings)
-	{
-		float MouseSensitivity = (float)HHGameGameUserSettings->GetMouseSensitivityScale();
-
-		AddControllerYawInput(LookAxisVector.X * (MouseSensitivity / 5));
-		AddControllerPitchInput(LookAxisVector.Y * (MouseSensitivity / 5));
-	}
-	else
-	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
+	
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
 void APrototype2Character::Sprint()
@@ -415,6 +358,7 @@ void APrototype2Character::Sprint()
 	// If the player used all their stamina to the bottom it has to fully reset
 	if (!bCanSprint)
 	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "Reason for no sprint: bCanSprint is false");
 		OnFailedToSprintDelegate.Broadcast();
 		return;
 	}
@@ -423,17 +367,17 @@ void APrototype2Character::Sprint()
 	if (!IsValid(DebuffComponent))
 		return;
 	
-	// If no debuff 
-	if (DebuffComponent->CurrentDebuff == EDebuff::None)
+	// If no debuff or sprint is at least 1/5th full
+	if (DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > (SprintTime / 5.0f))
 	{
 		bSprinting = true;		
 		bHasNotifiedCanSprint = false;
 		RefreshCurrentMaxSpeed();
-		bSprintAnimationState = true;
 		Server_SetSprintState(true);
 	}
 	else
 	{
+		UKismetSystemLibrary::PrintString(GetWorld(), "Reason for no sprint: this check was false->>>> if(DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > (SprintTime / 5.0f)");
 		OnFailedToSprintDelegate.Broadcast();
 	}
 }
@@ -446,7 +390,6 @@ void APrototype2Character::EndSprint()
 	// end sprint
 	bSprinting = false;
 	bHasNotifiedCanSprint = false;
-	bSprintAnimationState = false;
 	Server_SetSprintState(false);
 	
 	if (bCanSprint)
@@ -472,11 +415,12 @@ void APrototype2Character::Jump()
 
 void APrototype2Character::ChargeAttack()
 {
-	ReleaseInteract();
-
 	if (!IsValid(Weapon))
 		return;
 	
+	//if (bIsHoldingInteract)
+	//	return;
+
 	if (bIsChargingAttack)
 	{
 		return;
@@ -505,22 +449,21 @@ void APrototype2Character::ChargeAttack()
 		
 		bIsChargingAttack = true;
 		AttackAreaIndicatorMesh->SetHiddenInGame(false);
-		bChargeAnimationState = true;
-		OnChargeStateChangedDelegate.Broadcast(bChargeAnimationState);
 
 		if (HasAuthority())
 		{
-			//Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 			// Charge animation
+			bChargeAnimationState = true;
+			OnRep_ChargeStateChanged();
 			
 			Weapon->ChargeAttack(this);
-			Multi_ChargeAttack(bChargeAnimationState);
 		}
 		else
 		{
-			//Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-			Server_ChargeAttack(bChargeAnimationState);
+			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			Server_ChargeAttack();
 		}
 		PlayWeaponSound(ChargeCue);
 	}
@@ -536,14 +479,14 @@ void APrototype2Character::ReleaseAttack()
 	// Throw item functionality
 	if (IsValid(HeldItem))
 	{
-		InteractTimer = InteractTimerTime;
-		
 		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(Handle,this, 
-			&APrototype2Character::ThrowItem,
-			InstantAttackDelay, false);
+		GetWorld()->GetTimerManager().SetTimer(Handle,
+			FTimerDelegate::CreateLambda(
+				[this]
+				{
+					ThrowItem();
+				}), InstantAttackDelay, false);
 
-		
 		if (AnimationData->NormalPunchingAttack)
 		{
 			PlayNetworkMontage(AnimationData->NormalPunchingAttack);
@@ -561,45 +504,41 @@ void APrototype2Character::ReleaseAttack()
 	}
 	
 	bCanAttack = false;
-	AttackTimer = AttackTimerTime;
-
-	// If not punching, turn on attack trail
+	
 	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
 	{
-		// Except for the apearagus (bazooka)
-		if (CurrentWeaponSeedData->WeaponData->WeaponAnimationType != EWeaponAnimation::Aspearagus)
-		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);// Gets turned off in animation blueprint
+		// VFX
+		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
 	}
 
-	//if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
-	//{
-	//	SetPlayerAimingMovement(false);
-	//}
+	if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
+	{
+		SetPlayerAimingMovement(false);
+	}
 
-	// Lock the players momentum if not instant click attack or is moving
 	if (AttackChargeAmount > 0.5f || GetVelocity().Length() > 10.0f)
 	{
 		bIsFollowingThroughAttack = true;
 	}
 
-	//// Make sure weapon is socketed to hand
-	//if (HasAuthority())
-	//{
-	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	//}
-	//else
-	//{
-	//	Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	//}
+	// Make sure weapon is socketed to hand
+	if (HasAuthority())
+	{
+		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	}
+	else
+	{
+		Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	}
 
 	// Set the radius of the sphere for attack
-	ExecuteAttackInfo.AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
+	int32 AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
 	
 	// Always delay attack because of the new launch
 	bool bFullChargeAttack = true;
 	if (AttackChargeAmount < MaxAttackCharge) // InstantAttackThreshold
 		{
-			bFullChargeAttack = false;
+		bFullChargeAttack = false;
 		}
 
 	// Play the correct attack montage according to charge and weapon type equipped
@@ -610,15 +549,20 @@ void APrototype2Character::ReleaseAttack()
 	{
 		AttackChargeAmount = MaxAttackCharge;
 	}
-
-	ExecuteAttackInfo.AttackChargeAmount = AttackChargeAmount;
-	ExecuteAttackInfo.bIsSprinting = bSprinting;
+	float InAttackCharge = AttackChargeAmount;
+	bool InSprinting = bSprinting;
 	
 	// Delayed attack
 	FTimerHandle Handle;
-	GetWorld()->GetTimerManager().SetTimer(Handle, this,
-		&APrototype2Character::DelayedExecuteAttack,
-		InstantAttackDelay, false);
+	GetWorld()->GetTimerManager().SetTimer(Handle,
+		FTimerDelegate::CreateLambda(
+			[this, AttackSphereRadius, InAttackCharge, InSprinting]
+			{
+				
+				SetPlayerAimingMovement(false);
+				ExecuteAttack(AttackSphereRadius, InAttackCharge, InSprinting);
+				ResetAttack();
+			}), InstantAttackDelay, false);
 }
 
 void APrototype2Character::Interact(bool _Direct)
@@ -626,7 +570,7 @@ void APrototype2Character::Interact(bool _Direct)
 	if (!IsValid(PlayerStateRef))
 		return;
 
-	if (IsValid(ClosestInteractableActor) == false)
+	if (ClosestInteractableItem == nullptr)
 		return;
 	
 	if (DebuffComponent->DebuffInfo.Debuff == EDebuff::Daze ||
@@ -697,13 +641,21 @@ void APrototype2Character::ReleaseInteract()
 
 void APrototype2Character::Server_Interact_Implementation(AActor* _Item)
 {
-	if (IsValid(_Item) == false)
-		return;
 
-	if (const auto SomeInteractable = Cast<IInteractInterface>(_Item))
-		SomeInteractable->Interact(this);
-
-	OnRep_HeldItem();
+	
+	Cast<IInteractInterface>(_Item)->Interact(this);
+		
+	if (IsValid(HeldItem))
+	{
+		if (AnimationData->Pickup)
+		{
+			PlayNetworkMontage(AnimationData->Pickup);
+		}
+		if (IsValid(Weapon))
+		{
+			Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+		}
+	}
 }
 
 void APrototype2Character::OpenIngameMenu()
@@ -738,13 +690,11 @@ void APrototype2Character::ExecuteAttack(float _AttackSphereRadius, float _Attac
 	//Server_ExecuteAttack(_AttackSphereRadius, _AttackChargeAmount, _bSprinting);
 }
 
-void APrototype2Character::DelayedExecuteAttack()
+void APrototype2Character::Server_ExecuteAttack_Implementation(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting)
 {
-	SetPlayerAimingMovement(false);
-	ExecuteAttack(ExecuteAttackInfo.AttackSphereRadius,
-		ExecuteAttackInfo.AttackChargeAmount,
-		ExecuteAttackInfo.bIsSprinting);
-	ResetAttack();
+
+	
+	//Weapon->ExecuteAttack(_AttackSphereRadius, this, _AttackChargeAmount, _bSprinting);
 }
 
 void APrototype2Character::DropItem(float WhoopsyStrength)
@@ -758,14 +708,18 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			PlayerHUDRef->SetHUDInteractText("");
 		}
 		HeldItem->Client_Drop();
+
+
 		
 		if (HasAuthority())
 		{
 			// Server_DropItem
 			HeldItem->Server_Drop();
 			
-			//if (DropCue)
-			//	PlaySoundAtLocation(GetActorLocation(), DropCue);
+			if (DropCue)
+				PlaySoundAtLocation(GetActorLocation(), DropCue);
+			if (WeaponMesh)
+				Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 			Multi_DropItem();
 			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
@@ -774,7 +728,6 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			HeldItem->ItemComponent->Mesh->AddImpulse(RandomWhoopsyDirection.GetSafeNormal() * WhoopsyStrength, NAME_None, true);
 			
 			HeldItem = nullptr;
-			OnRep_HeldItem();
 			//
 		}
 		else
@@ -782,11 +735,6 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			Server_DropItem(WhoopsyStrength);
 		}
 		RefreshCurrentMaxSpeed();
-	}
-	else
-	{
-		HeldItem = nullptr;
-		OnRep_HeldItem();
 	}
 }
 
@@ -802,7 +750,7 @@ void APrototype2Character::CheckForInteractables()
 	//if (bIsHoldingInteract)
 	//	return;
 	
-	if (InteractTimer > 0.0f || bIsChargingAttack)
+	if (InteractTimer > InteractTimerTime / 2.0f || bIsChargingAttack)
 	{
 		EnableStencil(false);
 		if (ClosestInteractableItem)
@@ -847,7 +795,7 @@ void APrototype2Character::CheckForInteractables()
 	{
 		if (AGrowSpot* SomeGrowSpot = Cast<AGrowSpot>(InteractableActors[i]))
 		{
-			if (ABeehive* SomeBeeHive = Cast<ABeehive>(SomeGrowSpot->ItemRef))
+			if (ABeehive* SomeBeeHive = Cast<ABeehive>(SomeGrowSpot->GrowingItemRef))
 			{
 				ExtraImportantActors.Add(InteractableActors[i]);
 				ExtraImportantHitResults.Add(InteractableHitResults[i]);
@@ -931,11 +879,7 @@ void APrototype2Character::EnableStencil(bool _bIsOn)
 	{
 		AllItemComponents[i]->Mesh->SetRenderCustomDepth(_bIsOn);
 	}
-
-	if (auto Growspot = Cast<AGrowSpot>(ClosestInteractableActor))
-	{
-		Growspot->Mesh->SetRenderCustomDepth(_bIsOn);
-	}
+	
 }
 
 void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
@@ -943,9 +887,7 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	if (HasAuthority())
 	{
 		if (IsLocallyControlled())
-		{
 			ReleaseInteract();
-		}
 		
 		CalculateAndApplyHit(_AttackCharge, _AttackerLocation, _OtherWeaponData);
 	}
@@ -1025,7 +967,7 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	// Drop item
 	DropItem(1000.0f);
 	
-	Client_PlayWeaponSound(GetHitCue);
+	PlayWeaponSound(GetHitCue);
 	
 	// VFX
 	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
@@ -1040,21 +982,10 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	{
 		Multi_CancelChargeAttack();
 	}
-
-	// Vibrate controller
-	if (IsLocallyControlled())
-	{
-		OnGetHitForceFeedback();
-	}
 	else
 	{
-		Client_GetHitForceFeedback();
+		CancelChargeAttack();
 	}
-}
-
-void APrototype2Character::Client_GetHitForceFeedback_Implementation()
-{
-	OnGetHitForceFeedback();
 }
 
 void APrototype2Character::Server_HitWinterSellBin_Implementation(ASellBin_Winter* _HitWinterSellBin, float _AttackCharge,
@@ -1073,6 +1004,7 @@ void APrototype2Character::Server_CheckIfCrownHit_Implementation(APrototype2Char
 			PointsForHit = 1;
 		}
 		PlayerStateRef->AddCoins(PointsForHit);
+		_HitPlayer->PlaySoundAtLocation(_HitPlayer->GetActorLocation(), _HitPlayer->SellCue);
 	}
 }
 
@@ -1086,7 +1018,7 @@ void APrototype2Character::Server_HitConcrete_Implementation(AGrowSpot* _HitGrow
 {
 	if (_HitGrowSpot->DegradeConcrete())
 	{
-		Client_PlaySoundAtLocation(GetActorLocation(), HitConcreteCue);
+		PlaySoundAtLocation(GetActorLocation(), HitConcreteCue);
 	}
 }
 
@@ -1099,14 +1031,7 @@ void APrototype2Character::InitiateSmite(float _AttackCharge, UWeaponData* _Othe
 	// VFX
 	SmiteCloud->SetVisibility(true);
 	ActivateParticleSystemFromEnum(EParticleSystems::SmiteElectrifyWarning);
-	if (HasAuthority())
-	{
-		Client_PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
-	}
-	else
-	{
-		PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
-	}
+	PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
 	
 	// Start timer that fires this stuff when done
 	GetWorld()->GetTimerManager().SetTimer(SmiterTimer, this, &APrototype2Character::GetSmited, SmiteWarningTime);
@@ -1233,18 +1158,6 @@ void APrototype2Character::InitNiagraComponents()
 	AssertDominance_NiagaraComponent->SetupAttachment(RootComponent);
 	Slow_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Slow Component"));
 	Slow_NiagaraComponent->SetupAttachment(RootComponent);
-	
-	IceSliding_Left_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Left)"));
-	IceSliding_Left_NiagaraComponent->SetupAttachment(RootComponent);
-	IceSliding_Left_NiagaraComponent->SetAutoActivate(false);
-	IceSliding_Left_NiagaraComponent->SetRelativeLocation({0.0f, -35.0f, -98.0f});
-	IceSliding_Left_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 0.0f, 90.0f}));
-	
-	IceSliding_Right_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Right)"));
-	IceSliding_Right_NiagaraComponent->SetupAttachment(RootComponent);
-	IceSliding_Right_NiagaraComponent->SetAutoActivate(false);
-	IceSliding_Right_NiagaraComponent->SetRelativeLocation({0.0f, 35.0f, -98.0f});
-	IceSliding_Right_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 0.0f, 90.0f}));
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1254,16 +1167,13 @@ void APrototype2Character::InitMiscComponents()
 	
 	// Weapon Mesh
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
-	WeaponMesh->SetupAttachment(GetMesh(), FName("Base-HumanWeapon"));
-	WeaponMesh->SetRelativeScale3D({0.4f, 0.4f, 0.4f});
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	WeaponMesh->SetIsReplicated(true);
+	
 
-	// For spawning projectiles
-	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>("ProjectileSpawnPoint");
-	ProjectileSpawnPoint->SetupAttachment(RootComponent);
+	// Area of attack indicator mesh set up
 
 	AttackAreaIndicatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttackAreaIndicatorMesh"));
 	AttackAreaIndicatorMesh->SetupAttachment(RootComponent);
@@ -1274,19 +1184,7 @@ void APrototype2Character::InitMiscComponents()
 	// SFX
 	WeaponAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponAudioComponent"));
 	WeaponAudioComponent->SetupAttachment(RootComponent);
-	FallAudioComponent = CreateDefaultSubobject<UAudioComponent>("FallAudioCompoent");
-	FallAudioComponent->SetupAttachment(RootComponent);
-	if (FallCue)
-	{
-		FallAudioComponent->SetSound(FallCue);
-	}
-	GruntAudioComponent1 = CreateDefaultSubobject<UAudioComponent>(TEXT("Grunt1AudioComponent"));
-	GruntAudioComponent2 = CreateDefaultSubobject<UAudioComponent>(TEXT("Grunt2AudioComponent"));
-	GruntAudioComponent1->SetupAttachment(RootComponent);
-	GruntAudioComponent2->SetupAttachment(RootComponent);
-	GruntAudioComponent1->SetSound(GruntCue);
-	GruntAudioComponent2->SetSound(GruntCue);
-	
+
 	// Decal component
 	DecalArmSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DecalArrowArm"));
 	DecalArmSceneComponent->SetupAttachment(RootComponent);
@@ -1329,16 +1227,6 @@ void APrototype2Character::InitMiscComponents()
 	}
 }
 
-void APrototype2Character::InitFOV()
-{
-	SetFOV();
-	// Setup FOV after HUD has been created
-	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->OptionsMenu))
-	{
-		PlayerHUDRef->OptionsMenu->OnFOVChangedDelegate.AddDynamic(this, &APrototype2Character::SetFOV);
-	}
-}
-
 void APrototype2Character::UpdateDecalAngle()
 {
 	if (!IsValid(SellBin))
@@ -1368,30 +1256,19 @@ void APrototype2Character::OnRep_UpdateAOE()
 void APrototype2Character::PlayEmote(EEmote _Emote)
 {
 	if (HasAuthority())
-	{
-		FServerEmoteData NewEmoteData{};
-		NewEmoteData.LastPlayedEmote = _Emote;
-		NewEmoteData.EmoteTime = GetWorld()->GetTimeSeconds();
-		ServerEmoteData = NewEmoteData;
-		OnRep_LastServerEmote();
-	}
+		Multi_PlayEmote(_Emote);
 	else
 		Server_PlayEmote(_Emote);
 }
 
-void APrototype2Character::OnRep_LastServerEmote()
-{
-	if (IsValid(EmoteWidget))
-		EmoteWidget->PlayEmote(ServerEmoteData.LastPlayedEmote);
-}
-
 void APrototype2Character::Server_PlayEmote_Implementation(EEmote _Emote)
 {
-	FServerEmoteData NewEmoteData{};
-	NewEmoteData.LastPlayedEmote = _Emote;
-	NewEmoteData.EmoteTime = GetWorld()->GetTimeSeconds();
-	ServerEmoteData = NewEmoteData;
-	OnRep_LastServerEmote();
+	Multi_PlayEmote(_Emote);
+}
+
+void APrototype2Character::Multi_PlayEmote_Implementation(EEmote _Emote)
+{
+	EmoteWidget->PlayEmote(_Emote);
 }
 
 
@@ -1497,7 +1374,6 @@ void APrototype2Character::LandAfterfalling()
 		{
 			if (!bIsChargingAttack)
 			{
-				if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 				PlayNetworkMontage(AnimationData->FallOnButtAndGetBackUp);
 			}
 			OnFallOnButtDelegate.Broadcast();
@@ -1695,20 +1571,6 @@ void APrototype2Character::PickupItem(APickUpItem* _Item, EPickupActor _PickupTy
 	{
 		RefreshCurrentMaxSpeed();
 	}
-	
-	if (_PickupType == EPickupActor::WeaponActor)
-	{
-		if (_Item->ServerData.SeedData->WeaponData->WeaponAnimationType == EWeaponAnimation::Aspearagus)
-		{
-			bIsHoldingBazooka = true;
-			Multi_SetBazookaPickup(true);
-		}
-		else
-		{
-			bIsHoldingBazooka = false;
-			Multi_SetBazookaPickup(false);
-		}
-	}
 }
 
 
@@ -1740,7 +1602,7 @@ void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRot
 
 void APrototype2Character::DebugSomething()
 {
-
+	ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
 }
 
 void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
@@ -1767,238 +1629,15 @@ void APrototype2Character::SetClaimedPlot(ARadialPlot* _Plot)
 	Client_BroadcastPlotClaimed(_Plot);
 }
 
-void APrototype2Character::PickupItemV2(APickUpItem* _Item)
-{
-	if (IsValid(_Item) == false)
-		return;
-	
-	if (IsValid(HeldItem))
-	{
-		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
-	}
-	
-	_Item->ItemComponent->Mesh->SetSimulatePhysics(false);
-	
-	switch (_Item->ServerData.PickupActor)
-	{
-	case EPickupActor::PlantActor:
-		{
-			_Item->ItemComponent->PlayerWhoThrewItem = nullptr;
-			
-			HeldItem = _Item;
-			OnRep_HeldItem();
-			break;
-		}
-	case EPickupActor::WeaponActor:
-		{
-			// Replace weapon with new one
-			if (Weapon)
-				Weapon->DestroyComponent();
-			
-			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->ServerData.SeedData->WeaponData->WeaponComponent))
-			{
-				NewWeapon->RegisterComponent();
-				NewWeapon->SetIsReplicated(true);
-				Weapon = NewWeapon;
-			}
-			
-			CurrentWeaponSeedData = _Item->ServerData.SeedData;
-			bIsHoldingGoldWeapon = _Item->ItemComponent->bGold;
-
-			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
-			
-			_Item->Destroy(true);
-			break;
-		}
-	default:
-		{
-			HeldItem = _Item;
-			OnRep_HeldItem();
-			
-			break;
-		}
-	}
-}
-
-void APrototype2Character::ClientPickupV2(APickUpItem* _Item)
-{
-	if (!IsValid(_Item))
-		return;
-	
-	if (IsValid(PlayerHUDRef))
-		PlayerHUDRef->SetHUDInteractText("");
-
-	if (IsValid(HeldItem))
-		HeldItem->Client_Pickup(this);
-	
-	// Set the HUD UI pickup icon depending on seed/plant/weapon
-	switch (_Item->ServerData.PickupActor)
-	{
-	case EPickupActor::PlantActor:
-		{
-			if (!IsValid(PlayerHUDRef) || !_Item->ServerData.SeedData->PlantData)
-			{
-				break;
-			}
-			if (_Item->ItemComponent->bGold)
-			{
-				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->GoldPlantIcon);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Plant was normal when picked up for me"));
-				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->PlantIcon);
-			}
-			OnPickUpItemDelegate.Broadcast();
-			break;
-		}
-	case EPickupActor::WeaponActor:
-		{
-			// Set UI
-			if (PlayerHUDRef && _Item->ServerData.SeedData->WeaponData)
-			{
-				PlayerHUDRef->ClearPickupUI();
-				if (_Item->ItemComponent->bGold)
-				{
-					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->GoldWeaponIcon);
-				}
-				else
-				{
-					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->WeaponIcon);
-				}
-				FVector2D ImageSize ={(float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeX(), (float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeY()};
-				PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
-				OnPickUpWeaponDelegate.Broadcast();
-				
-				WeaponCurrentDurability = _Item->ServerData.SeedData->WeaponData->Durability;
-				if (_Item->ItemComponent->bGold)
-				{
-					WeaponCurrentDurability *= _Item->ServerData.SeedData->WeaponData->GoldDurabilityMultiplier;
-				}
-			}			
-			break;
-		}
-	case EPickupActor::SeedActor:
-		{
-			if (IsValid(PlayerHUDRef) && _Item)
-			{
-				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
-			}
-			OnPickUpItemDelegate.Broadcast();
-			break;
-		}
-	case EPickupActor::FertilizerActor:
-		{
-			if (!IsValid(PlayerHUDRef))
-				break;
-			
-			if (_Item->ServerData.SeedData->PacketIcon)
-			{
-				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
-			}
-			OnPickUpItemDelegate.Broadcast();
-		}
-	default:
-		break;
-	}
-	
-	// SFX
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickUpCue, GetActorLocation());
-}
-
 void APrototype2Character::OnRep_HeldItem()
 {
 	RefreshCurrentMaxSpeed();
-
-	if (IsValid(LastHeldItem))
+	if (!IsValid(HeldItem))
 	{
-		LastHeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		LastHeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
-
-		LastHeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		LastHeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
-	}
-
-	if (IsValid(HeldItem)
-		&& AnimationData
-		&& AnimationData->Pickup)
-	{
-		GetMesh()->GetAnimInstance()->Montage_Play(AnimationData->Pickup);
-
-		if (IsValid(Weapon) && WeaponMesh->GetAttachSocketName() != FName("WeaponHolsterSocket"))
-			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket")); 
-
-		if /* NOT WEAPON */(HeldItem->ServerData.PickupActor != EPickupActor::WeaponActor)
+		if (PlayerHUDRef)
 		{
-			HeldItem->SSComponent->Disable();
-			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(false);
-			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			HeldItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+			PlayerHUDRef->ClearPickupUI();
 		}
-		else /* WEAPON */
-		{
-			if (HeldItem->ServerData.SeedData
-				&& HeldItem->ServerData.SeedData->WeaponData
-				&& HeldItem->ServerData.SeedData->WeaponData->AOEIndicatorMesh)
-				AttackAreaIndicatorMesh->SetStaticMesh(HeldItem->ServerData.SeedData->WeaponData->AOEIndicatorMesh);
-		}
-
-		if (IsLocallyControlled())
-			ClientPickupV2(HeldItem);
-	}
-	else
-	{
-		ClearPickupUI();
-		
-		if (IsValid(Weapon) && WeaponMesh->GetAttachSocketName() != FName("Base-HumanWeapon"))
-			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Base-HumanWeapon")); 
-	}
-	
-	LastHeldItem = HeldItem;
-}
-
-bool APrototype2Character::IsHolding(UClass* _ObjectType)
-{
-	bool IsHoldingObjectType = false;
-
-	if (IsValid(HeldItem))
-	{
-		IsHoldingObjectType = HeldItem->IsA(_ObjectType);
-	}
-	
-	return IsHoldingObjectType;
-}
-
-USeedData* APrototype2Character::GetHeldItemData()
-{
-	USeedData* OutSeedData{nullptr};
-	if (IsValid(HeldItem))
-	{
-		if (IsValid(HeldItem->ServerData.SeedData))
-		{
-			OutSeedData = HeldItem->ServerData.SeedData;
-		}
-	}
-	return OutSeedData;
-}
-
-void APrototype2Character::ClearPickupUI()
-{
-	if (IsValid(PlayerHUDRef))
-		PlayerHUDRef->ClearPickupUI();
-}
-
-void APrototype2Character::UpdatePickupUI(UTexture2D* _Icon)
-{
-	if (IsValid(PlayerHUDRef))
-		PlayerHUDRef->UpdatePickupUI(_Icon);
-}
-
-void APrototype2Character::AddCoins(int32 _Amount)
-{
-	if (IsValid(PlayerStateRef))
-	{
-		PlayerStateRef->AddCoins(_Amount);
 	}
 }
 
@@ -2006,54 +1645,9 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 {
 	if (!IsValid(ClosestInteractableActor) || ClosestInteractableItem == nullptr)
 		return;
-
-	if (IsValid(GameState))
-	{
-		if (GameState->HasGameFinished())
-		{
-			InteractTimeline->Stop();
-			OnStoppedClaimingPlotDelegate.Broadcast();
-			bAllowMovementFromInput = true;
-			return;
-		}
-	}
-
-	if (InvincibilityTimer > 0)
-	{
-		InteractTimeline->Stop();
-		OnStoppedClaimingPlotDelegate.Broadcast();
-		bAllowMovementFromInput = true;
-		return;
-	}
-	else if (auto SomeGrowSpot = Cast<AGrowSpot>(ClosestInteractableActor))
-	{
-		if (SomeGrowSpot->FertilisationState.ConcretedHealth > 0)
-		{
-			InteractTimeline->Stop();
-			OnStoppedClaimingPlotDelegate.Broadcast();
-			bAllowMovementFromInput = true;
-			return;
-		}
-		if (IsValid(SomeGrowSpot->ItemRef) == false)
-		{
-			InteractTimeline->Stop();
-			OnStoppedClaimingPlotDelegate.Broadcast();
-			bAllowMovementFromInput = true;
-			return;
-		}
-		else if (ABeehive* beehive = Cast<ABeehive>(SomeGrowSpot->ItemRef))
-		{
-			if (beehive->TrackerTimeTillCollect > 0)
-			{
-				InteractTimeline->Stop();
-				OnStoppedClaimingPlotDelegate.Broadcast();
-				bAllowMovementFromInput = true;
-				return;
-			}
-		}
-	}
 	
 	OnClaimingPlotDelegate.Broadcast(_Progress, InteractTimeline->GetTimelineLength());
+
 }
 
 void APrototype2Character::OnFinish_InteractTimeline()
@@ -2061,6 +1655,7 @@ void APrototype2Character::OnFinish_InteractTimeline()
 	Interact();
 	OnStoppedClaimingPlotDelegate.Broadcast();
 	ReleaseInteract();
+	//bAllowMovementFromInput = true;
 }
 
 void APrototype2Character::Client_BroadcastPlotClaimed_Implementation(ARadialPlot* _Plot)
@@ -2076,105 +1671,63 @@ bool APrototype2Character::IsSprinting()
 void APrototype2Character::CheckForFloorSurface()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("Ground Check"));
+
+	if (!HasIdealRole())
+		return;
 	
 	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
-	FVector EndLocation = GetActorLocation() + FVector{0,0,-120}; // The end location of the line trace
-	
-	FHitResult HitResult;
+	FVector EndLocation = GetActorLocation() + FVector{0,0,-100}; // The end location of the line trace
+
+	TArray<FHitResult> HitResults;
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = true; // Enable complex tracing for accurate physics material retrieval
 	QueryParams.bReturnPhysicalMaterial = true;
-	QueryParams.AddIgnoredActor(this);
 
-	if (HasIdealRole())
-	{
-		GetCharacterMovement()->bUseSeparateBrakingFriction = true;
-		GetCharacterMovement()->BrakingFriction = 2.0f;
-		GetCharacterMovement()->MaxAcceleration = 2048.0f;
-		GetCharacterMovement()->GroundFriction = 8.0f;
-	}
+	GetCharacterMovement()->bUseSeparateBrakingFriction = true;
+	GetCharacterMovement()->BrakingFriction = 2.0f;
+	GetCharacterMovement()->MaxAcceleration = 2048.0f;
+	GetCharacterMovement()->GroundFriction = 8.0f;
 	
 	// Perform the line trace
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_GameTraceChannel1, QueryParams))
+	if (GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
 	{
-		if (HitResult.GetActor()->ActorHasTag(FName(TEXT("goop"))))
+		for(auto& Hit : HitResults)
 		{
-			if (DebuffComponent->CurrentDebuff != EDebuff::None)
-				return;
+			if (Hit.GetActor()->ActorHasTag(FName(TEXT("goop"))))
+			{
+				if (DebuffComponent->CurrentDebuff != EDebuff::None)
+					return;
 				
-			if (HasAuthority())
-			{
-				DebuffComponent->DebuffInfo.Debuff = EDebuff::Slow;
-				DebuffComponent->DebuffInfo.Duration = 0.3f;
-				DebuffComponent->OnRep_ApplyDebuff();
+				if (HasAuthority())
+				{
+					DebuffComponent->DebuffInfo.Debuff = EDebuff::Slow;
+					DebuffComponent->DebuffInfo.Duration = 0.3f;
+					DebuffComponent->OnRep_ApplyDebuff();
+				}
+				else if (GetLocalRole() == ROLE_AutonomousProxy)
+				{
+					Server_ApplyHoneyGoopSlow();
+				}
 			}
-			else if (GetLocalRole() == ROLE_AutonomousProxy)
-			{
-				Server_ApplyHoneyGoopSlow();
-			}
-		}
 			
-		if (const UPhysicalMaterial* PhysicalMaterial = HitResult.PhysMaterial.Get())
-		{
-			const float Friction = PhysicalMaterial->Friction;
-			
-			if (Friction <= 0.5f)
+			if (const UPhysicalMaterial* PhysicalMaterial = Hit.PhysMaterial.Get())
 			{
-				if (HasIdealRole())
+				const float Friction = PhysicalMaterial->Friction;
+			
+				if (Friction <= 0.5f)
 				{
 					GetCharacterMovement()->BrakingFriction = 0.0f;
 					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
 					GetCharacterMovement()->GroundFriction = 0.0f;
+					break;
 				}
-
-				if (FVector::DistXY(GetVelocity(), FVector::ZeroVector) > 10.0f)
-					ToggleIceSlidingVFX(true);
-				else
-					ToggleIceSlidingVFX(false);
-			}
-			else
-			{
-				ToggleIceSlidingVFX(false);
 			}
 		}
-		else
-		{
-			ToggleIceSlidingVFX(false);
-		}
-	}
-	else
-	{
-		ToggleIceSlidingVFX(false);
-	}
-}
-
-void APrototype2Character::ToggleIceSlidingVFX(bool _IsEnabled)
-{
-	if (_IsEnabled)
-	{
-		IceSliding_Left_NiagaraComponent->Activate();
-		IceSliding_Right_NiagaraComponent->Activate();
-	}
-	else
-	{
-		IceSliding_Left_NiagaraComponent->Deactivate();
-		IceSliding_Right_NiagaraComponent->Deactivate();
 	}
 }
 
 void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation)
 {
-	if (!IsValid(_SoundToPlay))
-		return;
-	
-	// Play locally first
-	if (_Attenuation)
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundToPlay, _Location, 1, 1, 0, _Attenuation);
-	else
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundToPlay, _Location, 1, 1, 0, SoundAttenuationSettings);
-
-
-	// Replicate
 	if (HasAuthority())
 	{
 		Multi_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
@@ -2185,89 +1738,8 @@ void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _So
 	}
 }
 
-void APrototype2Character::Client_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue,
-	USoundAttenuation* _Attenuation)
-{
-	PlaySoundAtLocation(_Location, _SoundQueue, _Attenuation);
-}
-
-void APrototype2Character::Grunt()
-{
-	if (!IsValid(GruntCue))
-		return;
-	
-	if (GruntAudioComponent1->IsPlaying())
-	{
-		if (GruntAudioComponent2->GetSound() != GruntCue)
-		{
-			GruntAudioComponent2->SetSound(GruntCue);
-		}
-		GruntAudioComponent2->Play();
-	}
-	else
-	{
-		if (GruntAudioComponent1->GetSound() != GruntCue)
-		{
-			GruntAudioComponent1->SetSound(GruntCue);
-		}
-		GruntAudioComponent1->Play();
-	}
-	if (HasAuthority())
-	{
-		Multi_Grunt();
-	}
-	else
-	{
-		Server_Grunt();
-	}
-}
-
-void APrototype2Character::Server_Grunt_Implementation()
-{
-	Multi_Grunt();
-}
-
-void APrototype2Character::Multi_Grunt_Implementation()
-{
-	if (IsLocallyControlled())
-		return;
-
-	if (GruntAudioComponent1->IsPlaying())
-	{
-		if (GruntAudioComponent2->GetSound() != GruntCue)
-		{
-			GruntAudioComponent2->SetSound(GruntCue);
-		}
-		GruntAudioComponent2->Play();
-	}
-	else
-	{
-		if (GruntAudioComponent1->GetSound() != GruntCue)
-		{
-			GruntAudioComponent1->SetSound(GruntCue);
-		}
-		GruntAudioComponent1->Play();
-	}
-}
-
-void APrototype2Character::PlayFallSound()
-{
-	if (HasAuthority() && IsValid(FallCue))
-	{
-		Client_PlaySoundAtLocation(GetActorLocation(), FallCue);
-	}
-}
-
 void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 {
-	if (!IsValid(_SoundToPlay))
-		return;
-
-	// Play locally first
-	WeaponAudioComponent->SetSound(_SoundToPlay);
-	WeaponAudioComponent->Play();
-
-	// Replicate
 	if (HasAuthority())
 	{
 		Multi_PlayWeaponSound(_SoundToPlay);
@@ -2278,11 +1750,6 @@ void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 	}
 }
 
-void APrototype2Character::Client_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
-{
-	PlayWeaponSound(_SoundToPlay);
-}
-
 void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
 {
 	Multi_PlayWeaponSound(_SoundToPlay);
@@ -2290,9 +1757,6 @@ void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _Sou
 
 void APrototype2Character::Multi_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
 {
-	if (IsLocallyControlled())
-		return;
-	
 	WeaponAudioComponent->SetSound(_SoundToPlay);
 	WeaponAudioComponent->Play();
 }
@@ -2311,9 +1775,6 @@ void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector _Dest
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _Montage)
 {
-	// Play locally first
-	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
-	
 	if (HasAuthority())
 		Multi_PlayNetworkMontage(_Montage);
 	else
@@ -2338,77 +1799,37 @@ void APrototype2Character::DropWeapon()
 	}
 	if (HasAuthority())
 	{
-		Client_PlaySoundAtLocation(GetActorLocation(), WeaponDestroyedCue);
 		Multi_DropWeapon();
 	}
 	else
 	{
-		PlaySoundAtLocation(GetActorLocation(), WeaponDestroyedCue);
 		Server_DropWeapon();
 	}
 }
 
-void APrototype2Character::Multi_ChargeAttack_Implementation(bool _bCharging)
-{
-	if (IsLocallyControlled())
-		return;
-	
-	OnChargeStateChangedDelegate.Broadcast(_bCharging);
-}
-
-void APrototype2Character::LungeAttack(FVector _LungeVector)
-{
-	GetCharacterMovement()->Launch(_LungeVector);
-
-	if (!HasAuthority())
-	{
-		Server_LungeAttack(_LungeVector);
-	}
-}
-
-void APrototype2Character::Server_LungeAttack_Implementation(FVector _LungeVector)
-{
-	Multi_LungeAttack(_LungeVector);
-}
-
-void APrototype2Character::Multi_LungeAttack_Implementation(FVector _LungeVector)
-{
-	if (!IsLocallyControlled())
-	GetCharacterMovement()->Launch(_LungeVector);
-}
-
-void APrototype2Character::OnRep_SetSimulatedProxyAimingMovement()
-{
-	// Only affect simulated proxies
-	if (IsLocallyControlled())
-		return;
-	
-	GetCharacterMovement()->bUseControllerDesiredRotation = true;
-	GetCharacterMovement()->bOrientRotationToMovement = !bIsAiming;
-	bAllowMovementFromInput = !bIsAiming;
-}
-
 void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
 {
+
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
-	
-	if (HasAuthority())
-	{
-		bIsAiming = _bIsAiming;
-	}
-	else
-	{
-		Server_SetPlayerAimingMovement(_bIsAiming);
-	}
+
+	//Server_SetPlayerAimingMovement(_bIsAiming);
 }
 
-void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
-{
-	bIsAiming = _bIsAiming;
-	OnRep_SetSimulatedProxyAimingMovement();
-}
+//void APrototype2Character::Multi_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+//{
+//	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+//	bAllowMovementFromInput = !_bIsAiming;
+//}
+//
+//void APrototype2Character::Client_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+//{
+//	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+//	bAllowMovementFromInput = !_bIsAiming;
+//}
 
 void APrototype2Character::Server_CancelChargeAttack_Implementation()
 {
@@ -2431,7 +1852,7 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 		PlayerHUDRef->SetHUDInteractText("");
 
 	if (IsValid(HeldItem))
-		HeldItem->Client_Pickup(this);
+		HeldItem->Client_Pickup();
 	
 	// Set the HUD UI pickup icon depending on seed/plant/weapon
 	switch (_PickupType)
@@ -2503,8 +1924,6 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 	default:
 		break;
 	}
-	// SFX
-	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
 }
 
 void APrototype2Character::Client_DropItem_Implementation()
@@ -2532,6 +1951,15 @@ void APrototype2Character::Client_DropWeapon_Implementation()
 	}
 }
 
+//void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+//{
+//	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
+//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
+//	bAllowMovementFromInput = !_bIsAiming;
+//
+//	Multi_SetPlayerAimingMovement(_bIsAiming);
+//}
+
 void APrototype2Character::SetMaxWalkSpeed(float _Speed)
 {
 	if (!HasIdealRole())
@@ -2549,11 +1977,6 @@ void APrototype2Character::Server_SetMaxWalkSpeed_Implementation(float _Speed)
 }
 
 void APrototype2Character::Server_SetSprintState_Implementation(bool _NewSprintAnimationState)
-{
-	Multi_SetSprintState(_NewSprintAnimationState);
-}
-
-void APrototype2Character::Multi_SetSprintState_Implementation(bool _NewSprintAnimationState)
 {
 	bSprintAnimationState = _NewSprintAnimationState;
 }
@@ -2587,10 +2010,6 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	{
 		SetMaxWalkSpeed(SprintSpeed);
 		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
-		if (GetVelocity().Length() == 0.0f)
-		{
-			return;
-		}
 		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 		return;
@@ -2600,28 +2019,6 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	SetMaxWalkSpeed(WalkSpeed);
 	DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 	DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
-}
-
-void APrototype2Character::HandleNotSprinting(float _DeltaSeconds)
-{
-	if (SprintTimer < SprintTime)
-	{
-		if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
-		{
-			DelayedSprintRegenTimer += _DeltaSeconds * 1.5f;
-		}
-		else
-		{
-			SprintTimer += _DeltaSeconds * 0.85f; // magic number slows down sprint regen
-		}
-	}
-	else
-	{
-		SetCanSprint(true);
-
-		bHasNotifiedCanSprint = true;
-		bCanSprint = true;
-	}
 }
 
 void APrototype2Character::Client_RefreshCurrentMaxSpeed_Implementation()
@@ -2639,24 +2036,34 @@ void APrototype2Character::ResetAttack()
 	InteractTimer = InteractTimerTime;
 	SetPlayerAimingMovement(false);
 	AttackAreaIndicatorMesh->SetHiddenInGame(false);
-	// Charge animation
-	bChargeAnimationState = false;
-	OnChargeStateChangedDelegate.Broadcast(bChargeAnimationState);
 	
+	// Reset Attack Timer
 	if (HasAuthority())
 	{
-		Multi_ChargeAttack(bChargeAnimationState);	
+		// Reset Attack variables
+		//bIsChargingAttack = false;
+
+		// Charge animation
+		bChargeAnimationState = false;
+		OnRep_ChargeStateChanged();
 	}
-	else if (GetLocalRole() == ROLE_AutonomousProxy)
+	else
 	{
-		Server_ResetAttack();
-		Server_ChargeAttack(bChargeAnimationState);
+		if (GetLocalRole() == ROLE_AutonomousProxy)
+		{
+			Server_ResetAttack();
+		}
 	}
 }
 
 void APrototype2Character::Server_ResetAttack_Implementation()
 {
 	// Reset Attack variables
+	
+	// Charge animation
+	bChargeAnimationState = false;
+	OnRep_ChargeStateChanged();
+	
 	bCanAttack = true;
 }
 
@@ -2692,20 +2099,19 @@ void APrototype2Character::ThrowItem()
 	if (IsValid(HeldItem))
 		HeldItem->Client_Drop();
 	
-	PlaySoundAtLocation(GetActorLocation(), GruntCue);
-	
 	if (HasAuthority())
 	{
 		// Server_DropItem
 		if (IsValid(HeldItem))
 		HeldItem->Server_Drop();
-		
-		//if (IsValid(WeaponMesh))
-		//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			
+		if (IsValid(DropCue))
+			PlaySoundAtLocation(GetActorLocation(), DropCue);
+		if (IsValid(WeaponMesh))
+			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
 		CalculateThrowVectorAndLaunch(GetActorForwardVector(), GetCharacterMovement()->GetLastUpdateVelocity().Length());
 		HeldItem = nullptr;
-		OnRep_HeldItem();
 	}
 	else
 	{
@@ -2758,12 +2164,14 @@ void APrototype2Character::Server_ThrowItem_Implementation(FVector _ForwardVecto
 	
 	HeldItem->Server_Drop();
 	
-	//if (IsValid(WeaponMesh))
-	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	// Server_DropItem
+	if (IsValid(DropCue))
+		PlaySoundAtLocation(GetActorLocation(), DropCue);
+	if (IsValid(WeaponMesh))
+		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
 	CalculateThrowVectorAndLaunch(_ForwardVector, _PlayerSpeed);
 	HeldItem = nullptr;
-	OnRep_HeldItem();
 }
 
 void APrototype2Character::Client_BroadcastOvercharge_Implementation()
@@ -2791,13 +2199,6 @@ void APrototype2Character::OnLaunchedByLaunchPad()
 
 void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 {
-	// Hide Sprint bar
-	if (SprintTimer < SprintTime)
-	{
-		SprintTimer = SprintTime;
-		OnSprintReadyDelegate.Broadcast();
-	}
-	
 	if (HasAuthority())
 	{
 		Multi_TeleportToEndGame(_EndGameTransform);
@@ -2855,35 +2256,17 @@ bool APrototype2Character::GetHasCrown()
 	{
 		if (GameInstance->bTeams)
 			return false;
+		if (GameState->bGameHasStarted == false)
+			return false;
 		
-		if (IsValid(GameState->TheCrown))
+		for(auto SomePlayerState : GameState->Server_Players)
 		{
-			if (GameState->TheCrown->AttachedPlayer == this)
-			{
-				return true;
-			}
+			if (SomePlayerState->Coins > PlayerStateRef->Coins && SomePlayerState != PlayerStateRef)
+				return false;
 		}
 	}
 	
-	return false;
-}
-
-int32 APrototype2Character::GetPlayerID()
-{
-	if (IsValid(GameState) == false)
-		return 0;
-	
-	int32 MyPlayerID{};
-	APlayerState* MyPlayerState = GetPlayerState();
-	for(int32 i = 0; i < GameState->PlayerArray.Num(); i++)
-	{
-		if (GameState->PlayerArray[i] == MyPlayerState)
-		{
-			MyPlayerID = i;
-			break;
-		}
-	}
-	return MyPlayerID;
+	return true;
 }
 
 void APrototype2Character::InitPlayerNameWidgetComponent()
@@ -2919,7 +2302,7 @@ void APrototype2Character::InitEmoteWidgetComponent()
 	if (IsValid(EmoteWidget))
 		return;
 		
-	if (IsValid(EmoteWidgetComponent) == false)
+	if (!IsValid(EmoteWidgetComponent))
 		return;
 
 	UUserWidget* Widget = EmoteWidgetComponent->GetWidget();
@@ -3019,7 +2402,7 @@ void APrototype2Character::HandleAttackChargeBehavior(float _DeltaSeconds)
 	{
 		if(AttackChargeAmount < MaxAttackCharge)// + AutoAttackDuration)
 		{
-			AttackChargeAmount += _DeltaSeconds * 1.5f; // increase charge speed by 50%
+			AttackChargeAmount += _DeltaSeconds * 1.2f; // increase charge speed by 10%
 		}
 		
 		if (AttackChargeAmount >= MaxAttackCharge)
@@ -3066,38 +2449,17 @@ void APrototype2Character::UpdatePlayerHUD()
 
 void APrototype2Character::UpdateWeaponMeshSkin()
 {
-	if (IsValid(BazookaMesh) &&
-		bIsHoldingBazooka)
-	{
-		WeaponMesh->SetStaticMesh(BazookaMesh);
-	}
-	else
-	{
-		if (IsValid(CurrentWeaponSeedData) &&
-			IsValid(CurrentWeaponSeedData->BabyMesh))
-		WeaponMesh->SetStaticMesh(CurrentWeaponSeedData->BabyMesh);
-	}
+	WeaponMesh->SetStaticMesh(CurrentWeaponSeedData->BabyMesh);
 	
 	if (bShouldWeaponFlashRed)
 	{
-		if (bIsHoldingBazooka)
-		{
-			WeaponMesh->SetMaterial(0, FlashRedMaterial);
-			return;
-		}
-
 		for (int i = 0; i < CurrentWeaponSeedData->BabyMaterials.Num(); i++)
 		{
 			WeaponMesh->SetMaterial(i, FlashRedMaterial);
-		}		
+		}
 	}
 	else if (bIsHoldingGoldWeapon)
 	{
-		if (bIsHoldingBazooka && IsValid(BazookaGoldMaterial))
-		{
-			WeaponMesh->SetMaterial(0, BazookaGoldMaterial);
-			return;
-		}
 		for (int i = 0; i < CurrentWeaponSeedData->BabyGoldMaterials.Num(); i++)
 		{
 			if (CurrentWeaponSeedData->BabyGoldMaterials[i])
@@ -3114,11 +2476,6 @@ void APrototype2Character::UpdateWeaponMeshSkin()
 	}
 	else
 	{
-		if (bIsHoldingBazooka && IsValid(BazookaNormalMaterial))
-		{
-			WeaponMesh->SetMaterial(0, BazookaNormalMaterial);
-			return;
-		}
 		for (int i = 0; i < CurrentWeaponSeedData->BabyMaterials.Num(); i++)
 		{
 			if (CurrentWeaponSeedData->BabyMaterials[i])
@@ -3167,10 +2524,7 @@ void APrototype2Character::TickTimers(float _DeltaSeconds)
 	// No longer replicated
 	DeltaDecrement(AttackTimer, _DeltaSeconds);
 	DecrementSprintTimers(_DeltaSeconds);
-	
-	if (HasAuthority())
-		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
-	
+	DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
 	DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
 	if (WeaponFlashTimer < 0.0f)
 	{
@@ -3186,25 +2540,10 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 	
 	if (bSprinting)
 	{
-		if (GetVelocity().Length() == 0.0f)
+		if (SprintTimer > 0)
 		{
-			HandleNotSprinting(_DeltaSeconds);
-			if (AssertDominance_NiagaraComponent->IsActive())
-			{
-				DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
-			}
-			return;
-		}
-		
-		if (SprintTimer > 0 && GetVelocity().Length() != 0.0f)
-		{
-			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 1.5f : _DeltaSeconds; // magic number increaeses sprint drain when sprinting with weapon
-			
-			if (!AssertDominance_NiagaraComponent->IsActive())
-			{
-				ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
-			}
-			
+			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 2 : _DeltaSeconds; // magic number increaeses sprint drain when sprinting with weapon
+
 			if (SprintTimer <= 0)
 			{
 				// end sprint
@@ -3218,7 +2557,24 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 	}
 	else
 	{
-		HandleNotSprinting(_DeltaSeconds);
+		if (SprintTimer < SprintTime)
+		{
+			if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
+			{
+				DelayedSprintRegenTimer += _DeltaSeconds;
+			}
+			else
+			{
+				SprintTimer += _DeltaSeconds * 0.75f; // magic number slows down sprint regen
+			}
+		}
+		else
+		{
+			SetCanSprint(true);
+
+			bHasNotifiedCanSprint = true;
+			bCanSprint = true;
+		}
 	}
 }
 
@@ -3239,21 +2595,12 @@ void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage
 
 void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage* _Montage)
 {
-	if (IsLocallyControlled())
-		return;
-	
 	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
-	
 }
 
 void APrototype2Character::Server_SetPlayerColour_Implementation()
 {
 	Multi_SetPlayerColour();
-}
-
-void APrototype2Character::Multi_SetBazookaPickup_Implementation(bool _bIsHoldingBazooka)
-{
-	bIsHoldingBazooka = _bIsHoldingBazooka;
 }
 
 void APrototype2Character::OnRep_InteractTimer()
@@ -3286,10 +2633,13 @@ void APrototype2Character::Multi_Client_AddHUD_Implementation()
     }
 }
 
-void APrototype2Character::Server_ChargeAttack_Implementation(bool _bCharging)
+void APrototype2Character::Server_ChargeAttack_Implementation()
 {
+	// Charge animation
+	bChargeAnimationState = true;
+	OnRep_ChargeStateChanged();
+	
 	Weapon->ChargeAttack(this);
-	Multi_ChargeAttack(_bCharging);
 }
 
 void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
@@ -3302,9 +2652,6 @@ void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _Lo
 
 void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
 {
-	if (IsLocallyControlled())
-		return;
-	
 	if (!IsValid(_SoundQueue))
 		return;
 	
@@ -3351,17 +2698,16 @@ void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 	HeldItem->Server_Drop();
 	
 	// Server_DropItem
-	//if (IsValid(DropCue))
-	//	PlaySoundAtLocation(GetActorLocation(), DropCue);
-	//if (IsValid(WeaponMesh))
-	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	if (IsValid(DropCue))
+		PlaySoundAtLocation(GetActorLocation(), DropCue);
+	if (IsValid(WeaponMesh))
+		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 	Multi_DropItem();
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 	HeldItem->ItemComponent->Mesh->AddImpulse(FVector::UpVector * WhoopsyStrength, NAME_None, true);
 
 	HeldItem = nullptr;
-	OnRep_HeldItem();
 }
 
 void APrototype2Character::Multi_DropItem_Implementation()
@@ -3380,7 +2726,9 @@ void APrototype2Character::Multi_DropItem_Implementation()
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, EPickupActor _PickupType)
-{	
+{
+	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
+	
 	if (IsValid(HeldItem))
 	{
 		if (HasAuthority())
@@ -3398,7 +2746,6 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 	case EPickupActor::PlantActor:
 		{
 			HeldItem = _Item;
-			OnRep_HeldItem();
 
 			_Item->ItemComponent->PlayerWhoThrewItem = nullptr;
 			
@@ -3431,17 +2778,16 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 			}
 
 			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
-			_Item->Destroy(true);
+			_Item->Destroy();
 
-			//Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			break;
 		}
 	default:
 		{
 			HeldItem = _Item;
-			OnRep_HeldItem();
 			
-			//Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+			Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
 			break;
 		}
 	}
@@ -3497,7 +2843,6 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item, E
 void APrototype2Character::Multi_DropWeapon_Implementation()
 {
 	CurrentWeaponSeedData = DefaultWeaponSeedData;
-	bIsHoldingBazooka = false;
 	
 	if (!IsValid(Weapon))
 		return;

@@ -17,8 +17,6 @@ public:
 	/* Constructor */
 	ALobbyGamemode();
 
-	virtual void PostLoad() override;
-
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere)
