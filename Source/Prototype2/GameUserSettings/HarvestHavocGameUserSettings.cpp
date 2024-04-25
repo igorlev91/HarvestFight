@@ -16,7 +16,8 @@ UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitia
 	UIIndicators = (int8)EIndicatorUISetting::ON;
 	UIIndicatorSizeLarge = false;
 	MouseSensitivityScale = 5;
-	
+	CustomMouseCursor = true;
+	ControllerMenuSensitivityScale = 5;
 }
 
 UHarvestHavocGameUserSettings* UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings()

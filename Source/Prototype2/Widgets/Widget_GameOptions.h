@@ -356,6 +356,30 @@ public:
 	UFUNCTION()
 	void SetMouseSensitivityScaleSettingText();
 
+	// Mouse sensitivity control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* CustomMouseCursor_Control;
+	
+	bool TempCustomMouseCursor;
+	
+	UFUNCTION()
+	void OnCustomMouseCursorControlButtonPressed();
+	UFUNCTION()
+	void SetCustomMouseCursorSettingText();
+
+	// Controller menu sensitivity control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* ControllerMenuSensitivityScale_Control;
+
+	int32 TempControllerMenuSensitivityScale;
+
+	UFUNCTION()
+	void OnControllerMenuSensitivityScaleControlLeftButtonPressed();
+	UFUNCTION()
+	void OnControllerMenuSensitivityScaleControlRightButtonPressed();
+	UFUNCTION()
+	void SetControllerMenuSensitivityScaleSettingText();
+
 private:
 	/* Private Functions */
 	void SetQualityLevelText(UWidget_OptionSelector* _OptionSelectorWidget, int32 _QualityValue);

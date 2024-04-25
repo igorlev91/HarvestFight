@@ -64,6 +64,8 @@ void UWidget_GameOptions::NativePreConstruct()
 
 	/* Control (mouse/controller) */
 	MouseSensitivityScale_Control->OptionText->SetText(FText::FromString("Mouse/Controller Sensitivity"));
+	CustomMouseCursor_Control->OptionText->SetText(FText::FromString("Custom Mouse Cursor"));
+	ControllerMenuSensitivityScale_Control->OptionText->SetText(FText::FromString("Controller Menu Sensitivity"));
 }
 
 void UWidget_GameOptions::NativeConstruct()
@@ -232,6 +234,16 @@ void UWidget_GameOptions::NativeConstruct()
 		MouseSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed);
 		MouseSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed);
 	}
+	if (CustomMouseCursor_Control)
+	{
+		CustomMouseCursor_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
+		CustomMouseCursor_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
+	}
+	if (ControllerMenuSensitivityScale_Control)
+	{
+		ControllerMenuSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed);
+		ControllerMenuSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed);
+	}
 
 	if (ConfirmButton)
 	{
@@ -252,6 +264,9 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->UIIndicators = TempUIIndicators;
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
+	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
+	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
+	OnFOVChangedDelegate.Broadcast();
 	HHGameGameUserSettings->ApplySettings(true);
 
 	UpdateGameInstanceVariables();
@@ -357,7 +372,7 @@ void UWidget_GameOptions::SetOptionsText()
 			break;
 		}
 	}
-
+	SetFOVQualitySettingText();
 	SetMasterGraphicsQualitySettingText();
 	SetTextureQualitySetting();
 	SetFoliageQualitySetting();
@@ -396,7 +411,8 @@ void UWidget_GameOptions::SetOptionsText()
 	SetUIOffscreenIndicatorsSetting();
 	SetUIOffscreenIndicatorSizeSettingText();
 	SetMouseSensitivityScaleSettingText();
-	SetFOVQualitySettingText();
+	SetCustomMouseCursorSettingText();
+	SetControllerMenuSensitivityScaleSettingText();
 }
 
 void UWidget_GameOptions::UpdateGameInstanceVariables()
@@ -437,7 +453,8 @@ void UWidget_GameOptions::LoadSettings()
 	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
 	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
 	TempFOV = HHGameGameUserSettings->FieldOfView;
-	
+	TempControllerMenuSensitivityScale = HHGameGameUserSettings->ControllerMenuSensitivityScale;
+	TempCustomMouseCursor = HHGameGameUserSettings->CustomMouseCursor;
 	UpdateGameInstanceVariables();
 	SetOptionsText();
 	
@@ -774,7 +791,7 @@ void UWidget_GameOptions::OnFOVControlLeftButtonPressed()
 
 	SetFOVQualitySettingText();
 		
-	OnFOVChangedDelegate.Broadcast();
+	//OnFOVChangedDelegate.Broadcast();
 }
 
 void UWidget_GameOptions::OnFOVControlRightButtonPressed()
@@ -786,7 +803,7 @@ void UWidget_GameOptions::OnFOVControlRightButtonPressed()
 
 	SetFOVQualitySettingText();
 	
-	OnFOVChangedDelegate.Broadcast();
+	//OnFOVChangedDelegate.Broadcast();
 }
 
 void UWidget_GameOptions::SetFOVQualitySettingText()
@@ -1478,6 +1495,49 @@ void UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed()
 void UWidget_GameOptions::SetMouseSensitivityScaleSettingText()
 {
 	MouseSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempMouseSensitivityScale)));
+}
+
+void UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed()
+{
+	if (TempCustomMouseCursor)
+		TempCustomMouseCursor = false;
+	else
+		TempCustomMouseCursor = true;
+	
+	SetCustomMouseCursorSettingText();
+}
+
+void UWidget_GameOptions::SetCustomMouseCursorSettingText()
+{
+	if (TempCustomMouseCursor)
+		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed()
+{
+	if (TempControllerMenuSensitivityScale >= 1)
+		TempControllerMenuSensitivityScale -= 1;
+	if (TempControllerMenuSensitivityScale < 1)
+		TempControllerMenuSensitivityScale = 10;
+
+	SetControllerMenuSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed()
+{
+	if (TempControllerMenuSensitivityScale < 11)
+		TempControllerMenuSensitivityScale += 1;
+	if (TempControllerMenuSensitivityScale >= 11)
+		TempControllerMenuSensitivityScale = 1;
+
+	SetControllerMenuSensitivityScaleSettingText();
+}
+
+void UWidget_GameOptions::SetControllerMenuSensitivityScaleSettingText()
+{
+	ControllerMenuSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempControllerMenuSensitivityScale)));
 }
 
 void UWidget_GameOptions::SetQualityLevelText(UWidget_OptionSelector* _OptionSelectorWidget, int32 _QualityValue)

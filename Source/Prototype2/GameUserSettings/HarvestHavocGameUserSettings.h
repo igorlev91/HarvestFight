@@ -59,6 +59,10 @@ public:
 	bool GetUIIndicatorSizeLarge() const { return UIIndicatorSizeLarge; }
 	UFUNCTION(BlueprintPure)
 	int32 GetMouseSensitivityScale() const { return MouseSensitivityScale; }
+	UFUNCTION(BlueprintPure)
+	bool GetCustomMouseCursor() const { return CustomMouseCursor; }
+	UFUNCTION(BlueprintPure)
+	int32 GetControllerMenuSensitivityScale() const { return ControllerMenuSensitivityScale; }
 
 protected:
 	/* Custom Graphics Settings */
@@ -98,4 +102,12 @@ protected:
 	/* Mouse sensitivity */
 	UPROPERTY(config, EditAnywhere)
 	int32 MouseSensitivityScale;
+
+	/* Mouse cursor */
+	UPROPERTY(config, EditAnywhere)
+	bool CustomMouseCursor;
+
+	/* Controller menu sensitivity */
+	UPROPERTY(config, EditAnywhere)
+	int32 ControllerMenuSensitivityScale;
 };
