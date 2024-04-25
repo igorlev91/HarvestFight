@@ -5,7 +5,7 @@
 
 UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
-	FieldOfView = 100;
+	FieldOfView = 90;
 	MasterGraphics = 3;
 	MasterVolume = 10;
 	MusicVolume = 10;
@@ -13,19 +13,10 @@ UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitia
 	SFXVolume = 10;
 	bPlayerStencil = true;
 	bEnemyAlwaysRed = false;
-	UIIndicators = (int8)EIndicatorUISetting::ONSIDESONLY;
+	UIIndicators = (int8)EIndicatorUISetting::ON;
 	UIIndicatorSizeLarge = false;
-	PlayerNames = true;
-	PlantValueFloatingUI = true;
-	SprintBar = true;
-	QuickTipTutorials = true;
-	QuickTipLobbyTutorials = 0;
-	QuickTipClassicTutorials = 0;
-	QuickTipBrawlTutorials = 0;
-	QuickTipBlitzTutorials = 0;
 	MouseSensitivityScale = 5;
-	CustomMouseCursor = true;
-	ControllerMenuSensitivityScale = 5;
+	
 }
 
 UHarvestHavocGameUserSettings* UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings()
@@ -81,27 +72,3 @@ void UHarvestHavocGameUserSettings::SetUIIndicatorSizeLarge(bool _bLargeSize)
 {
 	UIIndicatorSizeLarge = _bLargeSize;
 }
-
-void UHarvestHavocGameUserSettings::SetQuickTipLobbyTutorials(int32 _QuickTipLobbyTutorials)
-{
-	QuickTipLobbyTutorials = _QuickTipLobbyTutorials;
-}
-
-void UHarvestHavocGameUserSettings::SetQuickTipClassicTutorials(int32 _QuickTipClassicTutorials)
-{
-	QuickTipClassicTutorials = _QuickTipClassicTutorials;
-}
-
-void UHarvestHavocGameUserSettings::SetQuickTipBrawlTutorials(int32 _QuickTipBrawlTutorials)
-{
-	QuickTipBrawlTutorials = _QuickTipBrawlTutorials;
-}
-
-void UHarvestHavocGameUserSettings::SetQuickTipBlitzTutorials(int32 _QuickTipBlitzTutorials)
-{
-	QuickTipBlitzTutorials = _QuickTipBlitzTutorials;
-}
-
-
-
-

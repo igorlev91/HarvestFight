@@ -13,7 +13,6 @@ class PROTOTYPE2_API AFertiliser : public APickUpItem, public IInteractInterface
 
 public:
 	AFertiliser();
-	virtual void Destroyed() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 protected:
@@ -21,7 +20,7 @@ protected:
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
 
 	// Wilting
 public:

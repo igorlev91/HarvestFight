@@ -1,6 +1,5 @@
 
 
-
 #include "Fertiliser.h"
 
 #include "Net/UnrealNetwork.h"
@@ -18,21 +17,6 @@ AFertiliser::AFertiliser()
 	{
 		DestroyVFX = PoofVFX.Class;
 	}
-}
-
-void AFertiliser::Destroyed()
-{
-	if (IsValid(DestroyVFX) && bShouldWilt)
-	{
-		if (UWorld* World = GetWorld())
-		{
-			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-			if (IsValid(SpawnedVFX))
-				SpawnedVFX->SetLifeSpan(5.0f);
-		}
-	}
-	
-	Super::Destroyed();
 }
 
 void AFertiliser::Tick(float DeltaSeconds)
@@ -63,9 +47,6 @@ void AFertiliser::BeginPlay()
 	WiltDelayTimer = WiltDelay;
 
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	if (HasAuthority())
-		ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -15.0});
 }
 
 void AFertiliser::Interact(APrototype2Character* _Player)
@@ -99,7 +80,7 @@ void AFertiliser::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APro
 	}
 }
 
-EInteractMode AFertiliser::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode AFertiliser::IsInteractable(APrototype2PlayerState* _Player)
 {
 	if (!_Player)
 		return INVALID;
@@ -139,7 +120,8 @@ void AFertiliser::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Destroy(true);
+				Multi_OnDestroy();
+				Destroy();
 			}
 		}
 	}
@@ -177,13 +159,9 @@ void AFertiliser::Server_Drop()
 
 void AFertiliser::Multi_OnDestroy_Implementation()
 {
-	if (IsValid(DestroyVFX))
+	if (DestroyVFX)
 	{
-		if (UWorld* World = GetWorld())
-		{
-			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-			if (IsValid(SpawnedVFX))
-				SpawnedVFX->SetLifeSpan(5.0f);
-		}
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
 	}
 }

@@ -23,7 +23,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float _DeltaTime) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual bool IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void Interact(APrototype2Character* _Player) override;

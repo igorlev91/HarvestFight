@@ -17,11 +17,6 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-	virtual void NativeDestruct() override;
-
-	
-	void RemoveLoadingScreen();
-	void ShowLoadingScreen();
 
 	/* Public Variables */
 public:

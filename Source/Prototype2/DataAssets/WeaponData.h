@@ -10,8 +10,6 @@
 class APickUpItem;
 class UWeapon;
 class USoundCue;
-class UNiagaraSystem;
-
 /**
  * Data Asset to hold all data for the weapons
  */
@@ -20,14 +18,12 @@ class PROTOTYPE2_API UWeaponData : public UDataAsset
 {
 	GENERATED_BODY()
 public:
+
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	EWeaponAnimation WeaponAnimationType;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
 	USoundCue* AttackAudio;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Appearance")
-	UNiagaraSystem* PlantReadySparkle;
 	
 	UPROPERTY(EditDefaultsOnly, Category= "UI")
 	UTexture2D* WeaponIcon;

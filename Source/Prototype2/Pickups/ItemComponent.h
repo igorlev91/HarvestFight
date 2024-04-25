@@ -36,6 +36,9 @@ public:
 	UPROPERTY()
 	FOnGoldChanged OnGoldChangedDelegate;
 	
+	UPROPERTY(Replicated, EditAnywhere)
+	bool bDoBeginPlay = true;;
+	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Mesh;
 
@@ -43,7 +46,7 @@ public:
 	void OnRep_bGold();
 	
 	UPROPERTY(ReplicatedUsing = OnRep_bGold, EditAnywhere)
-	bool bGold;
+	bool bGold{false};
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInitialized{};

@@ -30,25 +30,6 @@ public:
 
 	float Delay = 0.2f;
 	float Counter = 0.2f;
-
-	UPROPERTY(EditAnywhere)
-	bool bOnlyUp = false;
-
-	UPROPERTY(EditAnywhere)
-	bool bOnAndOff = false;
-	UPROPERTY(EditAnywhere)
-	float InitialDelay = 1.0f;
-	UPROPERTY(EditAnywhere)
-	float TimeOff = 1.0f;
-	UPROPERTY(EditAnywhere)
-	float TimeOn = 1.0f;
-
-	UPROPERTY(EditAnywhere)
-	float Timer = 1.0f;
-	bool bTurnedOn = false;
-
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	bool bIsVent;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -59,7 +40,4 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	UStaticMeshComponent* LaunchPadMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	class USquashAndStretch* SquashAndStretch{nullptr};
 };

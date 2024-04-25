@@ -30,7 +30,7 @@ public:
 	/* Public Variables */
 public:
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UTextBlock* TextGameWinner;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

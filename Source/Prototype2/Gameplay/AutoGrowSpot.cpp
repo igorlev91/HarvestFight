@@ -18,24 +18,25 @@
 AAutoGrowSpot::AAutoGrowSpot()
 {
 	bReplicates = true;
+	bIsNormalGrowSpot = false;
 }
 
 void AAutoGrowSpot::BeginPlay()
 {
-	Super::BeginPlay();
+	AGrowSpot::BeginPlay();
 	
 	ReGrowTimer = ReGrowInterval;
 }
 
 void AAutoGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	AGrowSpot::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AAutoGrowSpot, ReGrowTimer);
 }
 
 void AAutoGrowSpot::Tick(float DeltaSeconds)
 {
-	Super::Tick(DeltaSeconds);
+	AGrowSpot::Tick(DeltaSeconds);
 		
 	if (!HasAuthority())
 		return;
@@ -47,7 +48,7 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 	}
 	if (ReGrowTimer <= 0)
 	{
-		if (IsValid(ItemRef) == false)
+		if (!GrowingItemRef)
 		{
 			if (auto Gamemode = UGameplayStatics::GetGameMode(GetWorld()))
 			{
@@ -78,7 +79,7 @@ void AAutoGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AP
 	OnDisplayInteractText_Unprotected(_InvokingWidget, _Owner);
 }
 
-EInteractMode AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return IsInteractable_Unprotected(_Player);
 }

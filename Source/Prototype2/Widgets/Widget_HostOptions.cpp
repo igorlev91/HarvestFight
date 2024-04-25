@@ -96,7 +96,8 @@ void UWidget_HostOptions::OnHostPressed()
 	if (!GameInstance)
 		return;
 
-	GameInstance->bTeams = IsTeamsButton->IsChecked();
+	if(GetOwningPlayer()->HasAuthority())
+		GameInstance->bTeams = IsTeamsButton->IsChecked();
 }
 
 void UWidget_HostOptions::ResetDefaults()

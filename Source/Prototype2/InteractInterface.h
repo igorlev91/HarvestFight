@@ -51,7 +51,7 @@ public:
 	virtual void ClientInteract(APrototype2Character* _Player){};
 	
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) = 0;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) = 0;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) = 0;
 
 	virtual void OnClientWalkAway(APrototype2Character* _Player = nullptr){}
 	EInterfaceType InterfaceType = EInterfaceType::Default;

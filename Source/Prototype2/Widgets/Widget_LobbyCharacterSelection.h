@@ -20,9 +20,9 @@ public:
 	virtual void NativeOnInitialized() override;
 	
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-	
+
 	UFUNCTION()
-	void UpdateButtonVisibility();
+	void SetSkinSelectionVisibility(ESlateVisibility _Visiblity);
 	
 	/* Updates the UI character image based on the selected character */
 	UFUNCTION(BlueprintCallable)
@@ -46,10 +46,10 @@ public:
 	void ChangeCharacter(bool _bIsTowardsRight);
 
 	UFUNCTION(BlueprintCallable)
-	void SetCharacterColourFromSelection();
+	void SetCharacterColourFromSelection(int32 _NumberOfColors);
 
 	UFUNCTION(BlueprintCallable)
-	void SetCharacterModelFromSelection();
+	void SetCharacterModelFromSelection(int32 _NumberOfCharacters);
 
 	UFUNCTION()
 	bool HasSamePlayerColour();
@@ -60,12 +60,16 @@ public:
 	UFUNCTION()
 	void SetPlayerID(int32 _PlayerID);
 
-	UFUNCTION(BlueprintCallable)
-	bool CanChangeTeams();
+	UFUNCTION()
+	int32 GetNumberOfRedPlayers();
+	UFUNCTION()
+	int32 GetNumberOfBluePlayers();
 
-	TArray<EColours> GetAvailableColours();
+	UFUNCTION()
+	void OnRep_TeamsDetails(bool _TeamA);
 
-	void UpdateWidgetSwitchers();
+	UFUNCTION()
+	bool CanChangeTeams(bool _ChangeRight);
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class ALobbyGamestate* GameStateReference;
@@ -86,25 +90,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	class UButton* Button_RightCharacter;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UWidgetSwitcher* Switch_CharacterLeft;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UWidgetSwitcher* Switch_CharacterRight;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UWidgetSwitcher* Switch_ColorLeft;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	class UWidgetSwitcher* Switch_ColorRight;
-	
-
 	UPROPERTY()
 	bool bTeams{};
 
 	UPROPERTY(VisibleAnywhere)
 	bool bLocalReady{};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bPlayerstateUpdated{};
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<ESlateVisibility> PreviousColorButtonVisibilities;
@@ -114,7 +104,7 @@ public:
 	FCharacterDetails IdealDetails{};
 
 	UPROPERTY(EditAnywhere)
-	int32 NumberOfCharacters{5};
+	int32 NumberOfCharacters{4};
 
 	UPROPERTY(EditAnywhere)
 	UColourData* SkinColourData{nullptr};

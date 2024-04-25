@@ -102,8 +102,4 @@ protected:
 
 	UPROPERTY(meta = (AllowPrivateAccess))
 	bool bDoOnce{true};
-
-public:
-	void SetBoingMagnitude(float _newMagnitude);
-	void SetAxis(FVector _Axis);
 };

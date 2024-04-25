@@ -52,6 +52,4 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="SFX")
 	USoundCue* Ambience;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category="SFX")
-	USoundCue* Music;
 };

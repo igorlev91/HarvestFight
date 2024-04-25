@@ -14,6 +14,7 @@
 APublicGrowSpot::APublicGrowSpot()
 {
 	bReplicates = true;
+	bIsNormalGrowSpot = false;
 }
 
 void APublicGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner,
@@ -22,7 +23,8 @@ void APublicGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, 
 	OnDisplayInteractText_Unprotected(_InvokingWidget, _Owner);
 }
 
-EInteractMode APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode APublicGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 {
+
 	return IsInteractable_Unprotected(_Player);
 }

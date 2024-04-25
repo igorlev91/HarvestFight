@@ -14,14 +14,14 @@ void UWeaponHoneyStick::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 	
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargeHoneyStickAttack)
+		if (_Player->AnimationData->FullChargePunchingAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeHoneyStickAttack);
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalHoneyStickAttack)
+		if (_Player->AnimationData->NormalPunchingAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalHoneyStickAttack);
 		}
@@ -68,10 +68,6 @@ void UWeaponHoneyStick::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 					//CheckIfCrownHit(_Player, HitPlayerCast);
 					_Player->Server_HitPlayer(HitPlayerCast, _AttackChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 					_Player->Server_CheckIfCrownHit(HitPlayerCast);
-					if (HitPlayerCast->GetHasCrown())
-					{
-						_Player->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
-					}
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))

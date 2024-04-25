@@ -11,7 +11,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/DataAssets/SeedData.h"
-#include "Kismet/KismetArrayLibrary.h"
 
 class UNavigationSystemV1;
 
@@ -38,21 +37,6 @@ void ASeedSpawner::BeginPlay()
 	{
 		MatchLengthSeconds = (GameState->GetMatchLengthMinutes() * 60) + GameState->GetMatchLengthSeconds();
 	}
-
-	SetUpSeedBag();
-}
-
-void ASeedSpawner::SetUpSeedBag()
-{
-	for (int i = 0; i < NumberOfSeedsPerStarValue.Num(); i++)
-	{
-		for (int k = 0; k < NumberOfSeedsPerStarValue[i]; k++)
-		{
-			SeedBag.Add(i);
-		}
-	}
-
-	ShuffleSeedBag();
 }
 
 void ASeedSpawner::SpawnSeedsOnTick(float _DeltaTime)
@@ -114,27 +98,10 @@ void ASeedSpawner::SpawnSeeds_RAW()
 				return;
 			}
 
-			int32 RandomIndex;
-			if (!bUseBagSystem)
+			int32 RandomIndex = rand() % PlantDataArray.Num();
+			if (PlantDataArray.Num() <= RandomIndex)
 			{
-				RandomIndex = rand() % PlantDataArray.Num();
-				if (PlantDataArray.Num() <= RandomIndex)
-				{
-					return;
-				}
-			}
-			else if (bUseWeightedSystem)
-			{
-				RandomIndex = rand() % SeedBag.Num();
-			}
-			else
-			{
-				if (BagPositionTracker >= SeedBag.Num())
-				{
-					ShuffleSeedBag();
-				}
-				RandomIndex = SeedBag[BagPositionTracker];
-				BagPositionTracker++;
+				return;
 			}
 
 			if (PlantDataArray[RandomIndex] == nullptr)
@@ -186,23 +153,6 @@ void ASeedSpawner::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ASeedSpawner, SpawnedSeeds);
-}
-
-void ASeedSpawner::ShuffleSeedBag()
-{
-	BagPositionTracker = 0;
-	if (SeedBag.Num() <= 0)
-		return;
-
-	int32 LastIndex = SeedBag.Num() - 1;
-	for (int32 i = 0; i <= LastIndex; i++)
-	{
-		int32 Index = FMath::RandRange(i, LastIndex);
-		if (i != Index)
-		{
-			SeedBag.Swap(i, Index);
-		}
-	}
 }
 
 void ASeedSpawner::Tick(float _DeltaTime)

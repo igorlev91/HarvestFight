@@ -11,7 +11,6 @@ UPrototypeGameInstance::UPrototypeGameInstance()
 	}
 }
 
-
 void UPrototypeGameInstance::OnStart()
 {
 	Super::OnStart();
@@ -24,28 +23,4 @@ void UPrototypeGameInstance::OnStart()
 void UPrototypeGameInstance::StartGameInstance()
 {
 	Super::StartGameInstance();
-}
-
-void UPrototypeGameInstance::ResetCachedPlayerDetails()
-{
-	FinalPlayerDetails.Empty();
-	FinalConnectionCount = 0;
-	MaxPlayersOnServer = 0;
-}
-
-void UPrototypeGameInstance::ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder)
-{
-	if (IsValid(this) && IsValid(Widget))
-	{
-		if (IsValid(GetGameViewportClient()))
-		{
-			GetGameViewportClient()->AddViewportWidgetContent(Widget->TakeWidget());
-		}
-	}
-}
-
-void UPrototypeGameInstance::RemoveLoadingScreen(UUserWidget *Widget)
-{
-	//UE_LOG(LogTemp, Warning, TEXT("Game instance - removed black screen transition"));
-	GetGameViewportClient()->RemoveViewportWidgetContent(Widget->TakeWidget());
 }

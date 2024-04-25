@@ -53,9 +53,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void LoadSettings();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnChangedCursorSetting();
 	
 	/* Child ControlWidgets */
 
@@ -346,52 +343,6 @@ public:
 	UFUNCTION()
 	void SetUIOffscreenIndicatorSizeSettingText();
 
-	// Player Names ingame UI control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* PlayerNames_Control;
-
-	bool bTempPlayerNames;
-
-	UFUNCTION()
-	void OnPlayerNamesControlButtonPressed();
-	UFUNCTION()
-	void SetPlayerNamesSettingText();
-
-	// Plant value floating UI control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* PlantValueFloatingUI_Control;
-
-	bool bPlantValueFloatingUI;
-
-	UFUNCTION()
-	void OnPlantValueFloatingUIControlButtonPressed();
-	UFUNCTION()
-	void SetPlantValueFloatingUISettingText();
-
-	// Plant value floating UI control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* SprintBar_Control;
-
-	bool bSprintBarUI;
-
-	UFUNCTION()
-	void OnSprintBarUIControlButtonPressed();
-	UFUNCTION()
-	void SetSprintBarUISettingText();
-
-	// First time tutorials
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* QuickTipTutorials_Control;
-
-	bool bQuickTipTutorials;
-
-	UFUNCTION()
-	void OnQuickTipTutorialsControlButtonPressed();
-	UFUNCTION(BlueprintCallable)
-	void QuickTipTutorialsReset();
-	UFUNCTION()
-	void SetQuickTipTutorialsSettingText();
-
 	// Mouse sensitivity control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* MouseSensitivityScale_Control;
@@ -404,30 +355,6 @@ public:
 	void OnMouseSensitivityScaleControlRightButtonPressed();
 	UFUNCTION()
 	void SetMouseSensitivityScaleSettingText();
-
-	// Mouse sensitivity control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* CustomMouseCursor_Control;
-	
-	bool TempCustomMouseCursor;
-	
-	UFUNCTION()
-	void OnCustomMouseCursorControlButtonPressed();
-	UFUNCTION()
-	void SetCustomMouseCursorSettingText();
-
-	// Controller menu sensitivity control
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UWidget_OptionSelector* ControllerMenuSensitivityScale_Control;
-
-	int32 TempControllerMenuSensitivityScale;
-
-	UFUNCTION()
-	void OnControllerMenuSensitivityScaleControlLeftButtonPressed();
-	UFUNCTION()
-	void OnControllerMenuSensitivityScaleControlRightButtonPressed();
-	UFUNCTION()
-	void SetControllerMenuSensitivityScaleSettingText();
 
 private:
 	/* Private Functions */

@@ -24,8 +24,7 @@ enum class ECharacters : uint8
 	COW = 0,
 	PIG = 1,
 	CHICKEN = 2,
-	DUCK = 3,
-	BEE = 4
+	DUCK = 3
 };
 
 UENUM(BlueprintType)
@@ -66,9 +65,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector4 PureToneColour{0.571125,0.031896,0.016807,1};
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FString RandomizedName{"Farmer"};
 };
 
 UCLASS()
@@ -79,15 +75,7 @@ public:
 	UPrototypeGameInstance();
 	virtual void OnStart() override;
 	virtual void StartGameInstance() override;
-	
-	void ResetCachedPlayerDetails();
-	
-	void ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder);
-	void RemoveLoadingScreen(UUserWidget *Widget);
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UUserWidget* BlackScreenWidget{ nullptr };
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bPlayerStentil{ false };
 	
@@ -139,7 +127,7 @@ public:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	TArray<UMaterialInstanceDynamic*> PlayerMaterialsDynamic{};
 	UPROPERTY(EditDefaultsOnly)
-	TArray<class UAnimationData*> PlayerModels{{},{},{},{},{}};
+	TArray<class UAnimationData*> PlayerModels{{},{},{},{}};
 	//
 
 	// Lobby

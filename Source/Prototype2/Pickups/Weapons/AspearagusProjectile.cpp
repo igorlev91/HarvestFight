@@ -50,9 +50,6 @@ AAspearagusProjectile::AAspearagusProjectile()
 	{
 		DestroyVFX = PoofVFX.Class;
 	}
-
-	DiveBombSFX = CreateDefaultSubobject<UAudioComponent>("DiveBombSFX");
-	DiveBombSFX->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -87,20 +84,6 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 
 void AAspearagusProjectile::Destroyed()
 {
-	if (IsValid(DestroyVFX))
-	{
-		if (UWorld* World = GetWorld())
-		{
-			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-			if (IsValid(SpawnedVFX))
-				SpawnedVFX->SetLifeSpan(5.0f);
-		}
-	}
-	if (DestroyedCue)
-	{
-		// Gets destroyed automatically after played
-		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DestroyedCue, GetActorLocation());		
-	}
 	Super::Destroyed();
 	
 }
@@ -117,8 +100,10 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	if (APrototype2Character* HitPlayerCast = Cast<APrototype2Character>(OtherActor))
 	{
 		if (HitPlayerCast != OwningPlayer)
-		{	
+		{
+			Destroy();
 			HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
+
 			if (HitPlayerCast->GetHasCrown())
 			{
 				int32 PointsForHit = static_cast<int32>(OwningPlayer->AttackChargeAmount);
@@ -127,10 +112,9 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 					PointsForHit = 1;
 				}
 				OwningPlayer->PlayerStateRef->AddCoins(PointsForHit);
-				HitPlayerCast->Client_PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+				HitPlayerCast->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
 			}
 		}
-		Destroy(true);
 		return;
 	}
 
@@ -142,12 +126,19 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 		HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
 	}
 	
-	Destroy(true);
+	Multi_OnDestroy();
+	
+	Destroy();
 }
 
 
 void AAspearagusProjectile::Multi_OnDestroy_Implementation()
 {
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }
 
 void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -181,24 +172,6 @@ void AAspearagusProjectile::OnRep_SetMesh()
 void AAspearagusProjectile::OnRep_GoldMaterial()
 {
 	AspearagusMesh->SetMaterial(0, GoldMaterial);
-}
-
-void AAspearagusProjectile::PlaySFX(USoundCue* _DiveBombSFX, USoundCue* _DestroyedSFX)
-{
-	if(HasAuthority())
-	{
-		Multi_PlaySFX(_DiveBombSFX, _DestroyedSFX);
-	}
-}
-
-void AAspearagusProjectile::Multi_PlaySFX_Implementation(USoundCue* _SFX, USoundCue* _DestroyedSFX)
-{
-	if (IsValid(_SFX))
-	{
-		DiveBombSFX->SetSound(_SFX);
-		DiveBombSFX->Play();
-	}
-	DestroyedCue = _DestroyedSFX;
 }
 
 void AAspearagusProjectile::Server_InitializeProjectile_Implementation(APrototype2Character* _Player,

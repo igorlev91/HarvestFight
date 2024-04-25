@@ -87,10 +87,6 @@ void UWeaponPunching::ExecuteAttack(float _AttackSphereRadius, APrototype2Charac
 					//Server_ExecuteAttack(HitPlayerCast, ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 					_Player->Server_HitPlayer(HitPlayerCast, ChargeAmount, _Player->GetActorLocation(), _Player->CurrentWeaponSeedData->WeaponData);
 					_Player->Server_CheckIfCrownHit(HitPlayerCast);
-					if (HitPlayerCast->GetHasCrown())
-					{
-						_Player->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
-					}
 				}
 			}
 			else if (auto HitSellBinCast = Cast<ASellBin_Winter>(HitResult.GetActor()))

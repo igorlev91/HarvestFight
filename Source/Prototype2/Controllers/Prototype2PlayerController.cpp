@@ -1,12 +1,4 @@
-/* Bachelor of Software Engineering
-Media Design School
-Auckland
-New Zealand
-(c) Media Design School
-File Name : APrototype2PlayerController.cp
-Description : Implementation for the player controller.
-Author/s : William Inman
-*/
+
 
 #include "Prototype2PlayerController.h"
 
@@ -66,7 +58,7 @@ void APrototype2PlayerController::Server_SetViewTarget_Networked_Implementation(
 void APrototype2PlayerController::Multi_SetViewTarget_Networked_Implementation(AActor* _ViewTarget)
 {
 	SetControlRotation({});
-	//SetInputMode(FInputModeUIOnly{});
+	SetInputMode(FInputModeUIOnly{});
 	bShowMouseCursor = true;
 	SetViewTargetWithBlend(_ViewTarget, 0.75f);
 }

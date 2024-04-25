@@ -14,26 +14,8 @@ APreGameArena::APreGameArena()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(Mesh);
+	RootComponent = Mesh;
 	bReplicates = true;
-
-	for(int i = 0; i < 9; i++)
-	{
-		FName ComponentName = FName("Spawn Location" + FString::FromInt(i));
-		SpawnLocations[i] = CreateDefaultSubobject<USkeletalMeshComponent>(ComponentName);
-		SpawnLocations[i]->SetupAttachment(RootComponent);
-		SpawnLocations[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		SpawnLocations[i]->SetVisibility(false);
-	}
-
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> FoundCowSkeletalMesh(TEXT("/Game/AlphaCharacters/CowV3/SM_Cow"));
-	if (FoundCowSkeletalMesh.Object != NULL)
-	{
-		for(int i = 0; i < 9; i++)
-		{
-			SpawnLocations[i]->SetSkeletalMeshAsset(FoundCowSkeletalMesh.Object);
-		}
-	}
 }
 
 void APreGameArena::BeginPlay()
@@ -92,7 +74,7 @@ void APreGameArena::Tick(float DeltaTime)
 		if (IsValid(GamemodeRef))
 		{
 			GamemodeRef->PreGameArenas.Remove(this);
-			Destroy(true);
+			Destroy();
 		}
 	}
 
@@ -102,13 +84,6 @@ void APreGameArena::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APreGameArena, AssignedTeam);
-}
-
-FVector APreGameArena::GetNextSpawnLocation()
-{
-	auto SpawnLocation = SpawnLocations[FMath::Clamp(SpawnLocationIndex, 0, 8)]->GetComponentLocation();
-	SpawnLocationIndex++;
-	return SpawnLocation;
 }
 
 void APreGameArena::Multi_SetArenaColour_Implementation()

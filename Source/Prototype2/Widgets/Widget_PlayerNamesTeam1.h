@@ -16,9 +16,6 @@ public:
 
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-
-	UFUNCTION(BlueprintCallable)
-	void UpdatePlayerNames();
 	
 	/* Public Variables */
 public:

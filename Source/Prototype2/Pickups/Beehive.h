@@ -21,7 +21,7 @@ public:
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual bool IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
 	void SetBeehiveLocation(FVector _Location);
 
 	UFUNCTION(Server, reliable)
@@ -40,9 +40,9 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	float FlowerEffectionDistance{600.0f};
-	
+
 	UPROPERTY(EditAnywhere)
-	UPlantData* HoneyData;
+	USeedData* HoneySeedData;
 	
 	UPROPERTY(Replicated, VisibleAnywhere)
 	bool bIsReadyToCollect = false;

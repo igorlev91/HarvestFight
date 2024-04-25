@@ -13,17 +13,12 @@ class PROTOTYPE2_API ACrown : public AActor
 	GENERATED_BODY()
 
 public:
-	//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, int32, _PlayerID);
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, FString, _PlayerName);
+	class UStaticMeshComponent* GetMesh();
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, int32, _PlayerID);
 	UPROPERTY(BlueprintAssignable)
 	FOnWinnerTakesTheCrown 	OnWinnerTakesTheCrownDelegate;
-
-	UFUNCTION()
-	void OnRep_AttachedPlayer();
-	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_AttachedPlayer)
-	class APrototype2Character* AttachedPlayer;
-	
+;
 private:
 	ACrown();
 	virtual void BeginPlay() override;
@@ -32,18 +27,29 @@ private:
 
 protected:
 	void AttachToCurrentWinner();
-	
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_AttachToCurrentWinner(USkeletalMeshComponent* _WinterMesh);
+
 	UPROPERTY(VisibleAnywhere)
 	class APrototype2Gamestate* GameStateRef;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated)
 	class USceneComponent* RootTransformComponent;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated)
 	class UStaticMeshComponent* Mesh;
-	
+
+	UPROPERTY(EditAnywhere)
+	UBobTransformComponent* BobTransformComponent;
+
 	UPROPERTY(VisibleAnywhere)
 	float UpdateDelay{3.0f};
 	UPROPERTY(VisibleAnywhere)
 	float UpdateDelayTimer{0.0f};
+
+	UFUNCTION(Server, Reliable)
+	void Server_OnWinnerTakesTheCrown(int32 _PlayerID);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnWinnerTakesTheCrown(int32 _PlayerID);
 };

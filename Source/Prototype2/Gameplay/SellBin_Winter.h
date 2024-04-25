@@ -32,9 +32,9 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float ImpactLocationZ{50};
 
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	//UStaticMeshComponent* IcePlane{nullptr};
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	UStaticMeshComponent* IcePlane{nullptr};
 
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
-	//UStaticMeshComponent* IceBoundary{nullptr};
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
+	UStaticMeshComponent* IceBoundary{nullptr};
 };

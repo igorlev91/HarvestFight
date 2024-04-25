@@ -3,7 +3,6 @@
 #include "Prototype2/Characters/LobbyCharacter.h"
 #include "Prototype2/Gamemodes/LobbyGamemode.h"
 #include "Net/UnrealNetwork.h"
-#include "Prototype2/Controllers/LobbyPlayerController.h"
 #include "Prototype2/HUDS/LobbyHUD.h"
 
 ALobbyPlayerState::ALobbyPlayerState()
@@ -15,12 +14,14 @@ void ALobbyPlayerState::BeginPlay()
 	Super::BeginPlay();
 
 	// Initialize HOST Skin
-	if (HasAuthority())
+	if (HasAuthority() && GetPlayerController() && GetPlayerController()->IsLocalController())
 	{
-		if (auto LocalPlayerController = GetWorld()->GetFirstPlayerController<ALobbyPlayerController>())
+		UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
+		if (IsValid(SomeGameInstance))
 		{
-			LocalPlayerController->GetHUD<ALobbyHUD>()->OnRep_CharacterDetails(Details);
+			Details.AnimationData = SomeGameInstance->PlayerModels[0];
 		}
+		OnRep_CharacterDetails();
 	}
 }
 
@@ -112,13 +113,37 @@ void ALobbyPlayerState::Server_UpdateCharacterMaterial_Implementation(FCharacter
 
 void ALobbyPlayerState::OnRep_CharacterDetails()
 {
-	auto LocalPlayerController = GetWorld()->GetFirstPlayerController();
-	if (IsValid(LocalPlayerController) == false)
+	AActor* SomePawn = GetPawn();
+	if (!IsValid(SomePawn))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Error: LobbyPlayerState Failed To Get Pawn"));
+		return;
+	}
+	
+	ALobbyCharacter* SomeCharacter = Cast<ALobbyCharacter>(SomePawn);
+	if (!IsValid(SomeCharacter))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Error: LobbyPlayerState Failed To Get Character"));
+		return;
+	}
+
+	if (!SomeCharacter->IsLocallyControlled())
 		return;
 
-	auto LocalLobbyHUD = LocalPlayerController->GetHUD<ALobbyHUD>();
-	if (IsValid(LocalLobbyHUD) == false)
+	UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
+	if (!IsValid(SomeGameInstance))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Error: LobbyPlayerState Failed To Get GameInstance"));
 		return;
-
-	LocalLobbyHUD->OnRep_CharacterDetails(Details);
+	}
+	
+	SomeCharacter->GetMesh()->SetSkeletalMeshAsset(SomeGameInstance->LobbyPlayerModels[(int16)Details.Character]);
+	
+	if (IsValid(SomeGameInstance->LobbyAnimBP))
+		SomeCharacter->GetMesh()->SetAnimInstanceClass(SomeGameInstance->LobbyAnimBP);
+	
+	SomeGameInstance->PlayerMaterialsDynamic[(int16)Details.Character]->SetVectorParameterValue(FName("Cow Colour"), Details.CharacterColour);
+	SomeGameInstance->PlayerMaterialsDynamic[(int16)Details.Character]->SetVectorParameterValue(FName("Spot Colour"), Details.CharacterSubColour);
+	
+	SomeCharacter->GetMesh()->SetMaterial(0, SomeGameInstance->PlayerMaterialsDynamic[(int16)Details.Character]);
 }

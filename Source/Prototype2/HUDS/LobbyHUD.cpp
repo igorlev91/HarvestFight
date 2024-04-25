@@ -9,7 +9,6 @@
 #include "Prototype2/Widgets/Widget_LobbyPlayerHUDV2.h"
 #include "Engine/Canvas.h"
 #include "CanvasItem.h"
-#include "Components/CircularThrobber.h"
 
 void ALobbyHUD::BeginPlay()
 {
@@ -38,25 +37,9 @@ void ALobbyHUD::BeginPlay()
 
 void ALobbyHUD::OnRep_CharacterDetails(FCharacterDetails& _SomeDetails)
 {
-	if(IsValid(HUDWidget) == false)
+	if(!IsValid(HUDWidget))
 		return;
 
-	HUDWidget->WBP_LobbyCharacterSelection->bPlayerstateUpdated = true;
 	HUDWidget->WBP_LobbyCharacterSelection->IdealDetails = _SomeDetails;
 	HUDWidget->WBP_LobbyCharacterSelection->UpdateCharacterImage();
-}
-
-bool ALobbyHUD::IsChangingCharacterSkin() const
-{
-	if(IsValid(HUDWidget) == false)
-		return true;
-
-	bool bIsChangingSkin = !HUDWidget->WBP_LobbyCharacterSelection->bPlayerstateUpdated;
-
-	if (bIsChangingSkin)
-		HUDWidget->Throbber_CharacterLoading->SetVisibility(ESlateVisibility::Visible);
-	else
-		HUDWidget->Throbber_CharacterLoading->SetVisibility(ESlateVisibility::Hidden);
-	
-	return bIsChangingSkin;
 }

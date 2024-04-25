@@ -13,13 +13,6 @@ public:
 	class ACameraActor* GetEndGameCamera();
 	class UArrowComponent* GetWinPosition(int32 _Placement);
 	class UArrowComponent* GetLossPosition(int32 _Placement);
-
-	void PlayConfetteVFX();
-
-	UFUNCTION(Server, Reliable)
-	void Server_PlayConfetteVFX();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayConfetteVFX();
 	
 	UPROPERTY(EditAnywhere, Replicated)
 	USceneComponent* BaseRootComponent;
@@ -47,15 +40,6 @@ protected:
 
 protected:
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = VFX)
-	class UNiagaraComponent* WinConfetteComponent;
-
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = VFX)
-	class UNiagaraComponent* SecondWinConfetteComponent;
-
-	UPROPERTY(EditDefaultsOnly)
-	class USoundCue* ConfettiCue;
-	
 	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	//TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;
 	

@@ -22,11 +22,8 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	if (HasAuthority())
-		SetReplicatingMovement(true);
+	
+	SetReplicatingMovement(true);
 
 	Lifetime = InitialLifetime;
 	WiltDelayTimer = WiltDelay;
@@ -65,8 +62,13 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, cla
 	}
 }
 
-EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player)
 {
+	if (!bGrown)
+	{
+		return INVALID;
+	}
+	
 	if (!_Player)
 		return INVALID;
 
@@ -108,6 +110,7 @@ void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APlant, bShouldWilt);
 	DOREPLIFETIME(APlant, bPoisoned);
+	DOREPLIFETIME(APlant, bGrown);
 }
 
 void APlant::Wilt(float DeltaTime)
@@ -128,7 +131,8 @@ void APlant::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Destroy(true);
+				Multi_OnDestroy();
+				Destroy();
 			}
 		}
 	}
@@ -166,9 +170,14 @@ void APlant::Server_Destroy_Implementation()
 
 void APlant::Multi_ScalePlant()
 {
-	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale * PlantScaleMultiplier);
+	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale);
 }
 
 void APlant::Multi_OnDestroy_Implementation()
 {
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
 }

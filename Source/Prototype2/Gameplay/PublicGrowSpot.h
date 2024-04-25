@@ -13,5 +13,5 @@ class PROTOTYPE2_API APublicGrowSpot : public AGrowSpot
 public:
 	APublicGrowSpot();
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int32 _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
 };

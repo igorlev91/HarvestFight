@@ -37,7 +37,7 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateGameModeText();
 	
 	/* Set game speed control */
-	GameLength_Control->OptionText->SetText(FText::FromString("Game Length"));
+	GameLength_Control->OptionText->SetText(FText::FromString("Game Speed"));
 	UpdateGameSpeedText();
 
 	/* Set stealing control */
@@ -45,16 +45,12 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateStealingText();
 
 	/* Set fertiliser control */
-	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn"));
+	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn (if available)"));
 	UpdateFertiliserText();
 
 	/* Set cement control */
-	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn"));
+	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn (if available)"));
 	UpdateCementText();
-
-	/* Set self cementing control */
-	SelfCement_Control->OptionText->SetText(FText::FromString("Own Plot Cementing"));
-	UpdateSelfCementText();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeConstruct()
@@ -96,13 +92,6 @@ void UWidget_LobbyPlayerHUDV2::NativeConstruct()
 	{
 		Cement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
 		Cement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
-	}
-
-	/* Self Cement control buttons */
-	if (SelfCement_Control)
-	{
-		SelfCement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
-		SelfCement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
 	}
 }
 
@@ -193,28 +182,12 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	KickOverlays.Add(P6KickOverlay);
 
 	InitTeams();
-
-	RemoveLoadingScreen();
-}
-
-void UWidget_LobbyPlayerHUDV2::NativeDestruct()
-{
-	Super::NativeDestruct();
-
-	ShowLoadingScreen();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (BlackScreenTimer > 0)
-	{
-		BlackScreenTimer -= InDeltaTime;
-		RemoveLoadingScreen();
-	}
-	
-	
 	OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
 	if (!IsValid(OwningPlayerState))
 		return;
@@ -282,11 +255,6 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 				case ECharacters::DUCK:
 					{
 						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
-						break;
-					}
-				case ECharacters::BEE:
-					{
-						Icons[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
 						break;
 					}
 				default:
@@ -368,6 +336,7 @@ void UWidget_LobbyPlayerHUDV2::SetReady()
 
 		// TOGGLE CHARACTER CHANGING VISIBILITY
 		WBP_LobbyCharacterSelection->bLocalReady = true;
+		WBP_LobbyCharacterSelection->SetSkinSelectionVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -381,6 +350,7 @@ void UWidget_LobbyPlayerHUDV2::SetCancel()
 		
 		// TOGGLE CHARACTER CHANGING VISIBILITY
 		WBP_LobbyCharacterSelection->bLocalReady = false;
+		WBP_LobbyCharacterSelection->SetSkinSelectionVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -394,7 +364,6 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetClockworkFarm()))); // Increase vote counter for map
-	_MapChoiceWidget->RandomLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetRandomFarm()))); // Increase vote counter for map
 
 	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->GetFarm() > 0) // Normal farm
@@ -421,24 +390,15 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
-
-	if (GameStateReference->GetRandomFarm() > 0) // Random farm
-		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Visible); 
-	else
-		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
 {
 	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
-	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= -0.5f)
+	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
 	{
-		//_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
-		//_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
-		if (GameStateReference->GetMapChoiceTotalLengthSeconds() > -1.0f && GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
-			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("0")));
-		else
-			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("")));
+		_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
+		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
 }
 
@@ -663,38 +623,6 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 
-void UWidget_LobbyPlayerHUDV2::RemoveLoadingScreen()
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-
-	if (!GameInstance)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("No game instance"));
-		return;
-	}
-
-	if (!GameInstance->BlackScreenWidget)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("No black screen widget"));
-		return;
-	}
-	
-	GameInstance->RemoveLoadingScreen(GameInstance->BlackScreenWidget);
-}
-
-void UWidget_LobbyPlayerHUDV2::ShowLoadingScreen()
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-
-	if (!GameInstance)
-		return;
-
-	if (!GameInstance->BlackScreenWidget)
-		return;
-	
-	GameInstance->ShowLoadingScreen(GameInstance->BlackScreenWidget, 0);
-}
-
 void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 {
 	TempGameSpeed = DefaultGameSpeed;
@@ -709,16 +637,10 @@ void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 	TempCementSetting = DefaultCementSetting;
 	UpdateCementText();
 	SetCementControl();
-	TempSelfCementSetting = DefaultSelfCementSetting;
-	UpdateSelfCementText();
-	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ResetSetting()
 {
-	TempHHGameMode = HHGameMode;
-	UpdateGameModeText();
-	SetGameModeControl();
 	TempGameSpeed = GameSpeed;
 	UpdateGameSpeedText();
 	SetGameSpeedControl();
@@ -731,9 +653,6 @@ void UWidget_LobbyPlayerHUDV2::ResetSetting()
 	TempCementSetting = CementSetting;
 	UpdateCementText();
 	SetCementControl();
-	TempSelfCementSetting = SelfCementSetting;
-	UpdateSelfCementText();
-	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
@@ -742,7 +661,6 @@ void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
 	SetStealingControl();
 	SetFertiliserControl();
 	SetCementControl();
-	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
@@ -770,8 +688,6 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
 			break;
 		}
 	}
-
-	ToggleAvailableSettings();
 
 	UpdateGameModeText();
 }
@@ -801,7 +717,7 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlRightButtonPressed()
 			break;
 		}
 	}
-	ToggleAvailableSettings();
+
 	UpdateGameModeText();
 }
 
@@ -986,23 +902,4 @@ void UWidget_LobbyPlayerHUDV2::UpdateCementText()
 void UWidget_LobbyPlayerHUDV2::SetCementControl()
 {
 	CementSetting = TempCementSetting;
-}
-
-void UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed()
-{
-	TempSelfCementSetting = !TempSelfCementSetting;
-	UpdateSelfCementText();
-}
-
-void UWidget_LobbyPlayerHUDV2::UpdateSelfCementText()
-{
-	if (TempSelfCementSetting)
-		SelfCement_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		SelfCement_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_LobbyPlayerHUDV2::SetSelfCementControl()
-{
-	SelfCementSetting = TempSelfCementSetting;
 }

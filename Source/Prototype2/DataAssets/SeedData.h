@@ -52,7 +52,4 @@ public:
 	class UPlantData* PlantData;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Fertiliser Data")
 	class UFertiliserData* FertiliserData;
-
-	UPROPERTY(EditDefaultsOnly, Category= "Most Valuable Crop Sound")
-	class USoundCue* HighValueCropSound;
 };

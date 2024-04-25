@@ -22,27 +22,55 @@ UItemComponent::UItemComponent()
 void UItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!bDoBeginPlay)
+	{
+		return;
+	}
+
 	
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	
+	//if (!bDoBeginPlay)
+	//{
+	//	return;
+	//}
+	//
+	//Mesh->SetCollisionProfileName("Ragdoll");
+	//Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	//Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	//Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	//Mesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+//
+	////if(GetOwner()->HasAuthority())
+	////{
+	////	//Mesh->SetSimulatePhysics(true);
+	////}
+//
+	//Mesh->SetRenderCustomDepth(false);
 }
 
 void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActorComponentTickFunction* _ThisTickFunction)
 {
 	Super::TickComponent(_DeltaTime, _TickType, _ThisTickFunction);
+
+	if (!bInitialized)
+	{
+		OnRep_bGold();
+	}
 }
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
 {
-	_Player->PickupItemV2(_ItemPickedUp);
-	//_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->ServerData.PickupActor);
-	//_Player->HeldItem = _ItemPickedUp;
+	_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->ServerData.PickupActor);
+	_Player->HeldItem = _ItemPickedUp;
 }
 
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UItemComponent, bGold);
+	DOREPLIFETIME(UItemComponent, bDoBeginPlay);
 	DOREPLIFETIME(UItemComponent, PlayerWhoThrewItem);
 }
 
@@ -56,10 +84,7 @@ void UItemComponent::InitializeSeed(TArray<UMaterialInstance*> _InMaterials, USt
 	for (int i = 0; i < _InMaterials.Num(); i++)
 	{
 		if (IsValid(_InMaterials[i]))
-		{
 			Mesh->SetMaterial(i, _InMaterials[i]);
-			Mesh->MarkRenderStateDirty();
-		}
 	}
 }
 
@@ -78,9 +103,6 @@ void UItemComponent::OnRep_bGold()
 		auto CastedOwner = Cast<APickUpItem>(MyOwner);
 		if (!IsValid(CastedOwner))
 			return;
-
-		CastedOwner->GoldChanged();
-		
 		if (!IsValid(CastedOwner->ServerData.SeedData))
 			return;
 		
@@ -92,32 +114,8 @@ void UItemComponent::OnRep_bGold()
 				Mesh->SetMaterial(i, CastedOwner->ServerData.SeedData->BabyGoldMaterials[0]);
 			bInitialized = true;
 		}
+		OnGoldChangedDelegate.Broadcast();
 	}
-	else
-	{
-		auto MyOwner = GetOwner();
-		if (!IsValid(MyOwner))
-			return;
-		auto CastedOwner = Cast<APickUpItem>(MyOwner);
-		if (!IsValid(CastedOwner))
-			return;
-
-		CastedOwner->GoldChanged();
-		
-		if (!IsValid(CastedOwner->ServerData.SeedData))
-			return;
-		
-		for (int i = 0; i < Mesh->GetNumMaterials(); i++)
-		{
-			if (CastedOwner->ServerData.SeedData->BabyMaterials.Num() > i)
-				Mesh->SetMaterial(i, CastedOwner->ServerData.SeedData->BabyMaterials[i]);
-			else if (CastedOwner->ServerData.SeedData->BabyMaterials.Num() > 0)
-				Mesh->SetMaterial(i, CastedOwner->ServerData.SeedData->BabyMaterials[0]);
-		}
-	}
-
-	/* Toggle GOLD sound */
-	OnGoldChangedDelegate.Broadcast();
 }
 
 void UItemComponent::Multi_DisableCollisionAndAttach_Implementation()

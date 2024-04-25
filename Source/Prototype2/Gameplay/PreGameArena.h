@@ -17,9 +17,6 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 
-	UFUNCTION()
-	FVector GetNextSpawnLocation();
-	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_SetArenaColour();
 	
@@ -31,15 +28,6 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	int32 AssignedTeam{};
 protected:
-	UPROPERTY(VisibleAnywhere)
-	TArray<class USkeletalMeshComponent*> SpawnLocations{
-		nullptr, nullptr, nullptr,
-		nullptr, nullptr, nullptr,
-		nullptr, nullptr, nullptr
-	};
-
-	UPROPERTY(VisibleAnywhere)
-	int32 SpawnLocationIndex{};
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess))
 	class APlayerStart* PlayerStart{nullptr};

@@ -58,13 +58,9 @@ void ADataAssetWorldOverride::BeginPlay()
 
 	if (WorldOverrideData)
 	{
-		if (WorldOverrideData->Ambience)
+		if ( WorldOverrideData->Ambience)
 		{
 			UGameplayStatics::PlaySound2D(GetWorld(), WorldOverrideData->Ambience);
-		}
-		if (WorldOverrideData->Music)
-		{
-			UGameplayStatics::PlaySound2D(GetWorld(), WorldOverrideData->Music);
 		}
 	}
 }

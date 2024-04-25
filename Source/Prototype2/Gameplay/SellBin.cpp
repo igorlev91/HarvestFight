@@ -48,26 +48,10 @@ ASellBin::ASellBin()
 		PoofSystem = PoofVFX.Class;
 	}
 
-	static ConstructorHelpers::FObjectFinder<USoundCue> FoundSellCue(TEXT("/Game/SFX/CUE_Sell"));
-	if (FoundSellCue.Object != nullptr)
-	{
-		SellCue = FoundSellCue.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<USoundCue> FoundPumpkinCue(TEXT("/Game/SFX/MostValueCrop/Pumpkin_Cue"));
-	if (FoundPumpkinCue.Object != nullptr)
-	{
-		EnemySellCue = FoundPumpkinCue.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<USoundAttenuation> FoundSellAttenuation(TEXT("/Game/SFX/MandrakeAttenuationSettings"));
-	if (FoundSellAttenuation.Object != nullptr)
-	{
-		SellAttenuation = FoundSellAttenuation.Object;
-	}
-
 	ThrowToSellCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("ThrowToSellCollider"));
 	ThrowToSellCollider->SetupAttachment(RootComponent);
+	
+	//SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
 }
 
 void ASellBin::BeginPlay()
@@ -75,11 +59,19 @@ void ASellBin::BeginPlay()
 	Super::BeginPlay();
 
 	InterfaceType = EInterfaceType::SellBin;
-	
+
+	// Sell UI related
+	StartPosition = FVector(0, 0, 0);// SellAmountWidgetComponent->GetComponentLocation(); // Set UI start location variable
+	MovingTimer = MovingTime; // Set starting timer to equal max time
+
 	ItemComponent->Mesh->SetMobility(EComponentMobility::Movable);
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
 	
+	ItemComponent->Mesh->SetNotifyRigidBodyCollision(true);
+	ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASellBin::OnPlayerTouchSellBin);
+	ItemComponent->Mesh->SetIsReplicated(true);
 	
 	if (SellBinData)
 	{
@@ -87,15 +79,8 @@ void ASellBin::BeginPlay()
 	}
 
 	//SSComponent->SetMeshToStretch(ItemComponent->Mesh);
-
-	if (HasAuthority())
-	{
-		ItemComponent->Mesh->SetNotifyRigidBodyCollision(true);
-		ItemComponent->Mesh->OnComponentHit.AddDynamic(this, &ASellBin::OnPlayerTouchSellBin);
-		ItemComponent->Mesh->SetIsReplicated(true);
-		
-		ThrowToSellCollider->OnComponentBeginOverlap.AddDynamic(this, &ASellBin::SellOnThrown);
-	}
+	
+	ThrowToSellCollider->OnComponentBeginOverlap.AddDynamic(this, &ASellBin::SellOnThrown);
 }
 
 void ASellBin::Tick(float DeltaTime)
@@ -107,180 +92,317 @@ void ASellBin::Tick(float DeltaTime)
 	//MoveUIComponent(DeltaTime);
 }
 
-EInteractMode ASellBin::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode ASellBin::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return INVALID;
+}
+
+void ASellBin::Server_FireParticleSystem_Implementation()
+{
+	//Multi_FireParticleSystem();
+}
+
+void ASellBin::Multi_FireSellVFXCrop_Implementation(APrototype2Character* _Player, APlant* _Plant)
+{
+	APrototype2PlayerState* SomePlayerState = _Player->GetPlayerState<APrototype2PlayerState>();
+	if (!SomePlayerState)
+		return;
+
+	int32 PlantSellValue = (_Plant->ServerData.SeedData->BabyStarValue * _Plant->ServerData.SeedData->PlantData->Multiplier * (_Plant->NumberOfNearbyFlowers + 1));
+	PlantSellValue *= 10;
+	int32 IncreaseAmount = _Plant->ItemComponent->bGold ? PlantSellValue * _Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
+
+	InteractSystem->SetVectorParameter(FName("Coin Colour"), SomePlayerState->Details.PureToneColour);
+	InteractSystem->SetIntParameter(FName("CoinCount"), IncreaseAmount);
+	InteractSystem->Activate(true);
+
+	if (PoofSystem)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{});
+		SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+}
+
+void ASellBin::Multi_FireSellVFX_Implementation(APrototype2Character* _Player, int32 _SellAmount)
+{
+	APrototype2PlayerState* SomePlayerState = _Player->GetPlayerState<APrototype2PlayerState>();
+	if (!SomePlayerState)
+		return;
+
+	InteractSystem->SetVectorParameter(FName("Coin Colour"), SomePlayerState->Details.PureToneColour);
+	InteractSystem->SetIntParameter(FName("CoinCount"), _SellAmount);
+	InteractSystem->Activate(true);
+
+	if (PoofSystem)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{});
+		SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+}
+
+void ASellBin::Client_MoveUI_Implementation(float _DeltaTime)
+{
+	if (bIsMoving == true)
+	{
+		
+	}
+}
+
+void ASellBin::Multi_FireParticleSystem_Implementation()
+{
+	// Spawn a one-shot emitter at the InteractSystem's location
+	//UNiagaraComponent* NiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ParticleSystem, InteractSystem->GetComponentLocation());
+	//NiagaraComponent->SetIsReplicated(true);
+	//// Set the NiagaraComponent to auto-destroy itself after it finishes playing
+	//NiagaraComponent->SetAutoDestroy(true);
+	//NiagaraComponent->Activate();
+}
+
+void ASellBin::HideParticleSystem()
+{
+	if (SellAmountWidgetComponent)
+	{
+		bWidgetVisible = false;
+		if (SellAmountWidgetComponent->GetWidget())
+		{
+			if (auto SellCropUI = Cast<UWidget_SellCropUI>(SellAmountWidgetComponent->GetWidget()))
+			{
+				if (SellCropUI->SellText)
+				{
+					SellCropUI->SellText->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
+		}
+	}
 }
 
 void ASellBin::ClientInteract(APrototype2Character* _Player)
 {
 	// Force Bump Into SellBin
+	////////
+	return;
+	////////
+	
+	if (_Player->HeldItem)
+	{
+		if (auto Plant = Cast<APlant>(_Player->HeldItem))
+		{
+			bWidgetVisible = true;
+			//_Player->UpdateDecalDirection(false);
+			if (_Player->PlayerHUDRef)
+				_Player->PlayerHUDRef->ClearPickupUI();
+		}
+	}
 }
 
 void ASellBin::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ASellBin, ServerSellData);
 }
 
 void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (IsValid(OtherActor) == false)
-		return;
-
-	APrototype2Character* PlayerCharacter = Cast<APrototype2Character>(OtherActor);
-	if (IsValid(PlayerCharacter) == false)
-		return;
-
-	if (IsValid(PlayerCharacter->HeldItem) == false)
-		return;
-
-	auto Plant = Cast<APlant>(PlayerCharacter->HeldItem);
-	if (IsValid(Plant) == false)
-		return;
-
-	auto Gamestate = UGameplayStatics::GetGameState(GetWorld());
-	if (IsValid(Gamestate) == false)
-		return;
-
-	auto SeedData = Plant->ServerData.SeedData;
-	if (IsValid(SeedData) == false)
-		return;
-
-	auto PlantData = SeedData->PlantData;
-	if (IsValid(PlantData) == false)
+	if (!OtherActor->HasNetOwner())
 		return;
 	
-	APrototype2Gamestate* CastedGamestate = Cast<APrototype2Gamestate>(Gamestate);
+	if (!OtherActor)
+		return;
 	
-	int32 PlantSellValue = (SeedData->BabyStarValue * PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
-	PlantSellValue *= CastedGamestate->SellMultiplier;
-	int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * SeedData->GoldMultiplier : PlantSellValue;
+	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
 	
-	PlayerCharacter->AddCoins(IncreaseAmount);
-	PlayerCharacter->HeldItem->Destroy(true);
-	PlayerCharacter->HeldItem = nullptr;
-	PlayerCharacter->OnRep_HeldItem();
+	if (!SomePlayer)
+		return;
 	
-	FServerSellData NewServerSellData{};
-	NewServerSellData.CoinCount = IncreaseAmount * SeedData->BabyStarValue;
-	NewServerSellData.SellValue = IncreaseAmount;
-	NewServerSellData.LastPlayerToSell = PlayerCharacter;
-	NewServerSellData.LastPlayerStateToSell = PlayerCharacter->GetPlayerState<APrototype2PlayerState>();
-	NewServerSellData.TimeOfSell = GetWorld()->GetTimeSeconds();
-	ServerSellData = NewServerSellData;
-	
-	OnRep_ItemSold();
+	//UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
+	if (SomePlayer->HeldItem)
+	{
+		if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
+		{
+			//Client_OnPlayerSell(SomePlayer);
+			//SomePlayer->PlayerStateRef->Client_OnAddCoins();
+			
+			// Audio
+			if (HasAuthority())
+			{
+				//SSComponent->Boing();
+				Multi_FireSellVFXCrop(SomePlayer, Plant);
+				
+				if (SomePlayer->SellCue)
+				{
+					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+				}
+
+				SomePlayer->PlayerStateRef->AddCoins(Plant);
+				
+				SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
+				
+				// Destroy the crop the player is holding
+				SomePlayer->HeldItem->Destroy();
+				SomePlayer->HeldItem = nullptr;
+				SomePlayer->Client_RefreshCurrentMaxSpeed();
+				Multi_OnPlayerSell(SomePlayer);
+			}
+		}
+	}
+}
+
+void ASellBin::MoveUIComponent(float _Dt)
+{
+	if (SellAmountWidgetComponent)
+	{
+		if (MovingTimer > 0)
+		{
+			MovingTimer -= _Dt; // Decrease timer
+			SellAmountWidgetComponent->AddLocalOffset(FVector(0, 0, MoveSpeed * _Dt)); // Move component
+		}
+		else
+		{
+			MovingTimer = MovingTime;
+			bIsMoving = false;
+			HideParticleSystem();
+		}
+	}
 }
 
 void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* OtherActor,
 	class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	if (IsValid(OtherActor) == false)
+	if (!OtherActor)
 		return;
 
-	APlant* ThrownPlant = Cast<APlant>(OtherActor);
-	if (IsValid(ThrownPlant) == false)
-		return;
-	
-	auto PlayerWhoThrewItem = ThrownPlant->ItemComponent->PlayerWhoThrewItem;
-	if (IsValid(PlayerWhoThrewItem) == false)
-		return;
-
-	auto Gamestate = UGameplayStatics::GetGameState(GetWorld());
-	if (IsValid(Gamestate) == false)
-		return;
-
-	auto SeedData = ThrownPlant->ServerData.SeedData;
-	if (IsValid(SeedData) == false)
-		return;
-
-	auto PlantData = SeedData->PlantData;
-	if (IsValid(PlantData) == false)
-		return;
-	
-	APrototype2Gamestate* CastedGamestate = Cast<APrototype2Gamestate>(Gamestate);
-	
-	int32 PlantSellValue = (SeedData->BabyStarValue * PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
-	PlantSellValue *= CastedGamestate->SellMultiplier;
-	int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * SeedData->GoldMultiplier : PlantSellValue;
-	
-	PlayerWhoThrewItem->AddCoins(IncreaseAmount);
-	ThrownPlant->Destroy(true);
-	
-	FServerSellData NewServerSellData{};
-	NewServerSellData.CoinCount = IncreaseAmount * SeedData->BabyStarValue;
-	NewServerSellData.SellValue = IncreaseAmount;
-	NewServerSellData.LastPlayerToSell = PlayerWhoThrewItem;
-	NewServerSellData.LastPlayerStateToSell = PlayerWhoThrewItem->GetPlayerState<APrototype2PlayerState>();
-	NewServerSellData.TimeOfSell = GetWorld()->GetTimeSeconds();
-	ServerSellData = NewServerSellData;
-
-	OnRep_ItemSold();
-}
-
-void ASellBin::OnRep_ItemSold()
-{
-	auto SellValue = ServerSellData.SellValue;
-	auto CoinCount = ServerSellData.CoinCount;
-	auto LastPlayerToSell = ServerSellData.LastPlayerToSell;
-	auto LastPlayerStateToSell = ServerSellData.LastPlayerStateToSell;
-	
-	if (SellValue <= 0)
-		return;
-
-	if (IsValid(LastPlayerToSell) == false)
-		return;
-
-	if (IsValid(LastPlayerStateToSell) == false)
-		return;
-
-	auto LocalPlayerController = GetWorld()->GetFirstPlayerController();
-	if (IsValid(LocalPlayerController) == false)
-		return;
-
-	if (LocalPlayerController->IsLocalController() == false)
-		return;
-
-	if (GetWorld()->GetRealTimeSeconds() <= 5.0f)
-		return;
-
-	auto LocalPlayerState = LocalPlayerController->GetPlayerState<APrototype2PlayerState>();
-	if (IsValid(LocalPlayerState) == false)
-		return;
-	
-	// Sell SFX
-	if (LocalPlayerState->Details.Colour == LastPlayerStateToSell->Details.Colour)
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SellCue, GetActorLocation(), 1, 1, 0, SellAttenuation);
-	else
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySellCue, GetActorLocation(), 1, 1, 0, SellAttenuation);
-
-	// Coin VFX
-	InteractSystem->SetVectorParameter(FName("Coin Colour"), LastPlayerStateToSell->Details.PureToneColour);
-	InteractSystem->SetIntParameter(FName("CoinCount"), CoinCount);
-	InteractSystem->Activate(true);
-
-	// Poof VFX
-	if (IsValid(PoofSystem))
+	UKismetSystemLibrary::PrintString(GetWorld(), "SellOnThrow()");
+	if (APlant* ThrownPlant = Cast<APlant>(OtherActor))
 	{
-		if (UWorld* World = GetWorld())
+		UKismetSystemLibrary::PrintString(GetWorld(), "Cast Successful");
+		if (ThrownPlant->ItemComponent->PlayerWhoThrewItem)
 		{
-			if (auto SpawnedVFX  = World->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{}))
+			UKismetSystemLibrary::PrintString(GetWorld(), "Correct PlayerWhoeThrew");
+			Client_OnPlayerSell(ThrownPlant->ItemComponent->PlayerWhoThrewItem);
+			ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->Client_OnAddCoins();
+		
+			// Audio
+			if (HasAuthority())
 			{
-				if (IsValid(SpawnedVFX))
+				//SSComponent->Boing();
+				Multi_FireSellVFXCrop(ThrownPlant->ItemComponent->PlayerWhoThrewItem, ThrownPlant);
+			
+				if (ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue)
 				{
-					SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
-					SpawnedVFX->SetLifeSpan(5.0f);
+					ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlaySoundAtLocation(GetActorLocation(), ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue, nullptr);
 				}
+				ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->AddCoins(ThrownPlant);
+				
+				// Destroy the crop the player is holding
+				ThrownPlant->Destroy();
 			}
 		}
-		
+	}
+}
+
+void ASellBin::Client_Boing_Implementation()
+{
+	//SSComponent->Boing();
+}
+
+void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player, APlant* _Plant)
+{
+	if (_Player->SellCue)
+	{
+		_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
+	}
+				
+	_Player->PlayerStateRef->AddCoins(_Plant);
+			
+	_Player->Multi_SocketItem(_Player->WeaponMesh, FName("Base-HumanWeapon"));
+				
+	// Destroy the crop the player is holding
+	_Player->HeldItem->Destroy();
+	_Player->HeldItem = nullptr;
+	_Player->Client_RefreshCurrentMaxSpeed();
+}
+
+void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
+{
+	if (_Player->PlayerHUDRef)
+		_Player->PlayerHUDRef->ClearPickupUI();
+	
+	ItemComponent->SetStencilEnabled(false);
+
+	APrototype2Gamestate* GamestateCast = Cast<APrototype2Gamestate>(GetWorld()->GetGameState());
+	if (!GamestateCast)
+		return;
+
+	for (int i = 0; i < GamestateCast->Server_Players.Num(); i++)
+	{
+		if (_Player->PlayerStateRef->PlayerName == GamestateCast->Server_Players[i]->PlayerName)
+		{
+			OnItemSoldDelegate.Broadcast(i);
+			return;
+		}
+	}
+	
+	//OnItemSoldDelegate.Broadcast(_Player->PlayerStateRef->Player_ID);
+}
+
+void ASellBin::Multi_OnPlayerSell_Implementation(APrototype2Character* _Player)
+{
+	APrototype2Gamestate* GamestateCast = Cast<APrototype2Gamestate>(GetWorld()->GetGameState());
+	if (!GamestateCast)
+		return;
+
+	for (int i = 0; i < GamestateCast->Server_Players.Num(); i++)
+	{
+		if (_Player->PlayerStateRef->PlayerName == GamestateCast->Server_Players[i]->PlayerName)
+		{
+			OnItemSoldDelegate.Broadcast(i);
+			return;
+		}
 	}
 }
 
 void ASellBin::Interact(APrototype2Character* _Player)
 {
 	// Force Bump Into SellBin
+	////////
+	return;
+	////////
+	
+	APrototype2Gamestate* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (!GameStateCast)
+		return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Attempted to sell something!"));
+	if (_Player->HeldItem)
+	{
+		if (auto Plant = Cast<APlant>(_Player->HeldItem))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Tis A Plant!"));
+			
+			// Audio
+			if (_Player->SellCue)
+			{
+				_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue);
+			}
+
+			_Player->PlayerStateRef->AddCoins(Plant);
+			
+			// Destroy the crop the player is holding
+			_Player->HeldItem->Destroy();
+			_Player->HeldItem = nullptr;
+
+			if (_Player->PlayerHUDRef)
+			{
+				_Player->PlayerHUDRef->ClearPickupUI();
+				_Player->PlayerHUDRef->SetHUDInteractText("");
+			}
+			_Player->EnableStencil(false);
+			ItemComponent->Mesh->SetRenderCustomDepth(false);
+
+			_Player->RefreshCurrentMaxSpeed();
+		}
+	}
 }
 
 void ASellBin::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)

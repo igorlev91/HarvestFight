@@ -43,7 +43,7 @@ void ASkyAlter::Tick(float DeltaTime)
 
 }
 
-EInteractMode ASkyAlter::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
+EInteractMode ASkyAlter::IsInteractable(APrototype2PlayerState* _Player)
 {
 	return INVALID;
 }
@@ -118,9 +118,10 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 			
 		SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
 
-		SomePlayer->HeldItem->Destroy(true);
-		SomePlayer->HeldItem = nullptr;
-		SomePlayer->OnRep_HeldItem();
+		APickUpItem* item = SomePlayer->HeldItem;
+		SomePlayer->DropItem();
+		// Destroy the crop the player is holding
+		item->Destroy();
 
 		SomePlayer->Client_RefreshCurrentMaxSpeed();
 	}

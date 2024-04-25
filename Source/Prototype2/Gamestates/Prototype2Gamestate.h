@@ -35,9 +35,6 @@ struct FHHExtraSettings
 	bool bConcreteFertiliser{true};
 	UPROPERTY(BlueprintReadWrite)
 	bool bPoisonFertiliser{true};
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bSelfConcreting{false};
 };
 
 UCLASS()
@@ -75,13 +72,10 @@ public:
 	void SetSellMultiplier(int32 _Multiplier);
 
 	void VoteMap(EFarm _Level);
-	void PickRandomMap();
 
 	UFUNCTION()
 	void AddCoinsTeams(APrototype2PlayerState* _Player, int32 _Amount);
-
-	UFUNCTION()
-	class APrototype2Character* GetWinningCharacter();
+	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
@@ -117,9 +111,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UPrototypeGameInstance* GameInstanceRef;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	class ACrown* TheCrown{nullptr};
+	
 	
 private:
 	virtual void BeginPlay() override;
@@ -137,8 +129,9 @@ private:
 	
 	/* Picks a random map to play for the list of those maps most voted for */
 	void PickMapToPlay();
+
 	
-	void ServerTravel(float _DeltaSeconds);
+
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bIsCountingDown{};
@@ -155,10 +148,7 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 CountdownLengthMinutes{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	float CountdownLengthSeconds{10.0f};
-	
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	float WaitingForPlayersSeconds{10.0f};
+	float CountdownLengthSeconds{8.0f};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 EndGameLengthMinutes{0};
@@ -217,7 +207,7 @@ public:
 	// Map choice
 	//UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	//bool bShowMapChoice{false};
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	FString MapChoice{"Level_Main"};
 
 	// Timer between map choice and starting gameplay
@@ -239,14 +229,6 @@ public:
 	int32 FloatingIslandFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 ClockworkFarm{0};
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	int32 RandomFarm{0};
-
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	bool bCanTravel{false};
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float MapTravelTimer{3.0f};
 
 	/* Maps */
 
@@ -277,9 +259,7 @@ public:
 	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Blitz_Attack";
 	
 	// Floating Islands
-	FString ClockworkClassicLarge = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
-	FString ClockworkClassicMedium = "/Game/Maps/Upcoming/Level_Clockwork_4_Player";
-	FString ClockworkBlitz = "/Game/Maps/Upcoming/Level_Clockwork_Blitz";
+	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
 };
 
 

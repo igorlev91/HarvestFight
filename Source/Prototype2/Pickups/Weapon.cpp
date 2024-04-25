@@ -40,7 +40,7 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 
 	if (_bIsFullCharge)
 	{
-		_Player->LungeAttack(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
+		_Player->GetCharacterMovement()->Launch(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
 	}
 }
 
@@ -54,7 +54,6 @@ void UWeapon::ExecuteAttack(float _AttackSphereRadius, APrototype2Character* _Pl
 	_Player->bShouldWeaponFlashRed = true;
 	_Player->bAllowMovementFromInput = true;
 	_Player->bIsFollowingThroughAttack = false;
-	_Player->Grunt();
 
 }
 

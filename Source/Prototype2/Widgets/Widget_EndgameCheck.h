@@ -18,7 +18,6 @@ public:
 	
 	/* Turns the endgame check menu widget on or off */
 	void ToggleMenu();
-	
 
 	/* Public Variables */
 public:

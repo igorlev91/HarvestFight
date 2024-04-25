@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "LobbyHUD.generated.h"
 
+/**
+ * 
+ */
 UCLASS()
 class PROTOTYPE2_API ALobbyHUD : public AHUD
 {
@@ -15,9 +17,8 @@ class PROTOTYPE2_API ALobbyHUD : public AHUD
 	virtual void BeginPlay() override;
 	
 public:
+	UFUNCTION()
 	void OnRep_CharacterDetails(FCharacterDetails& _SomeDetails);
-
-	bool IsChangingCharacterSkin() const;
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> HUDWidget_Prefab;

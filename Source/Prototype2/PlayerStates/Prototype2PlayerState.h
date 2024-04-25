@@ -37,6 +37,7 @@ public:
 	void Server_VoteMap(EFarm _Map);
 	
 	void AddCoins(int32 _amount);
+	void AddCoins(class APlant* _SomePlant);
 	
 	void GrabSkinFromGameInstance();
 
@@ -51,15 +52,15 @@ public:
 	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
 	UFUNCTION()
-	void Client_OnAddCoins(int32 _Score);
+	void Client_OnAddCoins();
 	
-	void Multi_OnAddCoins(int32 _Score);
+	void Multi_OnAddCoins();
 
 	bool IsLoosing();
 	bool IsWinning();
 
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemSold, int32, _PlayerID, int32, _Score);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
 	UPROPERTY(BlueprintAssignable)
 	FOnItemSold OnItemSoldDelegate;
 	
@@ -67,17 +68,11 @@ public:
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
     int32 Player_ID{};
-
-	UFUNCTION()
-	void OnRep_Coins();
 	
-	UPROPERTY(ReplicatedUsing=OnRep_Coins, EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	int32 Coins{0};
 
-	UPROPERTY(VisibleAnywhere)
-	int32 LastLocalCoins{};
-
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	FString PlayerName{};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
@@ -87,11 +82,14 @@ public:
 	class APrototype2Gamestate* Gamestate;
 
 	// Showing coins that are being added to total
-	//UPROPERTY(Replicated, EditAnywhere)
-	//int32 ExtraCoins{0};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 ExtraCoinsLocal{};
+	UPROPERTY(Replicated, EditAnywhere)
+	int32 ExtraCoins{0};
+	UPROPERTY(Replicated, EditAnywhere)
+	bool bIsShowingExtraCoins{false};
+	UPROPERTY(Replicated, EditAnywhere)
+	float MaxTimeShowExtraCoins{};
+	UPROPERTY(Replicated, VisibleAnywhere)
+	float TimerExtraCoins{};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails Details;
@@ -109,7 +107,4 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UTexture2D*> DuckTextures{{}, {}, {}, {}, {}, {}, {}, {}};
-	
-	UPROPERTY(EditAnywhere)
-	TArray<UTexture2D*> BeeTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 };

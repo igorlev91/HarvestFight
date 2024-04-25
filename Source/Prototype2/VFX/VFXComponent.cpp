@@ -49,12 +49,12 @@ void UVFXComponent::ActivateParticleSystem(UNiagaraComponent* _NewSystem)
 	
 	if (GetOwner()->HasAuthority())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Server | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Server | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
 		Multi_ActivateParticleSystem(_NewSystem);
 	}
 	else if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Client | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Client | Activated Particle System: %s"), *_NewSystem->GetFName().ToString());
 		Server_ActivateParticleSystem(_NewSystem);
 	}
 }
@@ -66,12 +66,12 @@ void UVFXComponent::DeActivateParticleSystem(UNiagaraComponent* _NewSystem)
 	
 	if (GetOwner()->HasAuthority())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Server | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Server | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
 		Multi_DeActivateParticleSystem(_NewSystem);
 	}
 	else if (GetOwner()->GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Client | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Client | Deactivate Particle System: %s"), *_NewSystem->GetFName().ToString());
 		Server_DeActivateParticleSystem(_NewSystem);
 	}
 }

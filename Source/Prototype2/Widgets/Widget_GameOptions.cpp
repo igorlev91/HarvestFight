@@ -61,15 +61,9 @@ void UWidget_GameOptions::NativePreConstruct()
 	/* UI */
 	UIOffscreenIndicators_Control->OptionText->SetText(FText::FromString("Waypoint Indicators"));
 	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
-	PlayerNames_Control->OptionText->SetText(FText::FromString("Player Names"));
-	PlantValueFloatingUI_Control->OptionText->SetText(FText::FromString("Plant Floating Value Stars"));
-	SprintBar_Control->OptionText->SetText(FText::FromString("Central Sprint Bar"));
-	QuickTipTutorials_Control->OptionText->SetText(FText::FromString("Reset Quick Tips"));
 
 	/* Control (mouse/controller) */
 	MouseSensitivityScale_Control->OptionText->SetText(FText::FromString("Mouse/Controller Sensitivity"));
-	CustomMouseCursor_Control->OptionText->SetText(FText::FromString("Custom Mouse Cursor"));
-	ControllerMenuSensitivityScale_Control->OptionText->SetText(FText::FromString("Controller Menu Sensitivity"));
 }
 
 void UWidget_GameOptions::NativeConstruct()
@@ -232,45 +226,11 @@ void UWidget_GameOptions::NativeConstruct()
 		UIOffscreenIndicatorSize_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlButtonPressed);
 	}
 
-	if (PlayerNames_Control)
-	{
-		PlayerNames_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
-		PlayerNames_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
-	}
-
-	if (PlantValueFloatingUI_Control)
-	{
-		PlantValueFloatingUI_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
-		PlantValueFloatingUI_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
-	}
-
-	if (SprintBar_Control)
-	{
-		SprintBar_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
-		SprintBar_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
-	}
-
-	if (QuickTipTutorials_Control)
-	{
-		QuickTipTutorials_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
-		QuickTipTutorials_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
-	}
-
 	/* Control (mouse/controller sensitivity) */
 	if (MouseSensitivityScale_Control)
 	{
 		MouseSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed);
 		MouseSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed);
-	}
-	if (CustomMouseCursor_Control)
-	{
-		CustomMouseCursor_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
-		CustomMouseCursor_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed);
-	}
-	if (ControllerMenuSensitivityScale_Control)
-	{
-		ControllerMenuSensitivityScale_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed);
-		ControllerMenuSensitivityScale_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed);
 	}
 
 	if (ConfirmButton)
@@ -291,24 +251,7 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->bEnemyAlwaysRed = bTempEnemyAlwaysRed;
 	HHGameGameUserSettings->UIIndicators = TempUIIndicators;
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
-	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
-	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
-	HHGameGameUserSettings->SprintBar = bSprintBarUI;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
-	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
-	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
-
-	//HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
-	if (bQuickTipTutorials)
-	{
-		HHGameGameUserSettings->QuickTipLobbyTutorials = 0;
-		HHGameGameUserSettings->QuickTipClassicTutorials = 0;
-		HHGameGameUserSettings->QuickTipBrawlTutorials = 0;
-		HHGameGameUserSettings->QuickTipBlitzTutorials = 0;
-	}
-	
-	OnFOVChangedDelegate.Broadcast();
-	OnChangedCursorSetting();
 	HHGameGameUserSettings->ApplySettings(true);
 
 	UpdateGameInstanceVariables();
@@ -414,7 +357,7 @@ void UWidget_GameOptions::SetOptionsText()
 			break;
 		}
 	}
-	SetFOVQualitySettingText();
+
 	SetMasterGraphicsQualitySettingText();
 	SetTextureQualitySetting();
 	SetFoliageQualitySetting();
@@ -452,13 +395,8 @@ void UWidget_GameOptions::SetOptionsText()
 
 	SetUIOffscreenIndicatorsSetting();
 	SetUIOffscreenIndicatorSizeSettingText();
-	SetPlayerNamesSettingText();
-	SetPlantValueFloatingUISettingText();
-	SetSprintBarUISettingText();
-	SetQuickTipTutorialsSettingText();
 	SetMouseSensitivityScaleSettingText();
-	SetCustomMouseCursorSettingText();
-	SetControllerMenuSensitivityScaleSettingText();
+	SetFOVQualitySettingText();
 }
 
 void UWidget_GameOptions::UpdateGameInstanceVariables()
@@ -496,15 +434,10 @@ void UWidget_GameOptions::LoadSettings()
 	bTempEnemyAlwaysRed = HHGameGameUserSettings->bEnemyAlwaysRed;
 	TempUIIndicators = HHGameGameUserSettings->UIIndicators;
 	bTempUIIndicatorSizeLarge = HHGameGameUserSettings->UIIndicatorSizeLarge;
-	bTempPlayerNames = HHGameGameUserSettings->PlayerNames;
-	bPlantValueFloatingUI = HHGameGameUserSettings->PlantValueFloatingUI;
-	bSprintBarUI = HHGameGameUserSettings->SprintBar;
-	bQuickTipTutorials = HHGameGameUserSettings->QuickTipTutorials;
 	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
 	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
 	TempFOV = HHGameGameUserSettings->FieldOfView;
-	TempControllerMenuSensitivityScale = HHGameGameUserSettings->ControllerMenuSensitivityScale;
-	TempCustomMouseCursor = HHGameGameUserSettings->CustomMouseCursor;
+	
 	UpdateGameInstanceVariables();
 	SetOptionsText();
 	
@@ -841,7 +774,7 @@ void UWidget_GameOptions::OnFOVControlLeftButtonPressed()
 
 	SetFOVQualitySettingText();
 		
-	//OnFOVChangedDelegate.Broadcast();
+	OnFOVChangedDelegate.Broadcast();
 }
 
 void UWidget_GameOptions::OnFOVControlRightButtonPressed()
@@ -853,7 +786,7 @@ void UWidget_GameOptions::OnFOVControlRightButtonPressed()
 
 	SetFOVQualitySettingText();
 	
-	//OnFOVChangedDelegate.Broadcast();
+	OnFOVChangedDelegate.Broadcast();
 }
 
 void UWidget_GameOptions::SetFOVQualitySettingText()
@@ -1478,12 +1411,12 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 	{
 	case EIndicatorUISetting::ON:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
 			break;
 		}
 	case EIndicatorUISetting::ONSIDESONLY:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On - Fade"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On (window edge only)"));
 			break;
 		}
 	case EIndicatorUISetting::OFF:
@@ -1493,7 +1426,7 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 		}
 	default:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
 			break;
 		}
 	}
@@ -1522,89 +1455,6 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorSizeSettingText()
 		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Small"));
 }
 
-void UWidget_GameOptions::OnPlayerNamesControlButtonPressed()
-{
-	if (bTempPlayerNames == true)
-		bTempPlayerNames = false;
-	else
-		bTempPlayerNames = true;
-
-	SetPlayerNamesSettingText();
-}
-
-void UWidget_GameOptions::SetPlayerNamesSettingText()
-{
-	if (bTempPlayerNames == true)
-		PlayerNames_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		PlayerNames_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed()
-{
-	if (bPlantValueFloatingUI == true)
-		bPlantValueFloatingUI = false;
-	else
-		bPlantValueFloatingUI = true;
-
-	SetPlantValueFloatingUISettingText();
-}
-
-void UWidget_GameOptions::SetPlantValueFloatingUISettingText()
-{
-	if (bPlantValueFloatingUI == true)
-		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_GameOptions::OnSprintBarUIControlButtonPressed()
-{
-	if (bSprintBarUI == true)
-		bSprintBarUI = false;
-	else
-		bSprintBarUI = true;
-
-	SetSprintBarUISettingText();
-}
-
-void UWidget_GameOptions::SetSprintBarUISettingText()
-{
-	if (bSprintBarUI == true)
-		SprintBar_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		SprintBar_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed()
-{
-	if (bQuickTipTutorials == true)
-		bQuickTipTutorials = false;
-	else
-		bQuickTipTutorials = true;
-
-	SetQuickTipTutorialsSettingText();
-}
-
-void UWidget_GameOptions::QuickTipTutorialsReset()
-{
-	if (bQuickTipTutorials)
-	{
-		bQuickTipTutorials = false;
-		SetQuickTipTutorialsSettingText();
-		HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
-		HHGameGameUserSettings->ApplySettings(true);
-	}
-}
-
-void UWidget_GameOptions::SetQuickTipTutorialsSettingText()
-{
-	if (bQuickTipTutorials == true)
-		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
 void UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed()
 {
 	if (TempMouseSensitivityScale >= 1)
@@ -1628,49 +1478,6 @@ void UWidget_GameOptions::OnMouseSensitivityScaleControlRightButtonPressed()
 void UWidget_GameOptions::SetMouseSensitivityScaleSettingText()
 {
 	MouseSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempMouseSensitivityScale)));
-}
-
-void UWidget_GameOptions::OnCustomMouseCursorControlButtonPressed()
-{
-	if (TempCustomMouseCursor)
-		TempCustomMouseCursor = false;
-	else
-		TempCustomMouseCursor = true;
-	
-	SetCustomMouseCursorSettingText();
-}
-
-void UWidget_GameOptions::SetCustomMouseCursorSettingText()
-{
-	if (TempCustomMouseCursor)
-		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("On"));
-	else
-		CustomMouseCursor_Control->OptionValueText->SetText(FText::FromString("Off"));
-}
-
-void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlLeftButtonPressed()
-{
-	if (TempControllerMenuSensitivityScale >= 1)
-		TempControllerMenuSensitivityScale -= 1;
-	if (TempControllerMenuSensitivityScale < 1)
-		TempControllerMenuSensitivityScale = 10;
-
-	SetControllerMenuSensitivityScaleSettingText();
-}
-
-void UWidget_GameOptions::OnControllerMenuSensitivityScaleControlRightButtonPressed()
-{
-	if (TempControllerMenuSensitivityScale < 11)
-		TempControllerMenuSensitivityScale += 1;
-	if (TempControllerMenuSensitivityScale >= 11)
-		TempControllerMenuSensitivityScale = 1;
-
-	SetControllerMenuSensitivityScaleSettingText();
-}
-
-void UWidget_GameOptions::SetControllerMenuSensitivityScaleSettingText()
-{
-	ControllerMenuSensitivityScale_Control->OptionValueText->SetText(FText::FromString(FString::FromInt(TempControllerMenuSensitivityScale)));
 }
 
 void UWidget_GameOptions::SetQualityLevelText(UWidget_OptionSelector* _OptionSelectorWidget, int32 _QualityValue)

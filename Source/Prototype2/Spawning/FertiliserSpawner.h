@@ -22,7 +22,7 @@ public:
 	/* Interaction functions */
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnClientWalkAway(APrototype2Character* _Player) override;
 
@@ -52,15 +52,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	class UMaterialInstance* GhostMaterial{};
-
-	UPROPERTY(EditAnywhere)
-	class UTexture2D* GoldOnlyTexture{};
-
-	UPROPERTY(EditAnywhere)
-	class UTexture2D* ConcreteOnlyTexture{};
-
-	UPROPERTY(EditAnywhere)
-	class UMaterialInstanceDynamic* DynamicMaterial{nullptr};
 	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* ChickenMesh{};

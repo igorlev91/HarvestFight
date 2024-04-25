@@ -14,73 +14,44 @@ protected:
 	AClockworkPlatform();
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	UFUNCTION()
-	void DoMovement();
-
+	void TickTimeline(float _Progress);
 	UFUNCTION()
-	float TriangleWave(float _X);
-
-	UFUNCTION(Client, Unreliable)
-	void Client_ReportServerTime(float requestWorldTime);
-
-	/** Requests current server time so accurate lag
-	  * compensation can be performed in ClientReportServerTime
-	  * based on the round-trip duration */
-	UFUNCTION(Server, Unreliable)
-	void Server_RequestServerTime(float requestWorldTime);
-
-	UFUNCTION(Client, Reliable)
-	void Client_InitialReportServerTime(float requestWorldTime);
-
-	/** Requests current server time so accurate lag
-	  * compensation can be performed in ClientReportServerTime
-	  * based on the round-trip duration */
-	UFUNCTION(Server, Reliable)
-	void Server_InitialRequestServerTime(float requestWorldTime);
-	
+	void OnTimelineEnd();
+	UFUNCTION()
+	void OnHaltEnd();
 protected:
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* PlatformMesh;
+	class UStaticMeshComponent* Platform;
 
 	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* StartPosition;
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* EndPosition;
+	class UStaticMeshComponent* Pole;
 
-	UFUNCTION()
-	void OnRep_ServerTime();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	class UStaticMeshComponent* EndPoint_DEBUG;
+
+	UPROPERTY(VisibleAnywhere)
+	class UTimelineComponent* LerpTimeline;
+
+	UPROPERTY(VisibleAnywhere)
+	class UTimelineComponent* HaltTimeline;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_ServerTime, VisibleAnywhere)
-	float ServerTime{};
-
-	UPROPERTY(Replicated)
-	float PlatformTimeOffset{0};
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector StartPosition{};
 
 	UPROPERTY(VisibleAnywhere)
-	float ClientTimeOffset{0};
+	float LerpProgress{};
 
 	UPROPERTY(VisibleAnywhere)
-	float InitialClientPingOffset{0};
+	bool OnReturnJourney{};
 
 	UPROPERTY(VisibleAnywhere)
-	float ObservingPlayerPing{0};
-
-	UPROPERTY(VisibleAnywhere)
-	class ULocalPlayer* LocalPlayer{nullptr};
-	UPROPERTY(VisibleAnywhere)
-	class APlayerController* LocalPlayerController{nullptr};
-	UPROPERTY(VisibleAnywhere)
-	class APlayerState* LocalPlayerState{nullptr};
+	float PauseTimer{};
 	
 protected:
 	UPROPERTY(EditAnywhere, Category="Moving Platform")
-	float MoveSpeed{1};
+	float MoveSpeed{0.3183f};
 
 	UPROPERTY(EditAnywhere, Category="Moving Platform")
-	class UCurveFloat* MovementCurve;
-
-	UPROPERTY(EditAnywhere, Category="Moving Platform")
-	bool bCentralPlatform{false };
+	float PauseDuration{5.0f};
 };
