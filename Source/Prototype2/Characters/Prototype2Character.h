@@ -324,6 +324,20 @@ public:
 	UFUNCTION()
 	void OnRep_HeldItem();
 
+	UFUNCTION()
+	bool IsHolding(UClass* _ObjectType);
+
+	UFUNCTION()
+	class USeedData* GetHeldItemData();
+
+	UFUNCTION()
+	void ClearPickupUI();
+	
+	UFUNCTION()
+	void UpdatePickupUI(UTexture2D* _Icon);
+
+	UFUNCTION()
+	void AddCoins(int32 _Amount);
 	
 	/* Currently held item */
 	UPROPERTY(ReplicatedUsing=OnRep_HeldItem, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))

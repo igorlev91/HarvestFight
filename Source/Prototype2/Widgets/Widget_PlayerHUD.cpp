@@ -839,15 +839,15 @@ void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 	// GROW SPOT WITH PICKUP ITEM
 	else if (AGrowSpot* SomeGrowspot = Cast<AGrowSpot>(Owner->ClosestInteractableActor))
 	{
-		if (IsValid(SomeGrowspot->GrowingItemRef))
+		if (IsValid(SomeGrowspot->ItemRef))
 		{
 			StarsParent->SetVisibility(ESlateVisibility::Visible);
 			// Growspots Vegetable has valid data and is NOT a weapon and NOT fertiliser
-			if (IsValid(SomeGrowspot->GrowingItemRef->ServerData.SeedData)
-				&& SomeGrowspot->GrowingItemRef->ServerData.SeedData->WeaponData == nullptr
-				&& SomeGrowspot->GrowingItemRef->ServerData.SeedData->FertiliserData == nullptr)
+			if (IsValid(SomeGrowspot->ItemRef->ServerData.SeedData)
+				&& SomeGrowspot->ItemRef->ServerData.SeedData->WeaponData == nullptr
+				&& SomeGrowspot->ItemRef->ServerData.SeedData->FertiliserData == nullptr)
 			{
-				for(int i = 0; i < SomeGrowspot->GrowingItemRef->ServerData.SeedData->BabyStarValue; i++)
+				for(int i = 0; i < SomeGrowspot->ItemRef->ServerData.SeedData->BabyStarValue; i++)
 				{
 					switch(i)
 					{

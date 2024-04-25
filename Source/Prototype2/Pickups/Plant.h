@@ -35,9 +35,6 @@ public:
 	void Multi_OnDestroy();
 	
 	void Multi_ScalePlant();
-
-	UPROPERTY(Replicated)
-	bool bGrown{};
 	
 	UPROPERTY(EditAnywhere)
 	int32 NumberOfNearbyFlowers{};

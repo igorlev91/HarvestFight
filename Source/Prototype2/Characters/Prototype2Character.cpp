@@ -708,8 +708,6 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			PlayerHUDRef->SetHUDInteractText("");
 		}
 		HeldItem->Client_Drop();
-
-
 		
 		if (HasAuthority())
 		{
@@ -735,6 +733,10 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			Server_DropItem(WhoopsyStrength);
 		}
 		RefreshCurrentMaxSpeed();
+	}
+	else
+	{
+		HeldItem = nullptr;
 	}
 }
 
@@ -795,7 +797,7 @@ void APrototype2Character::CheckForInteractables()
 	{
 		if (AGrowSpot* SomeGrowSpot = Cast<AGrowSpot>(InteractableActors[i]))
 		{
-			if (ABeehive* SomeBeeHive = Cast<ABeehive>(SomeGrowSpot->GrowingItemRef))
+			if (ABeehive* SomeBeeHive = Cast<ABeehive>(SomeGrowSpot->ItemRef))
 			{
 				ExtraImportantActors.Add(InteractableActors[i]);
 				ExtraImportantHitResults.Add(InteractableHitResults[i]);
@@ -879,7 +881,11 @@ void APrototype2Character::EnableStencil(bool _bIsOn)
 	{
 		AllItemComponents[i]->Mesh->SetRenderCustomDepth(_bIsOn);
 	}
-	
+
+	if (auto Growspot = Cast<AGrowSpot>(ClosestInteractableActor))
+	{
+		Growspot->Mesh->SetRenderCustomDepth(_bIsOn);
+	}
 }
 
 void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData)
@@ -1641,6 +1647,51 @@ void APrototype2Character::OnRep_HeldItem()
 	}
 }
 
+bool APrototype2Character::IsHolding(UClass* _ObjectType)
+{
+	bool IsHoldingObjectType = false;
+
+	if (IsValid(HeldItem))
+	{
+		IsHoldingObjectType = HeldItem->IsA(_ObjectType);
+	}
+	
+	return IsHoldingObjectType;
+}
+
+USeedData* APrototype2Character::GetHeldItemData()
+{
+	USeedData* OutSeedData{nullptr};
+	if (IsValid(HeldItem))
+	{
+		if (IsValid(HeldItem->ServerData.SeedData))
+		{
+			OutSeedData = HeldItem->ServerData.SeedData;
+		}
+	}
+	return OutSeedData;
+}
+
+void APrototype2Character::ClearPickupUI()
+{
+	if (IsValid(PlayerHUDRef))
+		PlayerHUDRef->ClearPickupUI();
+}
+
+void APrototype2Character::UpdatePickupUI(UTexture2D* _Icon)
+{
+	if (IsValid(PlayerHUDRef))
+		PlayerHUDRef->UpdatePickupUI(_Icon);
+}
+
+void APrototype2Character::AddCoins(int32 _Amount)
+{
+	if (IsValid(PlayerStateRef))
+	{
+		PlayerStateRef->AddCoins(_Amount);
+	}
+}
+
 void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 {
 	if (!IsValid(ClosestInteractableActor) || ClosestInteractableItem == nullptr)
@@ -1852,7 +1903,7 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 		PlayerHUDRef->SetHUDInteractText("");
 
 	if (IsValid(HeldItem))
-		HeldItem->Client_Pickup();
+		HeldItem->Client_Pickup(this);
 	
 	// Set the HUD UI pickup icon depending on seed/plant/weapon
 	switch (_PickupType)

@@ -22,8 +22,11 @@ APlant::APlant()
 void APlant::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	SetReplicatingMovement(true);
+
+	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HasAuthority())
+		SetReplicatingMovement(true);
 
 	Lifetime = InitialLifetime;
 	WiltDelayTimer = WiltDelay;
@@ -64,11 +67,6 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, cla
 
 EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player)
 {
-	if (!bGrown)
-	{
-		return INVALID;
-	}
-	
 	if (!_Player)
 		return INVALID;
 
@@ -110,7 +108,6 @@ void APlant::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APlant, bShouldWilt);
 	DOREPLIFETIME(APlant, bPoisoned);
-	DOREPLIFETIME(APlant, bGrown);
 }
 
 void APlant::Wilt(float DeltaTime)

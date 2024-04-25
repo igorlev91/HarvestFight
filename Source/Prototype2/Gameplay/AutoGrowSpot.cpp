@@ -18,25 +18,24 @@
 AAutoGrowSpot::AAutoGrowSpot()
 {
 	bReplicates = true;
-	bIsNormalGrowSpot = false;
 }
 
 void AAutoGrowSpot::BeginPlay()
 {
-	AGrowSpot::BeginPlay();
+	Super::BeginPlay();
 	
 	ReGrowTimer = ReGrowInterval;
 }
 
 void AAutoGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	AGrowSpot::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AAutoGrowSpot, ReGrowTimer);
 }
 
 void AAutoGrowSpot::Tick(float DeltaSeconds)
 {
-	AGrowSpot::Tick(DeltaSeconds);
+	Super::Tick(DeltaSeconds);
 		
 	if (!HasAuthority())
 		return;
@@ -48,7 +47,7 @@ void AAutoGrowSpot::Tick(float DeltaSeconds)
 	}
 	if (ReGrowTimer <= 0)
 	{
-		if (!GrowingItemRef)
+		if (IsValid(ItemRef) == false)
 		{
 			if (auto Gamemode = UGameplayStatics::GetGameMode(GetWorld()))
 			{

@@ -135,7 +135,7 @@ void AFertiliserSpawner::ClientInteract(APrototype2Character* _Player)
 	if (!IsValid(SpawnedFertiliser))
 		return;
 	
-	SpawnedFertiliser->Client_Pickup();
+	SpawnedFertiliser->Client_Pickup(_Player);
 }
 
 void AFertiliserSpawner::OnClientWalkAway(APrototype2Character* _Player)
