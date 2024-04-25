@@ -189,5 +189,7 @@ private:
 	FString FloatingIslandsBlitz = "/Game/Maps/Upcoming/AttackAltarVariants/Level_SkyIsland_Blitz_Attack";
 	
 	// Floating Islands
-	FString ClockworkClassic = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
+	FString ClockworkClassicLarge = "/Game/Maps/Upcoming/Level_Clockwork_W_Cogs";
+	FString ClockworkClassicMedium = "/Game/Maps/Upcoming/Level_Clockwork_4_Player";
+	FString ClockworkBlitz = "/Game/Maps/Upcoming/Level_Clockwork_Blitz";
 };

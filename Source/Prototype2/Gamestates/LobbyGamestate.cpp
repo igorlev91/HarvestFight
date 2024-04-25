@@ -282,13 +282,18 @@ void ALobbyGamestate::PickMapToPlay()
 		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
-				MapChoice = ClockworkClassic;
+			{
+				if (Server_Players.Num() <= 4)	
+					MapChoice = ClockworkClassicMedium;
+				else
+					MapChoice = ClockworkClassicLarge;
+			}
 			else if (GameMode == 1) // Brawl Mode
 			{
 				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm brawl mode attempted to start")); // No brawl mode for ClockworkFarm
 			}
 			else
-				UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm blitz mode attempted to start")); // No blitz mode for ClockworkFarm
+				MapChoice = ClockworkBlitz;
 		}
 		else // Pick a random map from highest votes
 		{
@@ -443,7 +448,22 @@ void ALobbyGamestate::PickMapToPlay()
 						case 4:
 							{
 								/* Clockwork map choice */
-								MapChoice = ClockworkClassic;
+								if (GameMode == 0) // Normal Mode
+								{
+									if (Server_Players.Num() <= 4)	
+										MapChoice = ClockworkClassicMedium;
+									else
+										MapChoice = ClockworkClassicLarge;
+								}
+								else if (GameMode == 1) // Brawl Mode
+								{
+									UE_LOG(LogTemp, Warning, TEXT("ClockworkFarm brawl mode attempted to start")); // No brawl mode for ClockworkFarm
+								}
+								else
+								{
+									MapChoice = ClockworkBlitz;
+								}
+								
 								UE_LOG(LogTemp, Warning, TEXT("Clockwork Map Chosen"));
 								break;
 							}
