@@ -132,5 +132,9 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 				NewAspearagusProjectile->GoldMaterial = _Player->CurrentWeaponSeedData->BabyGoldMaterials[0];
 			}
 		}
+		if (IsValid(_Player) && IsValid(_Player->ProjectileSoundCue) && IsValid(_Player->ProjectileDestroyedCue))
+		{
+			NewAspearagusProjectile->PlaySFX(_Player->ProjectileSoundCue, _Player->ProjectileDestroyedCue);
+		}
 	}
 }

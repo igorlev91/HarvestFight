@@ -50,6 +50,9 @@ AAspearagusProjectile::AAspearagusProjectile()
 	{
 		DestroyVFX = PoofVFX.Class;
 	}
+
+	DiveBombSFX = CreateDefaultSubobject<UAudioComponent>("DiveBombSFX");
+	DiveBombSFX->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -100,10 +103,10 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	if (APrototype2Character* HitPlayerCast = Cast<APrototype2Character>(OtherActor))
 	{
 		if (HitPlayerCast != OwningPlayer)
-		{
+		{	
+			Multi_OnDestroy();
 			Destroy();
 			HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
-
 			if (HitPlayerCast->GetHasCrown())
 			{
 				int32 PointsForHit = static_cast<int32>(OwningPlayer->AttackChargeAmount);
@@ -127,17 +130,21 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	}
 	
 	Multi_OnDestroy();
-	
 	Destroy();
 }
 
 
 void AAspearagusProjectile::Multi_OnDestroy_Implementation()
 {
-	if (DestroyVFX)
+	//if (DestroyVFX)
+	//{
+	//	auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+	//	SpawnedVFX->SetLifeSpan(5.0f);
+	//}
+	if (DestroyedCue)
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
+		// Gets destroyed automatically after played
+		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DestroyedCue, GetActorLocation());		
 	}
 }
 
@@ -172,6 +179,24 @@ void AAspearagusProjectile::OnRep_SetMesh()
 void AAspearagusProjectile::OnRep_GoldMaterial()
 {
 	AspearagusMesh->SetMaterial(0, GoldMaterial);
+}
+
+void AAspearagusProjectile::PlaySFX(USoundCue* _DiveBombSFX, USoundCue* _DestroyedSFX)
+{
+	if(HasAuthority())
+	{
+		Multi_PlaySFX(_DiveBombSFX, _DestroyedSFX);
+	}
+}
+
+void AAspearagusProjectile::Multi_PlaySFX_Implementation(USoundCue* _SFX, USoundCue* _DestroyedSFX)
+{
+	if (IsValid(_SFX))
+	{
+		DiveBombSFX->SetSound(_SFX);
+		DiveBombSFX->Play();
+	}
+	DestroyedCue = _DestroyedSFX;
 }
 
 void AAspearagusProjectile::Server_InitializeProjectile_Implementation(APrototype2Character* _Player,

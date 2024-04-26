@@ -69,4 +69,13 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> DestroyVFX{};
+
+	UFUNCTION()
+	void PlaySFX(USoundCue* _DiveBombSFX, USoundCue* _DestroyedSFX);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlaySFX(USoundCue* _SFX, USoundCue* _DestroyedSFX);
+	UPROPERTY()
+	UAudioComponent* DiveBombSFX;
+	UPROPERTY()
+	USoundCue* DestroyedCue;
 };

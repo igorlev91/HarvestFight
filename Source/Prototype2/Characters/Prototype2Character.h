@@ -357,7 +357,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	class UTimelineComponent* InteractTimeline;
-protected:
+public:
 	/* Multicast dropping an item */
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_DropItem();
@@ -752,7 +752,11 @@ public:
 	UFUNCTION()
 	bool HasIdealRole();
 
+	UFUNCTION()
 	bool GetHasCrown();
+
+	UFUNCTION()
+	int32 GetPlayerID();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														VFX		 												 ///
@@ -889,6 +893,10 @@ public:
 	USoundCue* FallOnButtCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* HitConcreteCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* ProjectileSoundCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* ProjectileDestroyedCue;
 	
 	/* One audio component for charge/attack/get hit sounds*/
 	UPROPERTY(EditDefaultsOnly)
