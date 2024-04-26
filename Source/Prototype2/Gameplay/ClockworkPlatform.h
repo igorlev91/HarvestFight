@@ -30,6 +30,15 @@ protected:
 	  * based on the round-trip duration */
 	UFUNCTION(Server, Unreliable)
 	void Server_RequestServerTime(float requestWorldTime);
+
+	UFUNCTION(Client, Reliable)
+	void Client_InitialReportServerTime(float requestWorldTime);
+
+	/** Requests current server time so accurate lag
+	  * compensation can be performed in ClientReportServerTime
+	  * based on the round-trip duration */
+	UFUNCTION(Server, Reliable)
+	void Server_InitialRequestServerTime(float requestWorldTime);
 	
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -53,6 +62,9 @@ protected:
 	float ClientTimeOffset{0};
 
 	UPROPERTY(VisibleAnywhere)
+	float InitialClientPingOffset{0};
+
+	UPROPERTY(VisibleAnywhere)
 	float ObservingPlayerPing{0};
 
 	UPROPERTY(VisibleAnywhere)
@@ -68,4 +80,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category="Moving Platform")
 	class UCurveFloat* MovementCurve;
+
+	UPROPERTY(EditAnywhere, Category="Moving Platform")
+	bool bCentralPlatform{false };
 };

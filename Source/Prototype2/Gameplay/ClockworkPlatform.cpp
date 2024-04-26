@@ -39,7 +39,7 @@ void AClockworkPlatform::BeginPlay()
 
 	SetReplicateMovement(false);
 
-	if (HasAuthority())
+	if (HasAuthority() && bCentralPlatform == false)
 	{
 		TArray<AActor*> FoundPlatforms;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundPlatforms);
@@ -75,7 +75,7 @@ void AClockworkPlatform::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 void AClockworkPlatform::DoMovement()
 {
-	float MoveAlpha = ((GetWorld()->GetTimeSeconds() * MoveSpeed) + PlatformTimeOffset + ClientTimeOffset + (ObservingPlayerPing)) * 0.05f;
+	float MoveAlpha = ((GetWorld()->GetTimeSeconds() * MoveSpeed) + PlatformTimeOffset + ClientTimeOffset) * 0.05f;
 	auto PredictedPos = FMath::Lerp(StartPosition->GetComponentLocation(), EndPosition->GetComponentLocation(), MovementCurve->FloatCurve.Eval(TriangleWave(MoveAlpha)));
 	PlatformMesh->SetWorldLocation(FMath::Lerp(PlatformMesh->GetComponentLocation(), PredictedPos, GetWorld()->DeltaRealTimeSeconds * 3.0f));
 }
@@ -89,6 +89,17 @@ float AClockworkPlatform::TriangleWave(float _X)
 	return Result;
 }
 
+void AClockworkPlatform::Server_InitialRequestServerTime_Implementation(float requestWorldTime)
+{
+	Client_InitialReportServerTime(requestWorldTime);
+}
+
+void AClockworkPlatform::Client_InitialReportServerTime_Implementation(float requestWorldTime)
+{
+	float roundTripTime = GetWorld()->GetTimeSeconds() - requestWorldTime;
+	InitialClientPingOffset = roundTripTime;
+}
+
 void AClockworkPlatform::Server_RequestServerTime_Implementation(float requestWorldTime)
 {
 	Client_ReportServerTime(requestWorldTime);
@@ -97,28 +108,18 @@ void AClockworkPlatform::Server_RequestServerTime_Implementation(float requestWo
 void AClockworkPlatform::Client_ReportServerTime_Implementation(float requestWorldTime)
 {
 	float roundTripTime = GetWorld()->GetTimeSeconds() - requestWorldTime;
-	ObservingPlayerPing = roundTripTime / 0.5f;
+	ObservingPlayerPing = roundTripTime * 0.5f;
 }
 
 void AClockworkPlatform::OnRep_ServerTime()
 {
-	LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	if (IsValid(LocalPlayer))
-	{
-		LocalPlayerController = LocalPlayer->GetPlayerController(GetWorld());
-		if (IsValid(LocalPlayerController))
-		{
-			LocalPlayerState = LocalPlayerController->GetPlayerState<APlayerState>();
-		}
-	}
-
-	if (IsValid(LocalPlayerState) == false)
-		return;
 	
 	float CurrentTime = GetWorld()->GetTimeSeconds();
-	Server_RequestServerTime(CurrentTime);
+	//Server_RequestServerTime(CurrentTime);
+	
 	if (ClientTimeOffset == 0)
 	{
+		//Server_InitialRequestServerTime(GetWorld()->GetTimeSeconds());
 		ClientTimeOffset = ServerTime - CurrentTime;
 	}
 }
