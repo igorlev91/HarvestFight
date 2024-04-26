@@ -6,6 +6,19 @@
 #include "Prototype2/InteractInterface.h"
 #include "PlotSign.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPlotSignData
+{
+	GENERATED_BODY()
+
+		
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bHasBeenClaimed{};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector4 AssignedColour{};
+};
+
 UCLASS()
 class PROTOTYPE2_API APlotSign : public AActor, public IInteractInterface
 {
@@ -33,7 +46,10 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class USquashAndStretch* SSComponent;
-	
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
-	bool bHasBeenClaimed{};
+
+	UFUNCTION()
+	void OnRep_bClaimed();
+
+	UPROPERTY(ReplicatedUsing=OnRep_bClaimed, EditAnywhere, BlueprintReadOnly)
+	FPlotSignData PlotSignData;
 };

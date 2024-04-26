@@ -34,7 +34,7 @@ void APlotSign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(APlotSign, bHasBeenClaimed);
+	DOREPLIFETIME(APlotSign, PlotSignData);
 }
 
 void APlotSign::Tick(float DeltaTime)
@@ -61,7 +61,7 @@ UStaticMeshComponent* APlotSign::GetMesh()
 
 void APlotSign::Interact(APrototype2Character* _Player)
 {
-	if (bHasBeenClaimed)
+	if (PlotSignData.bHasBeenClaimed)
 		return;
 
 	ClaimPlot(_Player);
@@ -97,7 +97,7 @@ void APlotSign::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProto
 	if (!_Owner)
 		return;
 	
-	if (bHasBeenClaimed)
+	if (PlotSignData.bHasBeenClaimed)
 		return;
 
 	_InvokingWidget->SetHUDInteractText("Claim (Hold)");
@@ -113,7 +113,7 @@ EInteractMode APlotSign::IsInteractable(APrototype2PlayerState* _Player)
 	if (!CastedInstigatorCharacter)
 		return INVALID;
 	
-	if (bHasBeenClaimed || CastedInstigatorCharacter->HasClaimedPlot())
+	if (PlotSignData.bHasBeenClaimed || CastedInstigatorCharacter->HasClaimedPlot())
 		return INVALID;
 	
 	return HOLD;
@@ -135,8 +135,27 @@ void APlotSign::ClaimPlot(APrototype2Character* _Player)
 	if (!RadialPlot)
 		return;
 
-	bHasBeenClaimed = true;
-	RadialPlot->SpawnGrowSpots(_Player->GetPlayerState<APrototype2PlayerState>()->Details.Colour);
+	APrototype2PlayerState* SomePlayerState = _Player->GetPlayerState<APrototype2PlayerState>();
+	if (IsValid(SomePlayerState) == false)
+		return;
+	
+	FPlotSignData NewPlotSignData;
+	NewPlotSignData.AssignedColour = SomePlayerState->Details.PureToneColour;
+	NewPlotSignData.bHasBeenClaimed = true;
+	PlotSignData = NewPlotSignData;
+	OnRep_bClaimed();
+	
+	RadialPlot->SpawnGrowSpots(SomePlayerState->Details.Colour);
 	_Player->SetClaimedPlot(RadialPlot);
+}
+
+void APlotSign::OnRep_bClaimed()
+{
+	if (PlotSignData.bHasBeenClaimed == false)
+		return;
+
+	auto PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(GetMesh()->GetStaticMesh()->GetMaterial(0), this);
+	PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), PlotSignData.AssignedColour);
+	GetMesh()->SetMaterial(0, PlotSignMaterialDynamic);
 }
 
