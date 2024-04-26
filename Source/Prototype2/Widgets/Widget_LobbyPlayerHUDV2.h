@@ -279,6 +279,10 @@ public:
 	// Confirm settings 
 	UFUNCTION(BlueprintCallable)
 	void ConfirmSetting();
+
+	// Confirm settings 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleAvailableSettings();
 	
 	// Game Mode
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
@@ -373,4 +377,24 @@ public:
 	void UpdateCementText();
 	UFUNCTION(BlueprintCallable)
 	void SetCementControl();
+	
+	// Cement - Whether cement spawns for maps that have it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* SelfCement_Control;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool DefaultSelfCementSetting = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool TempSelfCementSetting = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool SelfCementSetting = false;
+
+	UFUNCTION()
+	void OnSelfCementControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void UpdateSelfCementText();
+	UFUNCTION(BlueprintCallable)
+	void SetSelfCementControl();
+
+	
 };

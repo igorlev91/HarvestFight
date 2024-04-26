@@ -45,12 +45,16 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateStealingText();
 
 	/* Set fertiliser control */
-	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn (if available)"));
+	Fertiliser_Control->OptionText->SetText(FText::FromString("Fertiliser Spawn"));
 	UpdateFertiliserText();
 
 	/* Set cement control */
-	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn (if available)"));
+	Cement_Control->OptionText->SetText(FText::FromString("Cement Spawn"));
 	UpdateCementText();
+
+	/* Set self cementing control */
+	SelfCement_Control->OptionText->SetText(FText::FromString("Own Plot Cementing"));
+	UpdateSelfCementText();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeConstruct()
@@ -92,6 +96,13 @@ void UWidget_LobbyPlayerHUDV2::NativeConstruct()
 	{
 		Cement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
 		Cement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnCementControlButtonPressed);
+	}
+
+	/* Self Cement control buttons */
+	if (SelfCement_Control)
+	{
+		SelfCement_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
+		SelfCement_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed);
 	}
 }
 
@@ -647,10 +658,16 @@ void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 	TempCementSetting = DefaultCementSetting;
 	UpdateCementText();
 	SetCementControl();
+	TempSelfCementSetting = DefaultSelfCementSetting;
+	UpdateSelfCementText();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ResetSetting()
 {
+	TempHHGameMode = HHGameMode;
+	UpdateGameModeText();
+	SetGameModeControl();
 	TempGameSpeed = GameSpeed;
 	UpdateGameSpeedText();
 	SetGameSpeedControl();
@@ -663,6 +680,9 @@ void UWidget_LobbyPlayerHUDV2::ResetSetting()
 	TempCementSetting = CementSetting;
 	UpdateCementText();
 	SetCementControl();
+	TempSelfCementSetting = SelfCementSetting;
+	UpdateSelfCementText();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
@@ -671,6 +691,7 @@ void UWidget_LobbyPlayerHUDV2::ConfirmSetting()
 	SetStealingControl();
 	SetFertiliserControl();
 	SetCementControl();
+	SetSelfCementControl();
 }
 
 void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
@@ -698,6 +719,8 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlLeftButtonPressed()
 			break;
 		}
 	}
+
+	ToggleAvailableSettings();
 
 	UpdateGameModeText();
 }
@@ -727,7 +750,7 @@ void UWidget_LobbyPlayerHUDV2::OnGameModeControlRightButtonPressed()
 			break;
 		}
 	}
-
+	ToggleAvailableSettings();
 	UpdateGameModeText();
 }
 
@@ -912,4 +935,23 @@ void UWidget_LobbyPlayerHUDV2::UpdateCementText()
 void UWidget_LobbyPlayerHUDV2::SetCementControl()
 {
 	CementSetting = TempCementSetting;
+}
+
+void UWidget_LobbyPlayerHUDV2::OnSelfCementControlButtonPressed()
+{
+	TempSelfCementSetting = !TempSelfCementSetting;
+	UpdateSelfCementText();
+}
+
+void UWidget_LobbyPlayerHUDV2::UpdateSelfCementText()
+{
+	if (TempSelfCementSetting)
+		SelfCement_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		SelfCement_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_LobbyPlayerHUDV2::SetSelfCementControl()
+{
+	SelfCementSetting = TempSelfCementSetting;
 }
