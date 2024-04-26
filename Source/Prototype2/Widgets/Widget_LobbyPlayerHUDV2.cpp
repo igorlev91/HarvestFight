@@ -364,6 +364,7 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetHoneyFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetFloatingIslandFarm()))); // Increase vote counter for map
 	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetClockworkFarm()))); // Increase vote counter for map
+	_MapChoiceWidget->RandomLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->GetRandomFarm()))); // Increase vote counter for map
 
 	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->GetFarm() > 0) // Normal farm
@@ -390,15 +391,24 @@ void UWidget_LobbyPlayerHUDV2::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidg
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->GetRandomFarm() > 0) // Random farm
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_LobbyPlayerHUDV2::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
 {
 	_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString::FromInt(GameStateReference->GetMapChoiceTotalLengthSeconds())));
-	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
+	if (GameStateReference->GetMapChoiceTotalLengthSeconds() <= -0.5f)
 	{
-		_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
-		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		//_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
+		//_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
+		if (GameStateReference->GetMapChoiceTotalLengthSeconds() > -1.0f && GameStateReference->GetMapChoiceTotalLengthSeconds() <= 0)
+			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("0")));
+		else
+			_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("")));
 	}
 }
 

@@ -68,6 +68,7 @@ public:
 	int32 GetHoneyFarm() const;
 	int32 GetFloatingIslandFarm() const;
 	int32 GetClockworkFarm() const;
+	int32 GetRandomFarm() const;
 
 	bool HasMapBeenChosen() const;
 	int32 GetMapChoiceTotalLengthSeconds() const;
@@ -108,6 +109,7 @@ private:
 
 	void UpdateTeams();
 
+	void ServerTravel(float _DeltaSeconds);
 
 	
 	/* Private Variables */
@@ -133,7 +135,7 @@ private:
 	// Map choice
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bShowMapChoice{false};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	FString MapChoice{"Level_Main"};
 
 	// Timer between map choice and starting gameplay
@@ -164,6 +166,11 @@ private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bHasAllPlayersVoted{};
 
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	bool bCanTravel{false};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	float MapTravelTimer{2.0f};
 
 	/* Maps */
 

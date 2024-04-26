@@ -1,5 +1,4 @@
 
-
 #include "Prototype2Gamestate.h"
 
 #include "Net/UnrealNetwork.h"
@@ -51,6 +50,8 @@ void APrototype2Gamestate::Tick(float DeltaSeconds)
 	TickMapRotationTimer(DeltaSeconds);
 
 	TickTimers(DeltaSeconds);
+
+	ServerTravel(DeltaSeconds);
 }
 
 void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -113,6 +114,8 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, MapChoiceLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, bMapChosen);
 	DOREPLIFETIME(APrototype2Gamestate, bHasAllPlayersVoted);
+	DOREPLIFETIME(APrototype2Gamestate, MapChoice);
+	DOREPLIFETIME(APrototype2Gamestate, bCanTravel);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -733,7 +736,8 @@ void APrototype2Gamestate::TickTimers(float _DeltaSeconds)
 
 					PickMapToPlay();
 
-					GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+					bCanTravel = true;
+					//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 				}
 			}
 		}
@@ -999,6 +1003,23 @@ void APrototype2Gamestate::PickMapToPlay()
 				}
 			}
 		}
+	}
+}
+
+void APrototype2Gamestate::ServerTravel(float _DeltaSeconds)
+{
+	if (!HasAuthority())
+		return;
+	
+	if (bCanTravel == false)
+		return;
+
+	MapTravelTimer -= _DeltaSeconds;
+
+	if (MapTravelTimer <= 0)
+	{
+		bCanTravel = false;
+		GetWorld()->ServerTravel(MapChoice, false, false); // Start level
 	}
 }
 
