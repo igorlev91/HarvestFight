@@ -12,10 +12,10 @@ struct FFlowerData
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 StarValue = 0;
+	int32 StarValue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 Count = 0;
+	int32 Count;
 };
 
 UCLASS()
@@ -25,12 +25,9 @@ class PROTOTYPE2_API UWidget_3DGrowUI : public UUserWidget
 	
 public:
 	virtual void NativeOnInitialized() override;
-
-	UFUNCTION()
-	void SetWeaponType(int32 _Type);
 	
 	UFUNCTION()
-	void SetStarCount(int32 _Count, bool _bGold = false);
+	void SetStarCount(int32 _Count);
 
 	UFUNCTION()
 	void SetFlowerTypes(TArray<FFlowerData> _FlowerDatas);
@@ -42,12 +39,6 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> StarTextures;
-
-	UPROPERTY(EditAnywhere)
-	TArray<class UTexture2D*> GoldenStarTextures;
-
-	UPROPERTY(EditAnywhere)
-	TArray<class UTexture2D*> WeaponTextures;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UWidget_Flower> FlowerWidget;
@@ -63,9 +54,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, meta = (BindWidget))
 	class UHorizontalBox* H_Flowers;
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget))
-	class UImage* I_Weapon;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
