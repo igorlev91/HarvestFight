@@ -23,6 +23,8 @@ protected:
 	/* sets up the seed spawner */
 	virtual void BeginPlay() override;
 
+	void SetUpSeedBag();
+
 	/**
 	 * @brief calls the spawn seeds functions
 	 * @param _DeltaTime 
@@ -38,6 +40,8 @@ protected:
 	void SpawnSeeds(TArray<AActor*> _SpawnedSeeds, float _DeltaTime, float _MaxSeeds);
 	void SpawnSeeds_RAW();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
+
+	void ShuffleSeedBag();
 public:
 	
 	virtual void Tick(float _DeltaTime) override;
@@ -81,4 +85,15 @@ private:
 	float MinSpawnRadius{100.0f};
 	UPROPERTY(EditAnywhere, Category = Spawning, meta = (AllowPrivateAccess))
 	float MaxSpawnRadius{800.0f};
+
+	// bag system
+	UPROPERTY(EditAnywhere)
+	bool bUseBagSystem = false;
+	UPROPERTY(EditAnywhere)
+	TArray<int32> NumberOfSeedsPerStarValue;
+	UPROPERTY(VisibleAnywhere)
+	int32 BagPositionTracker;
+	UPROPERTY(VisibleAnywhere)
+	TArray<int32> SeedBag;
+	
 };
