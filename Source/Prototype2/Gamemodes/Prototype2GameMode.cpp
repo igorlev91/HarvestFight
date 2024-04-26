@@ -15,6 +15,7 @@
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Prototype2/DataAssets/RandomNameData.h"
 #include "Prototype2/Gameplay/Crown.h"
 #include "Prototype2/Gameplay/RandomEventManager.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
@@ -364,7 +365,15 @@ void APrototype2GameMode::UpdatePlayerInfo(APrototype2Gamestate* _GameStateRefer
 	}
 	else if (auto NullSubsystem = IOnlineSubsystem::Get())
 	{
-		SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
+		if (AvailableNames.Num() > 0)
+		{
+			SomePlayerName = AvailableNames[rand() % AvailableNames.Num()];
+			AvailableNames.Remove(SomePlayerName);
+		}
+		else
+		{
+			SomePlayerName = "Player " + FString::FromInt(SomePlayerID + 1);
+		}
 	}
 
 	if (_gameInstanceReference->FinalPlayerDetails.Contains(_PlayerState->GetPlayerName()))
@@ -386,6 +395,9 @@ void APrototype2GameMode::UpdatePlayerInfo(APrototype2Gamestate* _GameStateRefer
 
 void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference)
 {
+	if (IsValid(RandomNameData))
+		AvailableNames = RandomNameData->RandomNames;
+	
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
 		if (!IsValid(_GameStateReference->Server_Players[i]))
@@ -405,7 +417,15 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
-			SomePlayerName = "Player " + FString::FromInt(i + 1);
+			if (AvailableNames.Num() > 0)
+			{
+				SomePlayerName = AvailableNames[rand() % AvailableNames.Num()];
+				AvailableNames.Remove(SomePlayerName);
+			}
+			else
+			{
+				SomePlayerName = "Player " + FString::FromInt(i + 1);
+			}
 					
 			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{

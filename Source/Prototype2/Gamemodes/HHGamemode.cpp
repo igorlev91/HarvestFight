@@ -3,10 +3,20 @@
 #include "HHGamemode.h"
 
 #include "Prototype2/DataAssets/ColourData.h"
+#include "Prototype2/DataAssets/RandomNameData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Prototype2/PlayerStates/LobbyPlayerState.h"
+
+AHHGamemodeBase::AHHGamemodeBase()
+{
+	static ConstructorHelpers::FObjectFinder<URandomNameData> RandomLANNameData(TEXT("/Game/DataAssets/MiscData/DA_RandomNames"));
+	if (RandomLANNameData.Object != NULL)
+	{
+		RandomNameData = RandomLANNameData.Object;
+	}
+}
 
 void AHHGamemodeBase::UpdateSessionJoinability(int32 _MaxPlayers)
 {
