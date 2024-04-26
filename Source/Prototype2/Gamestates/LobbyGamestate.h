@@ -18,7 +18,8 @@ enum class EFarm : uint8
 	WINTERFARM,
 	HONEYFARM,
 	FLOATINGISLANDSFARM,
-	CLOCKWORKFARM
+	CLOCKWORKFARM,
+	RANDOMFARM
 };
 
 USTRUCT(BlueprintType)
@@ -101,6 +102,8 @@ private:
 	/* Picks a random map to play for the list of those maps most voted for */
 	void PickMapToPlay();
 
+	void PickRandomMap();
+
 	void TickTimers(float _DeltaSeconds);
 
 	void UpdateTeams();
@@ -152,6 +155,8 @@ private:
 	int32 FloatingIslandFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 ClockworkFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 RandomFarm{0};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bPreviousServerTravel{};
