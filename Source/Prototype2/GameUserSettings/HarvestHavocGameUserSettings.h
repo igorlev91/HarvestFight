@@ -1,5 +1,4 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -22,7 +21,7 @@ class PROTOTYPE2_API UHarvestHavocGameUserSettings : public UGameUserSettings
 	GENERATED_UCLASS_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	static UHarvestHavocGameUserSettings* GetHarvestHavocGameUserSettings();
 	
 	virtual void SaveSettings() override;
@@ -43,25 +42,25 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetUIIndicatorSizeLarge(bool _bLargeSize);
 
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetMasterVolume() const { return MasterVolume; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetMusicVolume() const { return MusicVolume; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetAmbienceVolume() const { return AmbienceVolume; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetSFXVolume() const { return SFXVolume; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	bool GetPlayerStencil() const { return bPlayerStencil; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	EIndicatorUISetting GetUIIndicators() const { return (EIndicatorUISetting)UIIndicators; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	bool GetUIIndicatorSizeLarge() const { return UIIndicatorSizeLarge; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetMouseSensitivityScale() const { return MouseSensitivityScale; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	bool GetCustomMouseCursor() const { return CustomMouseCursor; }
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable)
 	int32 GetControllerMenuSensitivityScale() const { return ControllerMenuSensitivityScale; }
 
 protected:
