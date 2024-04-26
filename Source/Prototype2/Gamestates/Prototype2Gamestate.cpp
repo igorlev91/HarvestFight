@@ -107,6 +107,7 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, HoneyFarm);
 	DOREPLIFETIME(APrototype2Gamestate, FloatingIslandFarm);
 	DOREPLIFETIME(APrototype2Gamestate, ClockworkFarm);
+	DOREPLIFETIME(APrototype2Gamestate, RandomFarm);
 
 	DOREPLIFETIME(APrototype2Gamestate, MapChoiceTotalLengthSeconds);
 	DOREPLIFETIME(APrototype2Gamestate, MapChoiceLengthSeconds);
@@ -321,6 +322,184 @@ void APrototype2Gamestate::VoteMap(EFarm _Level)
 	else if (_Level == EFarm::CLOCKWORKFARM)
 	{
 		ClockworkFarm += 1;
+	}else if (_Level == EFarm::RANDOMFARM)
+	{
+		RandomFarm += 1;
+	}
+}
+
+void APrototype2Gamestate::PickRandomMap()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Random Map button received highest vote. Randomising level based on game mode"));
+	
+	switch (GameMode)
+	{
+	case 0: // Classic
+		{
+			int32 RandomNumber = FMath::RandRange(0, 4);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = FriendlyFarmClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = FriendlyFarmClassicMedium;
+					else
+						MapChoice = FriendlyFarmClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly Farm Map Chosen"));
+					break;
+				}
+			case 1:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = FrostyFieldsClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = FrostyFieldsClassicMedium;
+					else
+						MapChoice = FrostyFieldsClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter Farm Map Chosen"));
+					break;
+				}
+			case 2:
+				{
+					if (Server_Players.Num() <= 2)	
+						MapChoice = HoneyClassicSmall;
+					else if (Server_Players.Num() == 3 || Server_Players.Num() == 4)	
+						MapChoice = HoneyClassicMedium;
+					else
+						MapChoice = HoneyClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Honey Farm Map Chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = FloatingIslandsClassic;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating Island Farm Map Chosen"));
+					break;
+				}
+			case 4:
+				{
+					if (Server_Players.Num() <= 4)	
+						MapChoice = ClockworkClassicMedium;
+					else
+						MapChoice = ClockworkClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Clockwork Farm Map Chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmClassicLarge;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached. Large classic friendly farm chosen"));
+					break;
+				}
+			}
+			
+			break;
+		}
+	case 1: // Brawl
+		{
+			int32 RandomNumber = FMath::RandRange(0, 3);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					MapChoice = FriendlyFarmBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly farm brawl map chosen"));
+					break;
+				}
+			case 1:
+				{
+					MapChoice = FrostyFieldsBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter farm brawl map chosen"));
+					break;
+				}
+			case 2:
+				{
+					MapChoice = HoneyBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Honey farm brawl map chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = FloatingIslandsBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating island farm brawl map chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmBrawl;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached. Friendly farm brawl map selected"));
+					break;
+				}
+			}
+			break;
+		}
+	case 2: // Blitz
+		{
+			int32 RandomNumber = FMath::RandRange(0, 3);
+			UE_LOG(LogTemp, Warning, TEXT("Random Number: %d"), RandomNumber);
+
+			switch (RandomNumber)
+			{
+			case 0:
+				{
+					MapChoice = FriendlyFarmBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Friendly farm blitz map chosen"));
+					break;
+				}
+			case 1:
+				{
+					MapChoice = FrostyFieldsBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Winter island farm blitz map chosen"));
+					break;
+				}
+			case 2:
+				{
+					MapChoice = FloatingIslandsBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Floating island farm blitz map chosen"));
+					break;
+				}
+			case 3:
+				{
+					MapChoice = ClockworkBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Clockwork farm blitz map chosen"));
+					break;
+				}
+			default:
+				{
+					MapChoice = FriendlyFarmBlitz;
+
+					UE_LOG(LogTemp, Warning, TEXT("Default case reached, Friendly farm blitz map chosen"));
+					break;
+				}
+			}
+			break;
+		}
+	default:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Default case reached, incorrect gamemode reached"));
+			break;
+		}
 	}
 }
 
@@ -538,7 +717,7 @@ void APrototype2Gamestate::TickTimers(float _DeltaSeconds)
 				MapChoiceTotalLengthSeconds -= _DeltaSeconds;
 				UE_LOG(LogTemp, Warning, TEXT("Timer should be decreasing"));
 
-				const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm + ClockworkFarm;
+				const int32 TotalVotes = Farm + WinterFarm + HoneyFarm + FloatingIslandFarm + ClockworkFarm + RandomFarm;
 				if (TotalVotes == Server_Players.Num() && bMapChosen == false && bHasAllPlayersVoted == false)
 				{
 					bHasAllPlayersVoted = true;
@@ -569,7 +748,7 @@ void APrototype2Gamestate::PickMapToPlay()
 	if (bMapChosen == false)
 	{
 		bMapChosen = true; // Turned true so that it will change HUD visibility for timer
-		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm) // Normal farm gets most votes
+		if (Farm > WinterFarm && Farm > HoneyFarm && Farm > FloatingIslandFarm && Farm > ClockworkFarm && Farm >= RandomFarm) // Normal farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -588,7 +767,7 @@ void APrototype2Gamestate::PickMapToPlay()
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start friendly farm map but incorrect mode attached"));
 			
 		}
-		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm) // Winter farm gets most votes
+		else if (WinterFarm > Farm && WinterFarm > HoneyFarm && WinterFarm > FloatingIslandFarm && WinterFarm > ClockworkFarm && WinterFarm >= RandomFarm) // Winter farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -606,7 +785,7 @@ void APrototype2Gamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start winter map but incorrect mode attached"));
 		}
-		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm) // Honey farm gets most votes
+		else if (HoneyFarm > Farm && HoneyFarm > WinterFarm && HoneyFarm > FloatingIslandFarm && HoneyFarm > ClockworkFarm && HoneyFarm >= RandomFarm) // Honey farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -622,7 +801,7 @@ void APrototype2Gamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start honey map but incorrect mode attached"));
 		}
-		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm) // floating islands farm gets most votes
+		else if (FloatingIslandFarm > Farm && FloatingIslandFarm > WinterFarm && FloatingIslandFarm > HoneyFarm && FloatingIslandFarm > ClockworkFarm && FloatingIslandFarm >= RandomFarm) // floating islands farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 				MapChoice = FloatingIslandsClassic;
@@ -633,7 +812,7 @@ void APrototype2Gamestate::PickMapToPlay()
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Attempted to start floating farm map but incorrect mode attached"));
 		}
-		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm) // floating islands farm gets most votes
+		else if (ClockworkFarm > Farm && ClockworkFarm > WinterFarm && ClockworkFarm > HoneyFarm && ClockworkFarm > FloatingIslandFarm && ClockworkFarm >= RandomFarm) // floating islands farm gets most votes
 		{
 			if (GameMode == 0) // Normal Mode
 			{
@@ -648,6 +827,10 @@ void APrototype2Gamestate::PickMapToPlay()
 			}
 			else
 				MapChoice = ClockworkBlitz;
+		}
+		else if (RandomFarm > Farm && RandomFarm > WinterFarm && RandomFarm > HoneyFarm && RandomFarm > FloatingIslandFarm && RandomFarm > ClockworkFarm) // floating islands farm gets most votes
+		{
+			PickRandomMap();
 		}
 		else // Pick a random map from highest votes
 		{

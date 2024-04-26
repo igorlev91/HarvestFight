@@ -72,6 +72,7 @@ public:
 	void SetSellMultiplier(int32 _Multiplier);
 
 	void VoteMap(EFarm _Level);
+	void PickRandomMap();
 
 	UFUNCTION()
 	void AddCoinsTeams(APrototype2PlayerState* _Player, int32 _Amount);
@@ -229,6 +230,8 @@ public:
 	int32 FloatingIslandFarm{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 ClockworkFarm{0};
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	int32 RandomFarm{0};
 
 	/* Maps */
 
