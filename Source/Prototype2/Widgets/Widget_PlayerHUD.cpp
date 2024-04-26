@@ -96,85 +96,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	/* Non team UI */
 	if (GameStateReference->bTeams == false)
 	{
-		/* Set number of UI shown on screen */
-		if (GameStateReference->GetFinalConnectionCount() <= 4)
-		{
-			// Probably dont need to set visibility at start, but just in case
-			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
-				
-			if (GameStateReference->GetFinalConnectionCount() <= 3)
-			{
-				OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
-
-				if (GameStateReference->GetFinalConnectionCount() <= 2)
-				{
-					OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
-						
-					if (GameStateReference->GetFinalConnectionCount() == 2)
-					{
-						OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
-
-					}
-					else if (GameStateReference->GetFinalConnectionCount() == 1)
-					{
-						OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
-					}
-					OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-				
-					UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
-					overlaySlot->SetPadding(FMargin(0,0,0,0));
-				}
-			}
-		}
-
-		// Set positions of slots for 1 - 4 players
-		if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
-		{
-			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-			OverlaySlot->SetPadding(FMargin(0,0,650,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-			OverlaySlot->SetPadding(FMargin(0,0,300,0));
-		}
-		else
-		{
-			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
-			OverlaySlot->SetPadding(FMargin(0,0,400,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
-			OverlaySlot->SetPadding(FMargin(400,0,0,0));
-		}
-		
-		/* Change UI positions if more than 4 players*/
-		if (GameStateReference->GetFinalConnectionCount() > 4)
-		{
-			/* Turn all UI icons on (make visible */
-			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
-			OverlayPlayer5->SetVisibility(ESlateVisibility::Visible);
-			
-			if (GameStateReference->GetFinalConnectionCount() > 4)
-				OverlayPlayer6->SetVisibility(ESlateVisibility::Visible);
-
-			/* Set positions of overlay UI (images and scores) for 4+ players
-			 * GetSlots()[2] not showing as that is the game timer
-			 */
-			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Player 1 UI
-			OverlaySlot->SetPadding(FMargin(0,0,780,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Player 2 UI
-			OverlaySlot->SetPadding(FMargin(0,0,510,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[3]); // Player 3 UI
-			OverlaySlot->SetPadding(FMargin(0,0,230,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[4]); // Player 4 UI
-			OverlaySlot->SetPadding(FMargin(230,0,0,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[5]); // Player 5 UI
-			OverlaySlot->SetPadding(FMargin(510,0,0,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[6]); // Player 6 UI
-			OverlaySlot->SetPadding(FMargin(780,0,0,0));
-		}
+		SetFreeForAllScoreUI();
 	}
 	else /* Teams UI */
 	{
@@ -581,17 +503,21 @@ void UWidget_PlayerHUD::DisableEmoteRadialMenu()
 
 void UWidget_PlayerHUD::EnableEndgameMenu()
 {
-	IngameMenu->DisableMenu();
-	EndgameMenu->EnableEndgameMenu();
-	bEndgame = true;
-	APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
-	if (PlayerController)
+	if (EndgameMenu->GetVisibility() != ESlateVisibility::Visible)
 	{
-		FInputModeGameAndUI InputMode;
-		PlayerController->SetInputMode(InputMode);
+		IngameMenu->DisableMenu();
+		EndgameMenu->EnableEndgameMenu();
+		bEndgame = true;
+		APrototype2PlayerController* PlayerController = Cast<APrototype2PlayerController>(GetOwningPlayer());
+		if (PlayerController)
+		{
+			FInputModeGameAndUI InputMode;
+			PlayerController->SetInputMode(InputMode);
+		}
+		EndgameMenu->SetFocus();
+		//bIsFocusable = true;
+		//SetFocus();
 	}
-	bIsFocusable = true;
-	SetFocus();
 }
 
 void UWidget_PlayerHUD::UpdatePickupUI(UTexture2D* _PickupTexture)
@@ -751,6 +677,7 @@ void UWidget_PlayerHUD::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget)
 	_MapChoiceWidget->HoneyLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->HoneyFarm))); // Increase vote counter for map
 	_MapChoiceWidget->FloatingIslandsLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->FloatingIslandFarm))); // Increase vote counter for map
 	_MapChoiceWidget->ClockworkLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->ClockworkFarm))); // Increase vote counter for map
+	_MapChoiceWidget->RandomLevelCounter->SetText(FText::FromString(FString::FromInt(GameStateReference->RandomFarm))); // Increase vote counter for map
 
 	/* Turning on visibility of map counters if value is higher than 0 */
 	if (GameStateReference->Farm > 0) // Normal farm
@@ -777,6 +704,11 @@ void UWidget_PlayerHUD::UpdateMapChoice(UWidget_MapChoice* _MapChoiceWidget)
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Visible); 
 	else
 		_MapChoiceWidget->ClockworkLevelCounter->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameStateReference->RandomFarm > 0) // Random farm
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Visible); 
+	else
+		_MapChoiceWidget->RandomLevelCounter->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_PlayerHUD::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget)
@@ -787,6 +719,89 @@ void UWidget_PlayerHUD::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget
 		//_MapChoiceWidget->LoadingPageFake->SetVisibility(ESlateVisibility::Visible);
 		_MapChoiceWidget->MapChoiceTimer->SetText(FText::FromString(FString("LOADING LEVEL...")));
 	}
+}
+
+void UWidget_PlayerHUD::SetFreeForAllScoreUI()
+{
+	/* Set number of UI shown on screen */
+		if (GameStateReference->GetFinalConnectionCount() <= 4)
+		{
+			// Probably dont need to set visibility at start, but just in case
+			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
+				
+			if (GameStateReference->GetFinalConnectionCount() <= 3)
+			{
+				OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
+
+				if (GameStateReference->GetFinalConnectionCount() <= 2)
+				{
+					OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
+						
+					if (GameStateReference->GetFinalConnectionCount() == 2)
+					{
+						OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+
+					}
+					else if (GameStateReference->GetFinalConnectionCount() == 1)
+					{
+						OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
+					}
+					OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+				
+					UOverlaySlot* overlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]);
+					overlaySlot->SetPadding(FMargin(0,0,0,0));
+				}
+			}
+		}
+
+		// Set positions of slots for 1 - 4 players
+		if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
+		{
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+			OverlaySlot->SetPadding(FMargin(0,0,650,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+			OverlaySlot->SetPadding(FMargin(0,0,300,0));
+		}
+		else
+		{
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
+			OverlaySlot->SetPadding(FMargin(0,0,400,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Change position of player 2
+			OverlaySlot->SetPadding(FMargin(400,0,0,0));
+		}
+		
+		/* Change UI positions if more than 4 players*/
+		if (GameStateReference->GetFinalConnectionCount() > 4)
+		{
+			/* Turn all UI icons on (make visible */
+			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
+			OverlayPlayer5->SetVisibility(ESlateVisibility::Visible);
+			
+			if (GameStateReference->GetFinalConnectionCount() > 4)
+				OverlayPlayer6->SetVisibility(ESlateVisibility::Visible);
+
+			/* Set positions of overlay UI (images and scores) for 4+ players
+			 * GetSlots()[2] not showing as that is the game timer
+			 */
+			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Player 1 UI
+			OverlaySlot->SetPadding(FMargin(0,0,780,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Player 2 UI
+			OverlaySlot->SetPadding(FMargin(0,0,510,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[3]); // Player 3 UI
+			OverlaySlot->SetPadding(FMargin(0,0,230,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[4]); // Player 4 UI
+			OverlaySlot->SetPadding(FMargin(230,0,0,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[5]); // Player 5 UI
+			OverlaySlot->SetPadding(FMargin(510,0,0,0));
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[6]); // Player 6 UI
+			OverlaySlot->SetPadding(FMargin(780,0,0,0));
+		}
 }
 
 void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)

@@ -65,6 +65,9 @@ public:
 
 	void UpdateMapChoice(class UWidget_MapChoice* _MapChoiceWidget);
 	void UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget);
+
+	UFUNCTION(BlueprintCallable)
+	void SetFreeForAllScoreUI();
 	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
