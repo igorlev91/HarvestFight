@@ -123,6 +123,8 @@ protected:
 	void InitNiagraComponents();
 	UFUNCTION()
 	void InitMiscComponents();
+	UFUNCTION()
+	void InitFOV();
 
 	void SyncCharacterColourWithPlayerState();
 
@@ -546,7 +548,7 @@ public:
 
 protected:
 	/* Invincible timer - how long the player can't be hit after being hit*/
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(Replicated, EditDefaultsOnly)
 	float InvincibilityTimer = 0.0f;
 	UPROPERTY(EditDefaultsOnly)
 	float InvincibilityDuration = 0.5f;

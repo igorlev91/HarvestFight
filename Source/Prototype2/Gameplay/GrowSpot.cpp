@@ -139,6 +139,8 @@ void AGrowSpot::BeginPlay()
 		Mesh->SetWorldScale3D(GrowSpotData->DesiredScale);
 	}
 
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	/* DYNAMIC MATERIAL */
 	PlotMaterial = UMaterialInstanceDynamic::Create(Mesh->GetMaterial(0), nullptr);
 	Mesh->SetMaterial(0, PlotMaterial);
@@ -352,6 +354,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 		
 		_Player->HeldItem->Destroy();
 		_Player->HeldItem = nullptr;
+		_Player->OnRep_HeldItem();
 
 		return;
 	}
@@ -376,6 +379,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 				APickUpItem* HeldSeed = _Player->HeldItem;
 				_Player->HeldItem = nullptr;
+				_Player->OnRep_HeldItem();
 				PlantASeed(HeldSeed);
 			}
 			
@@ -399,6 +403,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef);
 					SomeBeehive->Interact(_Player);
+					return;
 					break;
 				}
 			default:
@@ -559,12 +564,12 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	else if (SeedData->BabyType == EPickupDataType::BeehiveData)
 	{
 		ABeehive* NewItem = GetWorld()->SpawnActorDeferred<ABeehive>(BeehivePrefab,SpawnTransform, this);
-		NewItem->SetBeehiveLocation(GetActorLocation());
 		NewItem->ParentGrowSpot = this;
 		NewItem->SetSeedData(SeedData,EPickupActor::BeehiveActor);
 		NewItem->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
-
+		NewItem->SetBeehiveLocation(GetActorLocation());
+		
 		ItemRef = NewItem;
 
 	}

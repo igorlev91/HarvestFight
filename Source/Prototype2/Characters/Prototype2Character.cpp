@@ -79,6 +79,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, Weapon);
 	DOREPLIFETIME(APrototype2Character, HeldItem);
 	DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
+	DOREPLIFETIME(APrototype2Character, InvincibilityTimer);
 	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
 	//DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
 	//DOREPLIFETIME(APrototype2Character, InteractTimer);
@@ -128,13 +129,7 @@ void APrototype2Character::BeginPlay()
 	InitMeshAndCapsule();
 	InitWeapon();
 	InitShippingBin();
-	SetFOV();
-	// Setup FOV after HUD has been created
-	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->OptionsMenu))
-	{
-		PlayerHUDRef->OptionsMenu->OnFOVChangedDelegate.AddDynamic(this, &APrototype2Character::SetFOV);
-	}
-
+	InitFOV();
 }
 
 void APrototype2Character::DelayedBeginPlay()
@@ -315,6 +310,14 @@ void APrototype2Character::TogglePlayerStencil()
 
 void APrototype2Character::Move(const FInputActionValue& _Value)
 {
+	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->IngameMenu))
+	{
+		if (PlayerHUDRef->IngameMenu->GetVisibility() == ESlateVisibility::Visible)
+		{
+			return;
+		}
+	}
+
 	const FVector2D MovementVector = _Value.Get<FVector2D>();
 	//if (!Controller || bIsHoldingInteract)
 	//	return;
@@ -726,6 +729,7 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			HeldItem->ItemComponent->Mesh->AddImpulse(RandomWhoopsyDirection.GetSafeNormal() * WhoopsyStrength, NAME_None, true);
 			
 			HeldItem = nullptr;
+			OnRep_HeldItem();
 			//
 		}
 		else
@@ -737,6 +741,7 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 	else
 	{
 		HeldItem = nullptr;
+		OnRep_HeldItem();
 	}
 }
 
@@ -1233,6 +1238,16 @@ void APrototype2Character::InitMiscComponents()
 	}
 }
 
+void APrototype2Character::InitFOV()
+{
+	SetFOV();
+	// Setup FOV after HUD has been created
+	if (IsValid(PlayerHUDRef) && IsValid(PlayerHUDRef->OptionsMenu))
+	{
+		PlayerHUDRef->OptionsMenu->OnFOVChangedDelegate.AddDynamic(this, &APrototype2Character::SetFOV);
+	}
+}
+
 void APrototype2Character::UpdateDecalAngle()
 {
 	if (!IsValid(SellBin))
@@ -1380,6 +1395,7 @@ void APrototype2Character::LandAfterfalling()
 		{
 			if (!bIsChargingAttack)
 			{
+				if (HasAuthority() || GetLocalRole() == ROLE_AutonomousProxy)
 				PlayNetworkMontage(AnimationData->FallOnButtAndGetBackUp);
 			}
 			OnFallOnButtDelegate.Broadcast();
@@ -1638,11 +1654,17 @@ void APrototype2Character::SetClaimedPlot(ARadialPlot* _Plot)
 void APrototype2Character::OnRep_HeldItem()
 {
 	RefreshCurrentMaxSpeed();
-	if (!IsValid(HeldItem))
+	
+	if (!IsLocallyControlled())
+		return;
+	
+	if (IsValid(HeldItem) == false)
 	{
-		if (PlayerHUDRef)
+		ClearPickupUI();
+
+		if (IsValid(GetWeaponData()))
 		{
-			PlayerHUDRef->ClearPickupUI();
+			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Base-HumanWeapon")); 
 		}
 	}
 }
@@ -1696,9 +1718,18 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 {
 	if (!IsValid(ClosestInteractableActor) || ClosestInteractableItem == nullptr)
 		return;
+
+	if (InvincibilityTimer > 0)
+	{
+		InteractTimeline->Stop();
+	}
+	else if (auto SomeGrowSpot = Cast<AGrowSpot>(ClosestInteractableActor))
+	{
+		if (IsValid(SomeGrowSpot->ItemRef) == false)
+			InteractTimeline->Stop();
+	}
 	
 	OnClaimingPlotDelegate.Broadcast(_Progress, InteractTimeline->GetTimelineLength());
-
 }
 
 void APrototype2Character::OnFinish_InteractTimeline()
@@ -1706,7 +1737,6 @@ void APrototype2Character::OnFinish_InteractTimeline()
 	Interact();
 	OnStoppedClaimingPlotDelegate.Broadcast();
 	ReleaseInteract();
-	//bAllowMovementFromInput = true;
 }
 
 void APrototype2Character::Client_BroadcastPlotClaimed_Implementation(ARadialPlot* _Plot)
@@ -2163,6 +2193,7 @@ void APrototype2Character::ThrowItem()
 
 		CalculateThrowVectorAndLaunch(GetActorForwardVector(), GetCharacterMovement()->GetLastUpdateVelocity().Length());
 		HeldItem = nullptr;
+		OnRep_HeldItem();
 	}
 	else
 	{
@@ -2223,6 +2254,7 @@ void APrototype2Character::Server_ThrowItem_Implementation(FVector _ForwardVecto
 
 	CalculateThrowVectorAndLaunch(_ForwardVector, _PlayerSpeed);
 	HeldItem = nullptr;
+	OnRep_HeldItem();
 }
 
 void APrototype2Character::Client_BroadcastOvercharge_Implementation()
@@ -2575,7 +2607,10 @@ void APrototype2Character::TickTimers(float _DeltaSeconds)
 	// No longer replicated
 	DeltaDecrement(AttackTimer, _DeltaSeconds);
 	DecrementSprintTimers(_DeltaSeconds);
-	DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
+	
+	if (HasAuthority())
+		DeltaDecrement(InvincibilityTimer, _DeltaSeconds);
+	
 	DeltaDecrement(WeaponFlashTimer, _DeltaSeconds);
 	if (WeaponFlashTimer < 0.0f)
 	{
@@ -2751,14 +2786,15 @@ void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 	// Server_DropItem
 	if (IsValid(DropCue))
 		PlaySoundAtLocation(GetActorLocation(), DropCue);
-	if (IsValid(WeaponMesh))
-		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	//if (IsValid(WeaponMesh))
+	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 	Multi_DropItem();
 	HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
 	HeldItem->ItemComponent->Mesh->AddImpulse(FVector::UpVector * WhoopsyStrength, NAME_None, true);
 
 	HeldItem = nullptr;
+	OnRep_HeldItem();
 }
 
 void APrototype2Character::Multi_DropItem_Implementation()
@@ -2797,6 +2833,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 	case EPickupActor::PlantActor:
 		{
 			HeldItem = _Item;
+			OnRep_HeldItem();
 
 			_Item->ItemComponent->PlayerWhoThrewItem = nullptr;
 			
@@ -2837,6 +2874,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 	default:
 		{
 			HeldItem = _Item;
+			OnRep_HeldItem();
 			
 			Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
 			break;
