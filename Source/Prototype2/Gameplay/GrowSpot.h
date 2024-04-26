@@ -80,7 +80,10 @@ public:
 
 	void SpawnAPoof();
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UFUNCTION()
+	void OnRep_ItemRef();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_ItemRef, VisibleAnywhere)
 	APickUpItem* ItemRef{};
 	
 	UPROPERTY(Replicated, EditAnywhere)

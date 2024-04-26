@@ -550,8 +550,9 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		//SpawnTransform.SetRotation(FQuat::MakeFromEuler({-90.0f, 0.0f, 0.0f}));
 		AGrowableWeapon* NewItem = GetWorld()->SpawnActorDeferred<AGrowableWeapon>(WeaponPrefab,SpawnTransform, this);
 		NewItem->SetSeedData(SeedData,EPickupActor::WeaponActor, FertilisationState.bFertilised);
+		NewItem->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
-
+		
 		ItemRef = NewItem;
 		
 	}
@@ -561,6 +562,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		NewItem->SetBeehiveLocation(GetActorLocation());
 		NewItem->ParentGrowSpot = this;
 		NewItem->SetSeedData(SeedData,EPickupActor::BeehiveActor);
+		NewItem->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
 
 		ItemRef = NewItem;
@@ -570,10 +572,13 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 	{
 		APickUpItem* NewItem = GetWorld()->SpawnActorDeferred<APickUpItem>(PlantPrefab,SpawnTransform, this);
 		NewItem->SetSeedData(SeedData,EPickupActor::PlantActor, FertilisationState.bFertilised);
+		NewItem->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
 
 		ItemRef = NewItem;
 	}
+
+	
 	
 	_SeedToPlant->Destroy();
 	GrowSpotState = EGrowSpotState::Growing;
@@ -651,6 +656,11 @@ void AGrowSpot::SpawnAPoof()
 		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{});
 		SpawnedVFX->SetLifeSpan(5.0f);
 	}
+}
+
+void AGrowSpot::OnRep_ItemRef()
+{
+	SetPlantReadySparkle(false);
 }
 
 void AGrowSpot::MandrakePickupNoise()

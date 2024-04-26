@@ -14,44 +14,49 @@ protected:
 	AClockworkPlatform();
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UFUNCTION()
-	void TickTimeline(float _Progress);
+	void DoMovement();
+
 	UFUNCTION()
-	void OnTimelineEnd();
-	UFUNCTION()
-	void OnHaltEnd();
+	float TriangleWave(float _X);
+	
 protected:
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* Platform;
+	class UStaticMeshComponent* PlatformMesh;
 
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* Pole;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UStaticMeshComponent* EndPoint_DEBUG;
-
+	class USceneComponent* StartPosition;
 	UPROPERTY(VisibleAnywhere)
-	class UTimelineComponent* LerpTimeline;
+	class USceneComponent* EndPosition;
 
-	UPROPERTY(VisibleAnywhere)
-	class UTimelineComponent* HaltTimeline;
+	UFUNCTION()
+	void OnRep_ServerTime();
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FVector StartPosition{};
+	UPROPERTY(ReplicatedUsing=OnRep_ServerTime, VisibleAnywhere)
+	float ServerTime{};
+
+	UPROPERTY(Replicated)
+	float PlatformTimeOffset{0};
 
 	UPROPERTY(VisibleAnywhere)
-	float LerpProgress{};
+	float ClientTimeOffset{0};
 
 	UPROPERTY(VisibleAnywhere)
-	bool OnReturnJourney{};
+	float ObservingPlayerPing{0};
 
 	UPROPERTY(VisibleAnywhere)
-	float PauseTimer{};
+	class ULocalPlayer* LocalPlayer{nullptr};
+	UPROPERTY(VisibleAnywhere)
+	class APlayerController* LocalPlayerController{nullptr};
+	UPROPERTY(VisibleAnywhere)
+	class APlayerState* LocalPlayerState{nullptr};
 	
 protected:
 	UPROPERTY(EditAnywhere, Category="Moving Platform")
-	float MoveSpeed{0.3183f};
+	float MoveSpeed{1};
 
 	UPROPERTY(EditAnywhere, Category="Moving Platform")
-	float PauseDuration{5.0f};
+	class UCurveFloat* MovementCurve;
 };

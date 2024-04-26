@@ -3,98 +3,118 @@
 #include "ClockworkPlatform.h"
 
 #include "Components/TimelineComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
+#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AClockworkPlatform::AClockworkPlatform()
 {
+	static ConstructorHelpers::FObjectFinder<UCurveFloat> LinearCurve(TEXT("/Game/Curves/LinearCurve"));
+	if (LinearCurve.Object != nullptr)
+	{
+		MovementCurve = LinearCurve.Object;
+	}
+	
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
-	Platform = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Platform"));
-	Platform->SetupAttachment(RootComponent);
-	Platform->SetWorldScale3D(FVector::One() * 0.75f);
-	
-	Pole = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pole"));
-	Pole->SetupAttachment(RootComponent);
 
-	// Debug Endpoint Sphere
-	EndPoint_DEBUG = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DEBUG: End Point"));
-	EndPoint_DEBUG->SetupAttachment(Platform);
-	EndPoint_DEBUG->SetRelativeLocation(FVector::UpVector * 200.0f);
-	EndPoint_DEBUG->SetCollisionProfileName("NoCollision");
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere"));
-	if (SphereMesh.Object != NULL)
-	{
-		EndPoint_DEBUG->SetStaticMesh(SphereMesh.Object);
-		EndPoint_DEBUG->SetRelativeScale3D(FVector::One() * 0.5f);
-	}
-	EndPoint_DEBUG->SetRelativeLocation(FVector::UpVector * 853.33f);
+	PlatformMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Platform Mesh"));
+	SetRootComponent(PlatformMesh);
 
-	LerpTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
-	static ConstructorHelpers::FObjectFinder<UCurveFloat> LinearCurve(TEXT("/Game/Curves/LinearCurve"));
-	if (LinearCurve.Object != NULL)
-	{
-		FOnTimelineFloat TimelineCallback{};
-		TimelineCallback.BindDynamic(this, &AClockworkPlatform::TickTimeline);
-		LerpTimeline->AddInterpFloat(LinearCurve.Object, TimelineCallback);
-		FOnTimelineEvent FinishedCallback{};
-		FinishedCallback.BindDynamic(this, &AClockworkPlatform::OnTimelineEnd);
-		LerpTimeline->SetTimelineFinishedFunc(FinishedCallback);
-	}
+	StartPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Start Position (ROOT)"));
+	StartPosition->SetupAttachment(RootComponent);
 
-	HaltTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Halt Timeline"));
-	if (LinearCurve.Object != NULL)
-	{
-		FOnTimelineEvent FinishedCallback{};
-		FinishedCallback.BindDynamic(this, &AClockworkPlatform::OnHaltEnd);
-		HaltTimeline->SetTimelineFinishedFunc(FinishedCallback);
-	}
+	EndPosition = CreateDefaultSubobject<USceneComponent>(TEXT("End Position"));
+	EndPosition->SetupAttachment(RootComponent);
 }
 
 void AClockworkPlatform::BeginPlay()
 {
 	Super::BeginPlay();
-	EndPoint_DEBUG->SetVisibility(false);
 
-	
+	StartPosition->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	EndPosition->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	SetReplicateMovement(false);
+
 	if (HasAuthority())
 	{
-		EndPoint_DEBUG->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		StartPosition = GetActorLocation();
-		SetReplicateMovement(true);
+		TArray<AActor*> FoundPlatforms;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundPlatforms);
 
-		LerpTimeline->SetLooping(false);
-		LerpTimeline->SetTimelineLength(5.0f);
-		HaltTimeline->SetLooping(false);
-		HaltTimeline->SetTimelineLength(5.0f);
+		for(int i = 0; i < FoundPlatforms.Num(); i++)
+		{
+			if (FoundPlatforms[i] == this)
+			{
+				PlatformTimeOffset = i * 2;
+				break;
+			}
+		}
 	}
 }
 
 void AClockworkPlatform::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (HasAuthority())
+		ServerTime = GetWorld()->GetTimeSeconds();
+	
+	DoMovement();
 }
 
-void AClockworkPlatform::TickTimeline(float _Progress)
+void AClockworkPlatform::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	SetActorLocation(FMath::Lerp(StartPosition, EndPoint_DEBUG->GetComponentLocation(), _Progress));
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AClockworkPlatform, ServerTime);
+	DOREPLIFETIME(AClockworkPlatform, PlatformTimeOffset);
 }
 
-void AClockworkPlatform::OnTimelineEnd()
+void AClockworkPlatform::DoMovement()
 {
-	OnReturnJourney = !OnReturnJourney;
-	HaltTimeline->PlayFromStart();
-}
-
-void AClockworkPlatform::OnHaltEnd()
-{
-	if (OnReturnJourney)
+	if (IsValid(LocalPlayerState))
 	{
-		LerpTimeline->ReverseFromEnd();
+		ObservingPlayerPing = LocalPlayerState->GetPingInMilliseconds();
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::FromInt(ObservingPlayerPing));
 	}
-	else
+	
+	float MoveAlpha = ((GetWorld()->GetTimeSeconds() * MoveSpeed) + PlatformTimeOffset + ClientTimeOffset + (ObservingPlayerPing/1000.0f)) * 0.05f;
+	auto PredictedPos = FMath::Lerp(StartPosition->GetComponentLocation(), EndPosition->GetComponentLocation(), MovementCurve->FloatCurve.Eval(TriangleWave(MoveAlpha)));
+	PlatformMesh->SetWorldLocation(FMath::Lerp(PlatformMesh->GetComponentLocation(), PredictedPos, GetWorld()->DeltaRealTimeSeconds * 3.0f));
+}
+
+float AClockworkPlatform::TriangleWave(float _X)
+{
+	float Result = sin((_X * PI * 2) + (PI / 2.0f));
+	Result = acos(Result);
+	Result = Result / (PI / 2.0f);
+	Result = Result / 2.0f;
+	return Result;
+}
+
+void AClockworkPlatform::OnRep_ServerTime()
+{
+	LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	if (IsValid(LocalPlayer))
 	{
-		LerpTimeline->PlayFromStart();
+		LocalPlayerController = LocalPlayer->GetPlayerController(GetWorld());
+		if (IsValid(LocalPlayerController))
+		{
+			LocalPlayerState = LocalPlayerController->GetPlayerState<APlayerState>();
+			if (IsValid(LocalPlayerState))
+			{
+				ObservingPlayerPing = LocalPlayerState->GetPingInMilliseconds();
+				UKismetSystemLibrary::PrintString(GetWorld(), FString::FromInt(ObservingPlayerPing));
+			}
+		}
+	}
+
+	if (ClientTimeOffset == 0)
+	{
+		float CurrentTime = GetWorld()->GetTimeSeconds();
+		ClientTimeOffset = ServerTime - CurrentTime;
+		ClientTimeOffset += ObservingPlayerPing / 1000.0f;
 	}
 }
