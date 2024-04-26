@@ -21,6 +21,15 @@ protected:
 
 	UFUNCTION()
 	float TriangleWave(float _X);
+
+	UFUNCTION(Client, Unreliable)
+	void Client_ReportServerTime(float requestWorldTime);
+
+	/** Requests current server time so accurate lag
+	  * compensation can be performed in ClientReportServerTime
+	  * based on the round-trip duration */
+	UFUNCTION(Server, Unreliable)
+	void Server_RequestServerTime(float requestWorldTime);
 	
 protected:
 	UPROPERTY(VisibleAnywhere)

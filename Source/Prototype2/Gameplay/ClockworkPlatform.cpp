@@ -3,6 +3,7 @@
 #include "ClockworkPlatform.h"
 
 #include "Components/TimelineComponent.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -74,13 +75,7 @@ void AClockworkPlatform::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 void AClockworkPlatform::DoMovement()
 {
-	if (IsValid(LocalPlayerState))
-	{
-		ObservingPlayerPing = LocalPlayerState->GetPingInMilliseconds();
-		UKismetSystemLibrary::PrintString(GetWorld(), FString::FromInt(ObservingPlayerPing));
-	}
-	
-	float MoveAlpha = ((GetWorld()->GetTimeSeconds() * MoveSpeed) + PlatformTimeOffset + ClientTimeOffset + (ObservingPlayerPing/1000.0f)) * 0.05f;
+	float MoveAlpha = ((GetWorld()->GetTimeSeconds() * MoveSpeed) + PlatformTimeOffset + ClientTimeOffset + (ObservingPlayerPing)) * 0.05f;
 	auto PredictedPos = FMath::Lerp(StartPosition->GetComponentLocation(), EndPosition->GetComponentLocation(), MovementCurve->FloatCurve.Eval(TriangleWave(MoveAlpha)));
 	PlatformMesh->SetWorldLocation(FMath::Lerp(PlatformMesh->GetComponentLocation(), PredictedPos, GetWorld()->DeltaRealTimeSeconds * 3.0f));
 }
@@ -94,6 +89,17 @@ float AClockworkPlatform::TriangleWave(float _X)
 	return Result;
 }
 
+void AClockworkPlatform::Server_RequestServerTime_Implementation(float requestWorldTime)
+{
+	Client_ReportServerTime(requestWorldTime);
+}
+
+void AClockworkPlatform::Client_ReportServerTime_Implementation(float requestWorldTime)
+{
+	float roundTripTime = GetWorld()->GetTimeSeconds() - requestWorldTime;
+	ObservingPlayerPing = roundTripTime / 0.5f;
+}
+
 void AClockworkPlatform::OnRep_ServerTime()
 {
 	LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -103,18 +109,16 @@ void AClockworkPlatform::OnRep_ServerTime()
 		if (IsValid(LocalPlayerController))
 		{
 			LocalPlayerState = LocalPlayerController->GetPlayerState<APlayerState>();
-			if (IsValid(LocalPlayerState))
-			{
-				ObservingPlayerPing = LocalPlayerState->GetPingInMilliseconds();
-				UKismetSystemLibrary::PrintString(GetWorld(), FString::FromInt(ObservingPlayerPing));
-			}
 		}
 	}
 
+	if (IsValid(LocalPlayerState) == false)
+		return;
+	
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	Server_RequestServerTime(CurrentTime);
 	if (ClientTimeOffset == 0)
 	{
-		float CurrentTime = GetWorld()->GetTimeSeconds();
 		ClientTimeOffset = ServerTime - CurrentTime;
-		ClientTimeOffset += ObservingPlayerPing / 1000.0f;
 	}
 }
