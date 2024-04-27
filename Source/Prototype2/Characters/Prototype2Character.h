@@ -432,7 +432,9 @@ public:
 	 * Drops item if holding one, and sockets weapon to attacking socket
 	 */
 	UFUNCTION(Server, Reliable)
-	void Server_ChargeAttack();
+	void Server_ChargeAttack(bool _bCharging);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ChargeAttack(bool _bCharging);
 
 	void SetPlayerAimingMovement(bool _bIsAiming);
 	//UFUNCTION(Server, Reliable)
@@ -508,7 +510,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsChargingAttack;
 
-	UPROPERTY(ReplicatedUsing=OnRep_ChargeStateChanged)
+	UPROPERTY()
 	bool bChargeAnimationState;
 
 	/* Maximum amount of Attack Charge */
@@ -849,17 +851,22 @@ public:
 public:
 	/* Plays audio */
 	void PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation = nullptr);
+	UFUNCTION(Client, Unreliable)
+	void Client_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation = nullptr);
 	UFUNCTION(Server, Unreliable)
 	void Server_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
-
+	
 	void PlayWeaponSound(USoundCue* _SoundToPlay);
 	UFUNCTION(Server, Reliable)
 	void Server_PlayWeaponSound(USoundCue* _SoundToPlay);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayWeaponSound(USoundCue* _SoundToPlay);
-	
+
+	UFUNCTION(BlueprintCallable)
+	void PlayFallSound();
+		
 	/* Audio */
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundAttenuation* AltarAttenuationSettings;
@@ -867,8 +874,6 @@ public:
 	USoundAttenuation* SoundAttenuationSettings;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* ChargeCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* ExecuteCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* PickUpCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
@@ -879,8 +884,6 @@ public:
 	USoundCue* PlantCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* GetHitCue;
-	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* MandrakeScreamCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* SmiteCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
@@ -896,7 +899,9 @@ public:
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* ProjectileSoundCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* ProjectileDestroyedCue;
+	USoundCue* WeaponDestroyedCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* FallCue;
 	
 	/* One audio component for charge/attack/get hit sounds*/
 	UPROPERTY(EditDefaultsOnly)

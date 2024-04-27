@@ -19,7 +19,9 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Components/BoxComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
+#include "Prototype2/Widgets/Widget_3DGrowUI.h"
 
 AGrowSpot::AGrowSpot()
 {
@@ -55,6 +57,17 @@ void AGrowSpot::InitComponents()
 	PlantReadyComponent->SetupAttachment(RootComponent);
 	PlantReadyComponent->bAutoActivate = false;
 	PlantReadyComponent->SetRelativeLocation({0.0f, 0.0f, -20.0f});
+
+	ConcreteBreakComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Concrete Break Particles"));
+	ConcreteBreakComponent->SetupAttachment(RootComponent);
+	ConcreteBreakComponent->bAutoActivate = false;
+	ConcreteBreakComponent->SetRelativeLocation({0.0f, 0.0f, -20.0f});
+
+	/* UI */
+	GrowWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Grow Widget Component"));
+	GrowWidgetComponent->SetupAttachment(RootComponent);
+	GrowWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	GrowWidgetComponent->SetRelativeLocation({0.0f, 0.0f, 100.0f});
 }
 
 void AGrowSpot::InitAssignableVariables()
@@ -71,6 +84,12 @@ void AGrowSpot::InitAssignableVariables()
 		PlantReadyComponent->SetAsset(PlantReadyVFX.Object);
 	}
 
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ConcreteBreakVFX(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_Concrete"));
+	if (ConcreteBreakVFX.Object != NULL)
+	{
+		ConcreteBreakComponent->SetAsset(ConcreteBreakVFX.Object);
+	}
+
 	static ConstructorHelpers::FObjectFinder<UMaterialInstance> GoldenMaterial(TEXT("/Game/Materials/PickUpMaterials/MI_Golden"));
 	if (GoldenMaterial.Object != NULL)
 	{
@@ -83,16 +102,16 @@ void AGrowSpot::InitAssignableVariables()
 		TEMP_ConcreteMat = ConcreteMaterial_TEMP.Object;
 	}
 
-	static ConstructorHelpers::FObjectFinder<USoundCue> MandrakeSoundQue(TEXT("/Game/SFX/CUE_MandrakeScream"));
-	if (MandrakeSoundQue.Object != NULL)
-	{
-		MandrakeScreamQueue = MandrakeSoundQue.Object;
-	}
+	//static ConstructorHelpers::FObjectFinder<USoundCue> MandrakeSoundQue(TEXT("/Game/SFX/CUE_MandrakeScream"));
+	//if (MandrakeSoundQue.Object != NULL)
+	//{
+	//	MandrakeScreamQueue = MandrakeSoundQue.Object;
+	//}
 
 	static ConstructorHelpers::FObjectFinder<USoundAttenuation> MandrakeAtten(TEXT("/Game/SFX/MandrakeAttenuationSettings"));
 	if (MandrakeAtten.Object != NULL)
 	{
-		MandrakeAttenuationSettings = MandrakeAtten.Object;
+		HighValueAttenuationSettings = MandrakeAtten.Object;
 	}
 	
 	static ConstructorHelpers::FClassFinder<AActor> PolyWeaponBP(TEXT("/Game/Blueprints/Pickups/BP_Weapon"));
@@ -109,6 +128,12 @@ void AGrowSpot::InitAssignableVariables()
 	if (PolyBeehiveBP.Class != NULL)
 	{
 		BeehivePrefab = PolyBeehiveBP.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<UWidget_3DGrowUI> FoundGrowUI(TEXT("/Game/Blueprints/Widgets/3D/WBP_3DPlantUI"));
+	if (FoundGrowUI.Class != NULL)
+	{
+		GrowWidgetComponent->SetWidgetClass(FoundGrowUI.Class);
 	}
 }
 
@@ -129,6 +154,11 @@ void AGrowSpot::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (auto Widget = GrowWidgetComponent->GetWidget())
+	{
+		GrowWidget = Cast<UWidget_3DGrowUI>(Widget);
+	}
+
 	/* INIT STEAL DURATION */
 	HoldDuration = 8.0f;
 
@@ -144,14 +174,17 @@ void AGrowSpot::BeginPlay()
 	/* DYNAMIC MATERIAL */
 	PlotMaterial = UMaterialInstanceDynamic::Create(Mesh->GetMaterial(0), nullptr);
 	Mesh->SetMaterial(0, PlotMaterial);
+
+	GrowWidgetComponent->SetVisibility(false);
 }
 
 // Called every frame
 void AGrowSpot::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
-
+	
 	ScalePlantOnTick();
+	UpdateGrowUIVisibility();
 
 	/* SERVER ONLY */
 	if (!HasAuthority())
@@ -163,7 +196,7 @@ void AGrowSpot::Tick(float _DeltaTime)
 	GrowPlantOnTick(_DeltaTime);
 }
 
-EInteractMode AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode AGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (IsValid(_Player) == false)
 		return INVALID;
@@ -180,6 +213,28 @@ EInteractMode AGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
 
 EInteractMode AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete)
 {
+	if (_Player->GetLocalRole() > ROLE_SimulatedProxy
+		|| _Player->GetRemoteRole() > ROLE_SimulatedProxy)
+	{
+		if (IsValid(LastLocalPlayer))
+		{
+			if (LastLocalPlayer->GetPlayerState<APrototype2PlayerState>() != _Player)
+			{
+				if (APawn* SomePawn = _Player->GetPawn())
+				{
+					LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
+				}
+			}
+		}
+		else
+		{
+			if (APawn* SomePawn = _Player->GetPawn())
+			{
+				LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
+			}
+		}
+	}
+
 	if (_LookOutForConcrete && FertilisationState.ConcretedHealth > 0)
 		return INVALID;
 	
@@ -235,6 +290,28 @@ EInteractMode AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Pla
 
 EInteractMode AGrowSpot::IsInteractable_Stealing(APrototype2PlayerState* _Player)
 {
+	if (_Player->GetLocalRole() > ROLE_SimulatedProxy
+		|| _Player->GetRemoteRole() > ROLE_SimulatedProxy)
+	{
+		if (IsValid(LastLocalPlayer))
+		{
+			if (LastLocalPlayer->GetPlayerState<APrototype2PlayerState>() != _Player)
+			{
+				if (APawn* SomePawn = _Player->GetPawn())
+				{
+					LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
+				}
+			}
+		}
+		else
+		{
+			if (APawn* SomePawn = _Player->GetPawn())
+			{
+				LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
+			}
+		}
+	}
+	
 	if (FertilisationState.ConcretedHealth > 0)
 		return INVALID;
 	
@@ -260,12 +337,8 @@ EInteractMode AGrowSpot::IsInteractable_Stealing(APrototype2PlayerState* _Player
 	{
 	case EGrowSpotState::Grown:
 		{
-			//
-			// TO-DO Add beehive Stealing IsInteractable()
-			//
-			
-			//if (ABeehive* SomeBeehive = Cast<ABeehive>(GrowingActor))
-			//	return SomeBeehive->IsInteractable(_Player);
+			if (ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef))
+				return SomeBeehive->IsInteractable(_Player, HOLD);
 
 			return HOLD;
 		}
@@ -371,7 +444,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				/* PLAY PLANT SOUND */
 				if (_Player->PlantCue)
 				{
-					_Player->PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
+					_Player->Client_PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
 				}
 
 				if (const auto HeldItemData = _Player->GetHeldItemData())
@@ -411,7 +484,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					_Player->PickupItem(ItemRef, EPickupActor::PlantActor);
 
 					/* MANDRAKE SOUND */
-					MandrakePickupNoise();
+					HighValuePickupNoise();
 					break;
 				}
 			}
@@ -668,32 +741,26 @@ void AGrowSpot::OnRep_ItemRef()
 	SetPlantReadySparkle(false);
 }
 
-void AGrowSpot::MandrakePickupNoise()
+void AGrowSpot::HighValuePickupNoise()
 {
-	if (MandrakeScreamQueue == nullptr)
+	if (IsValid(ItemRef) == false ||
+		IsValid(ItemRef->GetSeedData()) == false ||
+		IsValid(ItemRef->GetSeedData()->HighValueCropSound) == false)
 		return;
 	
-	if (IsValid(ItemRef) == false)
-		return;
-	
-	if (ItemRef->GetSeedData()->Name.Compare("Mandrake"))
-	{
-		return;
-	}
-
 	if (HasAuthority())
-		Multi_MandrakePickupNoise();
+		Multi_HighValuePickupNoise();
 }
 
-void AGrowSpot::Multi_MandrakePickupNoise_Implementation()
+void AGrowSpot::Multi_HighValuePickupNoise_Implementation()
 {
-	if (MandrakeAttenuationSettings)
+	if (HighValueAttenuationSettings)
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), MandrakeScreamQueue, GetActorLocation(), FRotator::ZeroRotator, 1, 1, 0, MandrakeAttenuationSettings);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ItemRef->GetSeedData()->HighValueCropSound, GetActorLocation(), FRotator::ZeroRotator, 1, 1, 0, HighValueAttenuationSettings);
 	}
 	else
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), MandrakeScreamQueue, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ItemRef->GetSeedData()->HighValueCropSound, GetActorLocation());
 	}
 }
 
@@ -716,6 +783,65 @@ void AGrowSpot::ScalePlantOnTick() const
 		);
 
 	ItemRef->ItemComponent->Mesh->SetWorldScale3D(Scale);
+}
+
+void AGrowSpot::UpdateGrowUI()
+{
+	if (IsValid(GrowWidget) == false)
+		return;
+
+	if (IsValid(ItemRef) == false)
+	{
+		GrowWidgetComponent->SetVisibility(false);
+		return;
+	}
+
+	if (FertilisationState.ConcretedHealth > 0)
+	{
+		GrowWidgetComponent->SetVisibility(false);
+		return;
+	}
+
+	GrowWidgetComponent->SetVisibility(true);
+
+	if (ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef))
+	{
+		if (SomeBeehive->TimeTillCollect > 0)
+			GrowWidget->SetGrowTimer(FMath::Lerp(1.0f, 0.0f, SomeBeehive->TrackerTimeTillCollect / SomeBeehive->TimeTillCollect));
+		
+		GrowWidget->SetFlowerTypes(SomeBeehive->GetCloseFlowerDetails());
+	}
+	else if (AGrowableWeapon* SomeWeapon = Cast<AGrowableWeapon>(ItemRef))
+	{
+		if (GrowTime > 0)
+			GrowWidget->SetGrowTimer(FMath::Lerp(1.0f, 0.0f, GrowTimer / GrowTime), FertilisationState.bFertilised);
+		
+		if (USeedData* SeedData = SomeWeapon->GetSeedData())
+			GrowWidget->SetWeaponType((int32)SeedData->WeaponData->WeaponAnimationType);
+	}
+	else
+	{
+		if (GrowTime > 0)
+			GrowWidget->SetGrowTimer(FMath::Lerp(1.0f, 0.0f, GrowTimer / GrowTime), FertilisationState.bFertilised);
+
+		if (USeedData* SeedData = ItemRef->GetSeedData())
+			GrowWidget->SetStarCount(SeedData->BabyStarValue);
+	}
+}
+
+void AGrowSpot::UpdateGrowUIVisibility()
+{
+	if (IsValid(LastLocalPlayer))
+	{
+		if (FVector::DistXY(LastLocalPlayer->GetActorLocation(), GetActorLocation()) <= UIVisiblityRadius)
+			UpdateGrowUI();
+		else
+			GrowWidgetComponent->SetVisibility(false);
+	}
+	else
+	{
+		GrowWidgetComponent->SetVisibility(false);
+	}
 }
 
 void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
@@ -798,6 +924,8 @@ void AGrowSpot::OnRep_FertilisationState()
 	
 		if (FertilisationState.ConcretedHealth <= 0)
 		{
+			ConcreteBreakComponent->Activate(true);
+			
 			if (GrowSpotState == EGrowSpotState::Grown)
 			{
 				SetPlantReadySparkle(true);
@@ -826,6 +954,10 @@ void AGrowSpot::OnRep_FertilisationState()
 						ItemRef->ItemComponent->Mesh->SetMaterial(i, TEMP_ConcreteMat);
 				}
 			}
+		}
+		else
+		{
+			ConcreteBreakComponent->Activate(true);
 		}
 	}
 }

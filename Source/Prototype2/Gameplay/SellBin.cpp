@@ -92,7 +92,7 @@ void ASellBin::Tick(float DeltaTime)
 	//MoveUIComponent(DeltaTime);
 }
 
-EInteractMode ASellBin::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode ASellBin::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	return INVALID;
 }
@@ -231,7 +231,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 				
 				if (SomePlayer->SellCue)
 				{
-					SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
+					SomePlayer->Client_PlaySoundAtLocation(GetActorLocation(), SomePlayer->SellCue, nullptr);
 				}
 
 				SomePlayer->PlayerStateRef->AddCoins(Plant);
@@ -241,8 +241,16 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 				// Destroy the crop the player is holding
 				SomePlayer->HeldItem->Destroy();
 				SomePlayer->HeldItem = nullptr;
+				SomePlayer->OnRep_HeldItem();
 				SomePlayer->Client_RefreshCurrentMaxSpeed();
-				Multi_OnPlayerSell(SomePlayer);
+
+				if (auto* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+				{
+					int32 PlantSellValue = (Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
+					PlantSellValue *= GameStateCast->SellMultiplier;
+					int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
+					Multi_OnPlayerSell(SomePlayer, IncreaseAmount);
+				}
 			}
 		}
 	}
@@ -279,8 +287,15 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 		if (ThrownPlant->ItemComponent->PlayerWhoThrewItem)
 		{
 			UKismetSystemLibrary::PrintString(GetWorld(), "Correct PlayerWhoeThrew");
-			Client_OnPlayerSell(ThrownPlant->ItemComponent->PlayerWhoThrewItem);
-			ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->Client_OnAddCoins();
+			if (auto* GameStateCast = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld())))
+			{
+				int32 PlantSellValue = (ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
+				PlantSellValue *= GameStateCast->SellMultiplier;
+				int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * ThrownPlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
+				Client_OnPlayerSell(ThrownPlant->ItemComponent->PlayerWhoThrewItem, IncreaseAmount);
+				ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->Client_OnAddCoins(IncreaseAmount);
+			}
+			
 		
 			// Audio
 			if (HasAuthority())
@@ -290,7 +305,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 			
 				if (ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue)
 				{
-					ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlaySoundAtLocation(GetActorLocation(), ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue, nullptr);
+					ThrownPlant->ItemComponent->PlayerWhoThrewItem->Client_PlaySoundAtLocation(GetActorLocation(), ThrownPlant->ItemComponent->PlayerWhoThrewItem->SellCue, nullptr);
 				}
 				ThrownPlant->ItemComponent->PlayerWhoThrewItem->PlayerStateRef->AddCoins(ThrownPlant);
 				
@@ -310,7 +325,7 @@ void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player,
 {
 	if (_Player->SellCue)
 	{
-		_Player->PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
+		_Player->Client_PlaySoundAtLocation(GetActorLocation(), _Player->SellCue, nullptr);
 	}
 				
 	_Player->PlayerStateRef->AddCoins(_Plant);
@@ -320,10 +335,11 @@ void ASellBin::Server_OnPlayerSell_Implementation(APrototype2Character* _Player,
 	// Destroy the crop the player is holding
 	_Player->HeldItem->Destroy();
 	_Player->HeldItem = nullptr;
+	_Player->OnRep_HeldItem();
 	_Player->Client_RefreshCurrentMaxSpeed();
 }
 
-void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
+void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player, int32 _Points)
 {
 	if (_Player->PlayerHUDRef)
 		_Player->PlayerHUDRef->ClearPickupUI();
@@ -338,7 +354,7 @@ void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
 	{
 		if (_Player->PlayerStateRef->PlayerName == GamestateCast->Server_Players[i]->PlayerName)
 		{
-			OnItemSoldDelegate.Broadcast(i);
+			OnItemSoldDelegate.Broadcast(i, _Points);
 			return;
 		}
 	}
@@ -346,7 +362,7 @@ void ASellBin::Client_OnPlayerSell_Implementation(APrototype2Character* _Player)
 	//OnItemSoldDelegate.Broadcast(_Player->PlayerStateRef->Player_ID);
 }
 
-void ASellBin::Multi_OnPlayerSell_Implementation(APrototype2Character* _Player)
+void ASellBin::Multi_OnPlayerSell_Implementation(APrototype2Character* _Player, int32 _Points)
 {
 	APrototype2Gamestate* GamestateCast = Cast<APrototype2Gamestate>(GetWorld()->GetGameState());
 	if (!GamestateCast)
@@ -356,7 +372,7 @@ void ASellBin::Multi_OnPlayerSell_Implementation(APrototype2Character* _Player)
 	{
 		if (_Player->PlayerStateRef->PlayerName == GamestateCast->Server_Players[i]->PlayerName)
 		{
-			OnItemSoldDelegate.Broadcast(i);
+			OnItemSoldDelegate.Broadcast(i, _Points);
 			return;
 		}
 	}

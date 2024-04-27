@@ -12,6 +12,15 @@
 				"Engine",
 				"UMG"
 			]
+		},
+		{
+			"Name": "Niagara",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Core",
+				"CoreUObject"
+			]
 		}
 	],
 	"Plugins": [
@@ -28,6 +37,10 @@
 		},
 		{
 			"Name": "OnlineServicesOSSAdapter",
+			"Enabled": true
+		},
+		{
+			"Name": "GeometryScripting",
 			"Enabled": true
 		}
 	]

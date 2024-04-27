@@ -31,6 +31,36 @@ void ALaunchPad::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	Counter -= DeltaTime;
+
+	if (!bOnAndOff)
+		return;
+
+	if (InitialDelay > 0)
+	{
+		InitialDelay -= DeltaTime;
+		return;
+	}
+
+	if (bTurnedOn)
+	{
+		Timer -= DeltaTime;
+		if (Timer <= 0)
+		{
+			Timer = TimeOff;
+			bTurnedOn = false;
+			this->SetHidden(true);
+		}
+	}
+	else
+	{
+		Timer -= DeltaTime;
+		if (Timer <= 0)
+		{
+			Timer = TimeOn;
+			bTurnedOn = true;
+			this->SetHidden(false);
+		}
+	}
 }
 
 void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
@@ -40,6 +70,12 @@ void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
 	else
 	{
 		Counter = Delay;
+	}
+
+	if (bOnAndOff)
+	{
+		if (!bTurnedOn)
+			return;
 	}
 	
 	// Set which direction the player will be launched according to _WithArrowDirection
@@ -51,15 +87,29 @@ void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
 
 	float DistanceBetweenUs = (_Player->GetActorLocation() - GetActorLocation()).Length();
 	
-	LaunchVector *= ForwardStrength +
+	if (!bOnlyUp)
+	{
+		LaunchVector *= ForwardStrength +
 		// basically nullify the players velocity while keeping the walkspeed velocity
 		// which is what all the jump pads would have been set up with I'm assuming
 		// And just give them another little kick at the end for good measure
 		500.0f /* Player max walk speed */ - _Player->GetVelocity().Length() + 100.0f;
+	}
+	else
+	{
+		LaunchVector = {0,0,0};
+	}
 	
 	LaunchVector.Z = VerticalStrength;
 
-	_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+	if (HasAuthority())
+	{
+		_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+	}
+	else
+	{
+		_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+	}
 	_Player->LaunchCharacter(LaunchVector, false, false);
 }
 

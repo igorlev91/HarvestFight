@@ -115,7 +115,7 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 					PointsForHit = 1;
 				}
 				OwningPlayer->PlayerStateRef->AddCoins(PointsForHit);
-				HitPlayerCast->PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
+				HitPlayerCast->Client_PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
 			}
 		}
 		return;

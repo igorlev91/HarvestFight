@@ -78,7 +78,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APrototype2Character, Weapon);
 	DOREPLIFETIME(APrototype2Character, HeldItem);
-	DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
+	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
 	DOREPLIFETIME(APrototype2Character, InvincibilityTimer);
 	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
 	//DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
@@ -452,21 +452,22 @@ void APrototype2Character::ChargeAttack()
 		
 		bIsChargingAttack = true;
 		AttackAreaIndicatorMesh->SetHiddenInGame(false);
+		bChargeAnimationState = true;
+		OnChargeStateChangedDelegate.Broadcast(bChargeAnimationState);
 
 		if (HasAuthority())
 		{
 			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 			// Charge animation
-			bChargeAnimationState = true;
-			OnRep_ChargeStateChanged();
 			
 			Weapon->ChargeAttack(this);
+			Multi_ChargeAttack(bChargeAnimationState);
 		}
 		else
 		{
 			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-			Server_ChargeAttack();
+			Server_ChargeAttack(bChargeAnimationState);
 		}
 		PlayWeaponSound(ChargeCue);
 	}
@@ -519,6 +520,7 @@ void APrototype2Character::ReleaseAttack()
 		SetPlayerAimingMovement(false);
 	}
 
+	// Lock the players momentum if not instant click attack or is moving
 	if (AttackChargeAmount > 0.5f || GetVelocity().Length() > 10.0f)
 	{
 		bIsFollowingThroughAttack = true;
@@ -541,7 +543,7 @@ void APrototype2Character::ReleaseAttack()
 	bool bFullChargeAttack = true;
 	if (AttackChargeAmount < MaxAttackCharge) // InstantAttackThreshold
 		{
-		bFullChargeAttack = false;
+			bFullChargeAttack = false;
 		}
 
 	// Play the correct attack montage according to charge and weapon type equipped
@@ -717,8 +719,8 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			// Server_DropItem
 			HeldItem->Server_Drop();
 			
-			if (DropCue)
-				PlaySoundAtLocation(GetActorLocation(), DropCue);
+			//if (DropCue)
+			//	PlaySoundAtLocation(GetActorLocation(), DropCue);
 			if (WeaponMesh)
 				Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
@@ -757,7 +759,7 @@ void APrototype2Character::CheckForInteractables()
 	//if (bIsHoldingInteract)
 	//	return;
 	
-	if (InteractTimer > InteractTimerTime / 2.0f || bIsChargingAttack)
+	if (InteractTimer > 0.0f || bIsChargingAttack)
 	{
 		EnableStencil(false);
 		if (ClosestInteractableItem)
@@ -978,7 +980,7 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	// Drop item
 	DropItem(1000.0f);
 	
-	PlayWeaponSound(GetHitCue);
+	Client_PlaySoundAtLocation(GetActorLocation(), GetHitCue);
 	
 	// VFX
 	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
@@ -1015,7 +1017,6 @@ void APrototype2Character::Server_CheckIfCrownHit_Implementation(APrototype2Char
 			PointsForHit = 1;
 		}
 		PlayerStateRef->AddCoins(PointsForHit);
-		_HitPlayer->PlaySoundAtLocation(_HitPlayer->GetActorLocation(), _HitPlayer->SellCue);
 	}
 }
 
@@ -1029,7 +1030,7 @@ void APrototype2Character::Server_HitConcrete_Implementation(AGrowSpot* _HitGrow
 {
 	if (_HitGrowSpot->DegradeConcrete())
 	{
-		PlaySoundAtLocation(GetActorLocation(), HitConcreteCue);
+		Client_PlaySoundAtLocation(GetActorLocation(), HitConcreteCue);
 	}
 }
 
@@ -1042,7 +1043,14 @@ void APrototype2Character::InitiateSmite(float _AttackCharge, UWeaponData* _Othe
 	// VFX
 	SmiteCloud->SetVisibility(true);
 	ActivateParticleSystemFromEnum(EParticleSystems::SmiteElectrifyWarning);
-	PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
+	if (HasAuthority())
+	{
+		Client_PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
+	}
+	else
+	{
+		PlaySoundAtLocation(GetActorLocation(), SmiteCue, AltarAttenuationSettings);
+	}
 	
 	// Start timer that fires this stuff when done
 	GetWorld()->GetTimerManager().SetTimer(SmiterTimer, this, &APrototype2Character::GetSmited, SmiteWarningTime);
@@ -1195,7 +1203,7 @@ void APrototype2Character::InitMiscComponents()
 	// SFX
 	WeaponAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponAudioComponent"));
 	WeaponAudioComponent->SetupAttachment(RootComponent);
-
+	
 	// Decal component
 	DecalArmSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DecalArrowArm"));
 	DecalArmSceneComponent->SetupAttachment(RootComponent);
@@ -1722,11 +1730,17 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 	if (InvincibilityTimer > 0)
 	{
 		InteractTimeline->Stop();
+		OnStoppedClaimingPlotDelegate.Broadcast();
+		return;
 	}
 	else if (auto SomeGrowSpot = Cast<AGrowSpot>(ClosestInteractableActor))
 	{
 		if (IsValid(SomeGrowSpot->ItemRef) == false)
+		{
 			InteractTimeline->Stop();
+			OnStoppedClaimingPlotDelegate.Broadcast();
+			return;
+		}
 	}
 	
 	OnClaimingPlotDelegate.Broadcast(_Progress, InteractTimeline->GetTimelineLength());
@@ -1809,6 +1823,17 @@ void APrototype2Character::CheckForFloorSurface()
 
 void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _SoundToPlay, USoundAttenuation* _Attenuation)
 {
+	if (!IsValid(_SoundToPlay))
+		return;
+	
+	// Play locally first
+	if (_Attenuation)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundToPlay, _Location, 1, 1, 0, _Attenuation);
+	else
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), _SoundToPlay, _Location, 1, 1, 0, SoundAttenuationSettings);
+
+
+	// Replicate
 	if (HasAuthority())
 	{
 		Multi_PlaySoundAtLocation(_Location, _SoundToPlay, _Attenuation );
@@ -1819,8 +1844,22 @@ void APrototype2Character::PlaySoundAtLocation(FVector _Location, USoundCue* _So
 	}
 }
 
+void APrototype2Character::Client_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue,
+	USoundAttenuation* _Attenuation)
+{
+	PlaySoundAtLocation(_Location, _SoundQueue, _Attenuation);
+}
+
 void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 {
+	if (!IsValid(_SoundToPlay))
+		return;
+
+	// Play locally first
+	WeaponAudioComponent->SetSound(_SoundToPlay);
+	WeaponAudioComponent->Play();
+
+	// Replicate
 	if (HasAuthority())
 	{
 		Multi_PlayWeaponSound(_SoundToPlay);
@@ -1831,6 +1870,14 @@ void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 	}
 }
 
+void APrototype2Character::PlayFallSound()
+{
+	if (HasAuthority() && IsValid(FallCue))
+	{
+		Client_PlaySoundAtLocation(GetActorLocation(), FallCue);
+	}
+}
+
 void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
 {
 	Multi_PlayWeaponSound(_SoundToPlay);
@@ -1838,6 +1885,9 @@ void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _Sou
 
 void APrototype2Character::Multi_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
 {
+	if (IsLocallyControlled())
+		return;
+	
 	WeaponAudioComponent->SetSound(_SoundToPlay);
 	WeaponAudioComponent->Play();
 }
@@ -1856,6 +1906,9 @@ void APrototype2Character::Multi_TeleportToLocation_Implementation(FVector _Dest
 
 void APrototype2Character::PlayNetworkMontage(UAnimMontage* _Montage)
 {
+	// Play locally first
+	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
+	
 	if (HasAuthority())
 		Multi_PlayNetworkMontage(_Montage);
 	else
@@ -1880,12 +1933,23 @@ void APrototype2Character::DropWeapon()
 	}
 	if (HasAuthority())
 	{
+		Client_PlaySoundAtLocation(GetActorLocation(), WeaponDestroyedCue);
 		Multi_DropWeapon();
 	}
 	else
 	{
+		PlaySoundAtLocation(GetActorLocation(), WeaponDestroyedCue);
 		Server_DropWeapon();
 	}
+}
+
+void APrototype2Character::Multi_ChargeAttack_Implementation(bool _bCharging)
+{
+	if (IsLocallyControlled())
+		return;
+	
+	OnChargeStateChangedDelegate.Broadcast(_bCharging);
+	
 }
 
 void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
@@ -2005,6 +2069,8 @@ void APrototype2Character::Client_PickupItem_Implementation(APickUpItem* _Item, 
 	default:
 		break;
 	}
+	// SFX
+	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
 }
 
 void APrototype2Character::Client_DropItem_Implementation()
@@ -2117,34 +2183,24 @@ void APrototype2Character::ResetAttack()
 	InteractTimer = InteractTimerTime;
 	SetPlayerAimingMovement(false);
 	AttackAreaIndicatorMesh->SetHiddenInGame(false);
+	// Charge animation
+	bChargeAnimationState = false;
+	OnChargeStateChangedDelegate.Broadcast(bChargeAnimationState);
 	
-	// Reset Attack Timer
 	if (HasAuthority())
 	{
-		// Reset Attack variables
-		//bIsChargingAttack = false;
-
-		// Charge animation
-		bChargeAnimationState = false;
-		OnRep_ChargeStateChanged();
+		Multi_ChargeAttack(bChargeAnimationState);	
 	}
-	else
+	else if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		if (GetLocalRole() == ROLE_AutonomousProxy)
-		{
-			Server_ResetAttack();
-		}
+		Server_ResetAttack();
+		Server_ChargeAttack(bChargeAnimationState);
 	}
 }
 
 void APrototype2Character::Server_ResetAttack_Implementation()
 {
 	// Reset Attack variables
-	
-	// Charge animation
-	bChargeAnimationState = false;
-	OnRep_ChargeStateChanged();
-	
 	bCanAttack = true;
 }
 
@@ -2180,14 +2236,14 @@ void APrototype2Character::ThrowItem()
 	if (IsValid(HeldItem))
 		HeldItem->Client_Drop();
 	
+	PlaySoundAtLocation(GetActorLocation(), DropCue);
+	
 	if (HasAuthority())
 	{
 		// Server_DropItem
 		if (IsValid(HeldItem))
 		HeldItem->Server_Drop();
-			
-		if (IsValid(DropCue))
-			PlaySoundAtLocation(GetActorLocation(), DropCue);
+		
 		if (IsValid(WeaponMesh))
 			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
@@ -2246,9 +2302,6 @@ void APrototype2Character::Server_ThrowItem_Implementation(FVector _ForwardVecto
 	
 	HeldItem->Server_Drop();
 	
-	// Server_DropItem
-	if (IsValid(DropCue))
-		PlaySoundAtLocation(GetActorLocation(), DropCue);
 	if (IsValid(WeaponMesh))
 		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
@@ -2339,17 +2392,35 @@ bool APrototype2Character::GetHasCrown()
 	{
 		if (GameInstance->bTeams)
 			return false;
-		if (GameState->bGameHasStarted == false)
-			return false;
 		
-		for(auto SomePlayerState : GameState->Server_Players)
+		if (IsValid(GameState->TheCrown))
 		{
-			if (SomePlayerState->Coins > PlayerStateRef->Coins && SomePlayerState != PlayerStateRef)
-				return false;
+			if (GameState->TheCrown->AttachedPlayer == this)
+			{
+				return true;
+			}
 		}
 	}
 	
-	return true;
+	return false;
+}
+
+int32 APrototype2Character::GetPlayerID()
+{
+	if (IsValid(GameState) == false)
+		return 0;
+	
+	int32 MyPlayerID{};
+	APlayerState* MyPlayerState = GetPlayerState();
+	for(int32 i = 0; i < GameState->PlayerArray.Num(); i++)
+	{
+		if (GameState->PlayerArray[i] == MyPlayerState)
+		{
+			MyPlayerID = i;
+			break;
+		}
+	}
+	return MyPlayerID;
 }
 
 void APrototype2Character::InitPlayerNameWidgetComponent()
@@ -2681,7 +2752,11 @@ void APrototype2Character::Server_PlayNetworkMontage_Implementation(UAnimMontage
 
 void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage* _Montage)
 {
+	if (IsLocallyControlled())
+		return;
+	
 	GetMesh()->GetAnimInstance()->Montage_Play(_Montage);
+	
 }
 
 void APrototype2Character::Server_SetPlayerColour_Implementation()
@@ -2719,13 +2794,10 @@ void APrototype2Character::Multi_Client_AddHUD_Implementation()
     }
 }
 
-void APrototype2Character::Server_ChargeAttack_Implementation()
+void APrototype2Character::Server_ChargeAttack_Implementation(bool _bCharging)
 {
-	// Charge animation
-	bChargeAnimationState = true;
-	OnRep_ChargeStateChanged();
-	
 	Weapon->ChargeAttack(this);
+	Multi_ChargeAttack(_bCharging);
 }
 
 void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
@@ -2738,6 +2810,9 @@ void APrototype2Character::Server_PlaySoundAtLocation_Implementation(FVector _Lo
 
 void APrototype2Character::Multi_PlaySoundAtLocation_Implementation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation)
 {
+	if (IsLocallyControlled())
+		return;
+	
 	if (!IsValid(_SoundQueue))
 		return;
 	
@@ -2784,8 +2859,8 @@ void APrototype2Character::Server_DropItem_Implementation(float WhoopsyStrength)
 	HeldItem->Server_Drop();
 	
 	// Server_DropItem
-	if (IsValid(DropCue))
-		PlaySoundAtLocation(GetActorLocation(), DropCue);
+	//if (IsValid(DropCue))
+	//	PlaySoundAtLocation(GetActorLocation(), DropCue);
 	//if (IsValid(WeaponMesh))
 	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
@@ -2813,9 +2888,7 @@ void APrototype2Character::Multi_DropItem_Implementation()
 }
 
 void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, EPickupActor _PickupType)
-{
-	PlaySoundAtLocation(GetActorLocation(), PickUpCue);
-	
+{	
 	if (IsValid(HeldItem))
 	{
 		if (HasAuthority())
