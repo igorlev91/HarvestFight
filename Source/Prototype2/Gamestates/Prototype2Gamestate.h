@@ -76,7 +76,9 @@ public:
 
 	UFUNCTION()
 	void AddCoinsTeams(APrototype2PlayerState* _Player, int32 _Amount);
-	
+
+	UFUNCTION()
+	class APrototype2Character* GetWinningCharacter();
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<class APrototype2PlayerState>> Server_Players;
@@ -112,7 +114,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UPrototypeGameInstance* GameInstanceRef;
-	
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	class ACrown* TheCrown{nullptr};
 	
 private:
 	virtual void BeginPlay() override;
@@ -132,8 +136,6 @@ private:
 	void PickMapToPlay();
 	
 	void ServerTravel(float _DeltaSeconds);
-	
-
 public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	bool bIsCountingDown{};
@@ -238,7 +240,7 @@ public:
 	bool bCanTravel{false};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float MapTravelTimer{2.0f};
+	float MapTravelTimer{3.0f};
 
 	/* Maps */
 

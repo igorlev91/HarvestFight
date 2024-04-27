@@ -1,5 +1,6 @@
 #include "EndGamePodium.h"
 
+#include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -33,6 +34,17 @@ AEndGamePodium::AEndGamePodium()
 		FName EngineName{"Player " + FString::FromInt(i) + " Loss Position"};
 		LossPositions.EmplaceAt(i, CreateDefaultSubobject<UArrowComponent>(EngineName));
 		LossPositions[i]->SetupAttachment(RootComponent);
+	}
+
+	WinConfetteComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Win Confette"));
+	WinConfetteComponent->SetupAttachment(RootComponent);
+	WinConfetteComponent->bAutoActivate = false;
+	WinConfetteComponent->SetRelativeLocation({-200.0f, 0.0f, 120.0f});
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> WinConfetteVFX(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_WinConfetti"));
+	if (WinConfetteVFX.Object != NULL)
+	{
+		WinConfetteComponent->SetAsset(WinConfetteVFX.Object);
 	}
 }
 
@@ -98,5 +110,27 @@ UArrowComponent* AEndGamePodium::GetLossPosition(int32 _Placement)
 		return LossPositions[FMath::Clamp(_Placement, 0, WinPositions.Num() - 1)];
 
 	return nullptr;
+}
+
+void AEndGamePodium::PlayConfetteVFX()
+{
+	if (HasAuthority())
+	{
+		Multi_PlayConfetteVFX();
+	}
+	else
+	{
+		Server_PlayConfetteVFX();
+	}
+}
+
+void AEndGamePodium::Multi_PlayConfetteVFX_Implementation()
+{
+	WinConfetteComponent->Activate(true);
+}
+
+void AEndGamePodium::Server_PlayConfetteVFX_Implementation()
+{
+	Multi_PlayConfetteVFX();
 }
 

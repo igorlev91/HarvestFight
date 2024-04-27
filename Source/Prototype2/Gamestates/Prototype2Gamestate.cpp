@@ -1,4 +1,5 @@
 
+
 #include "Prototype2Gamestate.h"
 
 #include "Net/UnrealNetwork.h"
@@ -116,6 +117,8 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, bHasAllPlayersVoted);
 	DOREPLIFETIME(APrototype2Gamestate, MapChoice);
 	DOREPLIFETIME(APrototype2Gamestate, bCanTravel);
+
+	DOREPLIFETIME(APrototype2Gamestate, TheCrown);
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
@@ -521,6 +524,27 @@ void APrototype2Gamestate::AddCoinsTeams(APrototype2PlayerState* _Player, int32 
 	}
 }
 
+APrototype2Character* APrototype2Gamestate::GetWinningCharacter()
+{
+	APrototype2Character* OutWinningCharacter = nullptr;
+	
+	int32 HighestCoins{};
+	for(auto PlayerState : Server_Players)
+	{
+		if (PlayerState->Coins > HighestCoins)
+		{
+			HighestCoins = PlayerState->Coins;
+
+			if (auto SomePawn = PlayerState->GetPawn())
+			{
+				OutWinningCharacter = Cast<APrototype2Character>(SomePawn);
+			}
+		}
+	}
+	
+	return OutWinningCharacter;
+}
+
 void APrototype2Gamestate::UpdatePlayerDetails(int32 _Player, FCharacterDetails _CharacterDetails)
 {
 	Server_Players[_Player]->Details = _CharacterDetails;
@@ -531,6 +555,8 @@ void APrototype2Gamestate::PupeteerCharactersForEndGame()
 	AActor* EndGamePodiumActor = UGameplayStatics::GetActorOfClass(GetWorld(), AEndGamePodium::StaticClass());
 	AEndGamePodium* EndGamePodiumActorCasted = Cast<AEndGamePodium>(EndGamePodiumActor);
 
+	EndGamePodiumActorCasted->PlayConfetteVFX();
+	
 	if (bTeams)
 	{
 		int32 Team1Coins{};
