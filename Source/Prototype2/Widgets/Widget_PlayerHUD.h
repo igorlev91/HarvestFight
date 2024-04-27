@@ -20,7 +20,8 @@ public:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	class APrototype2Gamestate* GameStateReference;
+	UPROPERTY()
+	class APrototype2Gamestate* GameStateReference{nullptr};
 
 	/* Toggle ingame menu on/off */
 	UFUNCTION(BlueprintCallable)
@@ -95,27 +96,27 @@ public:
 	/* Player UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player1Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player1ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player2Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player2ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player3Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player3ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player4Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player4ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player5Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player5ExtraCoins;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Player6Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Player6ExtraCoins;
 
 	/* Player Icons */
@@ -220,19 +221,19 @@ public:
 	/* Team UI scores */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team1Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team1ExtraCoinsP3;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* Team2Coins;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP1;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP2;
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UTextBlock* Team2ExtraCoinsP3;
 
 	/* Team overlays */
@@ -310,15 +311,10 @@ public:
 	void HandleStarVisibility(APrototype2Character* Owner);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UBorder* StarsParent;
+	UOverlay* O_Stars;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UImage* Star1;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UImage* Star2;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UImage* Star3;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UImage* Star4;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
-	UImage* Star5;
+	UImage* I_Stars;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> StarTextures{nullptr, nullptr, nullptr, nullptr, nullptr};
 };

@@ -112,7 +112,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	}
 
 	// NEW STARS ON PICKUP UI
-	StarsParent->SetVisibility(ESlateVisibility::Hidden);
+	O_Stars->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -183,116 +183,57 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 					case 0:
 						{
 							Player1Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-								//Player1ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+
+							FString plus = "+";
+							FString combined = plus + ExtraCoins;
 							
-								Player1ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player1ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
-						
+							//Player1ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
 							break;
 						}
 					case 1:
 						{
 							Player2Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-							//	Player2ExtraCoins->SetVisibility(ESlateVisibility::Visible);
-							
-								Player2ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player2ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
+							FString plus = "+";
+							FString combined = plus + ExtraCoins;
 
+							//Player2ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
 							break;
 						}
 					case 2:
 						{
 							Player3Coins->SetText(FText::FromString(FString::FromInt(Coins)));  // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-							//	Player3ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + ExtraCoins;
 							
-								Player3ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player3ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
-
+							//Player3ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
 							break;
 						}
 					case 3:
 						{
 							Player4Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString plus = "+";
-								FString combined = plus + ExtraCoins;
-							//	Player4ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString plus = "+";
+							FString combined = plus + ExtraCoins;
 							
-								Player4ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player4ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
-
+							//Player4ExtraCoins->SetText(FText::FromString(combined)); // Set player extra score
 							break;
 						}
 					case 4:
 						{
 							Player5Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString Plus = "+";
-								FString Combined = Plus + ExtraCoins;
-							//	Player5ExtraCoins->SetVisibility(ESlateVisibility::Visible);
-							
-								Player5ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player5ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
+							FString Plus = "+";
+							FString Combined = Plus + ExtraCoins;
 
+							//Player5ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
 							break;
 						}
 					case 5:
 						{
 							Player6Coins->SetText(FText::FromString(FString::FromInt(Coins))); // Set player score
-							// Showing coin increase
-							//if (bIsShowingExtraCoins == true)
-							//{
-								FString Plus = "+";
-								FString Combined = Plus + ExtraCoins;
-							//	Player6ExtraCoins->SetVisibility(ESlateVisibility::Visible);
+							FString Plus = "+";
+							FString Combined = Plus + ExtraCoins;
 							
-								Player6ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
-							//}
-							//else
-							//{
-							//	Player6ExtraCoins->SetVisibility(ESlateVisibility::Hidden);
-							//}
+							//Player6ExtraCoins->SetText(FText::FromString(Combined)); // Set player extra score
 							break;
-							;
 						}
 					default:
 						{
@@ -318,19 +259,19 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 					{
 					case 0:
 						{
-							Team1ExtraCoinsP1->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team1ExtraCoinsP1->SetText(FText::FromString(CombinedText)); // Set player extra score
 						
 							break;
 						}
 					case 1:
 						{
-							Team1ExtraCoinsP2->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team1ExtraCoinsP2->SetText(FText::FromString(CombinedText)); // Set player extra score
 
 							break;
 						}
 					case 2:
 						{
-							Team1ExtraCoinsP3->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team1ExtraCoinsP3->SetText(FText::FromString(CombinedText)); // Set player extra score
 			
 							break;
 						}
@@ -355,19 +296,19 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 					{
 					case 0:
 						{
-							Team2ExtraCoinsP1->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team2ExtraCoinsP1->SetText(FText::FromString(CombinedText)); // Set player extra score
 						
 							break;
 						}
 					case 1:
 						{
-							Team2ExtraCoinsP2->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team2ExtraCoinsP2->SetText(FText::FromString(CombinedText)); // Set player extra score
 
 							break;
 						}
 					case 2:
 						{
-							Team2ExtraCoinsP3->SetText(FText::FromString(CombinedText)); // Set player extra score
+							//Team2ExtraCoinsP3->SetText(FText::FromString(CombinedText)); // Set player extra score
 			
 							break;
 						}
@@ -389,12 +330,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 		SetHUDInteractText("");
 
 		// NEW STARS ON PICKUP UI (Reset To Hidden)
-		StarsParent->SetVisibility(ESlateVisibility::Hidden);
-		Star1->SetVisibility(ESlateVisibility::Hidden);
-		Star2->SetVisibility(ESlateVisibility::Hidden);
-		Star3->SetVisibility(ESlateVisibility::Hidden);
-		Star4->SetVisibility(ESlateVisibility::Hidden);
-		Star5->SetVisibility(ESlateVisibility::Hidden);
+		O_Stars->SetVisibility(ESlateVisibility::Hidden);
 		
 		if (auto Owner = Cast<APrototype2Character>(GetOwningPlayer()->GetCharacter()))
 		{
@@ -809,46 +745,17 @@ void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 	// NEW STARS ON PICKUP UI (Set to visible)
 	if (APickUpItem* SomePickupItem = Cast<APickUpItem>(Owner->ClosestInteractableActor))
 	{
-		StarsParent->SetVisibility(ESlateVisibility::Visible);
 		// PICKUP ITEM
 		// Has valid data and is NOT a weapon and NOT fertiliser
 		if (IsValid(SomePickupItem->ServerData.SeedData)
 			&& SomePickupItem->ServerData.SeedData->WeaponData == nullptr
 			&& SomePickupItem->ServerData.SeedData->FertiliserData == nullptr)
 		{
-			for(int i = 0; i < SomePickupItem->ServerData.SeedData->BabyStarValue; i++)
-			{
-				switch(i)
-				{
-				case 0:
-					{
-						Star1->SetVisibility(ESlateVisibility::Visible);
-						break;
-					}
-				case 1:
-					{
-						Star2->SetVisibility(ESlateVisibility::Visible);
-						break;
-					}
-				case 2:
-					{
-						Star3->SetVisibility(ESlateVisibility::Visible);
-						break;
-					}
-				case 3:
-					{
-						Star4->SetVisibility(ESlateVisibility::Visible);
-						break;
-					}
-				case 4:
-					{
-						Star5->SetVisibility(ESlateVisibility::Visible);
-						break;
-					}
-				default:
-					break;
-				}
-			}
+			O_Stars->SetVisibility(ESlateVisibility::Visible);
+			
+			if (SomePickupItem->ServerData.SeedData->BabyStarValue - 1 >= 0
+				&& StarTextures.Num() >= SomePickupItem->ServerData.SeedData->BabyStarValue)
+				I_Stars->SetBrushFromTexture(StarTextures[SomePickupItem->ServerData.SeedData->BabyStarValue - 1]);
 		}
 	}
 	// GROW SPOT WITH PICKUP ITEM
@@ -856,45 +763,16 @@ void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 	{
 		if (IsValid(SomeGrowspot->ItemRef))
 		{
-			StarsParent->SetVisibility(ESlateVisibility::Visible);
 			// Growspots Vegetable has valid data and is NOT a weapon and NOT fertiliser
 			if (IsValid(SomeGrowspot->ItemRef->ServerData.SeedData)
 				&& SomeGrowspot->ItemRef->ServerData.SeedData->WeaponData == nullptr
 				&& SomeGrowspot->ItemRef->ServerData.SeedData->FertiliserData == nullptr)
 			{
-				for(int i = 0; i < SomeGrowspot->ItemRef->ServerData.SeedData->BabyStarValue; i++)
-				{
-					switch(i)
-					{
-					case 0:
-						{
-							Star1->SetVisibility(ESlateVisibility::Visible);
-							break;
-						}
-					case 1:
-						{
-							Star2->SetVisibility(ESlateVisibility::Visible);
-							break;
-						}
-					case 2:
-						{
-							Star3->SetVisibility(ESlateVisibility::Visible);
-							break;
-						}
-					case 3:
-						{
-							Star4->SetVisibility(ESlateVisibility::Visible);
-							break;
-						}
-					case 4:
-						{
-							Star5->SetVisibility(ESlateVisibility::Visible);
-							break;
-						}
-					default:
-						break;
-					}
-				}
+				O_Stars->SetVisibility(ESlateVisibility::Visible);
+				
+				if (SomeGrowspot->ItemRef->ServerData.SeedData->BabyStarValue - 1 >= 0
+					&& StarTextures.Num() >= SomeGrowspot->ItemRef->ServerData.SeedData->BabyStarValue)
+						I_Stars->SetBrushFromTexture(StarTextures[SomeGrowspot->ItemRef->ServerData.SeedData->BabyStarValue - 1]);
 			}
 		}
 	}
