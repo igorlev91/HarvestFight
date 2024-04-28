@@ -109,7 +109,6 @@ void ASellBin::Multi_FireSellVFXCrop_Implementation(APrototype2Character* _Playe
 		return;
 
 	int32 PlantSellValue = (_Plant->ServerData.SeedData->BabyStarValue * _Plant->ServerData.SeedData->PlantData->Multiplier * (_Plant->NumberOfNearbyFlowers + 1));
-	PlantSellValue *= 10;
 	int32 IncreaseAmount = _Plant->ItemComponent->bGold ? PlantSellValue * _Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 
 	InteractSystem->SetVectorParameter(FName("Coin Colour"), SomePlayerState->Details.PureToneColour);

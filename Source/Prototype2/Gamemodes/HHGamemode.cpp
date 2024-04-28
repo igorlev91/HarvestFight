@@ -44,9 +44,10 @@ FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour)
 {
 	FCharacterDetails IdealDetails{};
 	UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
-	if (IsValid(SomeGameInstance))
+	if (IsValid(SomeGameInstance)
+		&& SomeGameInstance->PlayerModels.Num() > 0)
 	{
-		IdealDetails.AnimationData = SomeGameInstance->PlayerModels[(int16)IdealDetails.Character];
+		IdealDetails.AnimationData = SomeGameInstance->PlayerModels[rand() % SomeGameInstance->PlayerModels.Num()];
 	}
 	IdealDetails.Colour = _Colour;
 	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];

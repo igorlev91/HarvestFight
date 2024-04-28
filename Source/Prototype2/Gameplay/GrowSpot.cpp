@@ -176,6 +176,17 @@ void AGrowSpot::BeginPlay()
 	Mesh->SetMaterial(0, PlotMaterial);
 
 	GrowWidgetComponent->SetVisibility(false);
+
+	if (auto World = GetWorld())
+	{
+		if (auto LocalController = World->GetFirstPlayerController())
+		{
+			if (auto LocalCharacter = LocalController->GetCharacter())
+			{
+				LastLocalPlayer = Cast<APrototype2Character>(LocalCharacter);
+			}
+		}
+	}
 }
 
 // Called every frame
@@ -213,28 +224,6 @@ EInteractMode AGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EIntera
 
 EInteractMode AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete)
 {
-	if (_Player->GetLocalRole() > ROLE_SimulatedProxy
-		|| _Player->GetRemoteRole() > ROLE_SimulatedProxy)
-	{
-		if (IsValid(LastLocalPlayer))
-		{
-			if (LastLocalPlayer->GetPlayerState<APrototype2PlayerState>() != _Player)
-			{
-				if (APawn* SomePawn = _Player->GetPawn())
-				{
-					LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
-				}
-			}
-		}
-		else
-		{
-			if (APawn* SomePawn = _Player->GetPawn())
-			{
-				LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
-			}
-		}
-	}
-
 	if (_LookOutForConcrete && FertilisationState.ConcretedHealth > 0)
 		return INVALID;
 	
@@ -290,27 +279,6 @@ EInteractMode AGrowSpot::IsInteractable_Unprotected(APrototype2PlayerState* _Pla
 
 EInteractMode AGrowSpot::IsInteractable_Stealing(APrototype2PlayerState* _Player)
 {
-	if (_Player->GetLocalRole() > ROLE_SimulatedProxy
-		|| _Player->GetRemoteRole() > ROLE_SimulatedProxy)
-	{
-		if (IsValid(LastLocalPlayer))
-		{
-			if (LastLocalPlayer->GetPlayerState<APrototype2PlayerState>() != _Player)
-			{
-				if (APawn* SomePawn = _Player->GetPawn())
-				{
-					LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
-				}
-			}
-		}
-		else
-		{
-			if (APawn* SomePawn = _Player->GetPawn())
-			{
-				LastLocalPlayer = Cast<APrototype2Character>(SomePawn);
-			}
-		}
-	}
 	
 	if (FertilisationState.ConcretedHealth > 0)
 		return INVALID;
@@ -428,6 +396,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 		_Player->HeldItem->Destroy();
 		_Player->HeldItem = nullptr;
 		_Player->OnRep_HeldItem();
+		_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PlantCue);
 
 		return;
 	}
@@ -476,6 +445,8 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef);
 					SomeBeehive->Interact(_Player);
+					_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PickUpCue);
+					HighValuePickupNoise();
 					return;
 					break;
 				}
@@ -656,7 +627,11 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		ItemRef = NewItem;
 	}
 
-	
+	if (FertilisationState.bFertilised)
+	{
+		ItemRef->ItemComponent->bGold = true;
+		ItemRef->ItemComponent->OnRep_bGold();
+	}
 	
 	_SeedToPlant->Destroy();
 	GrowSpotState = EGrowSpotState::Growing;
@@ -710,6 +685,8 @@ bool AGrowSpot::DegradeConcrete()
 	{
 		if (FertilisationState.ConcretedHealth > 0)
 		{
+			Multi_DamageConcrete();
+			
 			FFertilisationState NewFertilisationState = FertilisationState;
 			NewFertilisationState.ConcretedHealth--;
 			
@@ -721,10 +698,15 @@ bool AGrowSpot::DegradeConcrete()
 			DamagedConcrete = true;
 			FertilisationState = NewFertilisationState;
 			OnRep_FertilisationState();
-		}
+		} 
 	}
 	
 	return DamagedConcrete;
+}
+
+void AGrowSpot::Multi_DamageConcrete_Implementation()
+{
+	ConcreteBreakComponent->Activate(true);
 }
 
 void AGrowSpot::SpawnAPoof()
@@ -739,6 +721,8 @@ void AGrowSpot::SpawnAPoof()
 void AGrowSpot::OnRep_ItemRef()
 {
 	SetPlantReadySparkle(false);
+
+	OnRep_FertilisationState();
 }
 
 void AGrowSpot::HighValuePickupNoise()
@@ -898,6 +882,8 @@ void AGrowSpot::OnRep_GrowSpotState()
 	default:
 		break;
 	}
+
+	OnRep_FertilisationState();
 }
 
 void AGrowSpot::OnRep_FertilisationState()
@@ -924,8 +910,6 @@ void AGrowSpot::OnRep_FertilisationState()
 	
 		if (FertilisationState.ConcretedHealth <= 0)
 		{
-			ConcreteBreakComponent->Activate(true);
-			
 			if (GrowSpotState == EGrowSpotState::Grown)
 			{
 				SetPlantReadySparkle(true);
@@ -954,10 +938,6 @@ void AGrowSpot::OnRep_FertilisationState()
 						ItemRef->ItemComponent->Mesh->SetMaterial(i, TEMP_ConcreteMat);
 				}
 			}
-		}
-		else
-		{
-			ConcreteBreakComponent->Activate(true);
 		}
 	}
 }
