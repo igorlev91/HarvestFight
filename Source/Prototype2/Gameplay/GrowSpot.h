@@ -48,7 +48,7 @@ protected:
 	
 public:
 	/* INTERACTION */
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 	EInteractMode IsInteractable_Unprotected(APrototype2PlayerState* _Player, bool _LookOutForConcrete = true);
 	EInteractMode IsInteractable_Stealing(APrototype2PlayerState* _Player);
 	
@@ -68,6 +68,24 @@ public:
 
 	/* CONCRETE */
 	bool DegradeConcrete();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_DamageConcrete();
+
+	UFUNCTION()
+	void UpdateGrowUI();
+
+	UFUNCTION()
+	void UpdateGrowUIVisibility();
+
+	UFUNCTION()
+	bool CheckForSelfConcreting(APrototype2PlayerState* _Player);
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* GrowWidgetComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UWidget_3DGrowUI* GrowWidget;
 
 	UPROPERTY(EditAnywhere)
 	class UGrowSpotData* GrowSpotData;
@@ -110,10 +128,11 @@ protected:
 	
 	void ScalePlantOnTick() const;
 
+	/* IF this plant is the highest value on this map, it will have a sound in the data asset to play */
 	UFUNCTION()
-	void MandrakePickupNoise();
+	void HighValuePickupNoise();
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_MandrakePickupNoise();
+	void Multi_HighValuePickupNoise();
 	
 	void SetPlantReadySparkle(bool _bIsActive);
 	
@@ -138,10 +157,7 @@ protected:
 	//
 
 	UPROPERTY(EditAnywhere)
-	USoundAttenuation* MandrakeAttenuationSettings;
-
-	UPROPERTY(EditAnywhere)
-	USoundCue* MandrakeScreamQueue;
+	USoundAttenuation* HighValueAttenuationSettings;
 	
 	//
 	// VFX
@@ -150,6 +166,9 @@ protected:
 	class UNiagaraComponent* PlantReadyComponent;
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class TSubclassOf<AActor> PoofSystem;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	class UNiagaraComponent* ConcreteBreakComponent;
+
 	//
 	// Prefabs
 	//
@@ -164,5 +183,10 @@ protected:
 	/* Planting from WeaponData Data Asset */
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AGrowableWeapon> WeaponPrefab;
-	
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Character* LastLocalPlayer{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	float UIVisiblityRadius{1000.0f};
 };

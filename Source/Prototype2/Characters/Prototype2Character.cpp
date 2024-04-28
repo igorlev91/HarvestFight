@@ -78,23 +78,23 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APrototype2Character, Weapon);
 	DOREPLIFETIME(APrototype2Character, HeldItem);
-	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
 	DOREPLIFETIME(APrototype2Character, InvincibilityTimer);
-	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
-	//DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
-	//DOREPLIFETIME(APrototype2Character, InteractTimer);
 	DOREPLIFETIME(APrototype2Character, ClaimedPlot);
 	DOREPLIFETIME(APrototype2Character, DebuffComponent);
-	//DOREPLIFETIME(APrototype2Character, bAllowMovementFromInput);
-	//DOREPLIFETIME(APrototype2Character, FallTimer);
 	DOREPLIFETIME(APrototype2Character, CurrentWeaponSeedData);
 	DOREPLIFETIME(APrototype2Character, CurrentWeaponAnimation);
 	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
+	DOREPLIFETIME(APrototype2Character, WeaponMesh);
+	//DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
+	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
+	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
+	//DOREPLIFETIME(APrototype2Character, bIsHoldingGold);
+	//DOREPLIFETIME(APrototype2Character, InteractTimer);
+	//DOREPLIFETIME(APrototype2Character, bAllowMovementFromInput);
+	//DOREPLIFETIME(APrototype2Character, FallTimer);
 //	DOREPLIFETIME(APrototype2Character, bIsHoldingInteract);
 	//DOREPLIFETIME(APrototype2Character, WeaponFlashTimer);
 	//DOREPLIFETIME(APrototype2Character, bShouldWeaponFlashRed);
-	DOREPLIFETIME(APrototype2Character, WeaponMesh);
-	DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
 	
 	// Sprint
 	// DOREPLIFETIME(APrototype2Character, bHasNotifiedCanSprint);
@@ -144,6 +144,7 @@ void APrototype2Character::DelayedBeginPlay()
 			PlayerMaterialsDynamic.Add(UMaterialInstanceDynamic::Create(Material,this));
 		}
 	}
+	
 	InitPlayerNameWidgetComponent();
 	InitEmoteWidgetComponent();
 	SyncCharacterColourWithPlayerState();
@@ -257,6 +258,25 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	if (IsValid(smite))
 	{
 		smite->Tick(_DeltaSeconds);
+	}
+	
+	if (UHarvestHavocGameUserSettings* UserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings())
+	{
+		if (UserSettings->PlayerNames == true)
+		{
+			if (IsLocallyControlled())
+			{
+				PlayerNameWidgetComponent->SetVisibility(false);
+			}
+			else
+			{
+				PlayerNameWidgetComponent->SetVisibility(true);
+			}
+		}
+		else
+		{
+			PlayerNameWidgetComponent->SetVisibility(false);
+		}
 	}
 }
 
@@ -376,6 +396,7 @@ void APrototype2Character::Sprint()
 		bSprinting = true;		
 		bHasNotifiedCanSprint = false;
 		RefreshCurrentMaxSpeed();
+		bSprintAnimationState = true;
 		Server_SetSprintState(true);
 	}
 	else
@@ -393,6 +414,7 @@ void APrototype2Character::EndSprint()
 	// end sprint
 	bSprinting = false;
 	bHasNotifiedCanSprint = false;
+	bSprintAnimationState = false;
 	Server_SetSprintState(false);
 	
 	if (bCanSprint)
@@ -418,12 +440,11 @@ void APrototype2Character::Jump()
 
 void APrototype2Character::ChargeAttack()
 {
+	ReleaseInteract();
+
 	if (!IsValid(Weapon))
 		return;
 	
-	//if (bIsHoldingInteract)
-	//	return;
-
 	if (bIsChargingAttack)
 	{
 		return;
@@ -483,11 +504,17 @@ void APrototype2Character::ReleaseAttack()
 	// Throw item functionality
 	if (IsValid(HeldItem))
 	{
+		InteractTimer = InteractTimerTime;
 		FTimerHandle Handle;
+		APrototype2Character* ThisCharacter = this;
 		GetWorld()->GetTimerManager().SetTimer(Handle,
 			FTimerDelegate::CreateLambda(
-				[this]
+				[this, ThisCharacter]
 				{
+					if (!IsValid(ThisCharacter))
+					{
+						return;
+					}
 					ThrowItem();
 				}), InstantAttackDelay, false);
 
@@ -556,13 +583,18 @@ void APrototype2Character::ReleaseAttack()
 	}
 	float InAttackCharge = AttackChargeAmount;
 	bool InSprinting = bSprinting;
-	
+
+	APrototype2Character* ThisPlayer = this;
+
+	// CAUSES CRASH BECAUSE ITS RUNNING ON A SEPERATE THREAD
 	// Delayed attack
 	FTimerHandle Handle;
 	GetWorld()->GetTimerManager().SetTimer(Handle,
 		FTimerDelegate::CreateLambda(
-			[this, AttackSphereRadius, InAttackCharge, InSprinting]
+			[this, ThisPlayer, AttackSphereRadius, InAttackCharge, InSprinting]
 			{
+				if (!IsValid(ThisPlayer))
+					return;
 				
 				SetPlayerAimingMovement(false);
 				ExecuteAttack(AttackSphereRadius, InAttackCharge, InSprinting);
@@ -575,7 +607,7 @@ void APrototype2Character::Interact(bool _Direct)
 	if (!IsValid(PlayerStateRef))
 		return;
 
-	if (ClosestInteractableItem == nullptr)
+	if (IsValid(ClosestInteractableActor) == false)
 		return;
 	
 	if (DebuffComponent->DebuffInfo.Debuff == EDebuff::Daze ||
@@ -646,9 +678,11 @@ void APrototype2Character::ReleaseInteract()
 
 void APrototype2Character::Server_Interact_Implementation(AActor* _Item)
 {
+	if (IsValid(_Item) == false)
+		return;
 
-	
-	Cast<IInteractInterface>(_Item)->Interact(this);
+	if (const auto SomeInteractable = Cast<IInteractInterface>(_Item))
+		SomeInteractable->Interact(this);
 		
 	if (IsValid(HeldItem))
 	{
@@ -980,7 +1014,7 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	// Drop item
 	DropItem(1000.0f);
 	
-	Client_PlaySoundAtLocation(GetActorLocation(), GetHitCue);
+	Client_PlayWeaponSound(GetHitCue);
 	
 	// VFX
 	FVector AttackVFXLocation = _AttackerLocation - GetActorLocation();
@@ -1203,6 +1237,18 @@ void APrototype2Character::InitMiscComponents()
 	// SFX
 	WeaponAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponAudioComponent"));
 	WeaponAudioComponent->SetupAttachment(RootComponent);
+	FallAudioComponent = CreateDefaultSubobject<UAudioComponent>("FallAudioCompoent");
+	FallAudioComponent->SetupAttachment(RootComponent);
+	if (FallCue)
+	{
+		FallAudioComponent->SetSound(FallCue);
+	}
+	GruntAudioComponent1 = CreateDefaultSubobject<UAudioComponent>(TEXT("Grunt1AudioComponent"));
+	GruntAudioComponent2 = CreateDefaultSubobject<UAudioComponent>(TEXT("Grunt2AudioComponent"));
+	GruntAudioComponent1->SetupAttachment(RootComponent);
+	GruntAudioComponent2->SetupAttachment(RootComponent);
+	GruntAudioComponent1->SetSound(GruntCue);
+	GruntAudioComponent2->SetSound(GruntCue);
 	
 	// Decal component
 	DecalArmSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DecalArrowArm"));
@@ -1731,6 +1777,7 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 	{
 		InteractTimeline->Stop();
 		OnStoppedClaimingPlotDelegate.Broadcast();
+		bAllowMovementFromInput = true;
 		return;
 	}
 	else if (auto SomeGrowSpot = Cast<AGrowSpot>(ClosestInteractableActor))
@@ -1739,7 +1786,18 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 		{
 			InteractTimeline->Stop();
 			OnStoppedClaimingPlotDelegate.Broadcast();
+			bAllowMovementFromInput = true;
 			return;
+		}
+		else if (ABeehive* beehive = Cast<ABeehive>(SomeGrowSpot->ItemRef))
+		{
+			if (beehive->TrackerTimeTillCollect > 0)
+			{
+				InteractTimeline->Stop();
+				OnStoppedClaimingPlotDelegate.Broadcast();
+				bAllowMovementFromInput = true;
+				return;
+			}
 		}
 	}
 	
@@ -1850,6 +1908,73 @@ void APrototype2Character::Client_PlaySoundAtLocation_Implementation(FVector _Lo
 	PlaySoundAtLocation(_Location, _SoundQueue, _Attenuation);
 }
 
+void APrototype2Character::Grunt()
+{
+	if (!IsValid(GruntCue))
+		return;
+	
+	if (GruntAudioComponent1->IsPlaying())
+	{
+		if (GruntAudioComponent2->GetSound() != GruntCue)
+		{
+			GruntAudioComponent2->SetSound(GruntCue);
+		}
+		GruntAudioComponent2->Play();
+	}
+	else
+	{
+		if (GruntAudioComponent1->GetSound() != GruntCue)
+		{
+			GruntAudioComponent1->SetSound(GruntCue);
+		}
+		GruntAudioComponent1->Play();
+	}
+	if (HasAuthority())
+	{
+		Multi_Grunt();
+	}
+	else
+	{
+		Server_Grunt();
+	}
+}
+
+void APrototype2Character::Server_Grunt_Implementation()
+{
+	Multi_Grunt();
+}
+
+void APrototype2Character::Multi_Grunt_Implementation()
+{
+	if (IsLocallyControlled())
+		return;
+
+	if (GruntAudioComponent1->IsPlaying())
+	{
+		if (GruntAudioComponent2->GetSound() != GruntCue)
+		{
+			GruntAudioComponent2->SetSound(GruntCue);
+		}
+		GruntAudioComponent2->Play();
+	}
+	else
+	{
+		if (GruntAudioComponent1->GetSound() != GruntCue)
+		{
+			GruntAudioComponent1->SetSound(GruntCue);
+		}
+		GruntAudioComponent1->Play();
+	}
+}
+
+void APrototype2Character::PlayFallSound()
+{
+	if (HasAuthority() && IsValid(FallCue))
+	{
+		Client_PlaySoundAtLocation(GetActorLocation(), FallCue);
+	}
+}
+
 void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 {
 	if (!IsValid(_SoundToPlay))
@@ -1870,12 +1995,9 @@ void APrototype2Character::PlayWeaponSound(USoundCue* _SoundToPlay)
 	}
 }
 
-void APrototype2Character::PlayFallSound()
+void APrototype2Character::Client_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
 {
-	if (HasAuthority() && IsValid(FallCue))
-	{
-		Client_PlaySoundAtLocation(GetActorLocation(), FallCue);
-	}
+	PlayWeaponSound(_SoundToPlay);
 }
 
 void APrototype2Character::Server_PlayWeaponSound_Implementation(USoundCue* _SoundToPlay)
@@ -2125,6 +2247,11 @@ void APrototype2Character::Server_SetMaxWalkSpeed_Implementation(float _Speed)
 
 void APrototype2Character::Server_SetSprintState_Implementation(bool _NewSprintAnimationState)
 {
+	Multi_SetSprintState(_NewSprintAnimationState);
+}
+
+void APrototype2Character::Multi_SetSprintState_Implementation(bool _NewSprintAnimationState)
+{
 	bSprintAnimationState = _NewSprintAnimationState;
 }
 
@@ -2236,7 +2363,7 @@ void APrototype2Character::ThrowItem()
 	if (IsValid(HeldItem))
 		HeldItem->Client_Drop();
 	
-	PlaySoundAtLocation(GetActorLocation(), DropCue);
+	PlaySoundAtLocation(GetActorLocation(), GruntCue);
 	
 	if (HasAuthority())
 	{
@@ -2556,7 +2683,7 @@ void APrototype2Character::HandleAttackChargeBehavior(float _DeltaSeconds)
 	{
 		if(AttackChargeAmount < MaxAttackCharge)// + AutoAttackDuration)
 		{
-			AttackChargeAmount += _DeltaSeconds * 1.2f; // increase charge speed by 10%
+			AttackChargeAmount += _DeltaSeconds * 1.5f; // increase charge speed by 50%
 		}
 		
 		if (AttackChargeAmount >= MaxAttackCharge)
@@ -2699,7 +2826,7 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 	{
 		if (SprintTimer > 0)
 		{
-			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 2 : _DeltaSeconds; // magic number increaeses sprint drain when sprinting with weapon
+			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 1.5f : _DeltaSeconds; // magic number increaeses sprint drain when sprinting with weapon
 
 			if (SprintTimer <= 0)
 			{
@@ -2718,11 +2845,11 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 		{
 			if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
 			{
-				DelayedSprintRegenTimer += _DeltaSeconds;
+				DelayedSprintRegenTimer += _DeltaSeconds * 1.5f;
 			}
 			else
 			{
-				SprintTimer += _DeltaSeconds * 0.75f; // magic number slows down sprint regen
+				SprintTimer += _DeltaSeconds * 0.85f; // magic number slows down sprint regen
 			}
 		}
 		else

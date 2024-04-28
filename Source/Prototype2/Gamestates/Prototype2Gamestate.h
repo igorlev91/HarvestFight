@@ -35,6 +35,9 @@ struct FHHExtraSettings
 	bool bConcreteFertiliser{true};
 	UPROPERTY(BlueprintReadWrite)
 	bool bPoisonFertiliser{true};
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bSelfConcreting{false};
 };
 
 UCLASS()
@@ -152,7 +155,10 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 CountdownLengthMinutes{0};
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
-	float CountdownLengthSeconds{8.0f};
+	float CountdownLengthSeconds{10.0f};
+	
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
+	float WaitingForPlayersSeconds{10.0f};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess))
 	int32 EndGameLengthMinutes{0};

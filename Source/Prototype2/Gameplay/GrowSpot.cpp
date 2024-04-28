@@ -20,6 +20,7 @@
 #include "Prototype2/Gamestates/Prototype2Gamestate.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Prototype2/GameUserSettings/HarvestHavocGameUserSettings.h"
 #include "Prototype2/VFX/SquashAndStretch.h"
 #include "Prototype2/Widgets/Widget_3DGrowUI.h"
 
@@ -218,6 +219,9 @@ EInteractMode AGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EIntera
 	}
 	else  /* NORMAL */ 
 	{
+		if (CheckForSelfConcreting(_Player))
+			return INVALID;
+		
 		return IsInteractable_Unprotected(_Player, true);
 	}
 }
@@ -826,6 +830,41 @@ void AGrowSpot::UpdateGrowUIVisibility()
 	{
 		GrowWidgetComponent->SetVisibility(false);
 	}
+
+	if (UHarvestHavocGameUserSettings* UserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings())
+	{
+		if (UserSettings->GetPlantValueFloatingUI() == false)
+		{
+			GrowWidgetComponent->SetVisibility(false);
+		}
+	}
+}
+
+bool AGrowSpot::CheckForSelfConcreting(APrototype2PlayerState* _Player)
+{
+	APrototype2Character* CastedCharacter = Cast<APrototype2Character>(_Player->GetPawn());
+	if (!CastedCharacter)
+		return false;
+
+	APrototype2Gamestate* CastedGamestate = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (IsValid(CastedGamestate) == false)
+		return false;
+
+	/* HOLDING FERTILIZER */
+	if (CastedCharacter->IsHolding(AFertiliser::StaticClass()))
+	{
+		if (const auto HeldItemData = CastedCharacter->GetHeldItemData())
+		{
+			FHHExtraSettings& ExtraSettings = CastedGamestate->ExtraSettings;
+			if (HeldItemData->FertiliserData->Type == EFertiliserType::CONCRETE &&
+					ExtraSettings.bSelfConcreting == false)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
