@@ -368,6 +368,17 @@ public:
 	UFUNCTION()
 	void SetPlantValueFloatingUISettingText();
 
+	// First time tutorials
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* QuickTipTutorials_Control;
+
+	bool bQuickTipTutorials;
+
+	UFUNCTION()
+	void OnQuickTipTutorialsControlButtonPressed();
+	UFUNCTION()
+	void SetQuickTipTutorialsSettingText();
+
 	// Mouse sensitivity control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* MouseSensitivityScale_Control;

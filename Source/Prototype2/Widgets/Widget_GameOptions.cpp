@@ -63,6 +63,7 @@ void UWidget_GameOptions::NativePreConstruct()
 	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
 	PlayerNames_Control->OptionText->SetText(FText::FromString("Player Names"));
 	PlantValueFloatingUI_Control->OptionText->SetText(FText::FromString("Plant Floating Value Stars"));
+	QuickTipTutorials_Control->OptionText->SetText(FText::FromString("Reset Quick Tips"));
 
 	/* Control (mouse/controller) */
 	MouseSensitivityScale_Control->OptionText->SetText(FText::FromString("Mouse/Controller Sensitivity"));
@@ -242,6 +243,12 @@ void UWidget_GameOptions::NativeConstruct()
 		PlantValueFloatingUI_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
 	}
 
+	if (QuickTipTutorials_Control)
+	{
+		QuickTipTutorials_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
+		QuickTipTutorials_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
+	}
+
 	/* Control (mouse/controller sensitivity) */
 	if (MouseSensitivityScale_Control)
 	{
@@ -279,6 +286,7 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
 	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
 	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
+	HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
 	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
 	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
@@ -429,6 +437,7 @@ void UWidget_GameOptions::SetOptionsText()
 	SetUIOffscreenIndicatorSizeSettingText();
 	SetPlayerNamesSettingText();
 	SetPlantValueFloatingUISettingText();
+	SetQuickTipTutorialsSettingText();
 	SetMouseSensitivityScaleSettingText();
 	SetCustomMouseCursorSettingText();
 	SetControllerMenuSensitivityScaleSettingText();
@@ -471,6 +480,7 @@ void UWidget_GameOptions::LoadSettings()
 	bTempUIIndicatorSizeLarge = HHGameGameUserSettings->UIIndicatorSizeLarge;
 	bTempPlayerNames = HHGameGameUserSettings->PlayerNames;
 	bPlantValueFloatingUI = HHGameGameUserSettings->PlantValueFloatingUI;
+	bQuickTipTutorials = HHGameGameUserSettings->QuickTipTutorials;
 	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
 	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
 	TempFOV = HHGameGameUserSettings->FieldOfView;
@@ -1527,6 +1537,24 @@ void UWidget_GameOptions::SetPlantValueFloatingUISettingText()
 		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("On"));
 	else
 		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed()
+{
+	if (bQuickTipTutorials == true)
+		bQuickTipTutorials = false;
+	else
+		bQuickTipTutorials = true;
+
+	SetQuickTipTutorialsSettingText();
+}
+
+void UWidget_GameOptions::SetQuickTipTutorialsSettingText()
+{
+	if (bQuickTipTutorials == true)
+		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		QuickTipTutorials_Control->OptionValueText->SetText(FText::FromString("Off"));
 }
 
 void UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed()

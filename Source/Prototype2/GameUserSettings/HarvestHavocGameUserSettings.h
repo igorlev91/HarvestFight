@@ -1,4 +1,5 @@
 
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -57,6 +58,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetUIIndicatorSizeLarge() const { return UIIndicatorSizeLarge; }
 	UFUNCTION(BlueprintCallable)
+	bool GetPlayerNames() const { return PlayerNames; }
+	UFUNCTION(BlueprintCallable)
+	bool GetQuickTipTutorials() const { return QuickTipTutorials; }
+	UFUNCTION(BlueprintCallable)
+	bool GetPlantValueFloatingUI() const { return PlantValueFloatingUI; }
+	UFUNCTION(BlueprintCallable)
 	int32 GetMouseSensitivityScale() const { return MouseSensitivityScale; }
 	UFUNCTION(BlueprintCallable)
 	bool GetCustomMouseCursor() const { return CustomMouseCursor; }
@@ -97,6 +104,15 @@ protected:
 
 	UPROPERTY(config, EditAnywhere)
 	bool UIIndicatorSizeLarge;
+
+	UPROPERTY(config, EditAnywhere)
+	bool PlayerNames;
+
+	UPROPERTY(config, EditAnywhere)
+	bool PlantValueFloatingUI;
+
+	UPROPERTY(config, EditAnywhere)
+	bool QuickTipTutorials;
 
 	/* Mouse sensitivity */
 	UPROPERTY(config, EditAnywhere)

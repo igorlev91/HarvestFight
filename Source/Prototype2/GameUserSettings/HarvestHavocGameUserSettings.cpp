@@ -13,8 +13,11 @@ UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitia
 	SFXVolume = 10;
 	bPlayerStencil = true;
 	bEnemyAlwaysRed = false;
-	UIIndicators = (int8)EIndicatorUISetting::ON;
+	UIIndicators = (int8)EIndicatorUISetting::ONSIDESONLY;
 	UIIndicatorSizeLarge = false;
+	PlayerNames = true;
+	PlantValueFloatingUI = true;
+	QuickTipTutorials = true;
 	MouseSensitivityScale = 5;
 	CustomMouseCursor = true;
 	ControllerMenuSensitivityScale = 5;
