@@ -264,7 +264,7 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	{
 		if (UserSettings->PlayerNames == true)
 		{
-			if (IsLocallyControlled())
+			if (IsLocallyControlled() && GameState->HasGameFinished() == false)
 			{
 				PlayerNameWidgetComponent->SetVisibility(false);
 			}

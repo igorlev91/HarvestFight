@@ -31,6 +31,7 @@ class AWeaponSeed;
 UCLASS()
 class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 {
+	friend class ABeehive;
 	GENERATED_BODY()
 
 protected:
@@ -134,7 +135,7 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_HighValuePickupNoise();
 	
-	void SetPlantReadySparkle(bool _bIsActive);
+	void SetPlantReadySparkle(bool _bIsActive, bool _IsBeehive = false);
 	
 	//
 	// Fertilisation

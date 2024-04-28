@@ -44,29 +44,8 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	APlant* Honey = GetWorld()->SpawnActor<APlant>(HoneyPrefab, FVector(0, 0, 0), {});
 	Honey->ServerData.SeedData = HoneySeedData;
 	
-	TArray<AActor*> NearbyFlowerActors{};
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlant::StaticClass(), NearbyFlowerActors);
-	NumberOfNearbyFlowers = 0;
-	for(AActor* FlowerActor : NearbyFlowerActors)
-	{
-		if (FlowerActor == this)
-			continue;
-		
-		if (FVector::Distance(GetActorLocation(), FlowerActor->GetActorLocation()) <= FlowerEffectionDistance)
-		{
-			if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
-			{
-				if (NearbyFlower->ServerData.SeedData->BabyType == EPickupDataType::FlowerData)
-				{
-					NumberOfNearbyFlowers += NearbyFlower->ServerData.SeedData->BabyStarValue;
-				}
-			}
-		}
-	}
-	
 	Honey->SetSeedData(Honey->ServerData.SeedData, EPickupActor::PlantActor);
-	Honey->NumberOfNearbyFlowers = NumberOfNearbyFlowers;
-	Honey->bGrown = true;
+	Honey->NumberOfNearbyFlowers = GetCloseFlowers().Num();
 	Honey->Multi_ScalePlant();
 	Honey->Interact(_Player);
 
@@ -86,16 +65,24 @@ void ABeehive::Interact(APrototype2Character* _Player)
 
 void ABeehive::ClientInteract(APrototype2Character* _Player)
 {
-	//SSComponent->Boing();
+	if (IsValid(ParentGrowSpot) == false)
+		return;
+	
+	ParentGrowSpot->SetPlantReadySparkle(false, true);
 }
 
 void ABeehive::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID)
 {
 }
 
-EInteractMode ABeehive::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode ABeehive::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
-	return bIsReadyToCollect ? INSTANT : INVALID;
+	if (bIsReadyToCollect)
+	{
+		return _ForcedMode != INVALID ? _ForcedMode : INSTANT;
+	}
+
+	return INVALID;
 }
 
 void ABeehive::SetBeehiveLocation(FVector _Location)
@@ -104,11 +91,80 @@ void ABeehive::SetBeehiveLocation(FVector _Location)
 		Server_SetBeehiveLocation(_Location);
 }
 
+TArray<APlant*> ABeehive::GetCloseFlowers()
+{
+	TArray<AActor*> NearbyFlowerActors{};
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlant::StaticClass(), NearbyFlowerActors);
+	TArray<APlant*> NearbyFlowers{};
+	for(AActor* FlowerActor : NearbyFlowerActors)
+	{
+		if (FlowerActor == this)
+			continue;
+		
+		if (FVector::Distance(GetActorLocation(), FlowerActor->GetActorLocation()) <= FlowerEffectionDistance)
+		{
+			if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
+			{
+				if (NearbyFlower->ServerData.SeedData->BabyType == EPickupDataType::FlowerData)
+				{
+					NearbyFlowers.Add(NearbyFlower);
+				}
+			}
+		}
+	}
+
+	return NearbyFlowers;
+}
+
+TArray<FFlowerData> ABeehive::GetCloseFlowerDetails()
+{
+	int32 NumberOfOneStars{};
+	int32 NumberOfTwoStars{};
+	int32 NumberOfThreeStars{};
+	
+	for(auto CloseFlower : GetCloseFlowers())
+	{
+		if (auto SeedData = CloseFlower->GetSeedData())
+		{
+			switch (SeedData->BabyStarValue)
+			{
+			case 1:
+				{
+					NumberOfOneStars++;
+					break;
+				}
+			case 2:
+				{
+					NumberOfTwoStars++;
+					break;
+				}
+			case 3:
+				{
+					NumberOfThreeStars++;
+					break;
+				}
+			default:
+				break;
+			}
+		}
+	}
+
+	TArray<FFlowerData> NearbyFlowerDetails{};
+	if (NumberOfOneStars > 0)
+		NearbyFlowerDetails.Add({1, NumberOfOneStars});
+	if (NumberOfTwoStars > 0)
+		NearbyFlowerDetails.Add({2, NumberOfTwoStars});
+	if (NumberOfThreeStars > 0)
+		NearbyFlowerDetails.Add({3, NumberOfThreeStars});
+
+	return NearbyFlowerDetails;
+}
+
 void ABeehive::Server_SetBeehiveLocation_Implementation(FVector _Location)
 {
 	if (Bees && ItemComponent->Mesh)
 	{
-		Bees->SeekPositionLocation = _Location;//ItemComponent->Mesh->GetComponentLocation();
+		Bees->SeekPositionLocation = _Location;
 	}
 }
 
@@ -127,8 +183,18 @@ void ABeehive::Tick(float DeltaSeconds)
 
 	if (TimeTillCollect > 0)
 		ItemComponent->Mesh->SetWorldScale3D(FMath::Lerp(ServerData.SeedData->BabyScale, FVector::One() * 2.0f, TrackerTimeTillCollect / TimeTillCollect));
-	
 
+	if (bIsReadyToCollect && TimeTillCollect > 0)
+	{
+		if (IsValid(ParentGrowSpot))
+			ParentGrowSpot->SetPlantReadySparkle(true, true);
+	}
+	else
+	{
+		if (IsValid(ParentGrowSpot))
+			ParentGrowSpot->SetPlantReadySparkle(false, true);
+	}
+	
 	if (!HasAuthority())
 		return;
 	/*

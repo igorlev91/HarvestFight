@@ -159,7 +159,7 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 		if (OwningItem->ServerData.SeedData)
 		{
 			if (OwningItem->ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
-				OwningItem->ItemComponent->Mesh->SetWorldScale3D(FVector{2.0f,2.0f,2.0f} + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+				OwningItem->ItemComponent->Mesh->SetWorldScale3D(OwningItem->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 			else
 				OwningItem->ItemComponent->Mesh->SetWorldScale3D(OwningItem->ServerData.SeedData->BabyScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 		}
@@ -182,13 +182,12 @@ void USquashAndStretch::OnBoingUpdate(float _Value)
 	}
 	if (OwningGrowSpot != nullptr)
 	{
-		if (OwningGrowSpot->GrowSpotData)
+		if (IsValid(OwningGrowSpot->GrowSpotData))
 		{
 			for(int32 i = 0; i  < StaticMeshes.Num(); i++)
 			{
 				if (IsValid(StaticMeshes[i]))
-					if (OwningGrowSpot->GrowSpotData)
-						StaticMeshes[i]->SetWorldScale3D(OwningGrowSpot->GrowSpotData->DesiredScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
+					StaticMeshes[i]->SetWorldScale3D(OwningGrowSpot->GrowSpotData->DesiredScale + (SSAxis * (FMath::Sin(2 * PI * _Value) * BoingSquashMag)));
 			}
 		}
 		return;

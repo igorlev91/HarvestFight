@@ -340,6 +340,18 @@ void AGrowSpot::ClientInteract(APrototype2Character* _Player)
 	{
 	case EGrowSpotState::Grown:
 		{
+			switch(SeedData->BabyType)
+			{
+			case EPickupDataType::BeehiveData:
+				{
+					ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef);
+					SomeBeehive->ClientInteract(_Player);
+					break;
+				}
+			default:
+				break;
+			}
+			
 			ItemRef->Client_Pickup(_Player);
 		}
 	default:
@@ -867,7 +879,7 @@ bool AGrowSpot::CheckForSelfConcreting(APrototype2PlayerState* _Player)
 	return false;
 }
 
-void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
+void AGrowSpot::SetPlantReadySparkle(bool _bIsActive, bool _IsBeehive)
 {
 	if (PlantReadyComponent)
 	{
@@ -875,7 +887,8 @@ void AGrowSpot::SetPlantReadySparkle(bool _bIsActive)
 		{
 			if (IsValid(ItemRef))
 			{
-				if (ItemRef->IsA(ABeehive::StaticClass()))
+				if (ItemRef->IsA(ABeehive::StaticClass())
+					&& _IsBeehive == false)
 					return;
 				
 				Cast<APickUpItem>(ItemRef)->SSComponent->Enable();
