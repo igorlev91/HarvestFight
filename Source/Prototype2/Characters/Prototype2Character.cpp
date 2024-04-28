@@ -368,9 +368,20 @@ void APrototype2Character::Look(const FInputActionValue& _Value)
 	const FVector2D LookAxisVector = _Value.Get<FVector2D>();
 	if (!IsValid(Controller))
 		return;
-	
-	AddControllerYawInput(LookAxisVector.X);
-	AddControllerPitchInput(LookAxisVector.Y);
+
+	UHarvestHavocGameUserSettings* HHGameGameUserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings();
+	if (HHGameGameUserSettings)
+	{
+		float MouseSensitivity = (float)HHGameGameUserSettings->GetMouseSensitivityScale();
+
+		AddControllerYawInput((LookAxisVector.X / 2) * (MouseSensitivity / 5));
+		AddControllerPitchInput((LookAxisVector.Y / 2) * (MouseSensitivity / 5));
+	}
+	else
+	{
+		AddControllerYawInput(LookAxisVector.X);
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
 }
 
 void APrototype2Character::Sprint()
