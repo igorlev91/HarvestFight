@@ -32,7 +32,10 @@ ALobbyGamemode::ALobbyGamemode()
 void ALobbyGamemode::BeginPlay()
 {
 	Super::BeginPlay();
-	GetGameInstance<UPrototypeGameInstance>()->FinalPlayerDetails.Empty();
+	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
+	{
+		GameInstance->ResetCachedPlayerDetails();
+	}
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
@@ -61,17 +64,16 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	{
 		if (GameStateReference->TeamsDetails.Server_TeamOne.Num() <= GameStateReference->TeamsDetails.Server_TeamTwo.Num())
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamOneColour);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamOneColour, false);
 			GameStateReference->TeamsDetails.Server_TeamOne.Add(PlayerStateReference);
 		}
 		else
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamTwoColour);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamTwoColour, false);
 			GameStateReference->TeamsDetails.Server_TeamTwo.Add(PlayerStateReference);
 		}
 		
-		
-		UE_LOG(LogTemp, Warning, TEXT("%s Joined Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int)PlayerStateReference->Details.Colour));
+		UE_LOG(LogTemp, Warning, TEXT("%s Joined Team %s"), *PlayerStateReference->GetPlayerName(), *FString::FromInt((int16)PlayerStateReference->Details.Colour));
 	}
 	else /* NOT Teams */
 	{
@@ -82,7 +84,7 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 		}
 		else /* NEW PLAYER */
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference));
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference), false);
 		}
 	}
 

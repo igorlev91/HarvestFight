@@ -33,14 +33,14 @@ void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 	{
 		FTeamsDetails NewTeamDetails{};
 		
-		int RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
 		if (RandomColour == (int)EColours::RED)
 			RandomColour++;
 		NewTeamDetails.TeamOneColour = (EColours)RandomColour;
 	
 		do
 		{
-			RandomColour = rand() % ((int)EColours::MAXCOLOURS - 1);
+			RandomColour = rand() % ((int)EColours::MAXCOLOURS);
 			if (RandomColour == (int)EColours::RED)
 				RandomColour++;
 		}
@@ -57,7 +57,7 @@ void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 void ALobbyGamestate::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	/* Pre set backup level */
 	if (GameMode == 0) // Normal Mode
 		MapChoice = FriendlyFarmClassicLarge;
@@ -76,6 +76,8 @@ void ALobbyGamestate::Tick(float _DeltaSeconds)
 	TickTimers(_DeltaSeconds);
 
 	UpdateTeams();
+
+	ServerTravel(_DeltaSeconds);
 }
 
 void ALobbyGamestate::VoteMap(EFarm _Level)
@@ -146,6 +148,11 @@ int32 ALobbyGamestate::GetClockworkFarm() const
 	return ClockworkFarm;
 }
 
+int32 ALobbyGamestate::GetRandomFarm() const
+{
+	return RandomFarm;
+}
+
 bool ALobbyGamestate::HasMapBeenChosen() const
 {
 	return bMapChosen;
@@ -204,11 +211,15 @@ void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALobbyGamestate, MapChoiceLengthSeconds);
 	DOREPLIFETIME(ALobbyGamestate, bMapChosen);
 	DOREPLIFETIME(ALobbyGamestate, bHasCountedDown);
+	DOREPLIFETIME(ALobbyGamestate, MapChoice);
 	
 	DOREPLIFETIME(ALobbyGamestate, MaxPlayersOnServer);
 	
 	DOREPLIFETIME(ALobbyGamestate, TeamsDetails);
 	DOREPLIFETIME(ALobbyGamestate, bHasAllPlayersVoted);
+
+	DOREPLIFETIME(ALobbyGamestate, bCanTravel);
+	
 }
 
 void ALobbyGamestate::PickMapToPlay()
@@ -668,6 +679,8 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 {
 	if (HasAuthority())
 	{
+		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+		
 		if (bPreviousServerTravel != bShouldServerTravel)
 		{
 			bPreviousServerTravel = bShouldServerTravel;
@@ -727,27 +740,24 @@ void ALobbyGamestate::TickTimers(float _DeltaSeconds)
 							else
 								PickMapToPlay();
 							
-							if (auto GameInstance = Cast<UPrototypeGameInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+							GameInstance->FinalPlayerDetails.Empty();
+							for(auto Player : Server_Players)
 							{
-								GameInstance->FinalConnectionCount = Server_Players.Num();
-								
-								GameInstance->FinalPlayerDetails.Empty();
-								for(auto Player : Server_Players)
-								{
-									GameInstance->FinalPlayerDetails.Add({Player->GetPlayerName(), Player->Details});
-									UE_LOG(LogTemp, Warning, TEXT("%s Added To FinalDetails With Color: %s"), *Player->GetPlayerName(), *FString::FromInt((int16)Player->Details.Colour));
-								}
-
-								GameInstance->TeamOneName = TeamsDetails.TeamOneName;
-								GameInstance->TeamTwoName = TeamsDetails.TeamTwoName;
-								GameInstance->bTeams = bTeams;
-								GameInstance->FinalTeamACount = TeamsDetails.Server_TeamOne.Num();
-								GameInstance->FinalTeamBCount = TeamsDetails.Server_TeamTwo.Num();
-								GameInstance->FinalTeamAColour = TeamsDetails.TeamOneColour;
-								GameInstance->FinalTeamBColour = TeamsDetails.TeamTwoColour;
+								GameInstance->FinalPlayerDetails.Add({Player->GetPlayerName(), Player->Details});
+								UE_LOG(LogTemp, Warning, TEXT("%s Added To FinalDetails With Color: %s"), *Player->GetPlayerName(), *FString::FromInt((int16)Player->Details.Colour));
 							}
 
-							GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+							GameInstance->FinalConnectionCount = Server_Players.Num();
+							GameInstance->bTeams = bTeams;
+							GameInstance->TeamOneName = TeamsDetails.TeamOneName;
+							GameInstance->TeamTwoName = TeamsDetails.TeamTwoName;
+							GameInstance->FinalTeamACount = TeamsDetails.Server_TeamOne.Num();
+							GameInstance->FinalTeamBCount = TeamsDetails.Server_TeamTwo.Num();
+							GameInstance->FinalTeamAColour = TeamsDetails.TeamOneColour;
+							GameInstance->FinalTeamBColour = TeamsDetails.TeamTwoColour;
+
+							//GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+							bCanTravel = true;
 						}
 					}
 					
@@ -799,6 +809,30 @@ void ALobbyGamestate::UpdateTeams()
 			}
 		}
 	}
+}
+
+void ALobbyGamestate::ServerTravel(float _DeltaSeconds)
+{
+	if (!HasAuthority())
+		return;
+	
+	if (bCanTravel == false)
+		return;
+
+	MapTravelTimer -= _DeltaSeconds;
+
+	if (MapTravelTimer <= 0)
+	{
+		bCanTravel = false;
+		GetWorld()->ServerTravel(MapChoice, false, false); // Start level
+	}
+}
+
+void ALobbyGamestate::OnRep_CanTravel()
+{
+	auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	GameInstance->FinalConnectionCount = Server_Players.Num();
+	GameInstance->bTeams = bTeams;
 }
 
 int32 ALobbyGamestate::GetNumberOfCharactersTaken(ECharacters _DesiredCharacter) const
