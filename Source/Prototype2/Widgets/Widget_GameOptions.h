@@ -53,6 +53,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void LoadSettings();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnChangedCursorSetting();
 	
 	/* Child ControlWidgets */
 
@@ -342,6 +345,28 @@ public:
 	void OnUIOffscreenIndicatorSizeControlButtonPressed();
 	UFUNCTION()
 	void SetUIOffscreenIndicatorSizeSettingText();
+
+	// Player Names ingame UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* PlayerNames_Control;
+
+	bool bTempPlayerNames;
+
+	UFUNCTION()
+	void OnPlayerNamesControlButtonPressed();
+	UFUNCTION()
+	void SetPlayerNamesSettingText();
+
+	// Plant value floating UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* PlantValueFloatingUI_Control;
+
+	bool bPlantValueFloatingUI;
+
+	UFUNCTION()
+	void OnPlantValueFloatingUIControlButtonPressed();
+	UFUNCTION()
+	void SetPlantValueFloatingUISettingText();
 
 	// Mouse sensitivity control
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))

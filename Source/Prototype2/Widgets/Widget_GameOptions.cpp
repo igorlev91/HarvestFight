@@ -61,6 +61,8 @@ void UWidget_GameOptions::NativePreConstruct()
 	/* UI */
 	UIOffscreenIndicators_Control->OptionText->SetText(FText::FromString("Waypoint Indicators"));
 	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
+	PlayerNames_Control->OptionText->SetText(FText::FromString("Player Names"));
+	PlantValueFloatingUI_Control->OptionText->SetText(FText::FromString("Plant Floating Value Stars"));
 
 	/* Control (mouse/controller) */
 	MouseSensitivityScale_Control->OptionText->SetText(FText::FromString("Mouse/Controller Sensitivity"));
@@ -228,6 +230,18 @@ void UWidget_GameOptions::NativeConstruct()
 		UIOffscreenIndicatorSize_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnUIOffscreenIndicatorSizeControlButtonPressed);
 	}
 
+	if (PlayerNames_Control)
+	{
+		PlayerNames_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
+		PlayerNames_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlayerNamesControlButtonPressed);
+	}
+
+	if (PlantValueFloatingUI_Control)
+	{
+		PlantValueFloatingUI_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
+		PlantValueFloatingUI_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
+	}
+
 	/* Control (mouse/controller sensitivity) */
 	if (MouseSensitivityScale_Control)
 	{
@@ -263,10 +277,13 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->bEnemyAlwaysRed = bTempEnemyAlwaysRed;
 	HHGameGameUserSettings->UIIndicators = TempUIIndicators;
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
+	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
+	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
 	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
 	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
 	OnFOVChangedDelegate.Broadcast();
+	OnChangedCursorSetting();
 	HHGameGameUserSettings->ApplySettings(true);
 
 	UpdateGameInstanceVariables();
@@ -410,6 +427,8 @@ void UWidget_GameOptions::SetOptionsText()
 
 	SetUIOffscreenIndicatorsSetting();
 	SetUIOffscreenIndicatorSizeSettingText();
+	SetPlayerNamesSettingText();
+	SetPlantValueFloatingUISettingText();
 	SetMouseSensitivityScaleSettingText();
 	SetCustomMouseCursorSettingText();
 	SetControllerMenuSensitivityScaleSettingText();
@@ -450,6 +469,8 @@ void UWidget_GameOptions::LoadSettings()
 	bTempEnemyAlwaysRed = HHGameGameUserSettings->bEnemyAlwaysRed;
 	TempUIIndicators = HHGameGameUserSettings->UIIndicators;
 	bTempUIIndicatorSizeLarge = HHGameGameUserSettings->UIIndicatorSizeLarge;
+	bTempPlayerNames = HHGameGameUserSettings->PlayerNames;
+	bPlantValueFloatingUI = HHGameGameUserSettings->PlantValueFloatingUI;
 	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
 	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
 	TempFOV = HHGameGameUserSettings->FieldOfView;
@@ -1470,6 +1491,42 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorSizeSettingText()
 		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Large"));
 	else
 		UIOffscreenIndicatorSize_Control->OptionValueText->SetText(FText::FromString("Small"));
+}
+
+void UWidget_GameOptions::OnPlayerNamesControlButtonPressed()
+{
+	if (bTempPlayerNames == true)
+		bTempPlayerNames = false;
+	else
+		bTempPlayerNames = true;
+
+	SetPlayerNamesSettingText();
+}
+
+void UWidget_GameOptions::SetPlayerNamesSettingText()
+{
+	if (bTempPlayerNames == true)
+		PlayerNames_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		PlayerNames_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed()
+{
+	if (bPlantValueFloatingUI == true)
+		bPlantValueFloatingUI = false;
+	else
+		bPlantValueFloatingUI = true;
+
+	SetPlantValueFloatingUISettingText();
+}
+
+void UWidget_GameOptions::SetPlantValueFloatingUISettingText()
+{
+	if (bPlantValueFloatingUI == true)
+		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("Off"));
 }
 
 void UWidget_GameOptions::OnMouseSensitivityScaleControlLeftButtonPressed()
