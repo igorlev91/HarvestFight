@@ -10,16 +10,18 @@
 ASeed::ASeed()
 {
 	// make sure to rep
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
 	InterfaceType = EInterfaceType::Default;
 
 	ParachuteMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Parachute"));
 	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ParachuteMesh->SetIsReplicated(true);
-
-	PrimaryActorTick.bCanEverTick = true;
-
+	ParachuteMesh->SetupAttachment(RootComponent);
+	ParachuteMesh->SetRelativeScale3D({2,2,2});
+	ParachuteMesh->SetRelativeLocation(FVector::UpVector * 100);
+	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
 	if (PoofVFX.Class != NULL)
 	{
@@ -30,77 +32,67 @@ ASeed::ASeed()
 void ASeed::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	SetReplicatingMovement(true);
 	
-	ParachuteMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	FString levelName = UGameplayStatics::GetCurrentLevelName(GetWorld());
-
-	ParachuteMesh->SetRelativeLocation(ParachuteMesh->GetRelativeLocation() + (FVector::UpVector * 100));
-	ParachuteMesh->SetRelativeScale3D({2,2,2});
-	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ParachuteMesh->SetSimulatePhysics(false);
-	ParachuteMesh->SetVisibility(false);
-	
-	SpawnPos = GetActorLocation();
-	SpawnRotation = GetActorRotation();
-	SpawnTime = GetWorld()->GetTimeSeconds();
-	ItemComponent->Mesh->SetSimulatePhysics(false);
-
-	if (ServerData.SeedData)
+	if (HasAuthority())
 	{
-		if (ServerData.SeedData->BabyType == EPickupDataType::BeehiveData)
-			ItemComponent->Mesh->SetWorldScale3D({2.0f,2.0f,2.0f});
+		SpawnPos = GetActorLocation();
+		SpawnRotation = GetActorRotation();
+		SpawnTime = GetWorld()->GetTimeSeconds();
+		
+		Lifetime = InitialLifetime;
+		WiltDelayTimer = WiltDelay;
 	}
-
-	Lifetime = InitialLifetime;
-	WiltDelayTimer = WiltDelay;
 }
 
 void ASeed::Tick(float _DeltaSeconds)
 {
 	Super::Tick(_DeltaSeconds);
 	
-	if (bIsParachuteStaticMeshSet)
-	{
-		HandleParachuteMovement();
-	}
-
+	HandleParachuteMovement();
 	Wilt(_DeltaSeconds);
+}
+
+void ASeed::Destroyed()
+{
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+	
+	Super::Destroyed();
 }
 
 void ASeed::Interact(APrototype2Character* _Player)
 {
 	if (!bHasLanded)
 		return;
-	ItemComponent->Interact(_Player, this);
 	
-	Multi_OnInteract();
+	ItemComponent->Interact(_Player, this);
 	bShouldWilt = false;
+	WiltDelayTimer = WiltDelay;
 }
 
 void ASeed::ClientInteract(APrototype2Character* _Player)
 {
 	if (!bHasLanded)
 		return;
-	
-	IInteractInterface::ClientInteract(_Player);
 
 	_Player->EnableStencil(false);
-	if (_Player->PlayerHUDRef)
-	{
-		_Player->PlayerHUDRef->SetHUDInteractText("");
-	}
-	ItemComponent->Mesh->SetRenderCustomDepth(false);
 	
-	//SSComponent->Boing();
-
-	WiltDelayTimer = WiltDelay;
+	if (_Player->PlayerHUDRef)
+		_Player->PlayerHUDRef->SetHUDInteractText("");
+	
+	ItemComponent->Mesh->SetRenderCustomDepth(false);
 }
 
 void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class APrototype2Character* _Owner, int _PlayerID)
 {
 	if (!bHasLanded)
 		return;
+	
 	if (!_Owner->HeldItem || _Owner->HeldItem != this)
 	{
 		InvokingWidget->SetHUDInteractText("Pick Up");
@@ -109,7 +101,7 @@ void ASeed::OnDisplayInteractText(class UWidget_PlayerHUD* InvokingWidget, class
 	}
 }
 
-EInteractMode ASeed::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode ASeed::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (!bHasLanded)
 		return INVALID;
@@ -120,53 +112,45 @@ EInteractMode ASeed::IsInteractable(APrototype2PlayerState* _Player)
 void ASeed::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ASeed, ParachuteMesh);
-	DOREPLIFETIME(ASeed, bIsParachuteStaticMeshSet);
+	
 	DOREPLIFETIME(ASeed, bHasLanded);
 	DOREPLIFETIME(ASeed, bShouldWilt);
-}
-
-void ASeed::Multi_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
-{
-
-	ParachuteMesh->SetVisibility(true);
-	ParachuteMesh->SetStaticMesh(_InMesh);
-}
-
-void ASeed::Server_SetParachuteMesh_Implementation(UStaticMesh* _InMesh)
-{
-	Multi_SetParachuteMesh(_InMesh);
-}
-
-void ASeed::Multi_ToggleParachuteVisibility_Implementation(bool _Visible)
-{
-	if (DestroyVFX)
-	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
-		SpawnedVFX->SetActorScale3D(FVector::One() * 3);
-	}
-	
-	ParachuteMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	ParachuteMesh->SetVisibility(_Visible);
+	DOREPLIFETIME(ASeed, ParachuteSM);
 }
 
 void ASeed::SetParachuteMesh(UStaticMesh* _InMesh)
 {
-	if (_InMesh)
+	ParachuteSM = _InMesh;
+	OnRep_ParachuteMesh();
+}
+
+void ASeed::OnRep_ParachuteMesh()
+{
+	ParachuteMesh->SetStaticMesh(ParachuteSM);
+}
+
+void ASeed::OnRep_bHasLanded()
+{
+	if (bHasLanded)
 	{
-		Multi_SetParachuteMesh(_InMesh);
-		bIsParachuteStaticMeshSet = true;
+		if (DestroyVFX)
+		{
+			auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{});
+			SpawnedVFX->SetLifeSpan(5.0f);
+			SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+		}
+		
+		ParachuteMesh->SetVisibility(false);
 	}
 }
 
 void ASeed::Wilt(float DeltaTime)
 {
+	if (!HasAuthority())
+		return;
+	
 	if (!bShouldWilt)
 		return;
-
-	//WiltMaterial();
 
 	if (WiltDelayTimer > 0)
 	{
@@ -177,38 +161,9 @@ void ASeed::Wilt(float DeltaTime)
 		Lifetime -= DeltaTime;
 		if (Lifetime <= 0)
 		{
-			if (HasAuthority())
-			{
-				Multi_OnDestroy();
-				Destroy();
-			}
+			Destroy();
 		}
 	}
-}
-
-void ASeed::WiltMaterial()
-{
-	if (Materials.Num() <= 0)
-	{
-		for(int i = 0; i < ItemComponent->Mesh->GetNumMaterials(); i++)
-		{
-			auto MaterialInstance = ItemComponent->Mesh->CreateDynamicMaterialInstance(i, ItemComponent->Mesh->GetMaterial(i));
-			Materials.Add(MaterialInstance);
-			ItemComponent->Mesh->SetMaterial(i , MaterialInstance);
-		}
-	}
-	
-	for(int i = 0; i < Materials.Num(); i++)
-	{
-		Materials[i]->SetScalarParameterValue(FName("GrayScaleTint"), FMath::Lerp<float>(1.0f, 0.0f, Lifetime / InitialLifetime));
-
-		//UE_LOG(LogTemp, Warning, TEXT("wilted plant material"));
-	}
-}
-
-void ASeed::Multi_OnInteract_Implementation()
-{
-	WiltDelayTimer = WiltDelay;
 }
 
 void ASeed::Server_Drop()
@@ -216,26 +171,14 @@ void ASeed::Server_Drop()
 	bShouldWilt = true;
 }
 
-void ASeed::Multi_OnDestroy_Implementation()
-{
-	if (DestroyVFX)
-	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
-	}
-}
-
-
 void ASeed::HandleParachuteMovement()
 {
 	if (bHasLanded)
-	{
 		return;
-	}
 	
 	if (HasAuthority())
 	{
-		if (GetActorLocation().Z - 1.0f >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
+		if /* FALLING */ (GetActorLocation().Z >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
 		{
 			float XVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
 			float ZVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
@@ -245,12 +188,12 @@ void ASeed::HandleParachuteMovement()
 		}
 		else
 		{
-
 			ItemComponent->Mesh->SetSimulatePhysics(true);
-			Multi_ToggleParachuteVisibility(false);
+			ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -20.0});
 			bHasLanded = true;
 			bShouldWilt = true;
-			ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -20.0});
+
+			OnRep_bHasLanded();
 		}
 	}
 }
