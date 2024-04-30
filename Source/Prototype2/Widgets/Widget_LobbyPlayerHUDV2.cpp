@@ -347,7 +347,6 @@ void UWidget_LobbyPlayerHUDV2::SetReady()
 
 		// TOGGLE CHARACTER CHANGING VISIBILITY
 		WBP_LobbyCharacterSelection->bLocalReady = true;
-		WBP_LobbyCharacterSelection->SetSkinSelectionVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -361,7 +360,6 @@ void UWidget_LobbyPlayerHUDV2::SetCancel()
 		
 		// TOGGLE CHARACTER CHANGING VISIBILITY
 		WBP_LobbyCharacterSelection->bLocalReady = false;
-		WBP_LobbyCharacterSelection->SetSkinSelectionVisibility(ESlateVisibility::Visible);
 	}
 }
 

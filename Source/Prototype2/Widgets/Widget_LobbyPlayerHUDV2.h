@@ -56,6 +56,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget), Category = "Cancel Button")
 	UButton* CancelButton;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	class UCircularThrobber* Throbber_CharacterLoading{nullptr};
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	ALobbyGamestate* GameStateReference;
 	

@@ -2,7 +2,10 @@
 
 #include "Widget_LobbyCharacterSelection.h"
 
+#include "Widget_LobbyPlayerHUDV2.h"
+#include "Components/CircularThrobber.h"
 #include "Components/Image.h"
+#include "Components/WidgetSwitcher.h"
 #include "Kismet/GameplayStatics.h"
 #include "Prototype2/Characters/LobbyCharacter.h"
 #include "Prototype2/Characters/Prototype2Character.h"
@@ -24,11 +27,15 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 			GameStateReference = GameStateCast;
 	}
 
-	if (ALobbyPlayerState* PlayerStateCast = GetOwningPlayerState<ALobbyPlayerState>())
+	if (auto OwningPlayerController = GetOwningPlayer())
 	{
-		if (IsValid(PlayerStateCast))
+		if (OwningPlayerController->HasAuthority())
 		{
-			IdealDetails = PlayerStateCast->Details;
+			ALobbyPlayerState* OwningPlayerstate = GetOwningPlayerState<ALobbyPlayerState>();
+			if (IsValid(OwningPlayerstate))
+				IdealDetails = OwningPlayerstate->Details;
+			
+			bPlayerstateUpdated = true;
 			UpdateCharacterImage();
 		}
 	}
@@ -36,35 +43,37 @@ void UWidget_LobbyCharacterSelection::NativeOnInitialized()
 
 void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 {
-	if (SkinColourData && SkinColourData->PureColours.Num() > (uint8)IdealDetails.Colour)
-	{
-		PlayerColourImage->SetColorAndOpacity(SkinColourData->PureColours[(uint8)IdealDetails.Colour]);
-	}
-
-	ALobbyPlayerState* Player = GetOwningPlayerState<ALobbyPlayerState>();
-	if (!Player)
+	ALobbyPlayerState* OwningPlayerstate = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerstate) == false)
 		return;
+	
+	EColours OwningPlayerColor = OwningPlayerstate->Details.Colour;
+	
+	if (SkinColourData && SkinColourData->PureColours.Num() > (uint8)OwningPlayerColor)
+	{
+		PlayerColourImage->SetColorAndOpacity(SkinColourData->PureColours[(uint8)OwningPlayerColor]);
+	}
 	
 	switch(IdealDetails.Character)
 	{
 	case ECharacters::COW:
 		{
-			PlayerImage->SetBrushFromTexture(Player->CowTextures[(uint8)IdealDetails.Colour]);
+			PlayerImage->SetBrushFromTexture(OwningPlayerstate->CowTextures[(uint8)OwningPlayerColor]);
 			break;
 		}
 	case ECharacters::CHICKEN:
 		{
-			PlayerImage->SetBrushFromTexture(Player->ChickenTextures[(uint8)IdealDetails.Colour]);
+			PlayerImage->SetBrushFromTexture(OwningPlayerstate->ChickenTextures[(uint8)OwningPlayerColor]);
 			break;
 		}
 	case ECharacters::DUCK:
 		{
-			PlayerImage->SetBrushFromTexture(Player->DuckTextures[(uint8)IdealDetails.Colour]);
+			PlayerImage->SetBrushFromTexture(OwningPlayerstate->DuckTextures[(uint8)OwningPlayerColor]);
 			break;
 		}
 	case ECharacters::PIG:
 		{
-			PlayerImage->SetBrushFromTexture(Player->PigTextures[(uint8)IdealDetails.Colour]);
+			PlayerImage->SetBrushFromTexture(OwningPlayerstate->PigTextures[(uint8)OwningPlayerColor]);
 			break;
 		}
 	default:
@@ -77,80 +86,68 @@ void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 
 void UWidget_LobbyCharacterSelection::ChangeCharacterColour(bool _bIsTowardsRight)
 {
-	for (int16 i = 0; i < (int32)EColours::MAXCOLOURS; i++)
-	{
-		int16 newColour = (uint8)IdealDetails.Colour;
-		if (_bIsTowardsRight)
-		{
-			newColour++;
-		}
-		else
-		{
-			newColour--;
-		}
-		if (newColour >= (int32)EColours::MAXCOLOURS)
-		{
-			newColour = 0;
-		}
-		else if (newColour < 0)
-		{
-			newColour = (int32)EColours::MAXCOLOURS - 1;
-		}
-		IdealDetails.Colour = (EColours)newColour;
-		SetCharacterColourFromSelection((int32)EColours::MAXCOLOURS);
+	if (bPlayerstateUpdated == false)
+		return;
 
-		if (!HasSamePlayerColour())
-			break;
+	TArray<EColours> AvailableColors = GetAvailableColours();
+	int16 NewColor = AvailableColors.Find(IdealDetails.Colour);
+	if (_bIsTowardsRight)
+	{
+		NewColor++;
 	}
+	else
+	{
+		NewColor--;
+	}
+	if (NewColor >= AvailableColors.Num())
+	{
+		NewColor = 0;
+	}
+	else if (NewColor < 0)
+	{
+		NewColor = AvailableColors.Num() - 1;
+	}
+	IdealDetails.Colour = AvailableColors[NewColor];
+	SetCharacterColourFromSelection();
 	
+	bPlayerstateUpdated = false;
 	GetOwningPlayerState<ALobbyPlayerState>()->UpdateCharacterMaterial(IdealDetails);
-	UpdateCharacterImage();	
 }
 
 bool UWidget_LobbyCharacterSelection::ChangeTeamsCharacterColour(bool _bIsTowardsRight)
 {
-	ALobbyGamestate* GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
-	if (!IsValid(GameState))
+	if (bPlayerstateUpdated == false)
 		return false;
 
-	if (!CanChangeTeams(_bIsTowardsRight))
+	if (CanChangeTeams() == false)
 		return false;
 
-	if (_bIsTowardsRight)
-	{
-		Button_LeftColour->SetVisibility(ESlateVisibility::Visible);
-		Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
-		Button_LeftColour->InvalidateLayoutAndVolatility();
-		Button_RightColour->InvalidateLayoutAndVolatility();
+	auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerState) == false)
+		return false;
 
-		PreviousColorButtonVisibilities[0] = Button_LeftColour->GetVisibility();
-		PreviousColorButtonVisibilities[1] = Button_RightColour->GetVisibility();
-	}
-	else
-	{
-		Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
-		Button_RightColour->SetVisibility(ESlateVisibility::Visible);
-		Button_LeftColour->InvalidateLayoutAndVolatility();
-		Button_RightColour->InvalidateLayoutAndVolatility();
-
-		PreviousColorButtonVisibilities[0] = Button_LeftColour->GetVisibility();
-		PreviousColorButtonVisibilities[1] = Button_RightColour->GetVisibility();
-	}
+	auto GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (IsValid(GameState) == false)
+		return false;
 	
-	if (IdealDetails.Colour == GameState->TeamsDetails.TeamOneColour)
+	if (OwningPlayerState->Details.Colour == GameState->TeamsDetails.TeamOneColour)
 		IdealDetails.Colour = GameState->TeamsDetails.TeamTwoColour;
 	else
 		IdealDetails.Colour = GameState->TeamsDetails.TeamOneColour;
 	
-	SetCharacterColourFromSelection((int32)EColours::MAXCOLOURS);
+	SetCharacterColourFromSelection();
+	
+	bPlayerstateUpdated = false;
 	GetOwningPlayerState<ALobbyPlayerState>()->UpdateCharacterMaterial(IdealDetails);
-	UpdateCharacterImage();
 
 	return true;
 }
 
 void UWidget_LobbyCharacterSelection::ChangeCharacter(bool _bIsTowardsRight)
 {
+	if (bPlayerstateUpdated == false)
+		return;
+	
 	int16 newCharacter = (uint8)IdealDetails.Character;
 	if (_bIsTowardsRight)
 	{
@@ -169,14 +166,15 @@ void UWidget_LobbyCharacterSelection::ChangeCharacter(bool _bIsTowardsRight)
 		newCharacter = NumberOfCharacters - 1;
 	}
 	IdealDetails.Character = (ECharacters)newCharacter;
-		
-	SetCharacterModelFromSelection(NumberOfCharacters);
-	SetCharacterColourFromSelection((int32)EColours::MAXCOLOURS);
+	
+	SetCharacterModelFromSelection();
+	SetCharacterColourFromSelection();
+	
+	bPlayerstateUpdated = false;
 	GetOwningPlayerState<ALobbyPlayerState>()->UpdateCharacterMaterial(IdealDetails);
-	UpdateCharacterImage();	
 }
 
-void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _NumberOfColors)
+void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection()
 {
 	if (!SkinColourData)
 		return;
@@ -243,7 +241,7 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection(int32 _Num
 	}
 }
 
-void UWidget_LobbyCharacterSelection::SetCharacterModelFromSelection(int32 _NumberOfCharacters)
+void UWidget_LobbyCharacterSelection::SetCharacterModelFromSelection()
 {
 	if (SkinData->Models.Num() > (int16)IdealDetails.Character)
 		IdealDetails.AnimationData = SkinData->Models[(int16)IdealDetails.Character];
@@ -252,73 +250,84 @@ void UWidget_LobbyCharacterSelection::SetCharacterModelFromSelection(int32 _Numb
 void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	UpdateButtonVisibility();
+	UpdateWidgetSwitchers();
+	
+	auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerState) == false)
+		return;
+
+	if (OwningPlayerState->Details.Character != IdealDetails.Character
+		|| OwningPlayerState->Details.Colour != IdealDetails.Colour)
+	{
+		IdealDetails = OwningPlayerState->Details;
+		UpdateCharacterImage();
+	}
 }
 
-void UWidget_LobbyCharacterSelection::SetSkinSelectionVisibility(ESlateVisibility _Visiblity)
+void UWidget_LobbyCharacterSelection::UpdateButtonVisibility()
 {
+	if (bLocalReady)
+	{
+		Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
+		Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
+		Button_LeftCharacter->SetVisibility(ESlateVisibility::Hidden);
+		Button_RightCharacter->SetVisibility(ESlateVisibility::Hidden);
+		return;
+	}
+	
+	Button_LeftCharacter->SetVisibility(ESlateVisibility::Visible);
+	Button_RightCharacter->SetVisibility(ESlateVisibility::Visible);
+
 	if (bTeams)
 	{
-		Button_LeftCharacter->SetVisibility(_Visiblity);
-		Button_RightCharacter->SetVisibility(_Visiblity);
+		auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+		if (IsValid(OwningPlayerState) == false)
+			return;
 
-		if (_Visiblity == ESlateVisibility::Hidden)
+		auto GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+		if (IsValid(GameState) == false)
+			return;
+
+		bool bOnTeamOne = OwningPlayerState->Details.Colour == GameState->TeamsDetails.TeamOneColour;
+		if /* TEAM ONE */ (bOnTeamOne)
 		{
-			if (PreviousColorButtonVisibilities.Num() <= 0)
-			{
-				PreviousColorButtonVisibilities.Add(Button_LeftColour->GetVisibility());
-				PreviousColorButtonVisibilities.Add(Button_RightColour->GetVisibility());
-			}
-			else
-			{
-				PreviousColorButtonVisibilities[0] = Button_LeftColour->GetVisibility();
-				PreviousColorButtonVisibilities[1] = Button_RightColour->GetVisibility();
-			}
-			
-			Button_LeftColour->SetVisibility(_Visiblity);
-			Button_RightColour->SetVisibility(_Visiblity);
+			Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
+			Button_RightColour->SetVisibility(ESlateVisibility::Visible);
 		}
-		else
+		else /* TEAM TWO */
 		{
-			Button_LeftColour->SetVisibility(PreviousColorButtonVisibilities[0]);
-			Button_RightColour->SetVisibility(PreviousColorButtonVisibilities[1]);
+			Button_LeftColour->SetVisibility(ESlateVisibility::Visible);
+			Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 	else
 	{
-		Button_LeftColour->SetVisibility(_Visiblity);
-		Button_RightColour->SetVisibility(_Visiblity);
-		Button_LeftCharacter->SetVisibility(_Visiblity);
-		Button_RightCharacter->SetVisibility(_Visiblity);
+		Button_LeftColour->SetVisibility(ESlateVisibility::Visible);
+		Button_RightColour->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
 bool UWidget_LobbyCharacterSelection::HasSamePlayerColour()
 {
+	ALobbyPlayerState* OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerState) == false)
+		return true;
+	
 	for (int16 i = 0; i < GameStateReference->PlayerArray.Num(); i++)
 	{
 		if (ALobbyPlayerState* SomePlayer = Cast<ALobbyPlayerState>(GameStateReference->PlayerArray[i]))
 		{
-			if (OwningController)
-			{
-				if (OwningController->GetPlayerState<ALobbyPlayerState>() != SomePlayer)
-				{
-					if (SomePlayer->Details.Colour == IdealDetails.Colour)
-					{
-						return true;
-					}
-				}
-			}
-			else
+			if (OwningPlayerState != SomePlayer)
 			{
 				if (SomePlayer->Details.Colour == IdealDetails.Colour)
 				{
 					return true;
 				}
 			}
-
 		}
 	}
-
 	
 	return false;
 }
@@ -326,7 +335,6 @@ bool UWidget_LobbyCharacterSelection::HasSamePlayerColour()
 void UWidget_LobbyCharacterSelection::SetOwningController(ALobbyPlayerController* _Owner)
 {
 	OwningController = _Owner;
-	PlayerID = 0;
 }
 
 void UWidget_LobbyCharacterSelection::SetPlayerID(int32 _PlayerID)
@@ -334,114 +342,80 @@ void UWidget_LobbyCharacterSelection::SetPlayerID(int32 _PlayerID)
 	PlayerID = _PlayerID;
 }
 
-int32 UWidget_LobbyCharacterSelection::GetNumberOfRedPlayers()
+bool UWidget_LobbyCharacterSelection::CanChangeTeams()
 {
-	if (!OwningController)
-		return 0;
-	
-	int32 Count{};
-	if (IdealDetails.Colour == EColours::RED)
-		Count = 1;
-	for (int16 i = 0; i < GameStateReference->PlayerArray.Num(); i++)
+	auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerState) == false)
+		return false;
+
+	auto GameState = Cast<ALobbyGamestate>(UGameplayStatics::GetGameState(GetWorld()));
+	if (IsValid(GameState) == false)
+		return false;
+
+	bool bOnTeamOne = OwningPlayerState->Details.Colour == GameState->TeamsDetails.TeamOneColour;
+	int16 TeamOneCount = GameState->TeamsDetails.Server_TeamOne.Num();
+	int16 TeamTwoCount = GameState->TeamsDetails.Server_TeamTwo.Num();
+
+	bool bCanChangeTeams = true;
+	if /* ONE -> TWO */ (bOnTeamOne)
 	{
-		if (ALobbyPlayerState* SomePlayer = Cast<ALobbyPlayerState>(GameStateReference->PlayerArray[i]))
+		if (TeamTwoCount > TeamOneCount)
+			bCanChangeTeams = false;
+	}
+	else /* TWO -> ONE */
+	{
+		if (TeamOneCount > TeamTwoCount)
+			bCanChangeTeams = false;
+	}
+	return bCanChangeTeams;
+}
+
+TArray<EColours> UWidget_LobbyCharacterSelection::GetAvailableColours()
+{
+	TArray<EColours> AvailableColors{
+		EColours::RED,
+		EColours::BLUE,
+		EColours::GREEN,
+		EColours::YELLOW,
+		EColours::PURPLE,
+		EColours::ORANGE,
+		EColours::BLACK,
+		EColours::WHITE
+	};
+
+	ALobbyPlayerState* OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
+	if (IsValid(OwningPlayerState) == false)
+		return {OwningPlayerState->Details.Colour};
+	
+	for (auto Player : GameStateReference->Server_Players)
+	{
+		if (Player.Get() != OwningPlayerState)
 		{
-			if (OwningController->GetPlayerState<ALobbyPlayerState>() != SomePlayer)
-			{
-				if (SomePlayer->Details.Colour == EColours::RED)
-					Count++;
-			}
+			AvailableColors.Remove(Player->Details.Colour);
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Number Of Red Players: %s"), *FString::FromInt(Count));
-	return Count;
+
+	return AvailableColors;
 }
 
-int32 UWidget_LobbyCharacterSelection::GetNumberOfBluePlayers()
+void UWidget_LobbyCharacterSelection::UpdateWidgetSwitchers()
 {
-	if (!OwningController)
-		return 0;
-	
-	int32 Count{};
-	if (IdealDetails.Colour == EColours::BLUE)
-		Count = 1;
-	for (int16 i = 0; i < GameStateReference->PlayerArray.Num(); i++)
+	if /* Switch With Button */ (bPlayerstateUpdated)
 	{
-		if (ALobbyPlayerState* SomePlayer = Cast<ALobbyPlayerState>(GameStateReference->PlayerArray[i]))
-		{
-			if (OwningController->GetPlayerState<ALobbyPlayerState>() != SomePlayer)
-			{
-				if (SomePlayer->Details.Colour == EColours::BLUE)
-					Count++;
-			}
-		}
+		Switch_ColorLeft->SetActiveWidgetIndex(0);
+		Switch_ColorRight->SetActiveWidgetIndex(0);
+		Switch_CharacterLeft->SetActiveWidgetIndex(0);
+		Switch_CharacterRight->SetActiveWidgetIndex(0);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Number Of Blue Players: %s"), *FString::FromInt(Count));
-	return Count;
-}
-
-void UWidget_LobbyCharacterSelection::OnRep_TeamsDetails(bool _TeamA)
-{
-	if (bLocalReady)
-		return;
-	
-	if (_TeamA)
+	else /* Switch With Loading */
 	{
-		Button_LeftColour->SetVisibility(ESlateVisibility::Hidden);
-		Button_RightColour->SetVisibility(ESlateVisibility::Visible);
+		if (Button_LeftColour->IsVisible())
+			Switch_ColorLeft->SetActiveWidgetIndex(1);
+		if (Button_RightColour->IsVisible())
+			Switch_ColorRight->SetActiveWidgetIndex(1);
+		if (Button_LeftCharacter->IsVisible())
+			Switch_CharacterLeft->SetActiveWidgetIndex(1);
+		if (Button_RightCharacter->IsVisible())
+			Switch_CharacterRight->SetActiveWidgetIndex(1);
 	}
-	else
-	{
-		Button_LeftColour->SetVisibility(ESlateVisibility::Visible);
-		Button_RightColour->SetVisibility(ESlateVisibility::Hidden);
-	}
-
-	if (PreviousColorButtonVisibilities.Num() <= 0)
-	{
-		PreviousColorButtonVisibilities.Add(Button_LeftColour->GetVisibility());
-		PreviousColorButtonVisibilities.Add(Button_RightColour->GetVisibility());
-	}
-	else
-	{
-		PreviousColorButtonVisibilities[0] = Button_LeftColour->GetVisibility();
-		PreviousColorButtonVisibilities[1] = Button_RightColour->GetVisibility();
-	}
-}
-
-bool UWidget_LobbyCharacterSelection::CanChangeTeams(bool _ChangeRight)
-{
-	bool bCanChange = true;
-
-	if (_ChangeRight)
-	{
-		// True for empty lobby
-		if (GameStateReference->TeamsDetails.Server_TeamTwo.Num() <= 0)
-			return true;
-		
-		if (GameStateReference->TeamsDetails.Server_TeamTwo.Num()
-			>
-			GameStateReference->TeamsDetails.Server_TeamOne.Num())
-				bCanChange = false;
-		else if ((GameStateReference->TeamsDetails.Server_TeamOne.Num() - 1) < GameStateReference->TeamsDetails.Server_TeamTwo.Num())
-				bCanChange = false;
-		else if (GameStateReference->TeamsDetails.Server_TeamTwo.Num() + 1 > 3)
-			bCanChange = false;
-	}
-	else
-	{
-		// True for empty lobby
-		if (GameStateReference->TeamsDetails.Server_TeamOne.Num() <= 0)
-			return true;
-
-		if (GameStateReference->TeamsDetails.Server_TeamOne.Num()
-			>
-			GameStateReference->TeamsDetails.Server_TeamTwo.Num())
-				bCanChange = false;
-		else if ((GameStateReference->TeamsDetails.Server_TeamTwo.Num() - 1) < GameStateReference->TeamsDetails.Server_TeamOne.Num())
-				bCanChange = false;
-		else if (GameStateReference->TeamsDetails.Server_TeamOne.Num() + 1 > 3)
-			bCanChange = false;
-	}
-
-	return bCanChange;
 }
