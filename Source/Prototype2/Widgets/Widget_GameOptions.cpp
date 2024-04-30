@@ -286,10 +286,19 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
 	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
 	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
-	HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
 	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
 	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
+
+	//HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
+	if (bQuickTipTutorials)
+	{
+		HHGameGameUserSettings->QuickTipLobbyTutorials = 0;
+		HHGameGameUserSettings->QuickTipClassicTutorials = 0;
+		HHGameGameUserSettings->QuickTipBrawlTutorials = 0;
+		HHGameGameUserSettings->QuickTipBlitzTutorials = 0;
+	}
+	
 	OnFOVChangedDelegate.Broadcast();
 	OnChangedCursorSetting();
 	HHGameGameUserSettings->ApplySettings(true);
@@ -1459,12 +1468,12 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 	{
 	case EIndicatorUISetting::ON:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
 			break;
 		}
 	case EIndicatorUISetting::ONSIDESONLY:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On (window edge only)"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On - Fade"));
 			break;
 		}
 	case EIndicatorUISetting::OFF:
@@ -1474,7 +1483,7 @@ void UWidget_GameOptions::SetUIOffscreenIndicatorsSetting()
 		}
 	default:
 		{
-			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("On"));
+			UIOffscreenIndicators_Control->OptionValueText->SetText(FText::FromString("Always On"));
 			break;
 		}
 	}
@@ -1547,6 +1556,17 @@ void UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed()
 		bQuickTipTutorials = true;
 
 	SetQuickTipTutorialsSettingText();
+}
+
+void UWidget_GameOptions::QuickTipTutorialsReset()
+{
+	if (bQuickTipTutorials)
+	{
+		bQuickTipTutorials = false;
+		SetQuickTipTutorialsSettingText();
+		HHGameGameUserSettings->QuickTipTutorials = bQuickTipTutorials;
+		HHGameGameUserSettings->ApplySettings(true);
+	}
 }
 
 void UWidget_GameOptions::SetQuickTipTutorialsSettingText()

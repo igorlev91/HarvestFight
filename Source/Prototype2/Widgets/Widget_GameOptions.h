@@ -376,6 +376,8 @@ public:
 
 	UFUNCTION()
 	void OnQuickTipTutorialsControlButtonPressed();
+	UFUNCTION(BlueprintCallable)
+	void QuickTipTutorialsReset();
 	UFUNCTION()
 	void SetQuickTipTutorialsSettingText();
 
