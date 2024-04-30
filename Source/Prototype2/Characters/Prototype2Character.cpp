@@ -374,8 +374,8 @@ void APrototype2Character::Look(const FInputActionValue& _Value)
 	{
 		float MouseSensitivity = (float)HHGameGameUserSettings->GetMouseSensitivityScale();
 
-		AddControllerYawInput((LookAxisVector.X / 2) * (MouseSensitivity / 5));
-		AddControllerPitchInput((LookAxisVector.Y / 2) * (MouseSensitivity / 5));
+		AddControllerYawInput(LookAxisVector.X * (MouseSensitivity / 5));
+		AddControllerPitchInput(LookAxisVector.Y * (MouseSensitivity / 5));
 	}
 	else
 	{
@@ -694,18 +694,8 @@ void APrototype2Character::Server_Interact_Implementation(AActor* _Item)
 
 	if (const auto SomeInteractable = Cast<IInteractInterface>(_Item))
 		SomeInteractable->Interact(this);
-		
-	if (IsValid(HeldItem))
-	{
-		if (AnimationData->Pickup)
-		{
-			PlayNetworkMontage(AnimationData->Pickup);
-		}
-		if (IsValid(Weapon))
-		{
-			Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
-		}
-	}
+
+	OnRep_HeldItem();
 }
 
 void APrototype2Character::OpenIngameMenu()
@@ -1222,6 +1212,18 @@ void APrototype2Character::InitNiagraComponents()
 	AssertDominance_NiagaraComponent->SetupAttachment(RootComponent);
 	Slow_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Slow Component"));
 	Slow_NiagaraComponent->SetupAttachment(RootComponent);
+	
+	IceSliding_Left_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Left)"));
+	IceSliding_Left_NiagaraComponent->SetupAttachment(GetMesh(), FName("Base-HumanLFoot"));
+	IceSliding_Left_NiagaraComponent->SetAutoActivate(false);
+	IceSliding_Left_NiagaraComponent->SetRelativeLocation({0.0f, 2.5f, 0.0f});
+	IceSliding_Left_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 90.0f, 0.0f}));
+	
+	IceSliding_Right_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Right)"));
+	IceSliding_Right_NiagaraComponent->SetupAttachment(GetMesh(), FName("Base-HumanRFoot"));
+	IceSliding_Right_NiagaraComponent->SetAutoActivate(false);
+	IceSliding_Right_NiagaraComponent->SetRelativeLocation({0.0f, 2.5f, 0.0f});
+	IceSliding_Right_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 90.0f, 0.0f}));
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1716,22 +1718,194 @@ void APrototype2Character::SetClaimedPlot(ARadialPlot* _Plot)
 	Client_BroadcastPlotClaimed(_Plot);
 }
 
+void APrototype2Character::PickupItemV2(APickUpItem* _Item)
+{
+	if (IsValid(_Item) == false)
+		return;
+	
+	if (IsValid(HeldItem))
+	{
+		HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+	}
+	
+	_Item->ItemComponent->Mesh->SetSimulatePhysics(false);
+	
+	switch (_Item->ServerData.PickupActor)
+	{
+	case EPickupActor::PlantActor:
+		{
+			_Item->ItemComponent->PlayerWhoThrewItem = nullptr;
+			
+			HeldItem = _Item;
+			OnRep_HeldItem();
+			break;
+		}
+	case EPickupActor::WeaponActor:
+		{
+			// Replace weapon with new one
+			if (Weapon)
+				Weapon->DestroyComponent();
+			
+			if (UWeapon* NewWeapon = NewObject<UWeapon>(this, _Item->ServerData.SeedData->WeaponData->WeaponComponent))
+			{
+				NewWeapon->RegisterComponent();
+				NewWeapon->SetIsReplicated(true);
+				Weapon = NewWeapon;
+			}
+			
+			CurrentWeaponSeedData = _Item->ServerData.SeedData;
+			bIsHoldingGoldWeapon = _Item->ItemComponent->bGold;
+
+			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
+			
+			_Item->Destroy();
+			break;
+		}
+	default:
+		{
+			HeldItem = _Item;
+			OnRep_HeldItem();
+			
+			break;
+		}
+	}
+}
+
+void APrototype2Character::ClientPickupV2(APickUpItem* _Item)
+{
+	if (!IsValid(_Item))
+		return;
+	
+	if (IsValid(PlayerHUDRef))
+		PlayerHUDRef->SetHUDInteractText("");
+
+	if (IsValid(HeldItem))
+		HeldItem->Client_Pickup(this);
+	
+	// Set the HUD UI pickup icon depending on seed/plant/weapon
+	switch (_Item->ServerData.PickupActor)
+	{
+	case EPickupActor::PlantActor:
+		{
+			if (!IsValid(PlayerHUDRef) || !_Item->ServerData.SeedData->PlantData)
+			{
+				break;
+			}
+			if (_Item->ItemComponent->bGold)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->GoldPlantIcon);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Plant was normal when picked up for me"));
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PlantData->PlantIcon);
+			}
+			OnPickUpItemDelegate.Broadcast();
+			break;
+		}
+	case EPickupActor::WeaponActor:
+		{
+			// Set UI
+			if (PlayerHUDRef && _Item->ServerData.SeedData->WeaponData)
+			{
+				PlayerHUDRef->ClearPickupUI();
+				if (_Item->ItemComponent->bGold)
+				{
+					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->GoldWeaponIcon);
+				}
+				else
+				{
+					PlayerHUDRef->WeaponImage->SetBrushFromTexture(_Item->ServerData.SeedData->WeaponData->WeaponIcon);
+				}
+				FVector2D ImageSize ={(float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeX(), (float)_Item->ServerData.SeedData->WeaponData->WeaponIcon->GetSizeY()};
+				PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
+				OnPickUpWeaponDelegate.Broadcast();
+				
+				WeaponCurrentDurability = _Item->ServerData.SeedData->WeaponData->Durability;
+				if (_Item->ItemComponent->bGold)
+				{
+					WeaponCurrentDurability *= _Item->ServerData.SeedData->WeaponData->GoldDurabilityMultiplier;
+				}
+			}			
+			break;
+		}
+	case EPickupActor::SeedActor:
+		{
+			if (IsValid(PlayerHUDRef) && _Item)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
+			}
+			OnPickUpItemDelegate.Broadcast();
+			break;
+		}
+	case EPickupActor::FertilizerActor:
+		{
+			if (!IsValid(PlayerHUDRef))
+				break;
+			
+			if (_Item->ServerData.SeedData->PacketIcon)
+			{
+				PlayerHUDRef->UpdatePickupUI(_Item->ServerData.SeedData->PacketIcon);
+			}
+			OnPickUpItemDelegate.Broadcast();
+		}
+	default:
+		break;
+	}
+	
+	// SFX
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickUpCue, GetActorLocation());
+}
+
 void APrototype2Character::OnRep_HeldItem()
 {
 	RefreshCurrentMaxSpeed();
-	
-	if (!IsLocallyControlled())
-		return;
-	
-	if (IsValid(HeldItem) == false)
+
+	if (IsValid(LastHeldItem))
+	{
+		LastHeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		LastHeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
+
+		LastHeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		LastHeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	}
+
+	if (IsValid(HeldItem)
+		&& AnimationData
+		&& AnimationData->Pickup)
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(AnimationData->Pickup);
+
+		if (IsValid(Weapon))
+			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket")); 
+
+		if /* NOT WEAPON */(HeldItem->ServerData.PickupActor != EPickupActor::WeaponActor)
+		{
+			HeldItem->SSComponent->Disable();
+			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(false);
+			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			HeldItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("HeldItemSocket"));
+		}
+		else /* WEAPON */
+		{
+			if (HeldItem->ServerData.SeedData
+				&& HeldItem->ServerData.SeedData->WeaponData
+				&& HeldItem->ServerData.SeedData->WeaponData->AOEIndicatorMesh)
+				AttackAreaIndicatorMesh->SetStaticMesh(HeldItem->ServerData.SeedData->WeaponData->AOEIndicatorMesh);
+		}
+
+		if (IsLocallyControlled())
+			ClientPickupV2(HeldItem);
+	}
+	else
 	{
 		ClearPickupUI();
-
-		if (IsValid(GetWeaponData()))
-		{
+		
+		if (IsValid(Weapon))
 			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Base-HumanWeapon")); 
-		}
 	}
+	
+	LastHeldItem = HeldItem;
 }
 
 bool APrototype2Character::IsHolding(UClass* _ObjectType)
@@ -1835,9 +2009,6 @@ bool APrototype2Character::IsSprinting()
 void APrototype2Character::CheckForFloorSurface()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("Ground Check"));
-
-	if (!HasIdealRole())
-		return;
 	
 	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
 	FVector EndLocation = GetActorLocation() + FVector{0,0,-100}; // The end location of the line trace
@@ -1847,10 +2018,13 @@ void APrototype2Character::CheckForFloorSurface()
 	QueryParams.bTraceComplex = true; // Enable complex tracing for accurate physics material retrieval
 	QueryParams.bReturnPhysicalMaterial = true;
 
-	GetCharacterMovement()->bUseSeparateBrakingFriction = true;
-	GetCharacterMovement()->BrakingFriction = 2.0f;
-	GetCharacterMovement()->MaxAcceleration = 2048.0f;
-	GetCharacterMovement()->GroundFriction = 8.0f;
+	if (HasIdealRole())
+	{
+		GetCharacterMovement()->bUseSeparateBrakingFriction = true;
+		GetCharacterMovement()->BrakingFriction = 2.0f;
+		GetCharacterMovement()->MaxAcceleration = 2048.0f;
+		GetCharacterMovement()->GroundFriction = 8.0f;
+	}
 	
 	// Perform the line trace
 	if (GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
@@ -1880,13 +2054,48 @@ void APrototype2Character::CheckForFloorSurface()
 			
 				if (Friction <= 0.5f)
 				{
-					GetCharacterMovement()->BrakingFriction = 0.0f;
-					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
-					GetCharacterMovement()->GroundFriction = 0.0f;
+					if (HasIdealRole())
+					{
+						GetCharacterMovement()->BrakingFriction = 0.0f;
+						GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
+						GetCharacterMovement()->GroundFriction = 0.0f;
+					}
+
+					if (FVector::DistXY(GetVelocity(), FVector::ZeroVector) > 10.0f)
+						ToggleIceSlidingVFX(true);
+					else
+						ToggleIceSlidingVFX(false);
+					
 					break;
 				}
+				else
+				{
+					ToggleIceSlidingVFX(false);
+				}
+			}
+			else
+			{
+				ToggleIceSlidingVFX(false);
 			}
 		}
+	}
+	else
+	{
+		ToggleIceSlidingVFX(false);
+	}
+}
+
+void APrototype2Character::ToggleIceSlidingVFX(bool _IsEnabled)
+{
+	if (_IsEnabled)
+	{
+		IceSliding_Left_NiagaraComponent->Activate();
+		IceSliding_Right_NiagaraComponent->Activate();
+	}
+	else
+	{
+		IceSliding_Left_NiagaraComponent->Deactivate();
+		IceSliding_Right_NiagaraComponent->Deactivate();
 	}
 }
 

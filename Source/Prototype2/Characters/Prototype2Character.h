@@ -315,6 +315,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
+	UFUNCTION()
+	void PickupItemV2(APickUpItem* _Item);
+
+	UFUNCTION()
+	void ClientPickupV2(APickUpItem* _Item);
+	
 	/* Client RPC for dropping items */
 	UFUNCTION(Client, Reliable)
 	void Client_DropItem();
@@ -340,10 +346,15 @@ public:
 
 	UFUNCTION()
 	void AddCoins(int32 _Amount);
+
+
 	
 	/* Currently held item */
 	UPROPERTY(ReplicatedUsing=OnRep_HeldItem, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class APickUpItem* HeldItem;
+
+	UPROPERTY(VisibleAnywhere)
+	class APickUpItem* LastHeldItem{nullptr};
 	
 	/* The closest interactable item for HUD showing popup text */
 	class IInteractInterface* ClosestInteractableItem{nullptr};
@@ -587,6 +598,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetSprintState(bool _NewSprintAnimationState);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetSprintState(bool _NewSprintAnimationState);
 	
 	/* Public access to update speed */
 	UFUNCTION()
@@ -599,7 +612,7 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	bool bSprinting{false};
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
 	bool bSprintAnimationState = false;
 	
 	UPROPERTY()
@@ -844,6 +857,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* AssertDominance_NiagaraComponent;
 
+	void ToggleIceSlidingVFX(bool _IsEnabled);
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
+	class UNiagaraComponent* IceSliding_Left_NiagaraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = VFX)
+	class UNiagaraComponent* IceSliding_Right_NiagaraComponent;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														SFX		 												 ///
@@ -859,11 +879,19 @@ public:
 	void Multi_PlaySoundAtLocation(FVector _Location, USoundCue* _SoundQueue, USoundAttenuation* _Attenuation);
 	
 	void PlayWeaponSound(USoundCue* _SoundToPlay);
+	UFUNCTION(Client, Reliable)
+	void Client_PlayWeaponSound(USoundCue* _SoundToPlay);	
 	UFUNCTION(Server, Reliable)
 	void Server_PlayWeaponSound(USoundCue* _SoundToPlay);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayWeaponSound(USoundCue* _SoundToPlay);
 
+	void Grunt();
+	UFUNCTION(Server, Reliable)
+	void Server_Grunt();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Grunt();
+	
 	UFUNCTION(BlueprintCallable)
 	void PlayFallSound();
 		
@@ -877,7 +905,7 @@ public:
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* PickUpCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
-	USoundCue* DropCue;
+	USoundCue* GruntCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* SellCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
@@ -906,6 +934,14 @@ public:
 	/* One audio component for charge/attack/get hit sounds*/
 	UPROPERTY(EditDefaultsOnly)
 	UAudioComponent* WeaponAudioComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAudioComponent* GruntAudioComponent1;
+	UPROPERTY(EditDefaultsOnly)
+	UAudioComponent* GruntAudioComponent2;
+	
+	UPROPERTY(BlueprintReadOnly)
+	UAudioComponent* FallAudioComponent;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///													Animation 													 ///
