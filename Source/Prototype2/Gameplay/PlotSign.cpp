@@ -16,6 +16,12 @@ APlotSign::APlotSign()
 
 	ItemComponent = CreateDefaultSubobject<UItemComponent>(TEXT("ItemComponent"));
 	SSComponent = CreateDefaultSubobject<USquashAndStretch>(TEXT("Squash And Stretch Component"));
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> MI_GhostSign_Grayed(TEXT("/Game/Materials/Environment_MI/MI_GhostSign_Grayed"));
+	if (MI_GhostSign_Grayed.Object != nullptr)
+	{
+		UnclaimableMaterial = MI_GhostSign_Grayed.Object;
+	}
 }
 
 void APlotSign::BeginPlay()
@@ -57,6 +63,14 @@ void APlotSign::Tick(float DeltaTime)
 UStaticMeshComponent* APlotSign::GetMesh()
 {
 	return ItemComponent->Mesh;
+}
+
+void APlotSign::SetMeshGrey()
+{
+	if (IsValid(UnclaimableMaterial) == false)
+		return;
+	
+	GetMesh()->SetMaterial(0, UnclaimableMaterial);
 }
 
 void APlotSign::Interact(APrototype2Character* _Player)
@@ -103,7 +117,7 @@ void APlotSign::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AProto
 	_InvokingWidget->SetHUDInteractText("Claim (Hold)");
 }
 
-EInteractMode APlotSign::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode APlotSign::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	ACharacter* InstigatorCharacter = _Player->GetPlayerController()->GetCharacter();
 	if (!InstigatorCharacter)
@@ -142,6 +156,7 @@ void APlotSign::ClaimPlot(APrototype2Character* _Player)
 	FPlotSignData NewPlotSignData;
 	NewPlotSignData.AssignedColour = SomePlayerState->Details.PureToneColour;
 	NewPlotSignData.bHasBeenClaimed = true;
+	NewPlotSignData.CharacterWhoClaimed = _Player;
 	PlotSignData = NewPlotSignData;
 	OnRep_bClaimed();
 	
@@ -157,5 +172,30 @@ void APlotSign::OnRep_bClaimed()
 	auto PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(GetMesh()->GetStaticMesh()->GetMaterial(0), this);
 	PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), PlotSignData.AssignedColour);
 	GetMesh()->SetMaterial(0, PlotSignMaterialDynamic);
+
+	if (IsValid(UnclaimableMaterial) == false)
+		return;
+	
+	if (IsValid(PlotSignData.CharacterWhoClaimed) == false)
+		return;
+
+	if (PlotSignData.CharacterWhoClaimed->IsLocallyControlled() == false)
+		return;
+
+	TArray<AActor*> FoundPlotSignActors{};
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), StaticClass(), FoundPlotSignActors);
+	TArray<APlotSign*> FoundPlotSigns{};
+	for(auto PlotSignActor : FoundPlotSignActors)
+	{
+		if (PlotSignActor != this)
+			FoundPlotSigns.Add(Cast<APlotSign>(PlotSignActor));
+	}
+	for(auto PlotSign : FoundPlotSigns)
+	{
+		if (PlotSign->PlotSignData.bHasBeenClaimed == false)
+		{
+			PlotSign->SetMeshGrey();
+		}
+	}
 }
 

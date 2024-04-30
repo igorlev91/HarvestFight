@@ -17,6 +17,9 @@ struct FPlotSignData
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector4 AssignedColour{};
+
+	UPROPERTY(VisibleAnywhere)
+	class APrototype2Character* CharacterWhoClaimed{nullptr};
 };
 
 UCLASS()
@@ -31,11 +34,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	class UStaticMeshComponent* GetMesh();
+	void SetMeshGrey();
 	
 public:	
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 
 protected:
@@ -52,4 +56,7 @@ protected:
 
 	UPROPERTY(ReplicatedUsing=OnRep_bClaimed, EditAnywhere, BlueprintReadOnly)
 	FPlotSignData PlotSignData;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UMaterialInstance* UnclaimableMaterial{nullptr};
 };
