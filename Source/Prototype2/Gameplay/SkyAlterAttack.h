@@ -56,9 +56,13 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	class UNiagaraComponent* AlterOffer_VFX{nullptr};
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* AlterOffer_VFX2{nullptr};
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* AlterOffer_System{nullptr};
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* AlterOffer_System2{nullptr};
 	
 	/* When smite hits player the knockback will be multiplied by this value so bigger map can have more knockback */
 	UPROPERTY(EditAnywhere)

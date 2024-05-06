@@ -30,13 +30,25 @@ ASkyAlterAttack::ASkyAlterAttack()
 	AlterOffer_VFX->SetRelativeLocation({0.0f, 0.0f, 94.0f});
 	AlterOffer_VFX->SetRelativeScale3D(FVector::One() * 2.0f);
 	
+	AlterOffer_VFX2 = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Alter Offer VFX Component2"));
+	AlterOffer_VFX2->SetupAttachment(RootComponent);
+	AlterOffer_VFX2->SetRelativeLocation({0.0f, 0.0f, 94.0f});
+	AlterOffer_VFX2->SetRelativeScale3D(FVector::One() * 2.0f);
+	
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_AltarOffer"));
 	if (FoundOfferSystem.Object != NULL)
 	{
 		AlterOffer_System = FoundOfferSystem.Object;
 		AlterOffer_VFX->SetAsset(AlterOffer_System);
 	}
-
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem2(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_SmiteCountdown"));
+	if (FoundOfferSystem2.Object != NULL)
+	{
+		AlterOffer_System2 = FoundOfferSystem2.Object;
+		AlterOffer_VFX2->SetAsset(AlterOffer_System2);
+	}
+	
 	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
 	if (PoofVFX.Class != NULL)
 	{
@@ -188,4 +200,5 @@ void ASkyAlterAttack::OnRep_OnSacrifice()
 
 	// Alter Sacrifice VFX
 	AlterOffer_VFX->Activate(true);
+	AlterOffer_VFX2->Activate(true);
 }
