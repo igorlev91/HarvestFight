@@ -72,6 +72,14 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetFreeForAllScoreUI();
+
+	UFUNCTION(BlueprintCallable)
+	void RemoveLoadingScreen(UUserWidget *Widget);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(UUserWidget *Widget);
+
+	
 	
 	/* Widgets */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))

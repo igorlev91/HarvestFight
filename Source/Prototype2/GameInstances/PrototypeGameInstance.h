@@ -81,12 +81,9 @@ public:
 	virtual void StartGameInstance() override;
 	
 	void ResetCachedPlayerDetails();
-
-	UFUNCTION(BlueprintCallable)
+	
 	void ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder);
-	UFUNCTION(BlueprintCallable)
 	void RemoveLoadingScreen(UUserWidget *Widget);
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bPlayerStentil{ false };

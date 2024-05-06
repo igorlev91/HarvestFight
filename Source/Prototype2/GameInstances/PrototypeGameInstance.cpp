@@ -11,6 +11,7 @@ UPrototypeGameInstance::UPrototypeGameInstance()
 	}
 }
 
+
 void UPrototypeGameInstance::OnStart()
 {
 	Super::OnStart();
@@ -38,7 +39,6 @@ void UPrototypeGameInstance::ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder
 	{
 		if (IsValid(GetGameViewportClient()))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Test"));
 			GetGameViewportClient()->AddViewportWidgetContent(Widget->TakeWidget());
 		}
 	}

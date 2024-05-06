@@ -647,6 +647,22 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 
+void UWidget_LobbyPlayerHUDV2::RemoveLoadingScreen(UUserWidget* Widget)
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (GameInstance)
+		GameInstance->RemoveLoadingScreen(Widget);
+}
+
+void UWidget_LobbyPlayerHUDV2::ShowLoadingScreen(UUserWidget* Widget)
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (GameInstance)
+		GameInstance->ShowLoadingScreen(Widget, 0);
+}
+
 void UWidget_LobbyPlayerHUDV2::ResetDefaults()
 {
 	TempGameSpeed = DefaultGameSpeed;

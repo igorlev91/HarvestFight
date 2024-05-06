@@ -21,3 +21,19 @@ void UWidget_MainMenu::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 }
+
+void UWidget_MainMenu::RemoveLoadingScreen(UUserWidget* Widget)
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (GameInstance)
+		GameInstance->RemoveLoadingScreen(Widget);
+}
+
+void UWidget_MainMenu::ShowLoadingScreen(UUserWidget* Widget)
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (GameInstance)
+		GameInstance->ShowLoadingScreen(Widget, 0);
+}

@@ -26,6 +26,9 @@ public:
 
 	/* Turns on the endgame menu widget */
 	void EnableEndgameMapChoice();
+
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(UUserWidget *Widget);
 	
 	/* Public Variables */
 public:

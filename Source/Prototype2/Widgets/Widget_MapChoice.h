@@ -22,6 +22,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SelectLevel(EFarm _Level);
 
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(UUserWidget *Widget);
+
 	/* Public Variables */
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

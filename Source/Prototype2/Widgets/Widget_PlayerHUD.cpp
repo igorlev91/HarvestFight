@@ -752,6 +752,22 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 		}
 }
 
+void UWidget_PlayerHUD::RemoveLoadingScreen(UUserWidget* Widget)
+{
+	if (!GameInstance)
+		return;
+	
+	GameInstance->RemoveLoadingScreen(Widget);
+}
+
+void UWidget_PlayerHUD::ShowLoadingScreen(UUserWidget* Widget)
+{
+	if (!GameInstance)
+		return;
+	
+	GameInstance->ShowLoadingScreen(Widget, 0);
+}
+
 void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 {
 	// NEW STARS ON PICKUP UI (Set to visible)

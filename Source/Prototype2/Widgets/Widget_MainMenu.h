@@ -18,6 +18,12 @@ public:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	UFUNCTION(BlueprintCallable)
+	void RemoveLoadingScreen(UUserWidget *Widget);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(UUserWidget *Widget);
+
 	/* Public Variables */
 public:
 	/* Reference to game instance */

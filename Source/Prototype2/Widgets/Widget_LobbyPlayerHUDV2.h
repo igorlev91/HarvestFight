@@ -44,6 +44,12 @@ public:
 	UFUNCTION()
 	void UpdateTeams();
 
+	UFUNCTION(BlueprintCallable)
+	void RemoveLoadingScreen(UUserWidget *Widget);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(UUserWidget *Widget);
+
 	/* Public Variables */
 public:
 

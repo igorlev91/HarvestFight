@@ -2,6 +2,9 @@
 
 #include "Widget_EndgameCheck.h"
 #include "Kismet/GameplayStatics.h"
+#include "Prototype2/GameInstances/PrototypeGameInstance.h"
+
+class UPrototypeGameInstance;
 
 void UWidget_EndgameCheck::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
@@ -19,5 +22,15 @@ void UWidget_EndgameCheck::ToggleMenu()
 	else
 	{
 		SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void UWidget_EndgameCheck::ShowLoadingScreen(UUserWidget* Widget)
+{
+	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
+
+	if (GameInstance)
+	{
+		GameInstance->ShowLoadingScreen(Widget, 0);
 	}
 }
