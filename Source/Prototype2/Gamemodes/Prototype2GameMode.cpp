@@ -125,7 +125,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
 				if (PreGameArenas.Num() > 0)
 				{
-					Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+					Character->SetActorLocation(PreGameArenas[0]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
 					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena A"), *PlayerStateReference->GetPlayerName());
 				}
 			}
@@ -135,7 +135,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
 				if (PreGameArenas.Num() > 0)
 				{
-					Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+					Character->SetActorLocation(PreGameArenas[1]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
 					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena B"), *PlayerStateReference->GetPlayerName());
 				}
 			}
@@ -149,7 +149,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 				GameStateReference->Server_TeamOne.Add(PlayerStateReference);
 				if (PreGameArenas.Num() > 0)
 				{
-					Character->SetActorLocation(PreGameArenas[0]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+					Character->SetActorLocation(PreGameArenas[0]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
 					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena A"), *PlayerStateReference->GetPlayerName());
 				}
 			}
@@ -160,7 +160,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 				GameStateReference->Server_TeamTwo.Add(PlayerStateReference);
 				if (PreGameArenas.Num() > 0)
 				{
-					Character->SetActorLocation(PreGameArenas[1]->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+					Character->SetActorLocation(PreGameArenas[1]->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
 					UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena B"), *PlayerStateReference->GetPlayerName());
 				}
 			}
@@ -183,7 +183,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 		
 		if (DefaultPreGameArena)
 		{
-			Character->SetActorLocation(DefaultPreGameArena->GetActorLocation() + SpawnOffset, false, nullptr, ETeleportType::ResetPhysics);
+			Character->SetActorLocation(DefaultPreGameArena->GetNextSpawnLocation(), false, nullptr, ETeleportType::ResetPhysics);
 			UE_LOG(LogTemp, Warning, TEXT("%s Teleported To Arena (Solo)"), *PlayerStateReference->GetPlayerName());
 		}
 	}
