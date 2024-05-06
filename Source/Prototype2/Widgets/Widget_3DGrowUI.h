@@ -30,7 +30,7 @@ public:
 	void SetWeaponType(int32 _Type);
 	
 	UFUNCTION()
-	void SetStarCount(int32 _Count);
+	void SetStarCount(int32 _Count, bool _bGold = false);
 
 	UFUNCTION()
 	void SetFlowerTypes(TArray<FFlowerData> _FlowerDatas);
@@ -42,6 +42,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> StarTextures;
+
+	UPROPERTY(EditAnywhere)
+	TArray<class UTexture2D*> GoldenStarTextures;
 
 	UPROPERTY(EditAnywhere)
 	TArray<class UTexture2D*> WeaponTextures;

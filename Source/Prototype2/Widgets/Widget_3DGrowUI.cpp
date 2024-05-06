@@ -30,7 +30,7 @@ void UWidget_3DGrowUI::SetWeaponType(int32 _Type)
 	}
 }
 
-void UWidget_3DGrowUI::SetStarCount(int32 _Count)
+void UWidget_3DGrowUI::SetStarCount(int32 _Count, bool _bGold)
 {
 	/* HIDE WEAPON */
 	I_Weapon->SetVisibility(ESlateVisibility::Hidden);
@@ -46,8 +46,16 @@ void UWidget_3DGrowUI::SetStarCount(int32 _Count)
 		return;
 	}
 
-	if (StarTextures.Num() > _Count - 1)
-		I_Stars->SetBrushFromTexture(StarTextures[_Count - 1]);
+	if (_bGold)
+	{
+		if (GoldenStarTextures.Num() > _Count - 1)
+			I_Stars->SetBrushFromTexture(GoldenStarTextures[_Count - 1]);
+	}
+	else
+	{
+		if (StarTextures.Num() > _Count - 1)
+			I_Stars->SetBrushFromTexture(StarTextures[_Count - 1]);
+	}
 }
 
 void UWidget_3DGrowUI::SetFlowerTypes(TArray<FFlowerData> _FlowerDatas)
