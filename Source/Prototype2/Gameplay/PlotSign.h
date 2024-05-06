@@ -59,4 +59,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	class UMaterialInstance* UnclaimableMaterial{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ClaimCue{nullptr};
+	UPROPERTY(EditAnywhere)
+	class USoundAttenuation* ClaimAttenuation{nullptr};
 };

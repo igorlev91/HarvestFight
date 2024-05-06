@@ -22,6 +22,17 @@ APlotSign::APlotSign()
 	{
 		UnclaimableMaterial = MI_GhostSign_Grayed.Object;
 	}
+	
+	static ConstructorHelpers::FObjectFinder<USoundCue> FoundClaimCue(TEXT("/Game/SFX/CUE_bokAHH"));
+	if (FoundClaimCue.Object != nullptr)
+	{
+		ClaimCue = FoundClaimCue.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<USoundAttenuation> FoundClaimAttenuation(TEXT("/Game/SFX/MandrakeAttenuationSettings"));
+	if (FoundClaimAttenuation.Object != nullptr)
+	{
+		ClaimAttenuation = FoundClaimAttenuation.Object;
+	}
 }
 
 void APlotSign::BeginPlay()
@@ -168,6 +179,9 @@ void APlotSign::OnRep_bClaimed()
 {
 	if (PlotSignData.bHasBeenClaimed == false)
 		return;
+
+	if (ClaimCue && ClaimAttenuation && GetWorld()->GetTimeSeconds() > 5.0f)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ClaimCue, GetActorLocation(), 1, 1, 0, ClaimAttenuation);
 
 	auto PlotSignMaterialDynamic = UMaterialInstanceDynamic::Create(GetMesh()->GetStaticMesh()->GetMaterial(0), this);
 	PlotSignMaterialDynamic->SetVectorParameterValue(FName("PaintColour"), PlotSignData.AssignedColour);
