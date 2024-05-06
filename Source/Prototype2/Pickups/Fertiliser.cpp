@@ -48,6 +48,9 @@ void AFertiliser::BeginPlay()
 	WiltDelayTimer = WiltDelay;
 
 	ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (HasAuthority())
+		ItemComponent->Mesh->SetCenterOfMass({0.0f, 0.0f, -15.0});
 }
 
 void AFertiliser::Interact(APrototype2Character* _Player)

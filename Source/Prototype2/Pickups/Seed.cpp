@@ -180,9 +180,6 @@ void ASeed::HandleParachuteMovement()
 	{
 		if /* FALLING */ (GetActorLocation().Z >= (SpawnPos + (FVector::DownVector * DropDistance)).Z)
 		{
-			float XVariation = FMath::Sin(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed) * BobAmplitude;
-			float ZVariation = FMath::Cos(FMath::DegreesToRadians(GetWorld()->GetTimeSeconds()) * BobSpeed ) * BobAmplitude;
-			SetActorRotation({SpawnRotation.Pitch + XVariation, GetActorRotation().Yaw, SpawnRotation.Roll + ZVariation});
 			float ParachuteLifetime = GetWorld()->GetTimeSeconds() - SpawnTime;
 			SetActorLocation(FMath::Lerp(SpawnPos, SpawnPos + (FVector::DownVector * DropDistance), ParachuteLifetime / FallTime), false, nullptr, ETeleportType::ResetPhysics);
 		}
