@@ -40,7 +40,7 @@ void UWeapon::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* _Player)
 
 	if (_bIsFullCharge)
 	{
-		_Player->GetCharacterMovement()->Launch(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
+		_Player->LungeAttack(_Player->GetActorForwardVector() * _Player->CurrentWeaponSeedData->WeaponData->LaunchVelocityMultiplier);
 	}
 }
 

@@ -254,6 +254,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	bool bAllowMovementFromInput = true;
 
+	UPROPERTY(ReplicatedUsing=OnRep_SetSimulatedProxyAimingMovement)
+	bool bIsAiming = false;
+	
 	//UPROPERTY(Replicated, VisibleAnywhere)
 	//bool bIsHoldingInteract = false;
 
@@ -459,13 +462,20 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ChargeAttack(bool _bCharging);
 
+	UFUNCTION()
+	void LungeAttack(FVector _LungeVector);
+	UFUNCTION(Server, Reliable)
+	void Server_LungeAttack(FVector _LungeVector);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_LungeAttack(FVector _LungeVector);
+	
 	void SetPlayerAimingMovement(bool _bIsAiming);
-	//UFUNCTION(Server, Reliable)
-	//void Server_SetPlayerAimingMovement(bool _bIsAiming);
+	UFUNCTION()
+	void OnRep_SetSimulatedProxyAimingMovement();
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerAimingMovement(bool _bIsAiming);
 	//UFUNCTION(NetMulticast, Reliable)
 	//void Multi_SetPlayerAimingMovement(bool _bIsAiming);
-	//UFUNCTION(Client, Reliable)
-	//void Client_SetPlayerAimingMovement(bool _bIsAiming);
 
 	UFUNCTION(Server, Reliable)
 	void Server_CancelChargeAttack();
@@ -1073,5 +1083,6 @@ public:
 	void DebugSomething();
 	
 };
+
 
 

@@ -85,6 +85,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, CurrentWeaponAnimation);
 	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
 	DOREPLIFETIME(APrototype2Character, WeaponMesh);
+	DOREPLIFETIME(APrototype2Character, bIsAiming);
 	//DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
 	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
 	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
@@ -255,10 +256,10 @@ void APrototype2Character::Tick(float _DeltaSeconds)
 	
 	//ToggleParticleSystems();
 	
-	if (IsValid(smite))
-	{
-		smite->Tick(_DeltaSeconds);
-	}
+	//if (IsValid(smite))
+	//{
+	//	smite->Tick(_DeltaSeconds);
+	//}
 	
 	if (UHarvestHavocGameUserSettings* UserSettings = UHarvestHavocGameUserSettings::GetHarvestHavocGameUserSettings())
 	{
@@ -2292,32 +2293,61 @@ void APrototype2Character::Multi_ChargeAttack_Implementation(bool _bCharging)
 		return;
 	
 	OnChargeStateChangedDelegate.Broadcast(_bCharging);
+}
+
+void APrototype2Character::LungeAttack(FVector _LungeVector)
+{
+	GetCharacterMovement()->Launch(_LungeVector);
+
+	if (!HasAuthority())
+	{
+		Server_LungeAttack(_LungeVector);
+	}
+}
+
+void APrototype2Character::Server_LungeAttack_Implementation(FVector _LungeVector)
+{
+	Multi_LungeAttack(_LungeVector);
+}
+
+void APrototype2Character::Multi_LungeAttack_Implementation(FVector _LungeVector)
+{
+	if (!IsLocallyControlled())
+	GetCharacterMovement()->Launch(_LungeVector);
+}
+
+void APrototype2Character::OnRep_SetSimulatedProxyAimingMovement()
+{
+	// Only affect simulated proxies
+	if (IsLocallyControlled())
+		return;
 	
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = !bIsAiming;
+	bAllowMovementFromInput = !bIsAiming;
 }
 
 void APrototype2Character::SetPlayerAimingMovement(bool _bIsAiming)
 {
-
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
 	bAllowMovementFromInput = !_bIsAiming;
-
-	//Server_SetPlayerAimingMovement(_bIsAiming);
+	
+	if (HasAuthority())
+	{
+		bIsAiming = _bIsAiming;
+	}
+	else
+	{
+		Server_SetPlayerAimingMovement(_bIsAiming);
+	}
 }
 
-//void APrototype2Character::Multi_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
-//{
-//	GetCharacterMovement()->bUseControllerDesiredRotation = true;
-//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
-//	bAllowMovementFromInput = !_bIsAiming;
-//}
-//
-//void APrototype2Character::Client_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
-//{
-//	GetCharacterMovement()->bUseControllerDesiredRotation = true;
-//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
-//	bAllowMovementFromInput = !_bIsAiming;
-//}
+void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
+{
+	bIsAiming = _bIsAiming;
+	OnRep_SetSimulatedProxyAimingMovement();
+}
 
 void APrototype2Character::Server_CancelChargeAttack_Implementation()
 {
@@ -2440,15 +2470,6 @@ void APrototype2Character::Client_DropWeapon_Implementation()
 		PlayerHUDRef->WeaponImage->SetDesiredSizeOverride(ImageSize);
 	}
 }
-
-//void APrototype2Character::Server_SetPlayerAimingMovement_Implementation(bool _bIsAiming)
-//{
-//	GetCharacterMovement()->bUseControllerDesiredRotation = _bIsAiming;
-//	GetCharacterMovement()->bOrientRotationToMovement = !_bIsAiming;
-//	bAllowMovementFromInput = !_bIsAiming;
-//
-//	Multi_SetPlayerAimingMovement(_bIsAiming);
-//}
 
 void APrototype2Character::SetMaxWalkSpeed(float _Speed)
 {
@@ -3165,7 +3186,6 @@ void APrototype2Character::Server_SetPlayerColour_Implementation()
 void APrototype2Character::Multi_SetBazookaPickup_Implementation(bool _bIsHoldingBazooka)
 {
 	bIsHoldingBazooka = _bIsHoldingBazooka;
-	UKismetSystemLibrary::PrintString(GetWorld(), "bazooooooka");
 }
 
 void APrototype2Character::OnRep_InteractTimer()
