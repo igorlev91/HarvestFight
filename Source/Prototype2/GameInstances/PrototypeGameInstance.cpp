@@ -31,3 +31,20 @@ void UPrototypeGameInstance::ResetCachedPlayerDetails()
 	FinalConnectionCount = 0;
 	MaxPlayersOnServer = 0;
 }
+
+void UPrototypeGameInstance::ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder)
+{
+	if (IsValid(this) && IsValid(Widget))
+	{
+		if (IsValid(GetGameViewportClient()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Test"));
+			GetGameViewportClient()->AddViewportWidgetContent(Widget->TakeWidget());
+		}
+	}
+}
+
+void UPrototypeGameInstance::RemoveLoadingScreen(UUserWidget *Widget)
+{
+	GetGameViewportClient()->RemoveViewportWidgetContent(Widget->TakeWidget());
+}
