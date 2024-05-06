@@ -392,7 +392,6 @@ void APrototype2Character::Sprint()
 	// If the player used all their stamina to the bottom it has to fully reset
 	if (!bCanSprint)
 	{
-		UKismetSystemLibrary::PrintString(GetWorld(), "Reason for no sprint: bCanSprint is false");
 		OnFailedToSprintDelegate.Broadcast();
 		return;
 	}
@@ -401,8 +400,8 @@ void APrototype2Character::Sprint()
 	if (!IsValid(DebuffComponent))
 		return;
 	
-	// If no debuff or sprint is at least 1/5th full
-	if (DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > (SprintTime / 5.0f))
+	// If no debuff 
+	if (DebuffComponent->CurrentDebuff == EDebuff::None)
 	{
 		bSprinting = true;		
 		bHasNotifiedCanSprint = false;
@@ -412,7 +411,6 @@ void APrototype2Character::Sprint()
 	}
 	else
 	{
-		UKismetSystemLibrary::PrintString(GetWorld(), "Reason for no sprint: this check was false->>>> if(DebuffComponent->CurrentDebuff == EDebuff::None && SprintTimer > (SprintTime / 5.0f)");
 		OnFailedToSprintDelegate.Broadcast();
 	}
 }
@@ -516,19 +514,13 @@ void APrototype2Character::ReleaseAttack()
 	if (IsValid(HeldItem))
 	{
 		InteractTimer = InteractTimerTime;
+		
 		FTimerHandle Handle;
-		APrototype2Character* ThisCharacter = this;
-		GetWorld()->GetTimerManager().SetTimer(Handle,
-			FTimerDelegate::CreateLambda(
-				[this, ThisCharacter]
-				{
-					if (!IsValid(ThisCharacter))
-					{
-						return;
-					}
-					ThrowItem();
-				}), InstantAttackDelay, false);
+		GetWorld()->GetTimerManager().SetTimer(Handle,this, 
+			&APrototype2Character::ThrowItem,
+			InstantAttackDelay, false);
 
+		
 		if (AnimationData->NormalPunchingAttack)
 		{
 			PlayNetworkMontage(AnimationData->NormalPunchingAttack);
@@ -546,11 +538,13 @@ void APrototype2Character::ReleaseAttack()
 	}
 	
 	bCanAttack = false;
-	
+
+	// If not punching, turn on attack trail
 	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
 	{
-		// VFX
-		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);
+		// Except for the apearagus (bazooka)
+		if (CurrentWeaponSeedData->WeaponData->WeaponAnimationType != EWeaponAnimation::Aspearagus)
+		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);// Gets turned off in animation blueprint
 	}
 
 	if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
@@ -575,7 +569,7 @@ void APrototype2Character::ReleaseAttack()
 	}
 
 	// Set the radius of the sphere for attack
-	int32 AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
+	ExecuteAttackInfo.AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
 	
 	// Always delay attack because of the new launch
 	bool bFullChargeAttack = true;
@@ -592,25 +586,15 @@ void APrototype2Character::ReleaseAttack()
 	{
 		AttackChargeAmount = MaxAttackCharge;
 	}
-	float InAttackCharge = AttackChargeAmount;
-	bool InSprinting = bSprinting;
 
-	APrototype2Character* ThisPlayer = this;
-
-	// CAUSES CRASH BECAUSE ITS RUNNING ON A SEPERATE THREAD
+	ExecuteAttackInfo.AttackChargeAmount = AttackChargeAmount;
+	ExecuteAttackInfo.bIsSprinting = bSprinting;
+	
 	// Delayed attack
 	FTimerHandle Handle;
-	GetWorld()->GetTimerManager().SetTimer(Handle,
-		FTimerDelegate::CreateLambda(
-			[this, ThisPlayer, AttackSphereRadius, InAttackCharge, InSprinting]
-			{
-				if (!IsValid(ThisPlayer))
-					return;
-				
-				SetPlayerAimingMovement(false);
-				ExecuteAttack(AttackSphereRadius, InAttackCharge, InSprinting);
-				ResetAttack();
-			}), InstantAttackDelay, false);
+	GetWorld()->GetTimerManager().SetTimer(Handle, this,
+		&APrototype2Character::DelayedExecuteAttack,
+		InstantAttackDelay, false);
 }
 
 void APrototype2Character::Interact(bool _Direct)
@@ -730,11 +714,13 @@ void APrototype2Character::ExecuteAttack(float _AttackSphereRadius, float _Attac
 	//Server_ExecuteAttack(_AttackSphereRadius, _AttackChargeAmount, _bSprinting);
 }
 
-void APrototype2Character::Server_ExecuteAttack_Implementation(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting)
+void APrototype2Character::DelayedExecuteAttack()
 {
-
-	
-	//Weapon->ExecuteAttack(_AttackSphereRadius, this, _AttackChargeAmount, _bSprinting);
+	SetPlayerAimingMovement(false);
+	ExecuteAttack(ExecuteAttackInfo.AttackSphereRadius,
+		ExecuteAttackInfo.AttackChargeAmount,
+		ExecuteAttackInfo.bIsSprinting);
+	ResetAttack();
 }
 
 void APrototype2Character::DropItem(float WhoopsyStrength)
@@ -1237,9 +1223,10 @@ void APrototype2Character::InitMiscComponents()
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	WeaponMesh->SetIsReplicated(true);
-	
 
-	// Area of attack indicator mesh set up
+	// For spawning projectiles
+	ProjectileSpawnPoint = CreateDefaultSubobject<USceneComponent>("ProjectileSpawnPoint");
+	ProjectileSpawnPoint->SetupAttachment(RootComponent);
 
 	AttackAreaIndicatorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttackAreaIndicatorMesh"));
 	AttackAreaIndicatorMesh->SetupAttachment(RootComponent);
@@ -1660,6 +1647,20 @@ void APrototype2Character::PickupItem(APickUpItem* _Item, EPickupActor _PickupTy
 	{
 		RefreshCurrentMaxSpeed();
 	}
+	
+	if (_PickupType == EPickupActor::WeaponActor)
+	{
+		if (_Item->ServerData.SeedData->WeaponData->WeaponAnimationType == EWeaponAnimation::Aspearagus)
+		{
+			bIsHoldingBazooka = true;
+			Multi_SetBazookaPickup(true);
+		}
+		else
+		{
+			bIsHoldingBazooka = false;
+			Multi_SetBazookaPickup(false);
+		}
+	}
 }
 
 
@@ -1876,7 +1877,7 @@ void APrototype2Character::OnRep_HeldItem()
 	{
 		GetMesh()->GetAnimInstance()->Montage_Play(AnimationData->Pickup);
 
-		if (IsValid(Weapon))
+		if (IsValid(Weapon) && WeaponMesh->GetAttachSocketName() != FName("WeaponHolsterSocket"))
 			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponHolsterSocket")); 
 
 		if /* NOT WEAPON */(HeldItem->ServerData.PickupActor != EPickupActor::WeaponActor)
@@ -1901,7 +1902,7 @@ void APrototype2Character::OnRep_HeldItem()
 	{
 		ClearPickupUI();
 		
-		if (IsValid(Weapon))
+		if (IsValid(Weapon) && WeaponMesh->GetAttachSocketName() != FName("Base-HumanWeapon"))
 			WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Base-HumanWeapon")); 
 	}
 	
@@ -2504,6 +2505,10 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	{
 		SetMaxWalkSpeed(SprintSpeed);
 		DeActivateParticleSystemFromEnum(EParticleSystems::WalkPoof);
+		if (GetVelocity().Length() == 0.0f)
+		{
+			return;
+		}
 		ActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 		ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
 		return;
@@ -2513,6 +2518,28 @@ void APrototype2Character::RefreshCurrentMaxSpeed()
 	SetMaxWalkSpeed(WalkSpeed);
 	DeActivateParticleSystemFromEnum(EParticleSystems::SprintPoof);
 	DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
+}
+
+void APrototype2Character::HandleNotSprinting(float _DeltaSeconds)
+{
+	if (SprintTimer < SprintTime)
+	{
+		if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
+		{
+			DelayedSprintRegenTimer += _DeltaSeconds * 1.5f;
+		}
+		else
+		{
+			SprintTimer += _DeltaSeconds * 0.85f; // magic number slows down sprint regen
+		}
+	}
+	else
+	{
+		SetCanSprint(true);
+
+		bHasNotifiedCanSprint = true;
+		bCanSprint = true;
+	}
 }
 
 void APrototype2Character::Client_RefreshCurrentMaxSpeed_Implementation()
@@ -2950,17 +2977,38 @@ void APrototype2Character::UpdatePlayerHUD()
 
 void APrototype2Character::UpdateWeaponMeshSkin()
 {
-	WeaponMesh->SetStaticMesh(CurrentWeaponSeedData->BabyMesh);
+	if (IsValid(BazookaMesh) &&
+		bIsHoldingBazooka)
+	{
+		WeaponMesh->SetStaticMesh(BazookaMesh);
+	}
+	else
+	{
+		if (IsValid(CurrentWeaponSeedData) &&
+			IsValid(CurrentWeaponSeedData->BabyMesh))
+		WeaponMesh->SetStaticMesh(CurrentWeaponSeedData->BabyMesh);
+	}
 	
 	if (bShouldWeaponFlashRed)
 	{
+		if (bIsHoldingBazooka)
+		{
+			WeaponMesh->SetMaterial(0, FlashRedMaterial);
+			return;
+		}
+
 		for (int i = 0; i < CurrentWeaponSeedData->BabyMaterials.Num(); i++)
 		{
 			WeaponMesh->SetMaterial(i, FlashRedMaterial);
-		}
+		}		
 	}
 	else if (bIsHoldingGoldWeapon)
 	{
+		if (bIsHoldingBazooka && IsValid(BazookaGoldMaterial))
+		{
+			WeaponMesh->SetMaterial(0, BazookaGoldMaterial);
+			return;
+		}
 		for (int i = 0; i < CurrentWeaponSeedData->BabyGoldMaterials.Num(); i++)
 		{
 			if (CurrentWeaponSeedData->BabyGoldMaterials[i])
@@ -2977,6 +3025,11 @@ void APrototype2Character::UpdateWeaponMeshSkin()
 	}
 	else
 	{
+		if (bIsHoldingBazooka && IsValid(BazookaNormalMaterial))
+		{
+			WeaponMesh->SetMaterial(0, BazookaNormalMaterial);
+			return;
+		}
 		for (int i = 0; i < CurrentWeaponSeedData->BabyMaterials.Num(); i++)
 		{
 			if (CurrentWeaponSeedData->BabyMaterials[i])
@@ -3044,10 +3097,25 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 	
 	if (bSprinting)
 	{
-		if (SprintTimer > 0)
+		if (GetVelocity().Length() == 0.0f)
+		{
+			HandleNotSprinting(_DeltaSeconds);
+			if (AssertDominance_NiagaraComponent->IsActive())
+			{
+				DeActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
+			}
+			return;
+		}
+		
+		if (SprintTimer > 0 && GetVelocity().Length() != 0.0f)
 		{
 			SprintTimer -= chargingWithWeapon ? _DeltaSeconds * 1.5f : _DeltaSeconds; // magic number increaeses sprint drain when sprinting with weapon
-
+			
+			if (!AssertDominance_NiagaraComponent->IsActive())
+			{
+				ActivateParticleSystemFromEnum(EParticleSystems::AssertDominance);
+			}
+			
 			if (SprintTimer <= 0)
 			{
 				// end sprint
@@ -3061,24 +3129,7 @@ void APrototype2Character::DecrementSprintTimers(float _DeltaSeconds)
 	}
 	else
 	{
-		if (SprintTimer < SprintTime)
-		{
-			if (DelayedSprintRegenTimer < DelayedSprintRegenTotalDuration)
-			{
-				DelayedSprintRegenTimer += _DeltaSeconds * 1.5f;
-			}
-			else
-			{
-				SprintTimer += _DeltaSeconds * 0.85f; // magic number slows down sprint regen
-			}
-		}
-		else
-		{
-			SetCanSprint(true);
-
-			bHasNotifiedCanSprint = true;
-			bCanSprint = true;
-		}
+		HandleNotSprinting(_DeltaSeconds);
 	}
 }
 
@@ -3109,6 +3160,12 @@ void APrototype2Character::Multi_PlayNetworkMontage_Implementation(UAnimMontage*
 void APrototype2Character::Server_SetPlayerColour_Implementation()
 {
 	Multi_SetPlayerColour();
+}
+
+void APrototype2Character::Multi_SetBazookaPickup_Implementation(bool _bIsHoldingBazooka)
+{
+	bIsHoldingBazooka = _bIsHoldingBazooka;
+	UKismetSystemLibrary::PrintString(GetWorld(), "bazooooooka");
 }
 
 void APrototype2Character::OnRep_InteractTimer()
@@ -3352,6 +3409,7 @@ void APrototype2Character::Multi_PickupItem_Implementation(APickUpItem* _Item, E
 void APrototype2Character::Multi_DropWeapon_Implementation()
 {
 	CurrentWeaponSeedData = DefaultWeaponSeedData;
+	bIsHoldingBazooka = false;
 	
 	if (!IsValid(Weapon))
 		return;

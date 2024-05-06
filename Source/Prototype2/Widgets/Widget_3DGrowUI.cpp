@@ -14,10 +14,29 @@ void UWidget_3DGrowUI::NativeOnInitialized()
 	TimerMat = Timer->GetDynamicMaterial();
 }
 
-void UWidget_3DGrowUI::SetStarCount(int32 _Count)
+void UWidget_3DGrowUI::SetWeaponType(int32 _Type)
 {
 	/* HIDE FLOWERS */
 	H_Flowers->SetVisibility(ESlateVisibility::Hidden);
+	/* HIDE STARS */
+	I_Stars->SetVisibility(ESlateVisibility::Hidden);
+	
+	/* UN-HIDE WEAPON */
+	I_Weapon->SetVisibility(ESlateVisibility::Visible);
+
+	if (WeaponTextures.Num() > _Type - 1)
+	{
+		I_Weapon->SetBrushFromTexture(WeaponTextures[_Type - 1]);
+	}
+}
+
+void UWidget_3DGrowUI::SetStarCount(int32 _Count)
+{
+	/* HIDE WEAPON */
+	I_Weapon->SetVisibility(ESlateVisibility::Hidden);
+	/* HIDE FLOWERS */
+	H_Flowers->SetVisibility(ESlateVisibility::Hidden);
+	
 	/* UN-HIDE STARS */
 	I_Stars->SetVisibility(ESlateVisibility::Visible);
 	
@@ -33,8 +52,11 @@ void UWidget_3DGrowUI::SetStarCount(int32 _Count)
 
 void UWidget_3DGrowUI::SetFlowerTypes(TArray<FFlowerData> _FlowerDatas)
 {
+	/* HIDE WEAPON */
+	I_Weapon->SetVisibility(ESlateVisibility::Hidden);
 	/* HIDE STARS */
 	I_Stars->SetVisibility(ESlateVisibility::Hidden);
+	
 	/* UN-HIDE FLOWERS */
 	H_Flowers->SetVisibility(ESlateVisibility::Visible);
 	
@@ -67,11 +89,21 @@ void UWidget_3DGrowUI::SetGrowTimer(float _Progress, bool _Gold)
 		return;
 
 	const float ClampedProgress = FMath::Clamp(_Progress, 0.0f, 1.0f);
-	if (ClampedProgress >= 1)
-		Timer->SetVisibility(ESlateVisibility::Hidden);
-	else
-		Timer->SetVisibility(ESlateVisibility::Visible);
+	
 	
 	TimerMat->SetScalarParameterValue(FName("Percent"), ClampedProgress);
-	TimerMat->SetVectorParameterValue(FName("Color"), _Gold ? FLinearColor{1.0f, 0.843f, 0.0f} : FLinearColor{1.0f, 1.0f, 1.0f});
+
+	if (ClampedProgress >= 1)
+	{
+		/* MAKE IT GREEN */
+		//TimerMat->SetVectorParameterValue(FName("Color"), FLinearColor{0.0f, 1.0f, 0.0f});
+		
+		Timer->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else
+	{
+		Timer->SetVisibility(ESlateVisibility::Visible);
+		TimerMat->SetVectorParameterValue(FName("Color"), _Gold ? FLinearColor{1.0f, 0.843f, 0.0f} : FLinearColor{1.0f, 1.0f, 1.0f});
+	}
+
 }

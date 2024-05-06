@@ -19,12 +19,9 @@ public:
 protected:
 	ALobbyCharacter();
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	void SyncCharacterSkin();
 
 	virtual void OnRep_PlayerState() override;
-
-private:
-	UPROPERTY(VisibleAnywhere)
-	class ALobbyPlayerState* PlayerStateRef;
 };

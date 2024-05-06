@@ -47,10 +47,14 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* ClockworkLevelCounter;
 
+	/* Random map vote counter */
+	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UTextBlock* RandomLevelCounter;
+
 	/* Timer after players have voted on map */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UTextBlock* MapChoiceTimer;
 
-	UPROPERTY(EditAnywhere, meta=(BindWidget))
-	class UOverlay* LoadingPageFake;
+	//UPROPERTY(EditAnywhere, meta=(BindWidget))
+	//class UOverlay* LoadingPageFake;
 };

@@ -123,6 +123,10 @@ void ASeedSpawner::SpawnSeeds_RAW()
 					return;
 				}
 			}
+			else if (bUseWeightedSystem)
+			{
+				RandomIndex = rand() % SeedBag.Num();
+			}
 			else
 			{
 				if (BagPositionTracker >= SeedBag.Num())

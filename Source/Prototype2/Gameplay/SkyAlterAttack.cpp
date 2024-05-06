@@ -2,7 +2,10 @@
 
 
 #include "SkyAlterAttack.h"
+
+#include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2/Pickups/Plant.h"
@@ -13,80 +16,102 @@ ASkyAlterAttack::ASkyAlterAttack()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
+
+	AlterCollisionBox = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component (ROOT)"));
+	SetRootComponent(AlterCollisionBox);
+	AlterCollisionBox->SetSphereRadius(200.0f);
 	
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	SetRootComponent(StaticMesh);
+	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
+	StaticMesh->SetupAttachment(RootComponent);
+
+	AlterOffer_VFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Alter Offer VFX Component"));
+	AlterOffer_VFX->SetupAttachment(RootComponent);
+	AlterOffer_VFX->SetRelativeLocation({0.0f, 0.0f, 94.0f});
+	AlterOffer_VFX->SetRelativeScale3D(FVector::One() * 2.0f);
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_AltarOffer"));
+	if (FoundOfferSystem.Object != NULL)
+	{
+		AlterOffer_System = FoundOfferSystem.Object;
+		AlterOffer_VFX->SetAsset(AlterOffer_System);
+	}
 
 	static ConstructorHelpers::FClassFinder<AActor> PoofVFX(TEXT("/Game/Blueprints/VFX/SpawnableVFX"));
 	if (PoofVFX.Class != NULL)
 	{
 		PoofSystem = PoofVFX.Class;
 	}
+
+	static ConstructorHelpers::FObjectFinder<USoundCue> FoundSacrificeCue(TEXT("/Game/SFX/Altar/Sacrifice_Cue"));
+	if (FoundSacrificeCue.Object != NULL)
+	{
+		SacrificeCue = FoundSacrificeCue.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<USoundCue> FoundPumpkinCue(TEXT("/Game/SFX/MostValueCrop/Pumpkin_Cue"));
+	if (FoundPumpkinCue.Object != nullptr)
+	{
+		EnemySacrificeCue = FoundPumpkinCue.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<USoundAttenuation> FoundSacrificeAttenuation(TEXT("/Game/SFX/AltarSoundAttenuation"));
+	if (FoundSacrificeAttenuation.Object != NULL)
+	{
+		SacrificeAttenuation = FoundSacrificeAttenuation.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UWeaponData> FoundSmiteData(TEXT("/Game/DataAssets/WeaponData/DA_Smite"));
+	if (FoundSmiteData.Object != NULL)
+	{
+		SmiteWeaponData = FoundSmiteData.Object;
+	}
+}
+
+void ASkyAlterAttack::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASkyAlterAttack, ServerSkyAlterData);
 }
 
 // Called when the game starts or when spawned
 void ASkyAlterAttack::BeginPlay()
 {
 	Super::BeginPlay();
-	StaticMesh->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
-	BoxComponent1->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
-	BoxComponent2->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
-	BoxComponent3->OnComponentHit.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
+
+	if (HasAuthority())
+	{
+		AlterCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
+	}
 }
 
-void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent*
-	OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
 {
-	//if (!OtherActor->HasNetOwner())
-	//	return;
-	
 	if (!IsValid(OtherActor))
 		return;
+	
 	APrototype2Character* SomePlayer = Cast<APrototype2Character>(OtherActor);
 	if (!IsValid(SomePlayer))
 		return;
-
-	UE_LOG(LogTemp, Warning, TEXT("Attempted to offer something!"));
+	
 	if (!IsValid(SomePlayer->HeldItem))
 		return;
-	
-	if (auto Plant = Cast<APlant>(SomePlayer->HeldItem))
-	{
-		UKismetSystemLibrary::PrintString(GetWorld(), "Sacrificed something");
-		if (HasAuthority())
-		{
-			Multi_SacrificePoof();
-			OnSacrificed();
-		}
-		else
-		{
-			if (PoofSystem)
-			{
-				FVector PoofSpot = GetActorLocation();
-				PoofSpot.Z = PoofSpot.Z + 130.0f;
-				auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, PoofSpot, FRotator{});
-				SpawnedVFX->SetActorScale3D(FVector::One() * 3);
-				SpawnedVFX->SetLifeSpan(5.0f);
-			}
-			OnSacrificed();
-		}
-		// audio
-		SomePlayer->PlaySoundAtLocation(GetActorLocation(), SomePlayer->SacrificeCue, SomePlayer->AltarAttenuationSettings);
+
+	auto Plant = Cast<APlant>(SomePlayer->HeldItem);
+	if (!IsValid(Plant))
+		return;
 		
-		int32 StarValue = Plant->ServerData.SeedData->BabyStarValue;
-		StarValue = FMath::Clamp(StarValue, 1, 5);
-		Attack(SomePlayer, StarValue);
-		
-		// Destroy the crop the player is holding
-		SomePlayer->HeldItem->Destroy();
-		SomePlayer->HeldItem = nullptr;
-		if (IsValid(SomePlayer->PlayerHUDRef))
-		{
-			SomePlayer->PlayerHUDRef->ClearPickupUI();
-			SomePlayer->PlayerHUDRef->SetHUDInteractText("");
-		}
-		SomePlayer->RefreshCurrentMaxSpeed();
-	}
+	int32 StarValue = Plant->ServerData.SeedData->BabyStarValue;
+	StarValue = FMath::Clamp(StarValue, 1, 5);
+	Attack(SomePlayer, StarValue);
+
+	SomePlayer->HeldItem->Destroy();
+	SomePlayer->HeldItem = nullptr;
+	SomePlayer->OnRep_HeldItem();
+
+	FServerSkyAlterData NewSkyAlterData{};
+	NewSkyAlterData.TimeOfSacrifice = GetWorld()->GetTimeSeconds();
+	NewSkyAlterData.LastPlayerToSacrifice = SomePlayer->GetPlayerState<APrototype2PlayerState>();
+	ServerSkyAlterData = NewSkyAlterData;
+	OnRep_OnSacrifice();
 }
 
 void ASkyAlterAttack::Attack(APrototype2Character* _PlayerToNotSmite, int32 _StarValueOfPlant)
@@ -129,14 +154,29 @@ void ASkyAlterAttack::Attack(APrototype2Character* _PlayerToNotSmite, int32 _Sta
 	}
 }
 
-
-void ASkyAlterAttack::Server_SacrificePoof_Implementation()
+void ASkyAlterAttack::OnRep_OnSacrifice()
 {
-	Multi_SacrificePoof();
-}
+	auto LocalPlayerController = GetWorld()->GetFirstPlayerController();
+	if (IsValid(LocalPlayerController) == false)
+		return;
 
-void ASkyAlterAttack::Multi_SacrificePoof_Implementation()
-{
+	if (LocalPlayerController->IsLocalController() == false)
+		return;
+
+	if (GetWorld()->GetRealTimeSeconds() <= 5.0f)
+		return;
+
+	auto LocalPlayerState = LocalPlayerController->GetPlayerState<APrototype2PlayerState>();
+	if (IsValid(LocalPlayerState) == false)
+		return;
+
+		/* Friendly Alter Sound VFX */
+	if (LocalPlayerState->Details.Colour == ServerSkyAlterData.LastPlayerToSacrifice->Details.Colour)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SacrificeCue, GetActorLocation(),1, 1, 0, SacrificeAttenuation);
+	else /* Enemy Alter Sound VFX */
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySacrificeCue, GetActorLocation(),1, 1, 0, SacrificeAttenuation);
+	
+	// Poof VFX
 	if (PoofSystem)
 	{
 		FVector PoofSpot = GetActorLocation();
@@ -145,4 +185,7 @@ void ASkyAlterAttack::Multi_SacrificePoof_Implementation()
 		SpawnedVFX->SetActorScale3D(FVector::One() * 3);
 		SpawnedVFX->SetLifeSpan(5.0f);
 	}
+
+	// Alter Sacrifice VFX
+	AlterOffer_VFX->Activate(true);
 }

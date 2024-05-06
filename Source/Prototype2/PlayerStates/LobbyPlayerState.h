@@ -62,4 +62,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UTexture2D*> DuckTextures{{}, {}, {}, {}, {}, {}, {}, {}};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> BeeTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 };

@@ -24,3 +24,10 @@ void UPrototypeGameInstance::StartGameInstance()
 {
 	Super::StartGameInstance();
 }
+
+void UPrototypeGameInstance::ResetCachedPlayerDetails()
+{
+	FinalPlayerDetails.Empty();
+	FinalConnectionCount = 0;
+	MaxPlayersOnServer = 0;
+}

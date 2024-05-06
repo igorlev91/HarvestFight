@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Prototype2/Pickups/Plant.h"
+#include "Prototype2/Widgets/Widget_3DGrowUI.h"
 #include "Beehive.generated.h"
 
 class AGrowSpot;
@@ -21,8 +22,14 @@ public:
 	virtual void Interact(APrototype2Character* _Player) override;
 	virtual void ClientInteract(APrototype2Character* _Player) override;
 	virtual void OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, class APrototype2Character* _Owner, int _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 	void SetBeehiveLocation(FVector _Location);
+
+	UFUNCTION()
+	TArray<APlant*> GetCloseFlowers();
+
+	UFUNCTION()
+	TArray<FFlowerData> GetCloseFlowerDetails();
 
 	UFUNCTION(Server, reliable)
 	void Server_SetBeehiveLocation(FVector _Location);
@@ -59,6 +66,11 @@ public:
 	int MaxHarvestableHoney = 3;
 	UPROPERTY(Replicated, VisibleAnywhere)
 	int HarvestedHoney;
+
+	UPROPERTY(EditAnywhere)
+	float MinScale = 0.5f;
+	UPROPERTY(EditAnywhere)
+	float MaxScale = 1.0f;
 
 	// Bees
 	UPROPERTY(VisibleAnywhere)

@@ -64,6 +64,12 @@ void AFertiliserSpawner::Tick(float _DeltaTime)
 		if (IsValid(SomeGamestate))
 		{
 			GameStateRef = Cast<APrototype2Gamestate>(SomeGamestate);
+
+			FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
+			if (ExtraSettings.bConcreteFertiliser == false
+				&& ExtraSettings.bGoldFertiliser == false
+				&& HasAuthority())
+					Destroy();
 		}
 	}
 
@@ -113,12 +119,12 @@ void AFertiliserSpawner::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidge
 	SpawnedFertiliser->ItemComponent->Mesh->SetRenderCustomDepth(true);
 }
 
-EInteractMode AFertiliserSpawner::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode AFertiliserSpawner::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (bBagCountReachedMax)
 		return INVALID;
 	
-	if (SpawnTimer <= 0.0f)
+	if (SpawnTimer <= 0.0f && HasSpawnedFruit())
 	{
 		return INSTANT;
 	}
@@ -192,6 +198,18 @@ void AFertiliserSpawner::SpawnFertiliser()
 {
 	if (!FertiliserPrefab)
 		return;
+
+	TArray<USeedData*> RestrictedFertilizerDatas{};
+	FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
+	if (ExtraSettings.bGoldFertiliser && FertiliserDatas.Num() > 0)
+		RestrictedFertilizerDatas.Add(FertiliserDatas[0]);
+	if (ExtraSettings.bConcreteFertiliser && FertiliserDatas.Num() > 1)
+		RestrictedFertilizerDatas.Add(FertiliserDatas[1]);
+
+	if (RestrictedFertilizerDatas.Num() <= 0)
+	{
+		return;
+	}
 	
 	SpawnedFertiliser = GetWorld()->SpawnActor<AFertiliser>(FertiliserPrefab);
 	SpawnedFertiliser->SetReplicates(true);
@@ -200,30 +218,11 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->ItemComponent->Mesh->SetIsReplicated(false);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	//FertiliserServerData.SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
-
-	TArray<USeedData*> RestrictedFertilizerDatas{};
-	FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
-	if (ExtraSettings.bGoldFertiliser && FertiliserDatas.Num() > 0)
-		RestrictedFertilizerDatas.Add(FertiliserDatas[0]);
-	if (ExtraSettings.bConcreteFertiliser && FertiliserDatas.Num() > 1)
-		RestrictedFertilizerDatas.Add(FertiliserDatas[1]);
-	if (ExtraSettings.bPoisonFertiliser && FertiliserDatas.Num() > 2)
-		RestrictedFertilizerDatas.Add(FertiliserDatas[2]);
 	
-	if (RestrictedFertilizerDatas.Num() > 0)
-	{
-		int8 ChanceOfGold = rand() % 2;
-		if (ChanceOfGold == 0 && ExtraSettings.bGoldFertiliser)
-		{
-			USeedData* FertiliserData = RestrictedFertilizerDatas[0];
-			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
-		}
-		else
-		{
-			USeedData* FertiliserData = RestrictedFertilizerDatas[(rand() % (RestrictedFertilizerDatas.Num() - 1)) + 1];
-			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
-		}
-	}
+	int8 RandomFertiliser = rand() % RestrictedFertilizerDatas.Num();
+	USeedData* FertiliserData = RestrictedFertilizerDatas[RandomFertiliser];
+	SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+	
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
 }

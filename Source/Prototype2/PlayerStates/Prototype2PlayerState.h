@@ -52,15 +52,15 @@ public:
 	void Multi_GrabSkinFromGameInstance_Implementation(FCharacterDetails _Details);
 
 	UFUNCTION()
-	void Client_OnAddCoins();
+	void Client_OnAddCoins(int32 _Score);
 	
-	void Multi_OnAddCoins();
+	void Multi_OnAddCoins(int32 _Score);
 
 	bool IsLoosing();
 	bool IsWinning();
 
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemSold, int32, _PlayerID);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemSold, int32, _PlayerID, int32, _Score);
 	UPROPERTY(BlueprintAssignable)
 	FOnItemSold OnItemSoldDelegate;
 	
@@ -72,7 +72,7 @@ public:
 	UPROPERTY(Replicated, EditAnywhere)
 	int32 Coins{0};
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	FString PlayerName{};
 	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
@@ -107,4 +107,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UTexture2D*> DuckTextures{{}, {}, {}, {}, {}, {}, {}, {}};
+	
+	UPROPERTY(EditAnywhere)
+	TArray<UTexture2D*> BeeTextures{{}, {}, {}, {}, {}, {}, {}, {}};
 };

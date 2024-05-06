@@ -3,9 +3,10 @@
 #include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
-#include "Prototype2/Gameplay/Endgame/EndGameCamera.h"
+#include "Sound/SoundCue.h"
 
 AEndGamePodium::AEndGamePodium()
 {
@@ -39,12 +40,18 @@ AEndGamePodium::AEndGamePodium()
 	WinConfetteComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Win Confette"));
 	WinConfetteComponent->SetupAttachment(RootComponent);
 	WinConfetteComponent->bAutoActivate = false;
-	WinConfetteComponent->SetRelativeLocation({-200.0f, 0.0f, 120.0f});
+	WinConfetteComponent->SetRelativeLocation({0.0f, 300.0f, 300.0f});
 
+	SecondWinConfetteComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Second Win Confette"));
+	SecondWinConfetteComponent->SetupAttachment(RootComponent);
+	SecondWinConfetteComponent->bAutoActivate = false;
+	SecondWinConfetteComponent->SetRelativeLocation({0.0f, -300.0f, 300.0f});
+	
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> WinConfetteVFX(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_WinConfetti"));
 	if (WinConfetteVFX.Object != NULL)
 	{
 		WinConfetteComponent->SetAsset(WinConfetteVFX.Object);
+		SecondWinConfetteComponent->SetAsset(WinConfetteVFX.Object);
 	}
 }
 
@@ -127,6 +134,10 @@ void AEndGamePodium::PlayConfetteVFX()
 void AEndGamePodium::Multi_PlayConfetteVFX_Implementation()
 {
 	WinConfetteComponent->Activate(true);
+	SecondWinConfetteComponent->Activate(true);
+	
+	//if (ConfettiCue)
+	//	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ConfettiCue, GetActorLocation());
 }
 
 void AEndGamePodium::Server_PlayConfetteVFX_Implementation()

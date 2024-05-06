@@ -123,7 +123,6 @@ void ARadialPlot::SpawnGrowSpots(EColours _PlayerColour)
 				auto newPlot = GetWorld()->SpawnActor<AGrowSpot>(GrowSpotPrefab, RootComponent->GetComponentTransform());
 				newPlot->SetReplicates(true);
 				newPlot->SetOwner(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-				newPlot->RadialPlot = this;
 				newPlot->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 				newPlot->SetActorRelativeLocation({(static_cast<float>(i) + 0.8f) * PlotSpread, (static_cast<float>(j) - 1.0f) * PlotSpread, PlotZHeight});
 				newPlot->SetActorRotation(PlotSign->GetActorRotation());
@@ -165,9 +164,9 @@ void ARadialPlot::UpdateBeehiveFlowers()
 
 	for (int32 i = 0; i < GrowSpots.Num(); i++)
 	{
-		if (BeehiveVector.Num() > 0 && GrowSpots[i]->GrowingItemRef &&
-			(GrowSpots[i]->GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::FlowerData
-			|| GrowSpots[i]->GrowingItemRef->ServerData.SeedData->BabyType == EPickupDataType::PlantData))
+		if (BeehiveVector.Num() > 0 && GrowSpots[i]->ItemRef &&
+			(GrowSpots[i]->ItemRef->ServerData.SeedData->BabyType == EPickupDataType::FlowerData
+			|| GrowSpots[i]->ItemRef->ServerData.SeedData->BabyType == EPickupDataType::PlantData))
 		{
 			for (ABeehive* Behive : BeehiveVector)
 			{

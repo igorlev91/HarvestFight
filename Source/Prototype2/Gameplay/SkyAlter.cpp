@@ -43,7 +43,7 @@ void ASkyAlter::Tick(float DeltaTime)
 
 }
 
-EInteractMode ASkyAlter::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode ASkyAlter::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	return INVALID;
 }

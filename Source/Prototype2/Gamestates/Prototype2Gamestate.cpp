@@ -119,13 +119,19 @@ void APrototype2Gamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Gamestate, bCanTravel);
 
 	DOREPLIFETIME(APrototype2Gamestate, TheCrown);
+
+	DOREPLIFETIME(APrototype2Gamestate, WaitingForPlayersSeconds);
+	
 }
 
 void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 {
+	if (WaitingForPlayersSeconds >= 0)
+		WaitingForPlayersSeconds -= DeltaSeconds;
+	
 	if (HasAuthority() && !bGameHasStarted)
 	{
-		if (Server_Players.Num() >= FinalConnectionCount)
+		if (Server_Players.Num() >= FinalConnectionCount || WaitingForPlayersSeconds <= 0)
 		{
 			if (CountdownLengthSeconds > 0)
 			{

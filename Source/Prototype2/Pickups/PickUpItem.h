@@ -49,13 +49,16 @@ public:
 	/* Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void Client_Pickup();
+	virtual void Client_Pickup(class APrototype2Character* _Player);
 	
 	virtual void Client_Drop();
 	virtual void Server_Drop() {}
 
 	/* Called from SeedSpawner to give seed a specific data asset and setup material */
-	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType);
+	UFUNCTION()
+	void SetSeedData(class USeedData* _Data, EPickupActor _PickupType, bool _PreFertilised = false);
+	
+	class USeedData* GetSeedData();
 
 	UFUNCTION()
 	void OnRep_ServerData(FServerData& _Data);

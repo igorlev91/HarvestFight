@@ -78,7 +78,7 @@ void AAutoGrowSpot::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, AP
 	OnDisplayInteractText_Unprotected(_InvokingWidget, _Owner);
 }
 
-EInteractMode AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode AAutoGrowSpot::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	return IsInteractable_Unprotected(_Player);
 }

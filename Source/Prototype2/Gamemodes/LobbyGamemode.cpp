@@ -8,6 +8,7 @@
 #include "Prototype2/Characters/Prototype2Character.h"
 #include "Prototype2/DataAssets/ColourData.h"
 #include "Prototype2/DataAssets/RandomNameData.h"
+#include "Prototype2/DataAssets/TeamNames.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Gamestates/LobbyGamestate.h"
 
@@ -32,10 +33,6 @@ ALobbyGamemode::ALobbyGamemode()
 void ALobbyGamemode::BeginPlay()
 {
 	Super::BeginPlay();
-	if (auto GameInstance = GetGameInstance<UPrototypeGameInstance>())
-	{
-		GameInstance->ResetCachedPlayerDetails();
-	}
 }
 
 void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
@@ -60,16 +57,16 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 
 	GameStateReference->SetMaxPlayersOnServer(GameInstance->MaxPlayersOnServer);
 	
-	if /* Teams */ (bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
+	if /* Teams */ (GameInstance->bTeams || (GameStateReference->Server_Players.Num() <= 0 && GameInstance->bTeams))
 	{
 		if (GameStateReference->TeamsDetails.Server_TeamOne.Num() <= GameStateReference->TeamsDetails.Server_TeamTwo.Num())
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamOneColour, false);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamAColour);
 			GameStateReference->TeamsDetails.Server_TeamOne.Add(PlayerStateReference);
 		}
 		else
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameStateReference->TeamsDetails.TeamTwoColour, false);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GameInstance->FinalTeamBColour);
 			GameStateReference->TeamsDetails.Server_TeamTwo.Add(PlayerStateReference);
 		}
 		
@@ -84,7 +81,7 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 		}
 		else /* NEW PLAYER */
 		{
-			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference), false);
+			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference));
 		}
 	}
 
@@ -131,9 +128,6 @@ void ALobbyGamemode::Tick(float _DeltaSeconds)
 
 void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference)
 {
-	if (IsValid(RandomNameData))
-		AvailableNames = RandomNameData->RandomNames;
-	
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
 		if (!IsValid(_GameStateReference->Server_Players[i]))
@@ -153,20 +147,11 @@ void ALobbyGamemode::UpdateAllPlayerInfo(ALobbyGamestate* _GameStateReference, U
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
-			if (AvailableNames.Num() > 0)
-			{
-				SomePlayerName = AvailableNames[rand() % AvailableNames.Num()];
-				AvailableNames.Remove(SomePlayerName);
-			}
-			else
-			{
-				SomePlayerName = "Player " + FString::FromInt(i + 1);
-			}
-					
 			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{
 				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[_GameStateReference->Server_Players[i]->GetPlayerName()];
 			}
+			SomePlayerName = _GameStateReference->Server_Players[i]->Details.RandomizedName;
 		}
 		
 		_GameStateReference->Server_Players[i]->Player_ID = SomePlayerID;

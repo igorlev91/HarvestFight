@@ -114,7 +114,7 @@ public:
 	FCharacterDetails IdealDetails{};
 
 	UPROPERTY(EditAnywhere)
-	int32 NumberOfCharacters{4};
+	int32 NumberOfCharacters{5};
 
 	UPROPERTY(EditAnywhere)
 	UColourData* SkinColourData{nullptr};

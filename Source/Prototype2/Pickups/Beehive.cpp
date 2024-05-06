@@ -46,6 +46,13 @@ void ABeehive::Interact(APrototype2Character* _Player)
 	
 	Honey->SetSeedData(Honey->ServerData.SeedData, EPickupActor::PlantActor);
 	Honey->NumberOfNearbyFlowers = GetCloseFlowers().Num();
+	Honey->PlantScaleMultiplier = 0.4f + (static_cast<float>(Honey->NumberOfNearbyFlowers) / 10.0f);
+
+	if (Honey->PlantScaleMultiplier < MinScale)
+		Honey->PlantScaleMultiplier = MinScale;
+	if (Honey->PlantScaleMultiplier > MaxScale)
+		Honey->PlantScaleMultiplier = MaxScale;
+
 	Honey->Multi_ScalePlant();
 	Honey->Interact(_Player);
 

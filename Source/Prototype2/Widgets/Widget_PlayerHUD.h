@@ -23,6 +23,9 @@ public:
 	UPROPERTY()
 	class APrototype2Gamestate* GameStateReference{nullptr};
 
+	UPROPERTY()
+	class UPrototypeGameInstance* GameInstance{nullptr};
+
 	/* Toggle ingame menu on/off */
 	UFUNCTION(BlueprintCallable)
 	void EnableDisableMenu();
@@ -265,7 +268,7 @@ public:
 	/* Interaction image and text - eg "Grow" */
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget)) 
 	UTextBlock* InteractionText; 
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UImage* InteractionButtonImage;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UHorizontalBox* InteractionUI;
@@ -273,6 +276,10 @@ public:
 	UTexture2D* ETexture1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* ETexture2;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* EGamepadTexture1;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//UTexture2D* EGamepadTexture2;
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	bool bInteractionButtonShowing{false};
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
@@ -317,4 +324,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UTexture2D*> StarTextures{nullptr, nullptr, nullptr, nullptr, nullptr};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsGamepad = false;
 };

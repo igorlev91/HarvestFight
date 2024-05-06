@@ -63,6 +63,7 @@ void UWidget_GameOptions::NativePreConstruct()
 	UIOffscreenIndicatorSize_Control->OptionText->SetText(FText::FromString("Waypoint Indicator Size"));
 	PlayerNames_Control->OptionText->SetText(FText::FromString("Player Names"));
 	PlantValueFloatingUI_Control->OptionText->SetText(FText::FromString("Plant Floating Value Stars"));
+	SprintBar_Control->OptionText->SetText(FText::FromString("Central Sprint Bar"));
 	QuickTipTutorials_Control->OptionText->SetText(FText::FromString("Reset Quick Tips"));
 
 	/* Control (mouse/controller) */
@@ -243,6 +244,12 @@ void UWidget_GameOptions::NativeConstruct()
 		PlantValueFloatingUI_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnPlantValueFloatingUIControlButtonPressed);
 	}
 
+	if (SprintBar_Control)
+	{
+		SprintBar_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
+		SprintBar_Control->ButtonRight->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnSprintBarUIControlButtonPressed);
+	}
+
 	if (QuickTipTutorials_Control)
 	{
 		QuickTipTutorials_Control->ButtonLeft->OnPressed.AddDynamic(this, &UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed);
@@ -286,6 +293,7 @@ void UWidget_GameOptions::OnConfirmButtonPressed()
 	HHGameGameUserSettings->UIIndicatorSizeLarge = bTempUIIndicatorSizeLarge;
 	HHGameGameUserSettings->PlayerNames = bTempPlayerNames;
 	HHGameGameUserSettings->PlantValueFloatingUI = bPlantValueFloatingUI;
+	HHGameGameUserSettings->SprintBar = bSprintBarUI;
 	HHGameGameUserSettings->MouseSensitivityScale = TempMouseSensitivityScale;
 	HHGameGameUserSettings->CustomMouseCursor = TempCustomMouseCursor;
 	HHGameGameUserSettings->ControllerMenuSensitivityScale = TempControllerMenuSensitivityScale;
@@ -446,6 +454,7 @@ void UWidget_GameOptions::SetOptionsText()
 	SetUIOffscreenIndicatorSizeSettingText();
 	SetPlayerNamesSettingText();
 	SetPlantValueFloatingUISettingText();
+	SetSprintBarUISettingText();
 	SetQuickTipTutorialsSettingText();
 	SetMouseSensitivityScaleSettingText();
 	SetCustomMouseCursorSettingText();
@@ -489,6 +498,7 @@ void UWidget_GameOptions::LoadSettings()
 	bTempUIIndicatorSizeLarge = HHGameGameUserSettings->UIIndicatorSizeLarge;
 	bTempPlayerNames = HHGameGameUserSettings->PlayerNames;
 	bPlantValueFloatingUI = HHGameGameUserSettings->PlantValueFloatingUI;
+	bSprintBarUI = HHGameGameUserSettings->SprintBar;
 	bQuickTipTutorials = HHGameGameUserSettings->QuickTipTutorials;
 	TempMouseSensitivityScale = HHGameGameUserSettings->MouseSensitivityScale;
 	TempMasterGraphics = HHGameGameUserSettings->MasterGraphics;
@@ -1546,6 +1556,24 @@ void UWidget_GameOptions::SetPlantValueFloatingUISettingText()
 		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("On"));
 	else
 		PlantValueFloatingUI_Control->OptionValueText->SetText(FText::FromString("Off"));
+}
+
+void UWidget_GameOptions::OnSprintBarUIControlButtonPressed()
+{
+	if (bSprintBarUI == true)
+		bSprintBarUI = false;
+	else
+		bSprintBarUI = true;
+
+	SetSprintBarUISettingText();
+}
+
+void UWidget_GameOptions::SetSprintBarUISettingText()
+{
+	if (bSprintBarUI == true)
+		SprintBar_Control->OptionValueText->SetText(FText::FromString("On"));
+	else
+		SprintBar_Control->OptionValueText->SetText(FText::FromString("Off"));
 }
 
 void UWidget_GameOptions::OnQuickTipTutorialsControlButtonPressed()

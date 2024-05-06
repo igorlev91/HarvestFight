@@ -27,6 +27,10 @@ void AMovingPlatforms::BeginPlay()
 
 void AMovingPlatforms::Tick(float DeltaSeconds)
 {
+	// DISABLED MOVING PLATFORMS //
+	return;
+	// DISABLED MOVING PLATFORMS //
+	
 	if (!bDoMove && !bDoRotate && !bDoSineWave)
 		return;
 	
@@ -181,6 +185,9 @@ void AMovingPlatforms::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & 
 
 void AMovingPlatforms::OnRep_PlatformPosition()
 {
+	// DISABLED MOVING PLATFORMS //
+	return;
+	
 	// Update the client's interpolated position when ReplicatedPlatformPosition changes.
 	FVector NewLocation = GetActorLocation();
 	FQuat NewRotation = GetActorRotation().Quaternion();

@@ -43,6 +43,8 @@ void UWidget_PlayerNamesTeam2::NativeOnInitialized()
 	PlayerBackgrounds.Add(BackgroundT2_2);
 	PlayerBackgrounds.Add(BackgroundT2_3);
 	PlayerBackgrounds.Add(BackgroundT2_4);
+
+	
 }
 
 void UWidget_PlayerNamesTeam2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -119,6 +121,11 @@ void UWidget_PlayerNamesTeam2::NativeTick(const FGeometry& MyGeometry, float InD
 				case ECharacters::DUCK:
 					{
 						PlayerIconsTeam2[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::BEE:
+					{
+						PlayerIconsTeam2[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
 						break;
 					}
 				default:

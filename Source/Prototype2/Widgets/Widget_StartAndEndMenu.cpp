@@ -19,7 +19,7 @@ void UWidget_StartAndEndMenu::NativeOnInitialized()
 
 	/* Show text that other players are not ready yet */
 	TimerText->SetVisibility(ESlateVisibility::Visible);
-	TimerText->SetText(FText::FromString(FString("Waiting for other players")));
+	TimerText->SetText(FText::FromString(FString("Waiting for players")));
 
 	/* Stops players from moving until everyone is ready and in-game */
 	//if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))

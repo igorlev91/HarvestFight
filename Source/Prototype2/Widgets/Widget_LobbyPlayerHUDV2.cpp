@@ -37,7 +37,7 @@ void UWidget_LobbyPlayerHUDV2::NativePreConstruct()
 	UpdateGameModeText();
 	
 	/* Set game speed control */
-	GameLength_Control->OptionText->SetText(FText::FromString("Game Speed"));
+	GameLength_Control->OptionText->SetText(FText::FromString("Game Length"));
 	UpdateGameSpeedText();
 
 	/* Set stealing control */
@@ -266,6 +266,11 @@ void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InD
 				case ECharacters::DUCK:
 					{
 						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
+						break;
+					}
+				case ECharacters::BEE:
+					{
+						Icons[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
 						break;
 					}
 				default:

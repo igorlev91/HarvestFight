@@ -221,6 +221,16 @@ void USquashAndStretch::OnBoingFinish()
 {
 }
 
+void USquashAndStretch::SetBoingMagnitude(float _newMagnitude)
+{
+	BoingSquashMag = _newMagnitude;
+}
+
+void USquashAndStretch::SetAxis(FVector _Axis)
+{
+	SSAxis = _Axis;
+}
+
 void USquashAndStretch::Server_SetMeshToStretch_Implementation(UStaticMeshComponent* _StaticMesh)
 {
 	StaticMeshes.Empty();

@@ -12,141 +12,74 @@ ACrown::ACrown()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	
 	RootTransformComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootTransformComponent"));
-	RootComponent = RootTransformComponent;
-	RootTransformComponent->SetIsReplicated(true);
+	SetRootComponent(RootTransformComponent);
+	
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(RootComponent);
-	Mesh->SetIsReplicated(true);
-	BobTransformComponent = CreateDefaultSubobject<UBobTransformComponent>(TEXT("Bob Component"));
 }
 
 void ACrown::BeginPlay()
 {
 	Super::BeginPlay();
-	SetReplicateMovement(true);
+	
+	GameStateRef = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
 
-	Mesh->SetVisibility(false);
-
-	if (!HasAuthority())
-		return;
-
-	BobTransformComponent->SetEnabled(false);
+	if (AttachedPlayer == nullptr)
+		Mesh->SetVisibility(false);
 }
 
 void ACrown::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ACrown, Mesh);
-	DOREPLIFETIME(ACrown, RootTransformComponent);
+	DOREPLIFETIME(ACrown, AttachedPlayer);
 }
 
 void ACrown::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	SetActorRelativeRotation({-70.0f, -20.0f, 0.0f});
 	
 	if (!HasAuthority())
 		return;
 
-	SetActorRelativeLocation({6.000000,-3.000000,2.330000});
-	SetActorRelativeScale3D({0.1f, 0.1f, 0.1f});
-
-	if (!GameStateRef)
-		GameStateRef = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
-
-	if (UpdateDelayTimer <= 0)
-		AttachToCurrentWinner();
-	else
-		UpdateDelayTimer -= DeltaTime;
+	AttachToCurrentWinner();
 }
 
 void ACrown::AttachToCurrentWinner()
 {
-	if (!GameStateRef)
+	if (IsValid(GameStateRef) == false)
 		return;
-	
-	UpdateDelayTimer = UpdateDelay;
 
-	ACharacter* WinningPlayerCharacter{nullptr};
-	APrototype2PlayerState* WinningPlayer {nullptr};
-	
-	for(int i = 0; i < GameStateRef->PlayerArray.Num(); i++)
+	APrototype2Character* WinningPlayer = GameStateRef->GetWinningCharacter();
+	if (WinningPlayer != AttachedPlayer)
 	{
-		APlayerController* PlayerController = GameStateRef->PlayerArray[i].Get()->GetPlayerController();
-		if (!PlayerController)
-			continue;
+		AttachedPlayer = WinningPlayer;
 
-		ACharacter* Character = PlayerController->GetCharacter();
-		if (!Character)
-			continue;
-
-		//if (i == 0)
-		//{
-		//	WinningPlayerCharacter = Character;
-		//	WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]);
-		//	WinnerID = i;
-		//	continue;
-		//}
-		//else if (auto CastedPlayerState = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]))
-		//{
-		//	if (CastedPlayerState->Coins > WinningPlayer->Coins)
-		//	{
-		//		WinningPlayerCharacter = Character;
-		//		WinningPlayer = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i].Get());
-		//		WinnerID = i;
-		//	}
-		//}
-		
-		if (auto Player = Cast<APrototype2PlayerState>(GameStateRef->PlayerArray[i]))
+		if (IsValid(WinningPlayer))
 		{
-			if (Player->Coins > GameStateRef->GetWinningScore())
+			GameStateRef->SetPlayerWinner(WinningPlayer->GetPlayerID());
+			
+			APrototype2PlayerState* WinningPlayerState = WinningPlayer->GetPlayerState<APrototype2PlayerState>();
+			if (IsValid(WinningPlayerState))
 			{
-				WinningPlayerCharacter = Character;
-				WinningPlayer = Player;
-				GameStateRef->SetPlayerWinner(i);
-				GameStateRef->SetWinningScore(Player->Coins);
+				GameStateRef->SetWinningScore(WinningPlayerState->Coins);
 			}
 		}
-	}
-
-	if (WinningPlayer)
-	{
-		if (WinningPlayer->Coins <= 0)
-		{
-			Mesh->SetVisibility(false);
-		}
-		else if (!IsAttachedTo(WinningPlayerCharacter))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Attach Crown To Winning Player") );
-			Mesh->SetVisibility(true);
-			AttachToComponent(WinningPlayerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("Base-HumanHead"));
-			SetActorRelativeLocation({6.000000,-3.000000,2.330000});
-			SetActorRelativeScale3D({0.1f, 0.1f, 0.1f});
-
-			Server_OnWinnerTakesTheCrown(WinningPlayer->Player_ID);
-		}
-	}
-}
-
-void ACrown::Server_OnWinnerTakesTheCrown_Implementation(int32 _PlayerID)
-{
-	Multi_OnWinnerTakesTheCrown(_PlayerID);
-}
-
-void ACrown::Multi_OnWinnerTakesTheCrown_Implementation(int32 _PlayerID)
-{
-	OnWinnerTakesTheCrownDelegate.Broadcast(_PlayerID);
-}
-
-void ACrown::Multi_AttachToCurrentWinner_Implementation(USkeletalMeshComponent* _WinterMesh)
-{
 	
+		OnRep_AttachedPlayer();
+	}
 }
 
-UStaticMeshComponent* ACrown::GetMesh()
+void ACrown::OnRep_AttachedPlayer()
 {
-	return Mesh;
-}
+	if (IsValid(AttachedPlayer) == false)
+	{
+		Mesh->SetVisibility(false);
+		return;
+	}
 
+	Mesh->SetVisibility(true);
+	AttachToComponent(AttachedPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("S_Crown"));
+	OnWinnerTakesTheCrownDelegate.Broadcast(AttachedPlayer->GetPlayerID());
+}

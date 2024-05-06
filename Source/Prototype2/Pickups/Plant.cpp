@@ -65,7 +65,7 @@ void APlant::OnDisplayInteractText(class UWidget_PlayerHUD* _InvokingWidget, cla
 	}
 }
 
-EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode APlant::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (!_Player)
 		return INVALID;
@@ -167,7 +167,7 @@ void APlant::Server_Destroy_Implementation()
 
 void APlant::Multi_ScalePlant()
 {
-	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale);
+	ItemComponent->Mesh->SetWorldScale3D(ServerData.SeedData->BabyScale * PlantScaleMultiplier);
 }
 
 void APlant::Multi_OnDestroy_Implementation()

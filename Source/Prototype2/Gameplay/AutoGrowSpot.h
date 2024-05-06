@@ -16,7 +16,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& _OutLifetimeProps) const override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APrototype2Character* _Owner, int _PlayerID) override;
-	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player) override;
+	virtual EInteractMode IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode = INVALID) override;
 
 	UPROPERTY(EditAnywhere)
 	bool bWeaponOnly{false};

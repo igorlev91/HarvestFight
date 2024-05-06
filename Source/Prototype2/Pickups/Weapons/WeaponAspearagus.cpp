@@ -70,7 +70,8 @@ void UWeaponAspearagus::ExecuteAttack(float _AttackSphereRadius, APrototype2Char
 
 	UE_LOG(LogTemp, Warning, TEXT("Spawn Aspearagus Projectile"));
 	
-	Server_SpawnProjectile(_Player, _Player->GetTransform(), _AttackSphereRadius, _AttackChargeAmount);
+	//Server_SpawnProjectile(_Player, _Player->GetTransform(), _AttackSphereRadius, _AttackChargeAmount);
+	Server_SpawnProjectile(_Player, _Player->ProjectileSpawnPoint->GetComponentTransform(), _AttackSphereRadius, _AttackChargeAmount);
 	
 	// make UI pop out
 	//Client_BroadcastAttackToHUD(_Player);
@@ -115,8 +116,9 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 {
 	if (!_Player)
 		return;
-
+	
 	FTransform ProjectileTransform = _PlayerTransform;
+	
 	ProjectileTransform.SetScale3D(_Player->WeaponMesh->GetComponentScale());
 	AAspearagusProjectile* NewAspearagusProjectile = GetWorld()->SpawnActor<AAspearagusProjectile>(Prefab, ProjectileTransform);
 	if (NewAspearagusProjectile)
@@ -132,9 +134,9 @@ void UWeaponAspearagus::Server_SpawnProjectile_Implementation(APrototype2Charact
 				NewAspearagusProjectile->GoldMaterial = _Player->CurrentWeaponSeedData->BabyGoldMaterials[0];
 			}
 		}
-		if (IsValid(_Player) && IsValid(_Player->ProjectileSoundCue) && IsValid(_Player->ProjectileDestroyedCue))
+		if (IsValid(_Player) && IsValid(_Player->ProjectileSoundCue) && IsValid(_Player->WeaponDestroyedCue))
 		{
-			NewAspearagusProjectile->PlaySFX(_Player->ProjectileSoundCue, _Player->ProjectileDestroyedCue);
+			NewAspearagusProjectile->PlaySFX(_Player->ProjectileSoundCue, _Player->WeaponDestroyedCue);
 		}
 	}
 }

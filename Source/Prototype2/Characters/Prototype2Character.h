@@ -44,6 +44,15 @@ enum class EParticleSystems : uint8
 	END
 };
 
+USTRUCT()
+struct FExecuteAttackInfo
+{
+	GENERATED_BODY()
+	float AttackSphereRadius = 0.0f;
+	float AttackChargeAmount = 0.0f;
+	bool bIsSprinting = false;
+};
+
 UCLASS(config=Game)
 class APrototype2Character : public ACharacter
 {
@@ -377,6 +386,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PickupItem(APickUpItem* _Item, EPickupActor _PickupType);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetBazookaPickup(bool _bIsHoldingBazooka);
+	
 	/* Interact radius for checking closest item */
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	float InteractRadius = 150.0f;
@@ -471,10 +483,11 @@ public:
 	
 	/* Execute Attack */
 	void ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
-	
-	/* RPC for executing attack*/
-	UFUNCTION(Server, Reliable)
-	void Server_ExecuteAttack(float _AttackSphereRadius, float _AttackChargeAmount, bool _bSprinting);
+
+	UFUNCTION()
+	void DelayedExecuteAttack();
+	UPROPERTY()
+	FExecuteAttackInfo ExecuteAttackInfo;
 	
 	UFUNCTION(Client, Reliable)
 	void Client_BroadcastOvercharge();
@@ -491,6 +504,7 @@ public:
 	void Server_SetAOEIndicatorVisibility(bool _bIsVisible);
 
 	/* Throw Item functionality */
+	UFUNCTION()
 	void ThrowItem();
 	UFUNCTION(Server, Reliable)
 	void Server_ThrowItem(FVector _ForwardVector, float _PlayerSpeed);
@@ -503,7 +517,6 @@ public:
 	
 	UFUNCTION(Server, Reliable)
 	void Server_ApplyHoneyGoopSlow();
-	
 	UPROPERTY()
 	bool bShouldWeaponFlashRed;
 	UPROPERTY()
@@ -558,7 +571,20 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* WeaponMesh;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	class UStaticMesh* BazookaMesh;
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	UMaterialInstance* BazookaGoldMaterial;
+	UPROPERTY(EditDefaultsOnly, Category="Bazooka")
+	UMaterialInstance* BazookaNormalMaterial;
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Bazooka")
+	bool bIsHoldingBazooka;
 
+	UPROPERTY(EditDefaultsOnly)
+	USceneComponent* ProjectileSpawnPoint;
+	
 protected:
 	/* Invincible timer - how long the player can't be hit after being hit*/
 	UPROPERTY(Replicated, EditDefaultsOnly)
@@ -607,6 +633,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_RefreshCurrentMaxSpeed();
+
+	UFUNCTION()
+	void HandleNotSprinting(float _DeltaSeconds);
 	
 	/* Sprint */
 	UPROPERTY(VisibleAnywhere)
@@ -641,7 +670,7 @@ protected:
 	float SprintTime = 2.0f;
 	/* Timer for handling sprint */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float SprintTimer{};
+	float SprintTimer = 2.0f;
 
 	/* Delay before sprint regens*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
@@ -651,17 +680,9 @@ protected:
 	
 	/* Allows telling the player HUD one time that sprint is ready*/
 	UPROPERTY()
-	bool bHasNotifiedCanSprint = false;
+	bool bHasNotifiedCanSprint = true;
 	UPROPERTY()
 	bool bCanSprint = true;
-	
-	///* Rate scales for adjusting animation speed */
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float WalkRateScale = 1.5f;
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float GoldSlowRateScale = 0.7f;
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess), Category = RateScale)
-	//float SprintRateScaleScalar = 1.5f;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///														Delegates												 ///

@@ -40,15 +40,39 @@ void AHHGamemodeBase::UpdateSessionJoinability(int32 _MaxPlayers)
 	}
 }
 
-FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour)
+FCharacterDetails AHHGamemodeBase::CreateDetailsFromColourEnum(EColours _Colour, bool _RandomCharacter)
 {
 	FCharacterDetails IdealDetails{};
-	UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
-	if (IsValid(SomeGameInstance)
-		&& SomeGameInstance->PlayerModels.Num() > 0)
+
+	if (AvailableNames.Num() > 0)
 	{
-		IdealDetails.AnimationData = SomeGameInstance->PlayerModels[rand() % SomeGameInstance->PlayerModels.Num()];
+		IdealDetails.RandomizedName = AvailableNames[rand() % AvailableNames.Num()];
+		AvailableNames.Remove(IdealDetails.RandomizedName);
 	}
+	else if (IsValid(RandomNameData))
+	{
+		AvailableNames = RandomNameData->RandomNames;
+		if (AvailableNames.Num() > 0)
+		{
+			IdealDetails.RandomizedName = AvailableNames[rand() % AvailableNames.Num()];
+			AvailableNames.Remove(IdealDetails.RandomizedName);
+		}
+	}
+	
+	if (UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance()))
+	{
+		if (_RandomCharacter)
+		{
+			auto RandomCharacter = rand() % (SomeGameInstance->PlayerModels.Num());
+			IdealDetails.AnimationData = SomeGameInstance->PlayerModels[RandomCharacter];
+			IdealDetails.Character = (ECharacters)RandomCharacter;
+		}
+		else
+		{
+			IdealDetails.AnimationData = SomeGameInstance->PlayerModels[0];
+		}
+	}
+	
 	IdealDetails.Colour = _Colour;
 	IdealDetails.PureToneColour = SkinColourData->PureColours[(int16) IdealDetails.Colour];
 
@@ -137,7 +161,7 @@ EColours AHHGamemodeBase::GetFirstFreeColor(APlayerState* InPlayerState)
 		}
 
 		if (AvailableColours.Num() > 0)
-			return AvailableColours[0];
+			return AvailableColours[rand() % AvailableColours.Num()];
 	}
 
 	APrototype2Gamestate* NormalGamestate = GetGameState<APrototype2Gamestate>();
@@ -162,7 +186,7 @@ EColours AHHGamemodeBase::GetFirstFreeColor(APlayerState* InPlayerState)
 		}
 
 		if (AvailableColours.Num() > 0)
-			return AvailableColours[0];
+			return AvailableColours[rand() % AvailableColours.Num()];
 	}
 
 	return EColours::WHITE;

@@ -90,8 +90,8 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 	//bIsShowingExtraCoins = true;
 	Coins += _amount;
 	ExtraCoins = _amount;
-	Client_OnAddCoins();
-	Multi_OnAddCoins();
+	Client_OnAddCoins(_amount);
+	Multi_OnAddCoins(_amount);
 
 	APrototype2Gamestate* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
 	if (IsValid(GameState))
@@ -108,8 +108,8 @@ void APrototype2PlayerState::AddCoins(APlant* _SomePlant)
 	int32 IncreaseAmount = _SomePlant->ItemComponent->bGold ? PlantSellValue * _SomePlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	Coins += IncreaseAmount;
 	ExtraCoins = IncreaseAmount;
-	Client_OnAddCoins();
-	Multi_OnAddCoins();
+	Client_OnAddCoins(IncreaseAmount);
+	Multi_OnAddCoins(IncreaseAmount);
 
 	APrototype2Gamestate* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
 	if (IsValid(GameState))
@@ -142,14 +142,14 @@ void APrototype2PlayerState::Multi_GrabSkinFromGameInstance_Implementation(FChar
 	//UE_LOG(LogTemp, Warning, TEXT("Multi - GameInstance Character Colour: %s"), *FString::FromInt((int32)_Colour));
 }
 
-void APrototype2PlayerState::Client_OnAddCoins()
+void APrototype2PlayerState::Client_OnAddCoins(int32 _Score)
 {
-	OnItemSoldDelegate.Broadcast(Player_ID);
+	OnItemSoldDelegate.Broadcast(Player_ID, _Score);
 }
 
-void APrototype2PlayerState::Multi_OnAddCoins()
+void APrototype2PlayerState::Multi_OnAddCoins(int32 _Score)
 {
-	OnItemSoldDelegate.Broadcast(Player_ID);
+	OnItemSoldDelegate.Broadcast(Player_ID, _Score);
 }
 
 bool APrototype2PlayerState::IsLoosing()

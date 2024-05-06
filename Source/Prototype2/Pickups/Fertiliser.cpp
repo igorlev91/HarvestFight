@@ -1,5 +1,6 @@
 
 
+
 #include "Fertiliser.h"
 
 #include "Net/UnrealNetwork.h"
@@ -80,7 +81,7 @@ void AFertiliser::OnDisplayInteractText(UWidget_PlayerHUD* _InvokingWidget, APro
 	}
 }
 
-EInteractMode AFertiliser::IsInteractable(APrototype2PlayerState* _Player)
+EInteractMode AFertiliser::IsInteractable(APrototype2PlayerState* _Player, EInteractMode _ForcedMode)
 {
 	if (!_Player)
 		return INVALID;

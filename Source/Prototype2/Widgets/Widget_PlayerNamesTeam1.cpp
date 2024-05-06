@@ -122,6 +122,11 @@ void UWidget_PlayerNamesTeam1::NativeTick(const FGeometry& MyGeometry, float InD
 						PlayerIconsTeam1[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
 						break;
 					}
+				case ECharacters::BEE:
+					{
+						PlayerIconsTeam1[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
+						break;
+					}
 				default:
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_PlayerNames: Unable to determine character type"));

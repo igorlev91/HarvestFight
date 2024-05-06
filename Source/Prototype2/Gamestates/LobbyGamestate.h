@@ -72,9 +72,6 @@ public:
 
 	bool HasMapBeenChosen() const;
 	int32 GetMapChoiceTotalLengthSeconds() const;
-
-	UFUNCTION()
-	void OnRep_TeamsDetails();
 	
 public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
@@ -85,6 +82,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bInitializedOnRepTeams{};
+
+	UFUNCTION()
+	void OnRep_TeamsDetails();
 
 	UPROPERTY(ReplicatedUsing=OnRep_TeamsDetails, VisibleAnywhere)
 	FTeamsDetails TeamsDetails{};
@@ -166,11 +166,13 @@ private:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bHasAllPlayersVoted{};
 
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
+	UFUNCTION()
+	void OnRep_CanTravel();
+	UPROPERTY(ReplicatedUsing=OnRep_CanTravel, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
 	bool bCanTravel{false};
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess))
-	float MapTravelTimer{2.0f};
+	float MapTravelTimer{3.0f};
 
 	/* Maps */
 

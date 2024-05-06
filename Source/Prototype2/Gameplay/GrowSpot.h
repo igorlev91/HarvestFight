@@ -104,6 +104,9 @@ public:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_ItemRef, VisibleAnywhere)
 	APickUpItem* ItemRef{};
+
+	UPROPERTY(VisibleAnywhere)
+	class APickUpItem* LastItemRef{nullptr};
 	
 	UPROPERTY(Replicated, EditAnywhere)
 	EColours OwningPlayerColor{};
@@ -165,6 +168,8 @@ protected:
 	//
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* PlantReadyComponent;
+	UPROPERTY(EditAnywhere, Category = VFX)
+	class UNiagaraSystem* PlantReadySystem{nullptr};
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	class TSubclassOf<AActor> PoofSystem;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)

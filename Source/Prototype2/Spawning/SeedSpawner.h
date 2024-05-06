@@ -90,6 +90,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	bool bUseBagSystem = false;
 	UPROPERTY(EditAnywhere)
+	bool bUseWeightedSystem = false;
+	UPROPERTY(EditAnywhere)
 	TArray<int32> NumberOfSeedsPerStarValue;
 	UPROPERTY(VisibleAnywhere)
 	int32 BagPositionTracker;

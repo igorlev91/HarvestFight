@@ -76,6 +76,11 @@ void UWidget_LobbyCharacterSelection::UpdateCharacterImage()
 			PlayerImage->SetBrushFromTexture(OwningPlayerstate->PigTextures[(uint8)OwningPlayerColor]);
 			break;
 		}
+	case ECharacters::BEE:
+		{
+			PlayerImage->SetBrushFromTexture(OwningPlayerstate->BeeTextures[(uint8)OwningPlayerColor]);
+			break;
+		}
 	default:
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Error: Widget_LobbyCharacterSelection: Unable to determine character type"));
@@ -253,6 +258,8 @@ void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, fl
 
 	UpdateButtonVisibility();
 	UpdateWidgetSwitchers();
+
+	UpdateCharacterImage();
 	
 	auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
 	if (IsValid(OwningPlayerState) == false)
@@ -262,7 +269,6 @@ void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, fl
 		|| OwningPlayerState->Details.Colour != IdealDetails.Colour)
 	{
 		IdealDetails = OwningPlayerState->Details;
-		UpdateCharacterImage();
 	}
 }
 

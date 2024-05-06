@@ -38,6 +38,9 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	{
 		GameStateReference = GameState;
 	}
+
+	GameInstance = GetGameInstance<UPrototypeGameInstance>();
+	
 	
 	/* Add rings to array */
 	Rings.Add(P1Ring);
@@ -94,7 +97,7 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 	interactionButtonTimer = interactionButtonMaxTime;
 
 	/* Non team UI */
-	if (GameStateReference->bTeams == false)
+	if (GameInstance->bTeams == false)
 	{
 		SetFreeForAllScoreUI();
 	}
@@ -113,6 +116,9 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 
 	// NEW STARS ON PICKUP UI
 	O_Stars->SetVisibility(ESlateVisibility::Hidden);
+
+	FNavigationConfig& NavigationConfig = *FSlateApplication::Get().GetNavigationConfig();
+	NavigationConfig.bTabNavigation = false;
 }
 
 void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -505,6 +511,7 @@ void UWidget_PlayerHUD::InteractionImagePulse(float _DeltaTime)
 			{
 				bShowETexture1 = true;
 				InteractionButtonImage->SetBrushFromTexture(ETexture2);
+				
 			}
 
 			interactionButtonTimer = interactionButtonMaxTime;
@@ -592,6 +599,11 @@ void UWidget_PlayerHUD::UpdatePlayerIcons()
 						Icons[i]->SetBrushFromTexture(Player->DuckTextures[(int32)Player->Details.Colour]);
 						break;
 					}
+				case ECharacters::BEE:
+					{
+						Icons[i]->SetBrushFromTexture(Player->BeeTextures[(int32)Player->Details.Colour]);
+						break;
+					}
 				default:
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Error: Widget_PlayerHUD: Unable to determine character type"));
@@ -660,7 +672,7 @@ void UWidget_PlayerHUD::UpdateMapChoiceTimer(UWidget_MapChoice* _MapChoiceWidget
 void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 {
 	/* Set number of UI shown on screen */
-		if (GameStateReference->GetFinalConnectionCount() <= 4)
+		if (GameInstance->FinalConnectionCount <= 4)
 		{
 			// Probably dont need to set visibility at start, but just in case
 			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
@@ -668,20 +680,20 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 			OverlayPlayer3->SetVisibility(ESlateVisibility::Visible);
 			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
 				
-			if (GameStateReference->GetFinalConnectionCount() <= 3)
+			if (GameInstance->FinalConnectionCount <= 3)
 			{
 				OverlayPlayer4->SetVisibility(ESlateVisibility::Hidden);
 
-				if (GameStateReference->GetFinalConnectionCount() <= 2)
+				if (GameInstance->FinalConnectionCount <= 2)
 				{
 					OverlayPlayer3->SetVisibility(ESlateVisibility::Hidden);
 						
-					if (GameStateReference->GetFinalConnectionCount() == 2)
+					if (GameInstance->FinalConnectionCount == 2)
 					{
 						OverlayPlayer2->SetVisibility(ESlateVisibility::Visible);
 
 					}
-					else if (GameStateReference->GetFinalConnectionCount() == 1)
+					else if (GameInstance->FinalConnectionCount == 1)
 					{
 						OverlayPlayer2->SetVisibility(ESlateVisibility::Hidden);
 					}
@@ -694,7 +706,7 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 		}
 
 		// Set positions of slots for 1 - 4 players
-		if (GameStateReference->GetFinalConnectionCount() == 4 || GameStateReference->GetFinalConnectionCount() == 3)
+		if (GameInstance->FinalConnectionCount == 4 || GameInstance->FinalConnectionCount == 3)
 		{
 			UOverlaySlot* OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[0]); // Change position of player 1
 			OverlaySlot->SetPadding(FMargin(0,0,650,0));
@@ -710,7 +722,7 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 		}
 		
 		/* Change UI positions if more than 4 players*/
-		if (GameStateReference->GetFinalConnectionCount() > 4)
+		if (GameInstance->FinalConnectionCount > 4)
 		{
 			/* Turn all UI icons on (make visible */
 			OverlayPlayer1->SetVisibility(ESlateVisibility::Visible);
@@ -719,7 +731,7 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 			OverlayPlayer4->SetVisibility(ESlateVisibility::Visible);
 			OverlayPlayer5->SetVisibility(ESlateVisibility::Visible);
 			
-			if (GameStateReference->GetFinalConnectionCount() > 4)
+			if (GameInstance->FinalConnectionCount > 4)
 				OverlayPlayer6->SetVisibility(ESlateVisibility::Visible);
 
 			/* Set positions of overlay UI (images and scores) for 4+ players
@@ -729,7 +741,7 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 			OverlaySlot->SetPadding(FMargin(0,0,780,0));
 			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[1]); // Player 2 UI
 			OverlaySlot->SetPadding(FMargin(0,0,510,0));
-			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[3]); // Player 3 UI
+			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[2]); // Player 3 UI
 			OverlaySlot->SetPadding(FMargin(0,0,230,0));
 			OverlaySlot = CastChecked<UOverlaySlot>(TopOverlayUI->GetSlots()[4]); // Player 4 UI
 			OverlaySlot->SetPadding(FMargin(230,0,0,0));
@@ -749,7 +761,8 @@ void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 		// Has valid data and is NOT a weapon and NOT fertiliser
 		if (IsValid(SomePickupItem->ServerData.SeedData)
 			&& SomePickupItem->ServerData.SeedData->WeaponData == nullptr
-			&& SomePickupItem->ServerData.SeedData->FertiliserData == nullptr)
+			&& SomePickupItem->ServerData.SeedData->FertiliserData == nullptr
+			&& SomePickupItem->ServerData.SeedData->BabyType != EPickupDataType::BeehiveData)
 		{
 			O_Stars->SetVisibility(ESlateVisibility::Visible);
 			
@@ -766,7 +779,8 @@ void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
 			// Growspots Vegetable has valid data and is NOT a weapon and NOT fertiliser
 			if (IsValid(SomeGrowspot->ItemRef->ServerData.SeedData)
 				&& SomeGrowspot->ItemRef->ServerData.SeedData->WeaponData == nullptr
-				&& SomeGrowspot->ItemRef->ServerData.SeedData->FertiliserData == nullptr)
+				&& SomeGrowspot->ItemRef->ServerData.SeedData->FertiliserData == nullptr
+				&& SomeGrowspot->ItemRef->ServerData.SeedData->BabyType != EPickupDataType::BeehiveData)
 			{
 				O_Stars->SetVisibility(ESlateVisibility::Visible);
 				

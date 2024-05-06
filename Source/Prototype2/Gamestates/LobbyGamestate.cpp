@@ -25,12 +25,41 @@ ALobbyGamestate::ALobbyGamestate()
 }
 
 
+void ALobbyGamestate::OnRep_TeamsDetails()
+{
+	/*if (!bTeams)
+		return;
+	
+	ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (IsValid(MyCharacter))
+	{
+		ALobbyCharacter* MyCastedCharacter = Cast<ALobbyCharacter>(MyCharacter);
+		if (IsValid(MyCastedCharacter))
+		{
+			if (IsValid(MyCastedCharacter->HUD))
+			{
+				if (TeamsDetails.Server_TeamOne.Contains(MyCastedCharacter->GetPlayerState<ALobbyPlayerState>()))
+				{
+					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(true);
+				}
+				else
+				{
+					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(false);
+				}
+			}
+		}
+	}*/
+}
+
 void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
 	if (HasAuthority())
 	{
+		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
+		GameInstance->ResetCachedPlayerDetails();
+		
 		FTeamsDetails NewTeamDetails{};
 		
 		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
@@ -51,6 +80,9 @@ void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 		NewTeamDetails.TeamTwoName = TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names[rand() % TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names.Num()];
 
 		TeamsDetails = NewTeamDetails;
+
+		GameInstance->FinalTeamAColour = NewTeamDetails.TeamOneColour;
+		GameInstance->FinalTeamBColour = NewTeamDetails.TeamTwoColour;
 	}
 }
 
@@ -161,33 +193,6 @@ bool ALobbyGamestate::HasMapBeenChosen() const
 int32 ALobbyGamestate::GetMapChoiceTotalLengthSeconds() const
 {
 	return MapChoiceTotalLengthSeconds;
-}
-
-
-void ALobbyGamestate::OnRep_TeamsDetails()
-{
-	if (!bTeams)
-		return;
-	
-	ACharacter* MyCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-	if (IsValid(MyCharacter))
-	{
-		ALobbyCharacter* MyCastedCharacter = Cast<ALobbyCharacter>(MyCharacter);
-		if (IsValid(MyCastedCharacter))
-		{
-			if (IsValid(MyCastedCharacter->HUD))
-			{
-				if (TeamsDetails.Server_TeamOne.Contains(MyCastedCharacter->GetPlayerState<ALobbyPlayerState>()))
-				{
-					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(true);
-				}
-				else
-				{
-					MyCastedCharacter->HUD->HUDWidget->WBP_LobbyCharacterSelection->OnRep_TeamsDetails(false);
-				}
-			}
-		}
-	}
 }
 
 void ALobbyGamestate::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

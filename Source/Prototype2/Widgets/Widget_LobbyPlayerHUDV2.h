@@ -63,15 +63,15 @@ public:
 	ALobbyGamestate* GameStateReference;
 	
 	/* Classic Mode Map Choice Widget */
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoice;
 	
 	/* Brawl Mode Map Choice Widget*/
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoiceBrawl;
 
 	/* Blitz Mode Map Choice Widget*/
-	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(BindWidget))
 	UWidget_MapChoice* WBP_MapChoiceBlitz;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(BindWidget))

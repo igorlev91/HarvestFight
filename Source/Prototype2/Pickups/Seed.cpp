@@ -56,7 +56,7 @@ void ASeed::Tick(float _DeltaSeconds)
 
 void ASeed::Destroyed()
 {
-	if (DestroyVFX)
+	if (DestroyVFX && bShouldWilt)
 	{
 		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
 		SpawnedVFX->SetLifeSpan(5.0f);

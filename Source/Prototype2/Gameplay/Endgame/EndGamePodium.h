@@ -47,8 +47,14 @@ protected:
 
 protected:
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = VFX)
 	class UNiagaraComponent* WinConfetteComponent;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = VFX)
+	class UNiagaraComponent* SecondWinConfetteComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	class USoundCue* ConfettiCue;
 	
 	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess))
 	//TSubclassOf<class AEndGameCamera> EndGameCameraPrefab;

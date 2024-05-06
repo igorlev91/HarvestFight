@@ -36,4 +36,15 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	FVector RespawnLocation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsClassicMode = false;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* BaseRootComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UArrowComponent* ClassicRespawnLocation1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* ClassicRespawnLocation2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* ClassicRespawnLocation3;
 };

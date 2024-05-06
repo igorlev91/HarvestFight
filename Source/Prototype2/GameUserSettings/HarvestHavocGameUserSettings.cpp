@@ -17,7 +17,12 @@ UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitia
 	UIIndicatorSizeLarge = false;
 	PlayerNames = true;
 	PlantValueFloatingUI = true;
+	SprintBar = true;
 	QuickTipTutorials = true;
+	QuickTipLobbyTutorials = 0;
+	QuickTipClassicTutorials = 0;
+	QuickTipBrawlTutorials = 0;
+	QuickTipBlitzTutorials = 0;
 	MouseSensitivityScale = 5;
 	CustomMouseCursor = true;
 	ControllerMenuSensitivityScale = 5;
@@ -76,3 +81,27 @@ void UHarvestHavocGameUserSettings::SetUIIndicatorSizeLarge(bool _bLargeSize)
 {
 	UIIndicatorSizeLarge = _bLargeSize;
 }
+
+void UHarvestHavocGameUserSettings::SetQuickTipLobbyTutorials(int32 _QuickTipLobbyTutorials)
+{
+	QuickTipLobbyTutorials = _QuickTipLobbyTutorials;
+}
+
+void UHarvestHavocGameUserSettings::SetQuickTipClassicTutorials(int32 _QuickTipClassicTutorials)
+{
+	QuickTipClassicTutorials = _QuickTipClassicTutorials;
+}
+
+void UHarvestHavocGameUserSettings::SetQuickTipBrawlTutorials(int32 _QuickTipBrawlTutorials)
+{
+	QuickTipBrawlTutorials = _QuickTipBrawlTutorials;
+}
+
+void UHarvestHavocGameUserSettings::SetQuickTipBlitzTutorials(int32 _QuickTipBlitzTutorials)
+{
+	QuickTipBlitzTutorials = _QuickTipBlitzTutorials;
+}
+
+
+
+

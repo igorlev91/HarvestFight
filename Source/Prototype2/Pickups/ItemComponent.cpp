@@ -34,8 +34,9 @@ void UItemComponent::TickComponent(float _DeltaTime, ELevelTick _TickType, FActo
 
 void UItemComponent::Interact(APrototype2Character* _Player, APickUpItem* _ItemPickedUp)
 {
-	_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->ServerData.PickupActor);
-	_Player->HeldItem = _ItemPickedUp;
+	_Player->PickupItemV2(_ItemPickedUp);
+	//_Player->PickupItem(_ItemPickedUp, _ItemPickedUp->ServerData.PickupActor);
+	//_Player->HeldItem = _ItemPickedUp;
 }
 
 void UItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -77,6 +78,9 @@ void UItemComponent::OnRep_bGold()
 		auto CastedOwner = Cast<APickUpItem>(MyOwner);
 		if (!IsValid(CastedOwner))
 			return;
+
+		CastedOwner->GoldChanged();
+		
 		if (!IsValid(CastedOwner->ServerData.SeedData))
 			return;
 		
@@ -97,6 +101,9 @@ void UItemComponent::OnRep_bGold()
 		auto CastedOwner = Cast<APickUpItem>(MyOwner);
 		if (!IsValid(CastedOwner))
 			return;
+
+		CastedOwner->GoldChanged();
+		
 		if (!IsValid(CastedOwner->ServerData.SeedData))
 			return;
 		

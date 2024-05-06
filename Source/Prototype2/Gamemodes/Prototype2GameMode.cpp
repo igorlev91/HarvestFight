@@ -173,7 +173,7 @@ void APrototype2GameMode::PostLogin(APlayerController* _NewPlayer)
 		if /* JOINING FROM LOBBY */ (GameInstance->FinalPlayerDetails.Contains(PlayerStateReference->GetPlayerName()))
 		{
 		}
-		else /* JOINING FROM LOBBY */
+		else /* JOINING MID-GAME */
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s Joined (MID-GAME)"), *PlayerStateReference->GetPlayerName());
 			PlayerStateReference->Details = CreateDetailsFromColourEnum(GetFirstFreeColor(PlayerStateReference));
@@ -272,31 +272,14 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 		}
 	}
 	
-	if (DataAssetWorldOverride->WorldOverrideData && !KingCrown)
+	if (DataAssetWorldOverride->WorldOverrideData && !KingCrown && !bTeams)
 	{
 		if (DataAssetWorldOverride->WorldOverrideData->KingCrown)
 			KingCrown = GetWorld()->SpawnActor<ACrown>(DataAssetWorldOverride->WorldOverrideData->KingCrown);
 		else
 			KingCrown = GetWorld()->SpawnActor<ACrown>(ACrown::StaticClass());
-	}
 
-	if (KingCrown)
-	{
-		if (AutomaticCrownCheckTimer <= 0)
-		{
-			AutomaticCrownCheckTimer = AutomaticCrownCheckFrequency;
-		
-		}
-		else
-		{
-			AutomaticCrownCheckTimer -= _DeltaSeconds;
-		}
-
-		if (bTeams)
-		{
-			KingCrown->Destroy();
-			KingCrown = nullptr;
-		}
+		GameStateRef->TheCrown = KingCrown;
 	}
 }
 
@@ -395,9 +378,6 @@ void APrototype2GameMode::UpdatePlayerInfo(APrototype2Gamestate* _GameStateRefer
 
 void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateReference, UPrototypeGameInstance* _gameInstanceReference)
 {
-	if (IsValid(RandomNameData))
-		AvailableNames = RandomNameData->RandomNames;
-	
 	for(int32 i = 0; i < _GameStateReference->Server_Players.Num(); i++)
 	{
 		if (!IsValid(_GameStateReference->Server_Players[i]))
@@ -417,20 +397,11 @@ void APrototype2GameMode::UpdateAllPlayerInfo(APrototype2Gamestate* _GameStateRe
 		}
 		else if (auto NullSubsystem = IOnlineSubsystem::Get())
 		{
-			if (AvailableNames.Num() > 0)
-			{
-				SomePlayerName = AvailableNames[rand() % AvailableNames.Num()];
-				AvailableNames.Remove(SomePlayerName);
-			}
-			else
-			{
-				SomePlayerName = "Player " + FString::FromInt(i + 1);
-			}
-					
 			if (_gameInstanceReference->FinalPlayerDetails.Contains(_GameStateReference->Server_Players[i]->GetPlayerName()))
 			{
 				_GameStateReference->Server_Players[i]->Details = _gameInstanceReference->FinalPlayerDetails[_GameStateReference->Server_Players[i]->GetPlayerName()];
 			}
+			SomePlayerName = _GameStateReference->Server_Players[i]->Details.RandomizedName;
 		}
 		
 		_GameStateReference->Server_Players[i]->Player_ID = SomePlayerID;

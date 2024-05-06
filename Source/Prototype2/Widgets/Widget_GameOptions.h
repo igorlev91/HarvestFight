@@ -368,6 +368,17 @@ public:
 	UFUNCTION()
 	void SetPlantValueFloatingUISettingText();
 
+	// Plant value floating UI control
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
+	UWidget_OptionSelector* SprintBar_Control;
+
+	bool bSprintBarUI;
+
+	UFUNCTION()
+	void OnSprintBarUIControlButtonPressed();
+	UFUNCTION()
+	void SetSprintBarUISettingText();
+
 	// First time tutorials
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BindWidget))
 	UWidget_OptionSelector* QuickTipTutorials_Control;

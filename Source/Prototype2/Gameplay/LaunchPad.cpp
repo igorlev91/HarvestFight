@@ -4,6 +4,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Prototype2/Characters/Prototype2Character.h"
+#include "Prototype2/VFX/SquashAndStretch.h"
 
 
 // Sets default values
@@ -17,13 +18,19 @@ ALaunchPad::ALaunchPad()
 
 	LaunchCollider = CreateDefaultSubobject<UBoxComponent>("LaunchCollider");
 	LaunchCollider->SetupAttachment(RootComponent);
+
+	SquashAndStretch = CreateDefaultSubobject<USquashAndStretch>("Squash And Stretch Component");
 }
 
 // Called when the game starts or when spawned
 void ALaunchPad::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	SquashAndStretch->SetBoingMagnitude(0.05f);
+	SquashAndStretch->SetAxis({1,1,0});
+	SquashAndStretch->SetMeshToStretch(LaunchPadMesh);
+	SquashAndStretch->Enable();
 }
 
 // Called every frame

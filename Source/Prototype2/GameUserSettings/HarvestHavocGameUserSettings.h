@@ -42,6 +42,14 @@ public:
 	void SetUIIndicators(EIndicatorUISetting _Setting);
 	UFUNCTION(BlueprintCallable)
 	void SetUIIndicatorSizeLarge(bool _bLargeSize);
+	UFUNCTION(BlueprintCallable)
+	void SetQuickTipLobbyTutorials(int32 _QuickTipLobbyTutorials);
+	UFUNCTION(BlueprintCallable)
+	void SetQuickTipClassicTutorials(int32 _QuickTipClassicTutorials);
+	UFUNCTION(BlueprintCallable)
+	void SetQuickTipBrawlTutorials(int32 _QuickTipBrawlTutorials);
+	UFUNCTION(BlueprintCallable)
+	void SetQuickTipBlitzTutorials(int32 _QuickTipBlitzTutorials);
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetMasterVolume() const { return MasterVolume; }
@@ -60,9 +68,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetPlayerNames() const { return PlayerNames; }
 	UFUNCTION(BlueprintCallable)
+	bool GetPlantValueFloatingUI() const { return PlantValueFloatingUI; }
+	UFUNCTION(BlueprintCallable)
+	bool GetSprintBar() const { return SprintBar; }
+	UFUNCTION(BlueprintCallable)
 	bool GetQuickTipTutorials() const { return QuickTipTutorials; }
 	UFUNCTION(BlueprintCallable)
-	bool GetPlantValueFloatingUI() const { return PlantValueFloatingUI; }
+	int32 GetQuickTipLobbyTutorials() const { return QuickTipLobbyTutorials; }
+	UFUNCTION(BlueprintCallable)
+	int32 GetQuickTipClassicTutorials() const { return QuickTipClassicTutorials; }
+	UFUNCTION(BlueprintCallable)
+	int32 GetQuickTipBrawlTutorials() const { return QuickTipBrawlTutorials; }
+	UFUNCTION(BlueprintCallable)
+	int32 GetQuickTipBlitzTutorials() const { return QuickTipBlitzTutorials; }
 	UFUNCTION(BlueprintCallable)
 	int32 GetMouseSensitivityScale() const { return MouseSensitivityScale; }
 	UFUNCTION(BlueprintCallable)
@@ -112,7 +130,23 @@ protected:
 	bool PlantValueFloatingUI;
 
 	UPROPERTY(config, EditAnywhere)
+	bool SprintBar;
+
+	/* Tutorials */
+	UPROPERTY(config, EditAnywhere)
 	bool QuickTipTutorials;
+
+	UPROPERTY(config, EditAnywhere)
+	int32 QuickTipLobbyTutorials;
+
+	UPROPERTY(config, EditAnywhere)
+	int32 QuickTipClassicTutorials;
+
+	UPROPERTY(config, EditAnywhere)
+	int32 QuickTipBrawlTutorials;
+
+	UPROPERTY(config, EditAnywhere)
+	int32 QuickTipBlitzTutorials;
 
 	/* Mouse sensitivity */
 	UPROPERTY(config, EditAnywhere)

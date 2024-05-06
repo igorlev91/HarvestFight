@@ -26,42 +26,70 @@ void ALobbyCharacter::BeginPlay()
 
 	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
+}
 
-	if (!IsLocallyControlled())
+void ALobbyCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	if (IsLocallyControlled())
+	{
+		auto PlayerController = Cast<APlayerController>(Controller);
+		if (IsValid(PlayerController) == false)
+			return;
+
+		auto LobbyHUD = PlayerController->GetHUD<ALobbyHUD>();
+		if (IsValid(LobbyHUD) == false)
+			return;
+
+		if (LobbyHUD->IsChangingCharacterSkin())
+		{
+			GetMesh()->SetVisibility(false);
+		}
+		else
+		{
+			GetMesh()->SetVisibility(true);
+			SyncCharacterSkin();
+		}
+	}
+	else
+	{
 		GetMesh()->SetVisibility(false);
+	}
 }
 
 void ALobbyCharacter::SyncCharacterSkin()
 {
-	//if (PlayerStateRef->Details.AnimationData)
-	//{
-	//	GetMesh()->SetSkeletalMeshAsset(PlayerStateRef->Details.AnimationData->SkeletalMesh);
-	//
-	//	if (TemplatedAnimationBlueprint)
-	//		GetMesh()->SetAnimInstanceClass(TemplatedAnimationBlueprint);
-	//}
-	//	
-	//
-	//PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Cow Colour"), PlayerStateRef->Details.CharacterColour);
-	//PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]->SetVectorParameterValue(FName("Spot Colour"), PlayerStateRef->Details.CharacterSubColour);
-	//
-	//GetMesh()->SetMaterial(0, PlayerMaterialsDynamic[(int32)PlayerStateRef->Details.Character]);
+	UPrototypeGameInstance* SomeGameInstance = Cast<UPrototypeGameInstance>(GetGameInstance());
+	ALobbyPlayerState* SomePlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(SomePlayerState) == false)
+		return;
+
+	FCharacterDetails CurrentDetails = SomePlayerState->Details;
+	
+	GetMesh()->SetSkeletalMeshAsset(SomeGameInstance->LobbyPlayerModels[(int16)CurrentDetails.Character]);
+	
+	if (IsValid(SomeGameInstance->LobbyAnimBP))
+		GetMesh()->SetAnimInstanceClass(SomeGameInstance->LobbyAnimBP);
+	
+	SomeGameInstance->PlayerMaterialsDynamic[(int16)CurrentDetails.Character]->SetVectorParameterValue(FName("Cow Colour"), CurrentDetails.CharacterColour);
+	SomeGameInstance->PlayerMaterialsDynamic[(int16)CurrentDetails.Character]->SetVectorParameterValue(FName("Spot Colour"), CurrentDetails.CharacterSubColour);
+	
+	GetMesh()->SetMaterial(0, SomeGameInstance->PlayerMaterialsDynamic[(int16)CurrentDetails.Character]);
 }
 
 void ALobbyCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
-	ALobbyPlayerState* MyPlayerState = GetPlayerState<ALobbyPlayerState>();
-	if (!IsValid(MyPlayerState))
+	ALobbyPlayerState* SomePlayerState = GetPlayerState<ALobbyPlayerState>();
+	if (IsValid(SomePlayerState) == false)
 		return;
 
-	MyPlayerState->OnRep_CharacterDetails();
-
-	if (!IsValid(HUD))
+	if (IsValid(HUD) == false)
 		return;
 
-	HUD->OnRep_CharacterDetails(MyPlayerState->Details);
+	HUD->OnRep_CharacterDetails(SomePlayerState->Details);
 }
 
 

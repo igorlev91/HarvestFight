@@ -58,7 +58,7 @@ void APrototype2PlayerController::Server_SetViewTarget_Networked_Implementation(
 void APrototype2PlayerController::Multi_SetViewTarget_Networked_Implementation(AActor* _ViewTarget)
 {
 	SetControlRotation({});
-	SetInputMode(FInputModeUIOnly{});
+	//SetInputMode(FInputModeUIOnly{});
 	bShowMouseCursor = true;
 	SetViewTargetWithBlend(_ViewTarget, 0.75f);
 }

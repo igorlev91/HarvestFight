@@ -57,6 +57,9 @@ void AClockworkPlatform::BeginPlay()
 
 void AClockworkPlatform::Tick(float DeltaTime)
 {
+    if (!MovementCurve)
+    	return;
+	
 	Super::Tick(DeltaTime);
 	
 	if (HasAuthority())

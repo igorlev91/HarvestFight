@@ -102,8 +102,6 @@ void ALaunchPadV2::Launch(APrototype2Character* _Player)
 		else
 			LaunchVector += _Player->GetVelocity().GetSafeNormal2D() * ForwardStrength;
 	}
-
-	_Player->OnLaunchedByLaunchPad();
 	
 	_Player->LaunchCharacter(LaunchVector, false, true);
 }

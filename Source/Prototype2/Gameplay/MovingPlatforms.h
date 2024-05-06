@@ -27,13 +27,13 @@ struct FMPMove
 	FMPMove() {}
 
 	UPROPERTY()
-	float movementSpeed;
+	float movementSpeed = 0.0f;
 	UPROPERTY()
-	float movementAmplitude;
+	float movementAmplitude = 0.0f;
 	UPROPERTY()
-	float deltaTime;
+	float deltaTime = 0.0f;
 	UPROPERTY()
-	float time;
+	float time = 0.0f;
 };
 
 USTRUCT()
@@ -44,9 +44,9 @@ struct FMPServerState
 	FMPServerState() {}
 
 	UPROPERTY()
-	FMPMove currentMove;
+	FMPMove currentMove{};
 	UPROPERTY()
-	FTransform transform;
+	FTransform transform = FTransform::Identity;
 };
 
 #define MAX_POSITION_HISTORY 4

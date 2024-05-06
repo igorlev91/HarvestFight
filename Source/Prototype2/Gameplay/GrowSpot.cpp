@@ -13,6 +13,7 @@
 #include "Prototype2/DataAssets/ConcreteBagData.h"
 #include "Prototype2/DataAssets/FertiliserData.h"
 #include "Prototype2/DataAssets/GrowSpotData.h"
+#include "Prototype2/DataAssets/WeaponData.h"
 #include "Prototype2/DataAssets/PoisonFertiliserData.h"
 #include "Prototype2/Pickups/Weapon.h"
 #include "Prototype2/Pickups/Fertiliser.h"
@@ -82,7 +83,7 @@ void AGrowSpot::InitAssignableVariables()
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> PlantReadyVFX(TEXT("/Game/VFX/Effects/P_VegeReady"));
 	if (PlantReadyVFX.Object != NULL)
 	{
-		PlantReadyComponent->SetAsset(PlantReadyVFX.Object);
+		PlantReadySystem = PlantReadyVFX.Object;
 	}
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ConcreteBreakVFX(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_Concrete"));
@@ -374,6 +375,8 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			{
 			case EFertiliserType::GOLD:
 				{
+					if (NewFertilizationState.ConcretedHealth > 0)
+						return;
 					NewFertilizationState.ConcretedHealth = 0;
 					NewFertilizationState.bFertilised = true;
 
@@ -461,8 +464,8 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef);
 					SomeBeehive->Interact(_Player);
-					_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PickUpCue);
-					HighValuePickupNoise();
+					//_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PickUpCue);
+					//HighValuePickupNoise();
 					return;
 					break;
 				}
@@ -471,7 +474,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 					_Player->PickupItem(ItemRef, EPickupActor::PlantActor);
 
 					/* MANDRAKE SOUND */
-					HighValuePickupNoise();
+					//HighValuePickupNoise();
 					break;
 				}
 			}
@@ -479,6 +482,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			GrowSpotState = EGrowSpotState::Empty;
 			OnRep_GrowSpotState();
 			ItemRef = nullptr;
+			OnRep_ItemRef();
 
 			FertilisationState.bFertilised = false;
 			OnRep_FertilisationState();
@@ -619,7 +623,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
 		
 		ItemRef = NewItem;
-		
+		OnRep_ItemRef();
 	}
 	else if (SeedData->BabyType == EPickupDataType::BeehiveData)
 	{
@@ -631,7 +635,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		NewItem->SetBeehiveLocation(GetActorLocation());
 		
 		ItemRef = NewItem;
-
+		OnRep_ItemRef();
 	}
 	else
 	{
@@ -641,6 +645,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		UGameplayStatics::FinishSpawningActor(NewItem, SpawnTransform);
 
 		ItemRef = NewItem;
+		OnRep_ItemRef();
 	}
 
 	if (FertilisationState.bFertilised)
@@ -691,6 +696,7 @@ void AGrowSpot::DestroyPlant()
 	OnRep_GrowSpotState();
 	ItemRef->Destroy();
 	ItemRef = nullptr;
+	OnRep_ItemRef();
 }
 
 bool AGrowSpot::DegradeConcrete()
@@ -736,9 +742,29 @@ void AGrowSpot::SpawnAPoof()
 
 void AGrowSpot::OnRep_ItemRef()
 {
+	if (IsValid(LastItemRef))
+	{
+		if (auto SeedData = LastItemRef->GetSeedData())
+		{
+			if (IsValid(SeedData->HighValueCropSound))
+			{
+				if (HighValueAttenuationSettings)
+				{
+					UGameplayStatics::PlaySoundAtLocation(GetWorld(), SeedData->HighValueCropSound, GetActorLocation(), 1, 1, 0, HighValueAttenuationSettings);
+				}
+				else
+				{
+					UGameplayStatics::PlaySoundAtLocation(GetWorld(), SeedData->HighValueCropSound, GetActorLocation());
+				}
+			}
+		}
+	}
+	
 	SetPlantReadySparkle(false);
 
 	OnRep_FertilisationState();
+
+	LastItemRef = ItemRef;
 }
 
 void AGrowSpot::HighValuePickupNoise()
@@ -756,7 +782,7 @@ void AGrowSpot::Multi_HighValuePickupNoise_Implementation()
 {
 	if (HighValueAttenuationSettings)
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ItemRef->GetSeedData()->HighValueCropSound, GetActorLocation(), FRotator::ZeroRotator, 1, 1, 0, HighValueAttenuationSettings);
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ItemRef->GetSeedData()->HighValueCropSound, GetActorLocation(), 1, 1, 0, HighValueAttenuationSettings);
 	}
 	else
 	{
@@ -890,6 +916,19 @@ void AGrowSpot::SetPlantReadySparkle(bool _bIsActive, bool _IsBeehive)
 				if (ItemRef->IsA(ABeehive::StaticClass())
 					&& _IsBeehive == false)
 					return;
+
+				PlantReadyComponent->SetAsset(PlantReadySystem);
+				
+				if (auto SeedData = ItemRef->GetSeedData())
+				{
+					if (SeedData->WeaponData)
+					{
+						if (SeedData->WeaponData->PlantReadySparkle)
+						{
+							PlantReadyComponent->SetAsset(SeedData->WeaponData->PlantReadySparkle);
+						}
+					}
+				}
 				
 				Cast<APickUpItem>(ItemRef)->SSComponent->Enable();
 			}
