@@ -259,7 +259,8 @@ void UWidget_LobbyCharacterSelection::NativeTick(const FGeometry& MyGeometry, fl
 	UpdateButtonVisibility();
 	UpdateWidgetSwitchers();
 
-	UpdateCharacterImage();
+	if (bPlayerstateUpdated)
+		UpdateCharacterImage();
 	
 	auto OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
 	if (IsValid(OwningPlayerState) == false)
