@@ -212,8 +212,11 @@ void UWidget_LobbyCharacterSelection::SetCharacterColourFromSelection()
 		}
 	case EColours::YELLOW:
 		{
-			IdealDetails.CharacterColour = SkinColourData->Yellow;
-			IdealDetails.CharacterSubColour = SkinColourData->SubYellow;
+			if (SkinColourData->Yellows.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterColour = SkinColourData->Yellows[(int16)IdealDetails.Character];
+
+			if (SkinColourData->SubYellows.Num() > (int16)IdealDetails.Character)
+				IdealDetails.CharacterSubColour = SkinColourData->SubYellows[(int16)IdealDetails.Character];
 			break;
 		}
 	case EColours::PURPLE:
