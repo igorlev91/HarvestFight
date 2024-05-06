@@ -418,6 +418,10 @@ public:
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
 	UFUNCTION()
 	void CalculateAndApplyHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+	UFUNCTION(Client, Reliable)
+	void Client_GetHitForceFeedback();
+	UFUNCTION(BlueprintImplementableEvent)
+	void GetHitForceFeedback();
 	
 	UFUNCTION(Server, Reliable)
 	void Server_CheckIfCrownHit(APrototype2Character* _HitPlayer);

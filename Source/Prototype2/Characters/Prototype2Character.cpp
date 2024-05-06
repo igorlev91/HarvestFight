@@ -922,7 +922,9 @@ void APrototype2Character::GetHit(float _AttackCharge, FVector _AttackerLocation
 	if (HasAuthority())
 	{
 		if (IsLocallyControlled())
+		{
 			ReleaseInteract();
+		}
 		
 		CalculateAndApplyHit(_AttackCharge, _AttackerLocation, _OtherWeaponData);
 	}
@@ -1017,10 +1019,21 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	{
 		Multi_CancelChargeAttack();
 	}
+
+	// Vibrate controller
+	if (IsLocallyControlled())
+	{
+		GetHitForceFeedback();
+	}
 	else
 	{
-		CancelChargeAttack();
+		Client_GetHitForceFeedback();
 	}
+}
+
+void APrototype2Character::Client_GetHitForceFeedback_Implementation()
+{
+	GetHitForceFeedback();
 }
 
 void APrototype2Character::Server_HitWinterSellBin_Implementation(ASellBin_Winter* _HitWinterSellBin, float _AttackCharge,
