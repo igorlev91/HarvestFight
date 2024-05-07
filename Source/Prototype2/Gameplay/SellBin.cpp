@@ -133,7 +133,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	if (IsValid(Plant) == false)
 		return;
 	
-	int32 PlantSellValue = (Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
+	int32 PlantSellValue = (Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
 	int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	
 	PlayerCharacter->PlayerStateRef->AddCoins(IncreaseAmount);
@@ -142,6 +142,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	PlayerCharacter->OnRep_HeldItem();
 	
 	FServerSellData NewServerSellData{};
+	NewServerSellData.StarValue = Plant->ServerData.SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerCharacter;
 	NewServerSellData.LastPlayerStateToSell = PlayerCharacter->PlayerStateRef;
@@ -165,13 +166,14 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 	if (IsValid(PlayerWhoThrewItem) == false)
 		return;
 
-	int32 PlantSellValue = (ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
+	int32 PlantSellValue = (ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
 	int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * ThrownPlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	
 	PlayerWhoThrewItem->PlayerStateRef->AddCoins(IncreaseAmount);
 	ThrownPlant->Destroy();
 	
 	FServerSellData NewServerSellData{};
+	NewServerSellData.StarValue = ThrownPlant->ServerData.SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerWhoThrewItem;
 	NewServerSellData.LastPlayerStateToSell = PlayerWhoThrewItem->PlayerStateRef;
@@ -184,6 +186,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 void ASellBin::OnRep_ItemSold()
 {
 	auto SellValue = ServerSellData.SellValue;
+	auto StarValue = ServerSellData.StarValue;
 	auto LastPlayerToSell = ServerSellData.LastPlayerToSell;
 	auto LastPlayerStateToSell = ServerSellData.LastPlayerStateToSell;
 	
@@ -218,7 +221,7 @@ void ASellBin::OnRep_ItemSold()
 
 	// Coin VFX
 	InteractSystem->SetVectorParameter(FName("Coin Colour"), LastPlayerStateToSell->Details.PureToneColour);
-	InteractSystem->SetIntParameter(FName("CoinCount"), SellValue);
+	InteractSystem->SetIntParameter(FName("CoinCount"), SellValue * StarValue);
 	InteractSystem->Activate(true);
 
 	// Poof VFX

@@ -19,6 +19,9 @@ struct FServerSellData
 
 	UPROPERTY(VisibleAnywhere)
 	int32 SellValue{};
+	
+	UPROPERTY(VisibleAnywhere)
+	int32 StarValue{};
 
 	UPROPERTY(VisibleAnywhere)
 	class APrototype2PlayerState* LastPlayerStateToSell{nullptr};
