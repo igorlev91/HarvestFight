@@ -14,14 +14,14 @@ void UWeaponHoneyStick::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 	
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargePunchingAttack)
+		if (_Player->AnimationData->FullChargeHoneyStickAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeHoneyStickAttack);
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalPunchingAttack)
+		if (_Player->AnimationData->NormalHoneyStickAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalHoneyStickAttack);
 		}

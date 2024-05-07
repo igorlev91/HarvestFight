@@ -13,14 +13,14 @@ void UWeaponLeekSword::ReleaseAttack(bool _bIsFullCharge, APrototype2Character* 
 	
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargePunchingAttack)
+		if (_Player->AnimationData->FullChargeLeekAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeLeekAttack);
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalPunchingAttack)
+		if (_Player->AnimationData->NormalLeekAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalLeekAttack);
 		}

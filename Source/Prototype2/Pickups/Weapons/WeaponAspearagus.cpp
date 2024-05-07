@@ -45,16 +45,24 @@ void UWeaponAspearagus::ReleaseAttack(bool _bIsFullCharge, APrototype2Character*
 {
 	if (_bIsFullCharge)
 	{
-		if (_Player->AnimationData->FullChargePunchingAttack)
+		if (_Player->AnimationData->FullChargeAspearagusAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->FullChargeAspearagusAttack);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(GetWorld(), "No Aspearagus Montage");
 		}
 	}
 	else
 	{
-		if (_Player->AnimationData->NormalPunchingAttack)
+		if (_Player->AnimationData->NormalAspearagusAttack)
 		{
 			_Player->PlayNetworkMontage(_Player->AnimationData->NormalAspearagusAttack);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(GetWorld(), "No Aspearagus Montage");
 		}
 	}
 }

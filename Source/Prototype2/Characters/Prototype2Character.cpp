@@ -549,10 +549,10 @@ void APrototype2Character::ReleaseAttack()
 		ActivateParticleSystemFromEnum(EParticleSystems::AttackTrail);// Gets turned off in animation blueprint
 	}
 
-	if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
-	{
-		SetPlayerAimingMovement(false);
-	}
+	//if (AttackChargeAmount >= MaxAttackCharge) // InstantAttackThreshold
+	//{
+	//	SetPlayerAimingMovement(false);
+	//}
 
 	// Lock the players momentum if not instant click attack or is moving
 	if (AttackChargeAmount > 0.5f || GetVelocity().Length() > 10.0f)
@@ -1718,7 +1718,7 @@ void APrototype2Character::TeleportToLocation(FVector _DestinationLocation, FRot
 
 void APrototype2Character::DebugSomething()
 {
-	ActivateParticleSystemFromEnum(EParticleSystems::SmiteShockWave);
+
 }
 
 void APrototype2Character::Server_TeleportToLocation_Implementation(FVector _DestinationLocation, FRotator _DestinationRotation)
@@ -2755,6 +2755,13 @@ void APrototype2Character::OnLaunchedByLaunchPad()
 
 void APrototype2Character::TeleportToEndGame(FTransform _EndGameTransform)
 {
+	// Hide Sprint bar
+	if (SprintTimer < SprintTime)
+	{
+		SprintTimer = SprintTime;
+		OnSprintReadyDelegate.Broadcast();
+	}
+	
 	if (HasAuthority())
 	{
 		Multi_TeleportToEndGame(_EndGameTransform);
