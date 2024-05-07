@@ -137,6 +137,12 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 	
 	if (GameStateReference)
 	{
+		if (BlackScreenTimer > 0)
+		{
+			BlackScreenTimer -= InDeltaTime;
+			RemoveLoadingScreen();
+		}
+		
 		/* Set UI colours for teams */
 		if (ColourData && GameStateReference->bTeams)
 		{
@@ -189,8 +195,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 					//	return;
 					
 					auto Coins = Player->Coins;
-					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
-					auto bIsShowingExtraCoins = Player->bIsShowingExtraCoins;
+					auto ExtraCoins = FString::FromInt(Player->ExtraCoinsLocal);
 				
 					//UE_LOG(LogTemp, Warning, TEXT("Player [%s] ID = %s"), *FString::FromInt(i), *FString::FromInt(player->Player_ID));
 				
@@ -264,11 +269,11 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			/* Team 1 points */
 			Team1Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team1Points))); // Updating team 1 points
 			
-			for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
+			/*for (int i = 0; i < GameStateReference->Server_TeamOne.Num(); i++)
 			{
 				if (auto Player = GameStateReference->Server_TeamOne[i])
 				{
-					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
+					auto ExtraCoins = FString::FromInt(Player->ExtraCoinsLocal);
 					FString CombinedText = "+" + ExtraCoins;
 					
 					switch(i)
@@ -297,15 +302,15 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						}
 					}
 				}
-			}
+			}*/
 
 			Team2Coins->SetText(FText::FromString(FString::FromInt(GameStateReference->Team2Points))); // Updating team 2 points
 
-			for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
+			/*for (int i = 0; i < GameStateReference->Server_TeamTwo.Num(); i++)
 			{
 				if (auto Player = GameStateReference->Server_TeamTwo[i])
 				{
-					auto ExtraCoins = FString::FromInt(Player->ExtraCoins);
+					auto ExtraCoins = FString::FromInt(Player->ExtraCoinsLocal);
 					FString CombinedText = "+" + ExtraCoins;
 					
 					switch(i)
@@ -334,7 +339,7 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 						}
 					}
 				}
-			}
+			}*/
 		}
 		
 		if (GameStateReference->IsGameReadyForVote())

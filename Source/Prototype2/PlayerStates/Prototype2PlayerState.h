@@ -37,7 +37,6 @@ public:
 	void Server_VoteMap(EFarm _Map);
 	
 	void AddCoins(int32 _amount);
-	void AddCoins(class APlant* _SomePlant);
 	
 	void GrabSkinFromGameInstance();
 
@@ -68,9 +67,15 @@ public:
 	
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
     int32 Player_ID{};
+
+	UFUNCTION()
+	void OnRep_Coins();
 	
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(ReplicatedUsing=OnRep_Coins, EditAnywhere)
 	int32 Coins{0};
+
+	UPROPERTY(VisibleAnywhere)
+	int32 LastLocalCoins{};
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	FString PlayerName{};
@@ -82,14 +87,11 @@ public:
 	class APrototype2Gamestate* Gamestate;
 
 	// Showing coins that are being added to total
-	UPROPERTY(Replicated, EditAnywhere)
-	int32 ExtraCoins{0};
-	UPROPERTY(Replicated, EditAnywhere)
-	bool bIsShowingExtraCoins{false};
-	UPROPERTY(Replicated, EditAnywhere)
-	float MaxTimeShowExtraCoins{};
-	UPROPERTY(Replicated, VisibleAnywhere)
-	float TimerExtraCoins{};
+	//UPROPERTY(Replicated, EditAnywhere)
+	//int32 ExtraCoins{0};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ExtraCoinsLocal{};
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite)
 	FCharacterDetails Details;
