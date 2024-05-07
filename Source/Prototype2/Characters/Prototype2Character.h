@@ -11,6 +11,7 @@
 #include "Prototype2/DataAssets/SeedData.h"
 #include "Prototype2/GameInstances/PrototypeGameInstance.h"
 #include "Prototype2/Pickups/PickUpItem.h"
+#include "Prototype2/PlayerStates/Prototype2PlayerState.h"
 #include "Prototype2Character.generated.h"
 
 class APrototype2PlayerController;
@@ -51,6 +52,18 @@ struct FExecuteAttackInfo
 	float AttackSphereRadius = 0.0f;
 	float AttackChargeAmount = 0.0f;
 	bool bIsSprinting = false;
+};
+
+USTRUCT()
+struct FServerEmoteData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	EEmote LastPlayedEmote{EEmote::NONE};
+
+	UPROPERTY(VisibleAnywhere)
+	float EmoteTime{};
 };
 
 UCLASS(config=Game)
@@ -418,10 +431,12 @@ public:
 	void GetHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
 	UFUNCTION()
 	void CalculateAndApplyHit(float _AttackCharge, FVector _AttackerLocation, UWeaponData* _OtherWeaponData);
+
+	/* Force Feedback (Controller Vibration) */
 	UFUNCTION(Client, Reliable)
 	void Client_GetHitForceFeedback();
 	UFUNCTION(BlueprintImplementableEvent)
-	void GetHitForceFeedback();
+	void OnGetHitForceFeedback();
 	
 	UFUNCTION(Server, Reliable)
 	void Server_CheckIfCrownHit(APrototype2Character* _HitPlayer);
@@ -842,8 +857,11 @@ public:
 	void PlayEmote(EEmote _Emote);
 	UFUNCTION(Server, Reliable)
 	void Server_PlayEmote(EEmote _Emote);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayEmote(EEmote _Emote);
+
+	UFUNCTION()
+	void OnRep_LastServerEmote();
+	UPROPERTY(ReplicatedUsing=OnRep_LastServerEmote, VisibleAnywhere)
+	FServerEmoteData ServerEmoteData{};
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UVFXComponent* VFXComponent;

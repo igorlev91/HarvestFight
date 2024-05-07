@@ -86,6 +86,7 @@ void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(APrototype2Character, bIsHoldingGoldWeapon);
 	DOREPLIFETIME(APrototype2Character, WeaponMesh);
 	DOREPLIFETIME(APrototype2Character, bIsAiming);
+	DOREPLIFETIME(APrototype2Character, ServerEmoteData);
 	//DOREPLIFETIME(APrototype2Character, bSprintAnimationState);
 	//DOREPLIFETIME(APrototype2Character, bChargeAnimationState);
 	//DOREPLIFETIME(APrototype2Character, WeaponCurrentDurability);
@@ -1023,7 +1024,7 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 	// Vibrate controller
 	if (IsLocallyControlled())
 	{
-		GetHitForceFeedback();
+		OnGetHitForceFeedback();
 	}
 	else
 	{
@@ -1033,7 +1034,7 @@ void APrototype2Character::CalculateAndApplyHit(float _AttackCharge, FVector _At
 
 void APrototype2Character::Client_GetHitForceFeedback_Implementation()
 {
-	GetHitForceFeedback();
+	OnGetHitForceFeedback();
 }
 
 void APrototype2Character::Server_HitWinterSellBin_Implementation(ASellBin_Winter* _HitWinterSellBin, float _AttackCharge,
@@ -1345,19 +1346,30 @@ void APrototype2Character::OnRep_UpdateAOE()
 void APrototype2Character::PlayEmote(EEmote _Emote)
 {
 	if (HasAuthority())
-		Multi_PlayEmote(_Emote);
+	{
+		FServerEmoteData NewEmoteData{};
+		NewEmoteData.LastPlayedEmote = _Emote;
+		NewEmoteData.EmoteTime = GetWorld()->GetTimeSeconds();
+		ServerEmoteData = NewEmoteData;
+		OnRep_LastServerEmote();
+	}
 	else
 		Server_PlayEmote(_Emote);
 }
 
-void APrototype2Character::Server_PlayEmote_Implementation(EEmote _Emote)
+void APrototype2Character::OnRep_LastServerEmote()
 {
-	Multi_PlayEmote(_Emote);
+	if (IsValid(EmoteWidget))
+		EmoteWidget->PlayEmote(ServerEmoteData.LastPlayedEmote);
 }
 
-void APrototype2Character::Multi_PlayEmote_Implementation(EEmote _Emote)
+void APrototype2Character::Server_PlayEmote_Implementation(EEmote _Emote)
 {
-	EmoteWidget->PlayEmote(_Emote);
+	FServerEmoteData NewEmoteData{};
+	NewEmoteData.LastPlayedEmote = _Emote;
+	NewEmoteData.EmoteTime = GetWorld()->GetTimeSeconds();
+	ServerEmoteData = NewEmoteData;
+	OnRep_LastServerEmote();
 }
 
 
@@ -2864,7 +2876,7 @@ void APrototype2Character::InitEmoteWidgetComponent()
 	if (IsValid(EmoteWidget))
 		return;
 		
-	if (!IsValid(EmoteWidgetComponent))
+	if (IsValid(EmoteWidgetComponent) == false)
 		return;
 
 	UUserWidget* Widget = EmoteWidgetComponent->GetWidget();
