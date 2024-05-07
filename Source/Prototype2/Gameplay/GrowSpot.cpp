@@ -110,6 +110,18 @@ void AGrowSpot::InitAssignableVariables()
 	//	MandrakeScreamQueue = MandrakeSoundQue.Object;
 	//}
 
+	static ConstructorHelpers::FObjectFinder<USoundCue> FoundPlantCue(TEXT("/Game/SFX/CUE_PlantSeed"));
+	if (FoundPlantCue.Object != NULL)
+	{
+		PlantCue = FoundPlantCue.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USoundAttenuation> FoundPlantAttenuation(TEXT("/Game/SFX/PlayerSoundAttenuation"));
+	if (FoundPlantAttenuation.Object != NULL)
+	{
+		PlantAttenuation = FoundPlantAttenuation.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<USoundAttenuation> MandrakeAtten(TEXT("/Game/SFX/MandrakeAttenuationSettings"));
 	if (MandrakeAtten.Object != NULL)
 	{
@@ -149,6 +161,7 @@ void AGrowSpot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(AGrowSpot, ItemRef);
 	DOREPLIFETIME(AGrowSpot, OwningPlayerColor);
 	DOREPLIFETIME(AGrowSpot, FertilisationState);
+	DOREPLIFETIME(AGrowSpot, ServerGrowspotDetails);
 }
 
 // Called when the game starts or when spawned
@@ -408,14 +421,20 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 			FertilisationState = NewFertilizationState;
 			OnRep_FertilisationState();
 		}
-			
+
+		FServerGrowspotDetails NewServerGrowspotDetails{};
+		NewServerGrowspotDetails.LastTimeOfInteract = GetWorld()->GetTimeSeconds();
+		NewServerGrowspotDetails.CropStarValue = 5;
+		NewServerGrowspotDetails.LastPlayerToInteract = _Player->GetPlayerState<APrototype2PlayerState>();
+		ServerGrowspotDetails = NewServerGrowspotDetails;
+		OnRep_ServerGrowspotDetails();
+		
 		_Player->AddCoins(5);
 		_Player->EnableStencil(false);
 		
 		_Player->HeldItem->Destroy();
 		_Player->HeldItem = nullptr;
 		_Player->OnRep_HeldItem();
-		_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PlantCue);
 
 		return;
 	}
@@ -429,14 +448,18 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 
 			if (_Player->IsHolding(ASeed::StaticClass()))
 			{
-				/* PLAY PLANT SOUND */
-				if (_Player->PlantCue)
-				{
-					_Player->Client_PlaySoundAtLocation(GetActorLocation(), _Player->PlantCue);
-				}
-
 				if (const auto HeldItemData = _Player->GetHeldItemData())
+				{
 					_Player->AddCoins(HeldItemData->BabyStarValue);
+					
+					FServerGrowspotDetails NewServerGrowspotDetails{};
+					NewServerGrowspotDetails.LastTimeOfInteract = GetWorld()->GetTimeSeconds();
+					NewServerGrowspotDetails.LastPlayerToInteract = _Player->GetPlayerState<APrototype2PlayerState>();
+					NewServerGrowspotDetails.CropStarValue = HeldItemData->BabyStarValue;
+					ServerGrowspotDetails = NewServerGrowspotDetails;
+					OnRep_ServerGrowspotDetails();
+				}
+					
 
 				APickUpItem* HeldSeed = _Player->HeldItem;
 				_Player->HeldItem = nullptr;
@@ -464,17 +487,12 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 				{
 					ABeehive* SomeBeehive = Cast<ABeehive>(ItemRef);
 					SomeBeehive->Interact(_Player);
-					//_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->PickUpCue);
-					//HighValuePickupNoise();
 					return;
 					break;
 				}
 			default:
 				{
-					_Player->PickupItem(ItemRef, EPickupActor::PlantActor);
-
-					/* MANDRAKE SOUND */
-					//HighValuePickupNoise();
+					_Player->PickupItem(ItemRef, EPickupActor::PlantActor);	
 					break;
 				}
 			}
@@ -851,7 +869,7 @@ void AGrowSpot::UpdateGrowUI()
 			GrowWidget->SetGrowTimer(FMath::Lerp(1.0f, 0.0f, GrowTimer / GrowTime), FertilisationState.bFertilised);
 
 		if (USeedData* SeedData = ItemRef->GetSeedData())
-			GrowWidget->SetStarCount(SeedData->BabyStarValue);
+			GrowWidget->SetStarCount(SeedData->BabyStarValue, ItemRef->ItemComponent->bGold);
 	}
 }
 
@@ -962,7 +980,6 @@ void AGrowSpot::OnRep_GrowSpotState()
 		}
 	case EGrowSpotState::Growing:
 		{
-			
 			break;
 		}
 	case EGrowSpotState::Grown:
@@ -1030,5 +1047,48 @@ void AGrowSpot::OnRep_FertilisationState()
 				}
 			}
 		}
+	}
+}
+
+void AGrowSpot::OnRep_ServerGrowspotDetails()
+{
+	auto LocalPlayerController = GetWorld()->GetFirstPlayerController();
+	if (IsValid(LocalPlayerController) == false)
+		return;
+
+	if (LocalPlayerController->IsLocalController() == false)
+		return;
+
+	if (GetWorld()->GetRealTimeSeconds() <= 5.0f)
+		return;
+
+	auto LocalPlayerState = LocalPlayerController->GetPlayerState<APrototype2PlayerState>();
+	if (IsValid(LocalPlayerState) == false)
+		return;
+
+	APrototype2Gamestate* GamestateCast = GetWorld()->GetGameState<APrototype2Gamestate>();
+	if (IsValid(GamestateCast) == false)
+		return;
+
+	if (PlantAttenuation)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), PlantCue, GetActorLocation(), 1, 1, 0, HighValueAttenuationSettings);
+	}
+	else
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), PlantCue, GetActorLocation());
+	}
+
+	auto CropStarValue = ServerGrowspotDetails.CropStarValue;
+	auto LastPlayerToInteract = ServerGrowspotDetails.LastPlayerToInteract;
+
+	AActor* SellBinActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
+	if (IsValid(SellBinActor) == false)
+		return;
+
+	auto SellBinCast = Cast<ASellBin>(SellBinActor);
+	if (GamestateCast->Server_Players.Contains(LastPlayerToInteract))
+	{
+		SellBinCast->OnItemSoldDelegate.Broadcast(GamestateCast->Server_Players.Find(LastPlayerToInteract), CropStarValue);
 	}
 }

@@ -90,8 +90,6 @@ void APrototype2PlayerState::AddCoins(int32 _amount)
 	//bIsShowingExtraCoins = true;
 	Coins += _amount;
 	ExtraCoins = _amount;
-	Client_OnAddCoins(_amount);
-	Multi_OnAddCoins(_amount);
 
 	APrototype2Gamestate* GameState = Cast<APrototype2Gamestate>(UGameplayStatics::GetGameState(GetWorld()));
 	if (IsValid(GameState))

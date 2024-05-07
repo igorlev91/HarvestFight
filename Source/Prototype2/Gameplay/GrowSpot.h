@@ -28,6 +28,23 @@ class APlant;
 class AGrowableWeapon;
 class ASeed;
 class AWeaponSeed;
+class APrototype2PlayerState;
+
+USTRUCT()
+struct FServerGrowspotDetails
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	APrototype2PlayerState* LastPlayerToInteract{nullptr};
+
+	UPROPERTY(VisibleAnywhere)
+	int32 CropStarValue{};
+	
+	UPROPERTY(VisibleAnywhere)
+	float LastTimeOfInteract{};
+};
+
 UCLASS()
 class PROTOTYPE2_API AGrowSpot : public AActor, public IInteractInterface
 {
@@ -129,6 +146,12 @@ protected:
 	void OnRep_FertilisationState();
 	UPROPERTY(ReplicatedUsing=OnRep_FertilisationState, EditAnywhere)
 	FFertilisationState FertilisationState{};
+
+	UFUNCTION()
+	void OnRep_ServerGrowspotDetails();
+
+	UPROPERTY(ReplicatedUsing=OnRep_ServerGrowspotDetails, VisibleAnywhere)
+	FServerGrowspotDetails ServerGrowspotDetails{};
 	
 	void ScalePlantOnTick() const;
 
@@ -160,12 +183,23 @@ protected:
 	//	SFX
 	//
 
+	UPROPERTY(VisibleAnywhere)
+	class USoundCue* PlantCue{nullptr};
+
+	UPROPERTY(VisibleAnywhere)
+	class USoundAttenuation* PlantAttenuation{nullptr};
+	
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* HighValueAttenuationSettings;
 	
 	//
 	// VFX
 	//
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemSold, int32, _PlayerID, int32, _Score);
+	UPROPERTY(BlueprintAssignable)
+	FOnItemSold OnItemSoldDelegate;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = VFX)
 	class UNiagaraComponent* PlantReadyComponent;
 	UPROPERTY(EditAnywhere, Category = VFX)

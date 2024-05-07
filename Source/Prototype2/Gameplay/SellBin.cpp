@@ -142,7 +142,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	int32 PlantSellValue = (Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
 	int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	
-	PlayerCharacter->PlayerStateRef->AddCoins(IncreaseAmount);
+	PlayerCharacter->AddCoins(IncreaseAmount);
 	PlayerCharacter->HeldItem->Destroy();
 	PlayerCharacter->HeldItem = nullptr;
 	PlayerCharacter->OnRep_HeldItem();
@@ -175,7 +175,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 	int32 PlantSellValue = (ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
 	int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * ThrownPlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
 	
-	PlayerWhoThrewItem->PlayerStateRef->AddCoins(IncreaseAmount);
+	PlayerWhoThrewItem->AddCoins(IncreaseAmount);
 	ThrownPlant->Destroy();
 	
 	FServerSellData NewServerSellData{};
