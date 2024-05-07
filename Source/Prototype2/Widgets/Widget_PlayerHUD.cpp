@@ -119,7 +119,17 @@ void UWidget_PlayerHUD::NativeOnInitialized()
 
 	FNavigationConfig& NavigationConfig = *FSlateApplication::Get().GetNavigationConfig();
 	NavigationConfig.bTabNavigation = false;
+
+	RemoveLoadingScreen();
 }
+
+void UWidget_PlayerHUD::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	ShowLoadingScreen();
+}
+
 
 void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
@@ -333,6 +343,33 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 			SetHUDInteractText("");
 		}
 
+		if (GameStateReference->bHasGameFinished)
+		{
+			if (IngameMenu->GetVisibility() != ESlateVisibility::Hidden)
+			{
+				IngameMenu->SetVisibility(ESlateVisibility::Hidden);
+				if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+				{
+					Controller->SetInputMode(FInputModeGameAndUI{});
+					Controller->bShowMouseCursor = true;
+				}
+			}
+
+			if (OptionsMenu->GetVisibility() != ESlateVisibility::Hidden)
+			{
+				OptionsMenu->SetVisibility(ESlateVisibility::Hidden);
+				IngameMenu->SetVisibility(ESlateVisibility::Hidden);
+				if (auto* Controller = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+				{
+					Controller->SetInputMode(FInputModeGameAndUI{});
+					Controller->bShowMouseCursor = true;
+				}
+			}
+
+			
+		}
+			
+
 		SetHUDInteractText("");
 
 		// NEW STARS ON PICKUP UI (Reset To Hidden)
@@ -386,6 +423,12 @@ void UWidget_PlayerHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 
 void UWidget_PlayerHUD::EnableDisableMenu()
 {
+	if (!GameStateReference)
+		return;
+
+	if (GameStateReference->bHasGameFinished)
+		return;
+	
 	if (OptionsMenu->GetVisibility() == ESlateVisibility::Hidden)
 		IngameMenu->ToggleMenu();
 }
@@ -752,20 +795,26 @@ void UWidget_PlayerHUD::SetFreeForAllScoreUI()
 		}
 }
 
-void UWidget_PlayerHUD::RemoveLoadingScreen(UUserWidget* Widget)
+void UWidget_PlayerHUD::RemoveLoadingScreen()
 {
 	if (!GameInstance)
 		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
 	
-	GameInstance->RemoveLoadingScreen(Widget);
+	GameInstance->RemoveLoadingScreen(GameInstance->BlackScreenWidget);
 }
 
-void UWidget_PlayerHUD::ShowLoadingScreen(UUserWidget* Widget)
+void UWidget_PlayerHUD::ShowLoadingScreen()
 {
 	if (!GameInstance)
 		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
 	
-	GameInstance->ShowLoadingScreen(Widget, 0);
+	GameInstance->ShowLoadingScreen(GameInstance->BlackScreenWidget, 0);
 }
 
 void UWidget_PlayerHUD::HandleStarVisibility(APrototype2Character* Owner)
