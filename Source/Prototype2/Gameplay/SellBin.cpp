@@ -60,6 +60,12 @@ ASellBin::ASellBin()
 		EnemySellCue = FoundPumpkinCue.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<USoundAttenuation> FoundSellAttenuation(TEXT("/Game/SFX/MandrakeAttenuationSettings"));
+	if (FoundSellAttenuation.Object != nullptr)
+	{
+		SellAttenuation = FoundSellAttenuation.Object;
+	}
+
 	ThrowToSellCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("ThrowToSellCollider"));
 	ThrowToSellCollider->SetupAttachment(RootComponent);
 }
@@ -142,7 +148,7 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	PlayerCharacter->OnRep_HeldItem();
 	
 	FServerSellData NewServerSellData{};
-	NewServerSellData.StarValue = Plant->ServerData.SeedData->BabyStarValue;
+	NewServerSellData.CoinCount = IncreaseAmount * Plant->ServerData.SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerCharacter;
 	NewServerSellData.LastPlayerStateToSell = PlayerCharacter->PlayerStateRef;
@@ -173,7 +179,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 	ThrownPlant->Destroy();
 	
 	FServerSellData NewServerSellData{};
-	NewServerSellData.StarValue = ThrownPlant->ServerData.SeedData->BabyStarValue;
+	NewServerSellData.CoinCount = IncreaseAmount * ThrownPlant->ServerData.SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerWhoThrewItem;
 	NewServerSellData.LastPlayerStateToSell = PlayerWhoThrewItem->PlayerStateRef;
@@ -186,7 +192,7 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 void ASellBin::OnRep_ItemSold()
 {
 	auto SellValue = ServerSellData.SellValue;
-	auto StarValue = ServerSellData.StarValue;
+	auto CoinCount = ServerSellData.CoinCount;
 	auto LastPlayerToSell = ServerSellData.LastPlayerToSell;
 	auto LastPlayerStateToSell = ServerSellData.LastPlayerStateToSell;
 	
@@ -215,13 +221,13 @@ void ASellBin::OnRep_ItemSold()
 	
 	// Sell SFX
 	if (LocalPlayerState->Details.Colour == LastPlayerStateToSell->Details.Colour)
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SellCue, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SellCue, GetActorLocation(), 1, 1, 0, SellAttenuation);
 	else
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySellCue, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySellCue, GetActorLocation(), 1, 1, 0, SellAttenuation);
 
 	// Coin VFX
 	InteractSystem->SetVectorParameter(FName("Coin Colour"), LastPlayerStateToSell->Details.PureToneColour);
-	InteractSystem->SetIntParameter(FName("CoinCount"), SellValue * StarValue);
+	InteractSystem->SetIntParameter(FName("CoinCount"), CoinCount);
 	InteractSystem->Activate(true);
 
 	// Poof VFX

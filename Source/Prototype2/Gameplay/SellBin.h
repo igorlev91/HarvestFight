@@ -24,6 +24,9 @@ struct FServerSellData
 	int32 StarValue{};
 
 	UPROPERTY(VisibleAnywhere)
+	int32 CoinCount{};
+
+	UPROPERTY(VisibleAnywhere)
 	class APrototype2PlayerState* LastPlayerStateToSell{nullptr};
 
 	UPROPERTY(VisibleAnywhere)
@@ -87,4 +90,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class USoundCue* EnemySellCue{nullptr};
+
+	UPROPERTY(EditAnywhere)
+	class USoundAttenuation* SellAttenuation{nullptr};
 };
