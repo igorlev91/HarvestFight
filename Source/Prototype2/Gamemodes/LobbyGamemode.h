@@ -1,5 +1,4 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -17,6 +16,8 @@ class PROTOTYPE2_API ALobbyGamemode : public AHHGamemodeBase
 public:
 	/* Constructor */
 	ALobbyGamemode();
+
+	virtual void PostLoad() override;
 
 	virtual void BeginPlay() override;
 	

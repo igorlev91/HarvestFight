@@ -30,6 +30,11 @@ ALobbyGamemode::ALobbyGamemode()
 	bPauseable = false;
 }
 
+void ALobbyGamemode::PostLoad()
+{
+	Super::PostLoad();
+}
+
 void ALobbyGamemode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -52,6 +57,35 @@ void ALobbyGamemode::PostLogin(APlayerController* _NewPlayer)
 	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!IsValid(GameInstance))
 		return;
+
+	if (GameStateReference->Server_Players.Num() <= 0)
+	{
+		GameInstance->ResetCachedPlayerDetails();
+	
+		FTeamsDetails NewTeamDetails{};
+		
+		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
+		if (RandomColour == (int)EColours::RED)
+			RandomColour++;
+		NewTeamDetails.TeamOneColour = (EColours)RandomColour;
+	
+		do
+		{
+			RandomColour = rand() % ((int)EColours::MAXCOLOURS);
+			if (RandomColour == (int)EColours::RED)
+				RandomColour++;
+		}
+		while ((EColours)RandomColour == NewTeamDetails.TeamOneColour);
+		NewTeamDetails.TeamTwoColour = (EColours)RandomColour;
+
+		NewTeamDetails.TeamOneName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names.Num()];
+		NewTeamDetails.TeamTwoName = GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names[rand() % GameStateReference->TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names.Num()];
+
+		GameStateReference->TeamsDetails = NewTeamDetails;
+
+		GameInstance->FinalTeamAColour = NewTeamDetails.TeamOneColour;
+		GameInstance->FinalTeamBColour = NewTeamDetails.TeamTwoColour;
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Joined The Game!"), *FString(PlayerStateReference->GetPlayerName()));
 

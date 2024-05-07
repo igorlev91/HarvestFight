@@ -51,7 +51,6 @@ class PROTOTYPE2_API ALobbyGamestate : public AHHGameStateBase
 public:
 	ALobbyGamestate();
 	
-
 	int32 GetNumberOfCharactersTaken(ECharacters _DesiredCharacter)  const;
 	int32 GetNumberOfCharacterColoursTaken(FCharacterDetails _Details)  const;
 

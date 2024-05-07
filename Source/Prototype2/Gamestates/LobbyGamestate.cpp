@@ -54,36 +54,6 @@ void ALobbyGamestate::OnRep_TeamsDetails()
 void ALobbyGamestate::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
-	if (HasAuthority())
-	{
-		auto GameInstance = GetGameInstance<UPrototypeGameInstance>();
-		GameInstance->ResetCachedPlayerDetails();
-		
-		FTeamsDetails NewTeamDetails{};
-		
-		int RandomColour = rand() % ((int)EColours::MAXCOLOURS);
-		if (RandomColour == (int)EColours::RED)
-			RandomColour++;
-		NewTeamDetails.TeamOneColour = (EColours)RandomColour;
-	
-		do
-		{
-			RandomColour = rand() % ((int)EColours::MAXCOLOURS);
-			if (RandomColour == (int)EColours::RED)
-				RandomColour++;
-		}
-		while ((EColours)RandomColour == NewTeamDetails.TeamOneColour);
-		NewTeamDetails.TeamTwoColour = (EColours)RandomColour;
-
-		NewTeamDetails.TeamOneName = TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names[rand() % TeamNamesData->TeamNames[NewTeamDetails.TeamOneColour].Names.Num()];
-		NewTeamDetails.TeamTwoName = TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names[rand() % TeamNamesData->TeamNames[NewTeamDetails.TeamTwoColour].Names.Num()];
-
-		TeamsDetails = NewTeamDetails;
-
-		GameInstance->FinalTeamAColour = NewTeamDetails.TeamOneColour;
-		GameInstance->FinalTeamBColour = NewTeamDetails.TeamTwoColour;
-	}
 }
 
 void ALobbyGamestate::BeginPlay()
