@@ -58,11 +58,15 @@ public:
 	class UNiagaraComponent* AlterOffer_VFX{nullptr};
 	UPROPERTY(VisibleAnywhere)
 	class UNiagaraComponent* AlterOffer_VFX2{nullptr};
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* AlterOffer_VFX_Static{nullptr};
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* AlterOffer_System{nullptr};
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* AlterOffer_System2{nullptr};
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* AlterOffer_System_StaticRay{nullptr};
 	
 	/* When smite hits player the knockback will be multiplied by this value so bigger map can have more knockback */
 	UPROPERTY(EditAnywhere)
@@ -73,7 +77,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Debug")
 	bool DEBUG_AttackTeamMates = false;
-
+	
 	UPROPERTY(EditAnywhere, Category= SFX)
 	class USoundCue* SacrificeCue{nullptr};
 	UPROPERTY(EditAnywhere, Category= SFX)

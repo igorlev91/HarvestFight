@@ -28,7 +28,13 @@ ASkyAlterAttack::ASkyAlterAttack()
 	AlterOffer_VFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Alter Offer VFX Component"));
 	AlterOffer_VFX->SetupAttachment(RootComponent);
 	AlterOffer_VFX->SetRelativeLocation({0.0f, 0.0f, 94.0f});
-	AlterOffer_VFX->SetRelativeScale3D(FVector::One() * 2.0f);
+	AlterOffer_VFX->SetRelativeScale3D(FVector::One() * 2.5f);
+	AlterOffer_VFX->SetAutoActivate(false);
+
+	AlterOffer_VFX_Static = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Alter Offer VFX Static Component"));
+	AlterOffer_VFX_Static->SetupAttachment(RootComponent);
+	AlterOffer_VFX_Static->SetRelativeLocation({0.0f, 0.0f, 94.0f});
+	AlterOffer_VFX_Static->SetRelativeScale3D(FVector::One() * 2.5f);
 	
 	AlterOffer_VFX2 = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Alter Offer VFX Component2"));
 	AlterOffer_VFX2->SetupAttachment(RootComponent);
@@ -41,8 +47,15 @@ ASkyAlterAttack::ASkyAlterAttack()
 		AlterOffer_System = FoundOfferSystem.Object;
 		AlterOffer_VFX->SetAsset(AlterOffer_System);
 	}
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem_StaticRay(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_Altar"));
+	if (FoundOfferSystem_StaticRay.Object != NULL)
+	{
+		AlterOffer_System_StaticRay = FoundOfferSystem_StaticRay.Object;
+		AlterOffer_VFX_Static->SetAsset(AlterOffer_System_StaticRay);
+	}
 	
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem2(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_SmiteCountdown"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FoundOfferSystem2(TEXT("/Game/VFX/AlphaVFX/NiagaraSystems/NS_AltarElectricity"));
 	if (FoundOfferSystem2.Object != NULL)
 	{
 		AlterOffer_System2 = FoundOfferSystem2.Object;
@@ -93,6 +106,8 @@ void ASkyAlterAttack::BeginPlay()
 	{
 		AlterCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ASkyAlterAttack::OnPlayerTouchAltar);
 	}
+	
+	AlterOffer_VFX2->Activate();
 }
 
 void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
@@ -114,6 +129,9 @@ void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* OverlappedComponen
 	int32 StarValue = Plant->ServerData.SeedData->BabyStarValue;
 	StarValue = FMath::Clamp(StarValue, 1, 5);
 	Attack(SomePlayer, StarValue);
+
+	if (const auto HeldItemData = SomePlayer->GetHeldItemData())
+		SomePlayer->AddCoins(HeldItemData->BabyStarValue * 3);
 
 	SomePlayer->HeldItem->Destroy();
 	SomePlayer->HeldItem = nullptr;
@@ -200,5 +218,4 @@ void ASkyAlterAttack::OnRep_OnSacrifice()
 
 	// Alter Sacrifice VFX
 	AlterOffer_VFX->Activate(true);
-	AlterOffer_VFX2->Activate(true);
 }
