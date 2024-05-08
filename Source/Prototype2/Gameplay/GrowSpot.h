@@ -131,6 +131,11 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere)
 	ABeehive* Beehive = nullptr;
 
+	UFUNCTION()
+	void OnRep_FertilisationState();
+	UPROPERTY(ReplicatedUsing=OnRep_FertilisationState, EditAnywhere)
+	FFertilisationState FertilisationState{};
+	
 protected:
 	UFUNCTION()
 	void OnRep_GrowSpotState();
@@ -141,11 +146,6 @@ protected:
 	float GrowTime{10};
 	UPROPERTY(Replicated, EditAnywhere)
 	float GrowTimer{};
-	
-	UFUNCTION()
-	void OnRep_FertilisationState();
-	UPROPERTY(ReplicatedUsing=OnRep_FertilisationState, EditAnywhere)
-	FFertilisationState FertilisationState{};
 
 	UFUNCTION()
 	void OnRep_ServerGrowspotDetails();

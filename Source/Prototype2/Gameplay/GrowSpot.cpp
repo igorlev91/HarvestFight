@@ -175,7 +175,7 @@ void AGrowSpot::BeginPlay()
 	}
 
 	/* INIT STEAL DURATION */
-	HoldDuration = 8.0f;
+	HoldDuration = 7.0f;
 
 	/* INIT FROM DATA ASSET */
 	if (GrowSpotData)

@@ -1,4 +1,5 @@
 
+
 #include "Prototype2Character.h"
 
 #include "DebuffComponent.h"
@@ -1993,6 +1994,13 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 	}
 	else if (auto SomeGrowSpot = Cast<AGrowSpot>(ClosestInteractableActor))
 	{
+		if (SomeGrowSpot->FertilisationState.ConcretedHealth > 0)
+		{
+			InteractTimeline->Stop();
+			OnStoppedClaimingPlotDelegate.Broadcast();
+			bAllowMovementFromInput = true;
+			return;
+		}
 		if (IsValid(SomeGrowSpot->ItemRef) == false)
 		{
 			InteractTimeline->Stop();
