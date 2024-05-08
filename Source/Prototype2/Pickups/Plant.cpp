@@ -128,8 +128,7 @@ void APlant::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Multi_OnDestroy();
-				Destroy();
+				Destroy(true);
 			}
 		}
 	}

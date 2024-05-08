@@ -15,6 +15,7 @@ class PROTOTYPE2_API AAspearagusProjectile : public AActor
 public:
 	// Sets default values for this actor's properties
 	AAspearagusProjectile();
+
 	
 	// Called every frame
 	virtual void BeginPlay() override;

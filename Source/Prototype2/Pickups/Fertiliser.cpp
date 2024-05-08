@@ -20,6 +20,17 @@ AFertiliser::AFertiliser()
 	}
 }
 
+void AFertiliser::Destroyed()
+{
+	if (DestroyVFX && bShouldWilt)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+	
+	Super::Destroyed();
+}
+
 void AFertiliser::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -124,8 +135,7 @@ void AFertiliser::Wilt(float DeltaTime)
 		{
 			if (HasAuthority())
 			{
-				Multi_OnDestroy();
-				Destroy();
+				Destroy(true);
 			}
 		}
 	}

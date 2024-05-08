@@ -1,5 +1,4 @@
 
-
 #include "Prototype2GameMode.h"
 
 #include "NavigationSystem.h"
@@ -215,6 +214,8 @@ void APrototype2GameMode::Logout(AController* _Exiting)
 	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!PrototypeGameInstance)
 		return;
+	
+	UpdateSessionJoinability(PrototypeGameInstance->FinalConnectionCount);
 
 	UE_LOG(LogTemp, Warning, TEXT("%s Attempted To Disconnect"), *PlayerStateReference->GetPlayerName());
 	
@@ -256,7 +257,7 @@ void APrototype2GameMode::Tick(float _DeltaSeconds)
 			{
 				const FTransform EndGamePodiumTransform = EndGamePodium->GetTransform();
 				
-				EndGamePodium->Destroy();
+				EndGamePodium->Destroy(true);
 				EndGamePodium = nullptr;
 				EndGamePodium = GetWorld()->SpawnActor<AEndGamePodium>(DataAssetWorldOverride->WorldOverrideData->EndGamePodium_Teams, EndGamePodiumTransform);
 			}

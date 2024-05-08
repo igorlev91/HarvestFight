@@ -432,7 +432,7 @@ void AGrowSpot::Interact(APrototype2Character* _Player)
 		_Player->AddCoins(5);
 		_Player->EnableStencil(false);
 		
-		_Player->HeldItem->Destroy();
+		_Player->HeldItem->Destroy(true);
 		_Player->HeldItem = nullptr;
 		_Player->OnRep_HeldItem();
 
@@ -669,7 +669,7 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 		ItemRef->ItemComponent->OnRep_bGold();
 	}
 	
-	_SeedToPlant->Destroy();
+	_SeedToPlant->Destroy(true);
 	GrowSpotState = EGrowSpotState::Growing;
 	OnRep_GrowSpotState();
 }
@@ -709,7 +709,7 @@ void AGrowSpot::DestroyPlant()
 	
 	GrowSpotState = EGrowSpotState::Empty;
 	OnRep_GrowSpotState();
-	ItemRef->Destroy();
+	ItemRef->Destroy(true);
 	ItemRef = nullptr;
 	OnRep_ItemRef();
 }

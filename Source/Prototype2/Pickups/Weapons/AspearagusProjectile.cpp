@@ -87,6 +87,16 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 
 void AAspearagusProjectile::Destroyed()
 {
+	if (DestroyVFX)
+	{
+		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+		SpawnedVFX->SetLifeSpan(5.0f);
+	}
+	if (DestroyedCue)
+	{
+		// Gets destroyed automatically after played
+		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DestroyedCue, GetActorLocation());		
+	}
 	Super::Destroyed();
 	
 }
@@ -104,8 +114,6 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	{
 		if (HitPlayerCast != OwningPlayer)
 		{	
-			Multi_OnDestroy();
-			Destroy();
 			HitPlayerCast->GetHit(ChargeAmount, GetActorLocation(), OwningPlayer->CurrentWeaponSeedData->WeaponData);
 			if (HitPlayerCast->GetHasCrown())
 			{
@@ -118,6 +126,7 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 				HitPlayerCast->Client_PlaySoundAtLocation(HitPlayerCast->GetActorLocation(), HitPlayerCast->SellCue);
 			}
 		}
+		Destroy(true);
 		return;
 	}
 
@@ -129,23 +138,12 @@ void AAspearagusProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Oth
 		HitSellBinCast->GetHit(ChargeAmount, OwningPlayer->MaxAttackCharge, GetActorLocation());
 	}
 	
-	Multi_OnDestroy();
-	Destroy();
+	Destroy(true);
 }
 
 
 void AAspearagusProjectile::Multi_OnDestroy_Implementation()
 {
-	//if (DestroyVFX)
-	//{
-	//	auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-	//	SpawnedVFX->SetLifeSpan(5.0f);
-	//}
-	if (DestroyedCue)
-	{
-		// Gets destroyed automatically after played
-		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), DestroyedCue, GetActorLocation());		
-	}
 }
 
 void AAspearagusProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

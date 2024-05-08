@@ -138,20 +138,35 @@ void ASellBin::OnPlayerTouchSellBin(UPrimitiveComponent* HitComponent, AActor* O
 	auto Plant = Cast<APlant>(PlayerCharacter->HeldItem);
 	if (IsValid(Plant) == false)
 		return;
+
+	auto Gamestate = UGameplayStatics::GetGameState(GetWorld());
+	if (IsValid(Gamestate) == false)
+		return;
+
+	auto SeedData = Plant->ServerData.SeedData;
+	if (IsValid(SeedData) == false)
+		return;
+
+	auto PlantData = SeedData->PlantData;
+	if (IsValid(PlantData) == false)
+		return;
 	
-	int32 PlantSellValue = (Plant->ServerData.SeedData->BabyStarValue * Plant->ServerData.SeedData->PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
-	int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * Plant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
+	APrototype2Gamestate* CastedGamestate = Cast<APrototype2Gamestate>(Gamestate);
+	
+	int32 PlantSellValue = (SeedData->BabyStarValue * PlantData->Multiplier * (Plant->NumberOfNearbyFlowers + 1));
+	PlantSellValue *= CastedGamestate->SellMultiplier;
+	int32 IncreaseAmount = Plant->ItemComponent->bGold ? PlantSellValue * SeedData->GoldMultiplier : PlantSellValue;
 	
 	PlayerCharacter->AddCoins(IncreaseAmount);
-	PlayerCharacter->HeldItem->Destroy();
+	PlayerCharacter->HeldItem->Destroy(true);
 	PlayerCharacter->HeldItem = nullptr;
 	PlayerCharacter->OnRep_HeldItem();
 	
 	FServerSellData NewServerSellData{};
-	NewServerSellData.CoinCount = IncreaseAmount * Plant->ServerData.SeedData->BabyStarValue;
+	NewServerSellData.CoinCount = IncreaseAmount * SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerCharacter;
-	NewServerSellData.LastPlayerStateToSell = PlayerCharacter->PlayerStateRef;
+	NewServerSellData.LastPlayerStateToSell = PlayerCharacter->GetPlayerState<APrototype2PlayerState>();
 	NewServerSellData.TimeOfSell = GetWorld()->GetTimeSeconds();
 	ServerSellData = NewServerSellData;
 	
@@ -172,17 +187,32 @@ void ASellBin::SellOnThrown(class UPrimitiveComponent* HitComp, class AActor* Ot
 	if (IsValid(PlayerWhoThrewItem) == false)
 		return;
 
-	int32 PlantSellValue = (ThrownPlant->ServerData.SeedData->BabyStarValue * ThrownPlant->ServerData.SeedData->PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
-	int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * ThrownPlant->ServerData.SeedData->GoldMultiplier : PlantSellValue;
+	auto Gamestate = UGameplayStatics::GetGameState(GetWorld());
+	if (IsValid(Gamestate) == false)
+		return;
+
+	auto SeedData = ThrownPlant->ServerData.SeedData;
+	if (IsValid(SeedData) == false)
+		return;
+
+	auto PlantData = SeedData->PlantData;
+	if (IsValid(PlantData) == false)
+		return;
+	
+	APrototype2Gamestate* CastedGamestate = Cast<APrototype2Gamestate>(Gamestate);
+	
+	int32 PlantSellValue = (SeedData->BabyStarValue * PlantData->Multiplier * (ThrownPlant->NumberOfNearbyFlowers + 1));
+	PlantSellValue *= CastedGamestate->SellMultiplier;
+	int32 IncreaseAmount = ThrownPlant->ItemComponent->bGold ? PlantSellValue * SeedData->GoldMultiplier : PlantSellValue;
 	
 	PlayerWhoThrewItem->AddCoins(IncreaseAmount);
-	ThrownPlant->Destroy();
+	ThrownPlant->Destroy(true);
 	
 	FServerSellData NewServerSellData{};
-	NewServerSellData.CoinCount = IncreaseAmount * ThrownPlant->ServerData.SeedData->BabyStarValue;
+	NewServerSellData.CoinCount = IncreaseAmount * SeedData->BabyStarValue;
 	NewServerSellData.SellValue = IncreaseAmount;
 	NewServerSellData.LastPlayerToSell = PlayerWhoThrewItem;
-	NewServerSellData.LastPlayerStateToSell = PlayerWhoThrewItem->PlayerStateRef;
+	NewServerSellData.LastPlayerStateToSell = PlayerWhoThrewItem->GetPlayerState<APrototype2PlayerState>();
 	NewServerSellData.TimeOfSell = GetWorld()->GetTimeSeconds();
 	ServerSellData = NewServerSellData;
 
@@ -236,15 +266,6 @@ void ASellBin::OnRep_ItemSold()
 		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{});
 		SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
 		SpawnedVFX->SetLifeSpan(5.0f);
-	}
-	
-	APrototype2Gamestate* GamestateCast = GetWorld()->GetGameState<APrototype2Gamestate>();
-	if (IsValid(GamestateCast) == false)
-		return;
-
-	if (GamestateCast->Server_Players.Contains(LastPlayerStateToSell))
-	{
-		OnItemSoldDelegate.Broadcast(GamestateCast->Server_Players.Find(LastPlayerStateToSell), SellValue);
 	}
 }
 

@@ -83,7 +83,7 @@ void AFertiliserSpawner::Tick(float _DeltaTime)
 		if (ExtraSettings.bConcreteFertiliser == false
 			&& ExtraSettings.bGoldFertiliser == false
 			&& HasAuthority())
-				Destroy();
+				Destroy(true);
 		else if /* CONCRETE ONLY */ (ExtraSettings.bConcreteFertiliser == true
 				&& ExtraSettings.bGoldFertiliser == false)
 		{

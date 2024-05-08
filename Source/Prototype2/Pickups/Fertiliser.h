@@ -13,6 +13,7 @@ class PROTOTYPE2_API AFertiliser : public APickUpItem, public IInteractInterface
 
 public:
 	AFertiliser();
+	virtual void Destroyed() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 protected:

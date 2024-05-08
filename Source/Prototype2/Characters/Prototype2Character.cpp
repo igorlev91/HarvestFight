@@ -744,8 +744,6 @@ void APrototype2Character::DropItem(float WhoopsyStrength)
 			
 			//if (DropCue)
 			//	PlaySoundAtLocation(GetActorLocation(), DropCue);
-			if (WeaponMesh)
-				Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 			Multi_DropItem();
 			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
@@ -1234,6 +1232,8 @@ void APrototype2Character::InitMiscComponents()
 	
 	// Weapon Mesh
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	WeaponMesh->SetupAttachment(GetMesh(), FName("Base-HumanWeapon"));
+	WeaponMesh->SetRelativeScale3D({0.4f, 0.4f, 0.4f});
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
@@ -1785,7 +1785,7 @@ void APrototype2Character::PickupItemV2(APickUpItem* _Item)
 
 			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
 			
-			_Item->Destroy();
+			_Item->Destroy(true);
 			break;
 		}
 	default:
@@ -3409,7 +3409,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 			}
 
 			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
-			_Item->Destroy();
+			_Item->Destroy(true);
 
 			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			break;

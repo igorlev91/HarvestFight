@@ -1,6 +1,5 @@
 ﻿
 
-
 #include "SkyAlterAttack.h"
 
 #include "NiagaraComponent.h"
@@ -133,7 +132,7 @@ void ASkyAlterAttack::OnPlayerTouchAltar(UPrimitiveComponent* OverlappedComponen
 	if (const auto HeldItemData = SomePlayer->GetHeldItemData())
 		SomePlayer->AddCoins(HeldItemData->BabyStarValue * 3);
 
-	SomePlayer->HeldItem->Destroy();
+	SomePlayer->HeldItem->Destroy(true);
 	SomePlayer->HeldItem = nullptr;
 	SomePlayer->OnRep_HeldItem();
 
