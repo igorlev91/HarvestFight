@@ -103,24 +103,33 @@ TArray<APlant*> ABeehive::GetCloseFlowers()
 	TArray<AActor*> NearbyFlowerActors{};
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlant::StaticClass(), NearbyFlowerActors);
 	TArray<APlant*> NearbyFlowers{};
-	for(AActor* FlowerActor : NearbyFlowerActors)
+	if (NearbyFlowerActors.Num() > 0)
 	{
-		if (FlowerActor == this)
-			continue;
-		
-		if (FVector::Distance(GetActorLocation(), FlowerActor->GetActorLocation()) <= FlowerEffectionDistance)
+		for(AActor* FlowerActor : NearbyFlowerActors)
 		{
-			if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
+			if (IsValid(FlowerActor) == false)
+				continue;
+			
+			if (FlowerActor == this)
+				continue;
+		
+			if (FVector::Distance(GetActorLocation(), FlowerActor->GetActorLocation()) <= FlowerEffectionDistance)
 			{
-				if (NearbyFlower->ServerData.SeedData->BabyType == EPickupDataType::FlowerData)
+				if (APlant* NearbyFlower = Cast<APlant>(FlowerActor))
 				{
-					NearbyFlowers.Add(NearbyFlower);
+					if (NearbyFlower->ServerData.SeedData->BabyType == EPickupDataType::FlowerData)
+					{
+						NearbyFlowers.Add(NearbyFlower);
+					}
 				}
 			}
 		}
+		return NearbyFlowers;
 	}
-
-	return NearbyFlowers;
+	else
+	{
+		return {};
+	}
 }
 
 TArray<FFlowerData> ABeehive::GetCloseFlowerDetails()
@@ -128,6 +137,10 @@ TArray<FFlowerData> ABeehive::GetCloseFlowerDetails()
 	int32 NumberOfOneStars{};
 	int32 NumberOfTwoStars{};
 	int32 NumberOfThreeStars{};
+
+	auto CloseFlowers = GetCloseFlowers();
+	if (CloseFlowers.Num() <= 0)
+		return {};
 	
 	for(auto CloseFlower : GetCloseFlowers())
 	{

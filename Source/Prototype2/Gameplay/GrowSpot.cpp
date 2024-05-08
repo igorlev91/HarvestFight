@@ -617,15 +617,12 @@ void AGrowSpot::PlantASeed(ASeed* _SeedToPlant)
 						FertilisationState.ConcretedHealth <= 0 &&
 						SeedData->BabyType != EPickupDataType::BeehiveData)
 	{
-		if (SeedData->ChanceOfGold > 0)
+		if (rand() % 20 == 0)
 		{
-			if (rand() % SeedData->ChanceOfGold == 0)
-			{
-				FFertilisationState NewFertilisationState = FertilisationState;
-				NewFertilisationState.bFertilised = true;
-				FertilisationState = NewFertilisationState;
-				OnRep_FertilisationState();
-			}
+			FFertilisationState NewFertilisationState = FertilisationState;
+			NewFertilisationState.bFertilised = true;
+			FertilisationState = NewFertilisationState;
+			OnRep_FertilisationState();
 		}
 	}
 
@@ -852,8 +849,9 @@ void AGrowSpot::UpdateGrowUI()
 	{
 		if (SomeBeehive->TimeTillCollect > 0)
 			GrowWidget->SetGrowTimer(FMath::Lerp(1.0f, 0.0f, SomeBeehive->TrackerTimeTillCollect / SomeBeehive->TimeTillCollect));
-		
-		GrowWidget->SetFlowerTypes(SomeBeehive->GetCloseFlowerDetails());
+
+		auto CloseFlowers = SomeBeehive->GetCloseFlowerDetails();
+		GrowWidget->SetFlowerTypes(CloseFlowers);
 	}
 	else if (AGrowableWeapon* SomeWeapon = Cast<AGrowableWeapon>(ItemRef))
 	{
@@ -947,8 +945,12 @@ void AGrowSpot::SetPlantReadySparkle(bool _bIsActive, bool _IsBeehive)
 						}
 					}
 				}
-				
-				Cast<APickUpItem>(ItemRef)->SSComponent->Enable();
+
+				if (auto Pickup = Cast<APickUpItem>(ItemRef))
+				{
+					if (IsValid(Pickup))
+						Pickup->SSComponent->Enable();
+				}
 			}
 			
 			if (!PlantReadyComponent->IsActive())
@@ -1077,18 +1079,5 @@ void AGrowSpot::OnRep_ServerGrowspotDetails()
 	else
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), PlantCue, GetActorLocation());
-	}
-
-	auto CropStarValue = ServerGrowspotDetails.CropStarValue;
-	auto LastPlayerToInteract = ServerGrowspotDetails.LastPlayerToInteract;
-
-	AActor* SellBinActor = UGameplayStatics::GetActorOfClass(GetWorld(), ASellBin::StaticClass());
-	if (IsValid(SellBinActor) == false)
-		return;
-
-	auto SellBinCast = Cast<ASellBin>(SellBinActor);
-	if (GamestateCast->Server_Players.Contains(LastPlayerToInteract))
-	{
-		SellBinCast->OnItemSoldDelegate.Broadcast(GamestateCast->Server_Players.Find(LastPlayerToInteract), CropStarValue);
 	}
 }

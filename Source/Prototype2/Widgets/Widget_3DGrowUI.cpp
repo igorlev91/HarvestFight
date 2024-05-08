@@ -67,18 +67,24 @@ void UWidget_3DGrowUI::SetFlowerTypes(TArray<FFlowerData> _FlowerDatas)
 	
 	/* UN-HIDE FLOWERS */
 	H_Flowers->SetVisibility(ESlateVisibility::Visible);
-	
-	for(UWidget_Flower* Widget : FlowerWidgets)
-	{
-		Widget->RemoveFromParent();
-		Widget->ConditionalBeginDestroy();
-		Widget = nullptr;
-	}
-	FlowerWidgets.Empty();
 
-	for(FFlowerData& FlowerData : _FlowerDatas)
+	if (_FlowerDatas.Num() <= 0)
+		return;
+
+	if (FlowerWidgets.Num() > 0)
 	{
-		UWidget_Flower* NewFlowerWidget = CreateWidget<UWidget_Flower>(this, FlowerWidget);
+		for(UWidget_Flower* Widget : FlowerWidgets)
+		{
+			Widget->RemoveFromParent();
+			Widget->ConditionalBeginDestroy();
+			Widget = nullptr;
+		}
+		FlowerWidgets.Empty();
+	}
+
+	for(FFlowerData FlowerData : _FlowerDatas)
+	{
+		UWidget_Flower* NewFlowerWidget = CreateWidget<UWidget_Flower>(GetOwningPlayer(), FlowerWidget);
 		NewFlowerWidget->SetFlowerType(FlowerData.StarValue);
 		NewFlowerWidget->SetFlowerCount(FlowerData.Count);
 		if (NewFlowerWidget)

@@ -517,7 +517,7 @@ void APrototype2Gamestate::PickRandomMap()
 
 void APrototype2Gamestate::AddCoinsTeams(APrototype2PlayerState* _Player, int32 _Amount)
 {
-	if (!HasAuthority())
+	if (IsValid(_Player) == false)
 		return;
 	
 	if (Server_TeamOne.Contains(_Player))

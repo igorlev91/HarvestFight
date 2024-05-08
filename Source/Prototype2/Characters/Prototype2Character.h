@@ -363,6 +363,7 @@ public:
 	UFUNCTION()
 	class USeedData* GetHeldItemData();
 
+	
 	UFUNCTION()
 	void ClearPickupUI();
 	
@@ -973,6 +974,8 @@ public:
 	USoundCue* JumpCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* LaunchPadCue;
+	UPROPERTY(EditAnywhere, Category="SFX")
+	USoundCue* AirVentPadCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
 	USoundCue* FallOnButtCue;
 	UPROPERTY(EditAnywhere, Category="SFX")
