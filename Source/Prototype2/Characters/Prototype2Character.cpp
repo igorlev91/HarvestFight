@@ -2038,12 +2038,13 @@ void APrototype2Character::CheckForFloorSurface()
 	//UE_LOG(LogTemp, Warning, TEXT("Ground Check"));
 	
 	FVector StartLocation = GetActorLocation() + FVector{0,0,100}; // The start location of the line trace
-	FVector EndLocation = GetActorLocation() + FVector{0,0,-100}; // The end location of the line trace
-
-	TArray<FHitResult> HitResults;
+	FVector EndLocation = GetActorLocation() + FVector{0,0,-120}; // The end location of the line trace
+	
+	FHitResult HitResult;
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = true; // Enable complex tracing for accurate physics material retrieval
 	QueryParams.bReturnPhysicalMaterial = true;
+	QueryParams.AddIgnoredActor(this);
 
 	if (HasIdealRole())
 	{
@@ -2054,56 +2055,51 @@ void APrototype2Character::CheckForFloorSurface()
 	}
 	
 	// Perform the line trace
-	if (GetWorld()->LineTraceMultiByChannel(HitResults, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
 	{
-		for(auto& Hit : HitResults)
+		if (HitResult.GetActor()->ActorHasTag(FName(TEXT("goop"))))
 		{
-			if (Hit.GetActor()->ActorHasTag(FName(TEXT("goop"))))
-			{
-				if (DebuffComponent->CurrentDebuff != EDebuff::None)
-					return;
+			if (DebuffComponent->CurrentDebuff != EDebuff::None)
+				return;
 				
-				if (HasAuthority())
-				{
-					DebuffComponent->DebuffInfo.Debuff = EDebuff::Slow;
-					DebuffComponent->DebuffInfo.Duration = 0.3f;
-					DebuffComponent->OnRep_ApplyDebuff();
-				}
-				else if (GetLocalRole() == ROLE_AutonomousProxy)
-				{
-					Server_ApplyHoneyGoopSlow();
-				}
-			}
-			
-			if (const UPhysicalMaterial* PhysicalMaterial = Hit.PhysMaterial.Get())
+			if (HasAuthority())
 			{
-				const float Friction = PhysicalMaterial->Friction;
+				DebuffComponent->DebuffInfo.Debuff = EDebuff::Slow;
+				DebuffComponent->DebuffInfo.Duration = 0.3f;
+				DebuffComponent->OnRep_ApplyDebuff();
+			}
+			else if (GetLocalRole() == ROLE_AutonomousProxy)
+			{
+				Server_ApplyHoneyGoopSlow();
+			}
+		}
 			
-				if (Friction <= 0.5f)
+		if (const UPhysicalMaterial* PhysicalMaterial = HitResult.PhysMaterial.Get())
+		{
+			const float Friction = PhysicalMaterial->Friction;
+			
+			if (Friction <= 0.5f)
+			{
+				if (HasIdealRole())
 				{
-					if (HasIdealRole())
-					{
-						GetCharacterMovement()->BrakingFriction = 0.0f;
-						GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
-						GetCharacterMovement()->GroundFriction = 0.0f;
-					}
+					GetCharacterMovement()->BrakingFriction = 0.0f;
+					GetCharacterMovement()->MaxAcceleration = 2048.0f * 0.5f;
+					GetCharacterMovement()->GroundFriction = 0.0f;
+				}
 
-					if (FVector::DistXY(GetVelocity(), FVector::ZeroVector) > 10.0f)
-						ToggleIceSlidingVFX(true);
-					else
-						ToggleIceSlidingVFX(false);
-					
-					break;
-				}
+				if (FVector::DistXY(GetVelocity(), FVector::ZeroVector) > 10.0f)
+					ToggleIceSlidingVFX(true);
 				else
-				{
 					ToggleIceSlidingVFX(false);
-				}
 			}
 			else
 			{
 				ToggleIceSlidingVFX(false);
 			}
+		}
+		else
+		{
+			ToggleIceSlidingVFX(false);
 		}
 	}
 	else
