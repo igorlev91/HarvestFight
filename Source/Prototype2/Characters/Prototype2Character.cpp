@@ -1215,16 +1215,16 @@ void APrototype2Character::InitNiagraComponents()
 	Slow_NiagaraComponent->SetupAttachment(RootComponent);
 	
 	IceSliding_Left_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Left)"));
-	IceSliding_Left_NiagaraComponent->SetupAttachment(GetMesh(), FName("Base-HumanLFoot"));
+	IceSliding_Left_NiagaraComponent->SetupAttachment(RootComponent);
 	IceSliding_Left_NiagaraComponent->SetAutoActivate(false);
-	IceSliding_Left_NiagaraComponent->SetRelativeLocation({0.0f, 2.5f, 0.0f});
-	IceSliding_Left_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 90.0f, 0.0f}));
+	IceSliding_Left_NiagaraComponent->SetRelativeLocation({0.0f, -35.0f, -98.0f});
+	IceSliding_Left_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 0.0f, 90.0f}));
 	
 	IceSliding_Right_NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Ice Sliding VFX (Right)"));
-	IceSliding_Right_NiagaraComponent->SetupAttachment(GetMesh(), FName("Base-HumanRFoot"));
+	IceSliding_Right_NiagaraComponent->SetupAttachment(RootComponent);
 	IceSliding_Right_NiagaraComponent->SetAutoActivate(false);
-	IceSliding_Right_NiagaraComponent->SetRelativeLocation({0.0f, 2.5f, 0.0f});
-	IceSliding_Right_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 90.0f, 0.0f}));
+	IceSliding_Right_NiagaraComponent->SetRelativeLocation({0.0f, 35.0f, -98.0f});
+	IceSliding_Right_NiagaraComponent->SetRelativeRotation(FRotator::MakeFromEuler({0.0f, 0.0f, 90.0f}));
 }
 
 void APrototype2Character::InitMiscComponents()
@@ -1984,6 +1984,17 @@ void APrototype2Character::OnUpdate_InteractTimeline(float _Progress)
 {
 	if (!IsValid(ClosestInteractableActor) || ClosestInteractableItem == nullptr)
 		return;
+
+	if (IsValid(GameState))
+	{
+		if (GameState->HasGameFinished())
+		{
+			InteractTimeline->Stop();
+			OnStoppedClaimingPlotDelegate.Broadcast();
+			bAllowMovementFromInput = true;
+			return;
+		}
+	}
 
 	if (InvincibilityTimer > 0)
 	{

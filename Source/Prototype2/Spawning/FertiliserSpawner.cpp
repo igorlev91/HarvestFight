@@ -24,6 +24,18 @@ AFertiliserSpawner::AFertiliserSpawner()
 
 	ItemComponent->Mesh->CustomDepthStencilValue = 1;
 	ChickenMesh->CustomDepthStencilValue = 1;
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FoundGoldOnlyMaterial(TEXT("/Game/Environment/Textures/T_FertiliserSpawnerChicken_NoCement_Diff"));
+	if (FoundGoldOnlyMaterial.Object != NULL)
+	{
+		GoldOnlyTexture = FoundGoldOnlyMaterial.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> FoundConcreteOnlyMaterial(TEXT("/Game/Environment/Textures/T_FertiliserSpawnerChicken_NoGold_Diff"));
+	if (FoundConcreteOnlyMaterial.Object != NULL)
+	{
+		ConcreteOnlyTexture = FoundConcreteOnlyMaterial.Object;
+	}
 }
 
 void AFertiliserSpawner::BeginPlay()
@@ -36,10 +48,17 @@ void AFertiliserSpawner::BeginPlay()
 	ItemComponent->Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 	ItemComponent->Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
+	DynamicMaterial = ItemComponent->Mesh->CreateAndSetMaterialInstanceDynamic(0);
 	
 	ChickenMesh->AttachToComponent(ItemComponent->Mesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	ChickenMesh->SetRelativeLocation(FVector(75.006312,1.607227,167.150239)); // Copied from the original blueprint placement
 	SSComponent->SetMeshToStretch(ChickenMesh);
+
+	AGameStateBase* SomeGamestate = UGameplayStatics::GetGameState(GetWorld());
+	if (IsValid(SomeGamestate))
+	{
+		GameStateRef = Cast<APrototype2Gamestate>(SomeGamestate);
+	}
 	
 	if (!HasAuthority())
 		return;
@@ -57,19 +76,23 @@ void AFertiliserSpawner::Tick(float _DeltaTime)
 {
 	Super::Tick(_DeltaTime);
 
-	// LOCALIZED
-	if (!IsValid(GameStateRef))
+	// LOCALIZED MATERIAL CHANGE
+	if (IsValid(GameStateRef))
 	{
-		AGameStateBase* SomeGamestate = UGameplayStatics::GetGameState(GetWorld());
-		if (IsValid(SomeGamestate))
+		FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
+		if (ExtraSettings.bConcreteFertiliser == false
+			&& ExtraSettings.bGoldFertiliser == false
+			&& HasAuthority())
+				Destroy();
+		else if /* CONCRETE ONLY */ (ExtraSettings.bConcreteFertiliser == true
+				&& ExtraSettings.bGoldFertiliser == false)
 		{
-			GameStateRef = Cast<APrototype2Gamestate>(SomeGamestate);
-
-			FHHExtraSettings& ExtraSettings = GameStateRef->ExtraSettings;
-			if (ExtraSettings.bConcreteFertiliser == false
-				&& ExtraSettings.bGoldFertiliser == false
-				&& HasAuthority())
-					Destroy();
+			DynamicMaterial->SetTextureParameterValue(FName("Colour Texture"), ConcreteOnlyTexture);
+		}
+		else if /* GOLD ONLY */ (ExtraSettings.bConcreteFertiliser == false
+				&& ExtraSettings.bGoldFertiliser == true)
+		{
+			DynamicMaterial->SetTextureParameterValue(FName("Colour Texture"), GoldOnlyTexture);
 		}
 	}
 

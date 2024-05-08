@@ -52,6 +52,15 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	class UMaterialInstance* GhostMaterial{};
+
+	UPROPERTY(EditAnywhere)
+	class UTexture2D* GoldOnlyTexture{};
+
+	UPROPERTY(EditAnywhere)
+	class UTexture2D* ConcreteOnlyTexture{};
+
+	UPROPERTY(EditAnywhere)
+	class UMaterialInstanceDynamic* DynamicMaterial{nullptr};
 	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* ChickenMesh{};
