@@ -1,5 +1,4 @@
 
-
 #include "Prototype2Character.h"
 
 #include "DebuffComponent.h"
@@ -2055,7 +2054,7 @@ void APrototype2Character::CheckForFloorSurface()
 	}
 	
 	// Perform the line trace
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_EngineTraceChannel1, QueryParams))
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_GameTraceChannel1, QueryParams))
 	{
 		if (HitResult.GetActor()->ActorHasTag(FName(TEXT("goop"))))
 		{
