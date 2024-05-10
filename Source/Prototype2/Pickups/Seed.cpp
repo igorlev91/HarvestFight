@@ -56,10 +56,10 @@ void ASeed::Tick(float _DeltaSeconds)
 
 void ASeed::Destroyed()
 {
-	if (DestroyVFX && bShouldWilt)
+	if (IsValid(DestroyVFX) && bShouldWilt)
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
+			SpawnedVFX->SetLifeSpan(5.0f);
 	}
 	
 	Super::Destroyed();
@@ -133,11 +133,13 @@ void ASeed::OnRep_bHasLanded()
 {
 	if (bHasLanded)
 	{
-		if (DestroyVFX)
+		if (IsValid(DestroyVFX))
 		{
-			auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{});
-			SpawnedVFX->SetLifeSpan(5.0f);
-			SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+			if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{}))
+			{
+				SpawnedVFX->SetLifeSpan(5.0f);
+				SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+			}
 		}
 		
 		ParachuteMesh->SetVisibility(false);
@@ -161,7 +163,7 @@ void ASeed::Wilt(float DeltaTime)
 		Lifetime -= DeltaTime;
 		if (Lifetime <= 0)
 		{
-			Destroy();
+			Destroy(true);
 		}
 	}
 }

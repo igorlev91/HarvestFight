@@ -748,10 +748,10 @@ void AGrowSpot::Multi_DamageConcrete_Implementation()
 
 void AGrowSpot::SpawnAPoof()
 {
-	if (PoofSystem)
+	if (IsValid(PoofSystem))
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{}))
+			SpawnedVFX->SetLifeSpan(5.0f);
 	}
 }
 

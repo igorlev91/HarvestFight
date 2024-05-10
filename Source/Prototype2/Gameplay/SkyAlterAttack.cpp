@@ -206,13 +206,15 @@ void ASkyAlterAttack::OnRep_OnSacrifice()
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySacrificeCue, GetActorLocation(),1, 1, 0, SacrificeAttenuation);
 	
 	// Poof VFX
-	if (PoofSystem)
+	if (IsValid(PoofSystem))
 	{
 		FVector PoofSpot = GetActorLocation();
 		PoofSpot.Z = PoofSpot.Z + 130.0f;
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, PoofSpot, FRotator{});
-		SpawnedVFX->SetActorScale3D(FVector::One() * 3);
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, PoofSpot, FRotator{}))
+		{
+			SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+			SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 
 	// Alter Sacrifice VFX

@@ -261,11 +261,13 @@ void ASellBin::OnRep_ItemSold()
 	InteractSystem->Activate(true);
 
 	// Poof VFX
-	if (PoofSystem)
+	if (IsValid(PoofSystem))
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{});
-		SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, InteractSystem->GetComponentLocation(), FRotator{}))
+		{
+			SpawnedVFX->SetActorScale3D(FVector::One() * 1.5f);
+			SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 }
 

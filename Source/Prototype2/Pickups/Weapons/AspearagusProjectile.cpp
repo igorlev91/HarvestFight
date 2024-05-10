@@ -87,10 +87,12 @@ void AAspearagusProjectile::Tick(float DeltaTime)
 
 void AAspearagusProjectile::Destroyed()
 {
-	if (DestroyVFX)
+	if (IsValid(DestroyVFX))
 	{
-		auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
-		SpawnedVFX->SetLifeSpan(5.0f);
+		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
+		{
+			SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 	if (DestroyedCue)
 	{
