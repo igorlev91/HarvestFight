@@ -73,6 +73,27 @@ APrototype2Character::APrototype2Character()
 	InitNiagraComponents();
 }
 
+void APrototype2Character::Destroyed()
+{
+	if (HasAuthority())
+	{
+		if (IsValid(HeldItem))
+		{
+			HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			HeldItem->SetActorLocation(GetActorLocation() + (FVector::UpVector * 100.0f));
+
+			HeldItem->ItemComponent->Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			HeldItem->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+			HeldItem->ItemComponent->Mesh->SetSimulatePhysics(true);
+		}
+	}
+
+	HeldItem = nullptr;
+	OnRep_HeldItem();
+	
+	Super::Destroyed();
+}
+
 void APrototype2Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

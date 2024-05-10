@@ -110,6 +110,8 @@ protected:
 	/* Constructor */
 	APrototype2Character();	
 
+	virtual void Destroyed() override;
+	
 	/* For networking */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
