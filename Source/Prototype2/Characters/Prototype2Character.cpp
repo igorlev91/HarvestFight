@@ -489,7 +489,7 @@ void APrototype2Character::ChargeAttack()
 
 		if (HasAuthority())
 		{
-			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			//Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			
 			// Charge animation
 			
@@ -498,7 +498,7 @@ void APrototype2Character::ChargeAttack()
 		}
 		else
 		{
-			Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			//Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			Server_ChargeAttack(bChargeAnimationState);
 		}
 		PlayWeaponSound(ChargeCue);
@@ -540,6 +540,7 @@ void APrototype2Character::ReleaseAttack()
 	}
 	
 	bCanAttack = false;
+	AttackTimer = AttackTimerTime;
 
 	// If not punching, turn on attack trail
 	if (CurrentWeaponSeedData->WeaponData != DefaultWeaponSeedData->WeaponData)
@@ -560,15 +561,15 @@ void APrototype2Character::ReleaseAttack()
 		bIsFollowingThroughAttack = true;
 	}
 
-	// Make sure weapon is socketed to hand
-	if (HasAuthority())
-	{
-		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	}
-	else
-	{
-		Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
-	}
+	//// Make sure weapon is socketed to hand
+	//if (HasAuthority())
+	//{
+	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	//}
+	//else
+	//{
+	//	Server_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	//}
 
 	// Set the radius of the sphere for attack
 	ExecuteAttackInfo.AttackSphereRadius = CurrentWeaponSeedData->WeaponData->BaseAttackRadius + AttackChargeAmount * CurrentWeaponSeedData->WeaponData->AOEMultiplier;
@@ -2678,8 +2679,8 @@ void APrototype2Character::ThrowItem()
 		if (IsValid(HeldItem))
 		HeldItem->Server_Drop();
 		
-		if (IsValid(WeaponMesh))
-			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+		//if (IsValid(WeaponMesh))
+		//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
 		CalculateThrowVectorAndLaunch(GetActorForwardVector(), GetCharacterMovement()->GetLastUpdateVelocity().Length());
 		HeldItem = nullptr;
@@ -2736,8 +2737,8 @@ void APrototype2Character::Server_ThrowItem_Implementation(FVector _ForwardVecto
 	
 	HeldItem->Server_Drop();
 	
-	if (IsValid(WeaponMesh))
-		Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+	//if (IsValid(WeaponMesh))
+	//	Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 
 	CalculateThrowVectorAndLaunch(_ForwardVector, _PlayerSpeed);
 	HeldItem = nullptr;
@@ -3411,7 +3412,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 			CurrentWeaponAnimation = _Item->ServerData.SeedData->WeaponData->WeaponAnimationType;
 			_Item->Destroy(true);
 
-			Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
+			//Multi_SocketItem(WeaponMesh, FName("Base-HumanWeapon"));
 			break;
 		}
 	default:
@@ -3419,7 +3420,7 @@ void APrototype2Character::Server_PickupItem_Implementation(APickUpItem* _Item, 
 			HeldItem = _Item;
 			OnRep_HeldItem();
 			
-			Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
+			//Multi_SocketItem(WeaponMesh, FName("WeaponHolsterSocket"));
 			break;
 		}
 	}
