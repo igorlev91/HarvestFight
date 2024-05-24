@@ -241,10 +241,25 @@ void AFertiliserSpawner::SpawnFertiliser()
 	SpawnedFertiliser->ItemComponent->Mesh->SetIsReplicated(false);
 	//SpawnedFertiliser->ItemComponent->Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	//FertiliserServerData.SpawnedFertiliser->ItemComponent->Multi_DisableCollisionAndAttach();
-	
-	int8 RandomFertiliser = rand() % RestrictedFertilizerDatas.Num();
-	USeedData* FertiliserData = RestrictedFertilizerDatas[RandomFertiliser];
-	SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+
+	if (RestrictedFertilizerDatas.Num() == 1)
+	{
+		USeedData* FertiliserData = RestrictedFertilizerDatas[0];
+		SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+	}
+	else if (RestrictedFertilizerDatas.Num() == 2)
+	{
+		if (rand() % 5 == 0)
+		{
+			USeedData* FertiliserData = RestrictedFertilizerDatas[1];
+			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+		}
+		else
+		{
+			USeedData* FertiliserData = RestrictedFertilizerDatas[0];
+			SpawnedFertiliser->SetSeedData(FertiliserData, EPickupActor::FertilizerActor);
+		}
+	}
 	
 	SpawnedFertiliser->AttachToComponent(RootComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	SpawnedFertiliser->SetActorRelativeLocation({SpawnXPosition, 0.0f, SpawnZPosition});
