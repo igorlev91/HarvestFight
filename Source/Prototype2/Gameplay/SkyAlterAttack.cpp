@@ -210,10 +210,16 @@ void ASkyAlterAttack::OnRep_OnSacrifice()
 	{
 		FVector PoofSpot = GetActorLocation();
 		PoofSpot.Z = PoofSpot.Z + 130.0f;
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, PoofSpot, FRotator{}))
+		if (UWorld* World = GetWorld())
 		{
-			SpawnedVFX->SetActorScale3D(FVector::One() * 3);
-			SpawnedVFX->SetLifeSpan(5.0f);
+			if (auto SpawnedVFX  = World->SpawnActor<AActor>(PoofSystem, PoofSpot, FRotator{}))
+			{
+				if (IsValid(SpawnedVFX))
+				{
+					SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+					SpawnedVFX->SetLifeSpan(5.0f);
+				}
+			}
 		}
 	}
 

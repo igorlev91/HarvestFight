@@ -24,9 +24,11 @@ void AFertiliser::Destroyed()
 {
 	if (IsValid(DestroyVFX) && bShouldWilt)
 	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
+		if (UWorld* World = GetWorld())
 		{
-			SpawnedVFX->SetLifeSpan(5.0f);
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
 		}
 	}
 	
@@ -177,9 +179,11 @@ void AFertiliser::Multi_OnDestroy_Implementation()
 {
 	if (IsValid(DestroyVFX))
 	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
+		if (UWorld* World = GetWorld())
 		{
-			SpawnedVFX->SetLifeSpan(5.0f);
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
 		}
 	}
 }

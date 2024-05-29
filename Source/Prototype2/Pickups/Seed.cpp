@@ -1,5 +1,4 @@
 
-
 #include "Seed.h"
 
 #include "Prototype2/Characters/Prototype2Character.h"
@@ -58,8 +57,12 @@ void ASeed::Destroyed()
 {
 	if (IsValid(DestroyVFX) && bShouldWilt)
 	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
-			SpawnedVFX->SetLifeSpan(5.0f);
+		if (UWorld* World = GetWorld())
+		{
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 	
 	Super::Destroyed();
@@ -135,10 +138,16 @@ void ASeed::OnRep_bHasLanded()
 	{
 		if (IsValid(DestroyVFX))
 		{
-			if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{}))
+			if (UWorld* World = GetWorld())
 			{
-				SpawnedVFX->SetLifeSpan(5.0f);
-				SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+				if (auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, ParachuteMesh->GetComponentLocation(), FRotator{}))
+				{
+					if (IsValid(SpawnedVFX))
+					{
+						SpawnedVFX->SetLifeSpan(5.0f);
+						SpawnedVFX->SetActorScale3D(FVector::One() * 3);
+					}
+				}
 			}
 		}
 		

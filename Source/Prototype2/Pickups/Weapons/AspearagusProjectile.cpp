@@ -89,9 +89,11 @@ void AAspearagusProjectile::Destroyed()
 {
 	if (IsValid(DestroyVFX))
 	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
+		if (UWorld* World = GetWorld())
 		{
-			SpawnedVFX->SetLifeSpan(5.0f);
+			auto SpawnedVFX  = World->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
 		}
 	}
 	if (DestroyedCue)

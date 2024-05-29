@@ -750,8 +750,12 @@ void AGrowSpot::SpawnAPoof()
 {
 	if (IsValid(PoofSystem))
 	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{}))
-			SpawnedVFX->SetLifeSpan(5.0f);
+		if (UWorld* World = GetWorld())
+		{
+			auto SpawnedVFX  = World->SpawnActor<AActor>(PoofSystem, GetActorLocation(), FRotator{});
+			if (IsValid(SpawnedVFX))
+				SpawnedVFX->SetLifeSpan(5.0f);
+		}
 	}
 }
 

@@ -171,9 +171,4 @@ void APlant::Multi_ScalePlant()
 
 void APlant::Multi_OnDestroy_Implementation()
 {
-	if (IsValid(DestroyVFX))
-	{
-		if (auto SpawnedVFX  = GetWorld()->SpawnActor<AActor>(DestroyVFX, GetActorLocation(), FRotator{}))
-			SpawnedVFX->SetLifeSpan(5.0f);
-	}
 }
