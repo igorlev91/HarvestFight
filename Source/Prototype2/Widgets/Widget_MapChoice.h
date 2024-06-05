@@ -21,9 +21,7 @@ public:
 	/* Sets the player map choice in the player state */
 	UFUNCTION(BlueprintCallable)
 	void SelectLevel(EFarm _Level);
-
-	UFUNCTION(BlueprintCallable)
-	void ShowLoadingScreen(UUserWidget *Widget);
+	
 
 	/* Public Variables */
 public:

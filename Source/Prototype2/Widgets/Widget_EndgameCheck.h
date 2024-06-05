@@ -18,9 +18,7 @@ public:
 	
 	/* Turns the endgame check menu widget on or off */
 	void ToggleMenu();
-
-	UFUNCTION(BlueprintCallable)
-	void ShowLoadingScreen(UUserWidget *Widget);
+	
 
 	/* Public Variables */
 public:

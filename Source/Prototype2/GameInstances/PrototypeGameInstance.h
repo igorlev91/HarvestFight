@@ -84,7 +84,10 @@ public:
 	
 	void ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder);
 	void RemoveLoadingScreen(UUserWidget *Widget);
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UUserWidget* BlackScreenWidget{ nullptr };
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bPlayerStentil{ false };
 	

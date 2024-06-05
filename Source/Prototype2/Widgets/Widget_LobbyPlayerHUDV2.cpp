@@ -193,12 +193,28 @@ void UWidget_LobbyPlayerHUDV2::NativeOnInitialized()
 	KickOverlays.Add(P6KickOverlay);
 
 	InitTeams();
+
+	RemoveLoadingScreen();
+}
+
+void UWidget_LobbyPlayerHUDV2::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	ShowLoadingScreen();
 }
 
 void UWidget_LobbyPlayerHUDV2::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
+	if (BlackScreenTimer > 0)
+	{
+		BlackScreenTimer -= InDeltaTime;
+		RemoveLoadingScreen();
+	}
+	
+	
 	OwningPlayerState = GetOwningPlayerState<ALobbyPlayerState>();
 	if (!IsValid(OwningPlayerState))
 		return;
@@ -647,20 +663,36 @@ void UWidget_LobbyPlayerHUDV2::UpdateTeams()
 	VerticalBoxRight->InvalidateLayoutAndVolatility();
 }
 
-void UWidget_LobbyPlayerHUDV2::RemoveLoadingScreen(UUserWidget* Widget)
+void UWidget_LobbyPlayerHUDV2::RemoveLoadingScreen()
 {
 	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
 
-	if (GameInstance)
-		GameInstance->RemoveLoadingScreen(Widget);
+	if (!GameInstance)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("No game instance"));
+		return;
+	}
+
+	if (!GameInstance->BlackScreenWidget)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("No black screen widget"));
+		return;
+	}
+	
+	GameInstance->RemoveLoadingScreen(GameInstance->BlackScreenWidget);
 }
 
-void UWidget_LobbyPlayerHUDV2::ShowLoadingScreen(UUserWidget* Widget)
+void UWidget_LobbyPlayerHUDV2::ShowLoadingScreen()
 {
 	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
 
-	if (GameInstance)
-		GameInstance->ShowLoadingScreen(Widget, 0);
+	if (!GameInstance)
+		return;
+
+	if (!GameInstance->BlackScreenWidget)
+		return;
+	
+	GameInstance->ShowLoadingScreen(GameInstance->BlackScreenWidget, 0);
 }
 
 void UWidget_LobbyPlayerHUDV2::ResetDefaults()

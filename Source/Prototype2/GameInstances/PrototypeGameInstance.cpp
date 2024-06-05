@@ -46,5 +46,6 @@ void UPrototypeGameInstance::ShowLoadingScreen(UUserWidget *Widget, int32 ZOrder
 
 void UPrototypeGameInstance::RemoveLoadingScreen(UUserWidget *Widget)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Game instance - removed black screen transition"));
 	GetGameViewportClient()->RemoveViewportWidgetContent(Widget->TakeWidget());
 }

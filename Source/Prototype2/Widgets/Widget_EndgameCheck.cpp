@@ -25,12 +25,4 @@ void UWidget_EndgameCheck::ToggleMenu()
 	}
 }
 
-void UWidget_EndgameCheck::ShowLoadingScreen(UUserWidget* Widget)
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
 
-	if (GameInstance)
-	{
-		GameInstance->ShowLoadingScreen(Widget, 0);
-	}
-}

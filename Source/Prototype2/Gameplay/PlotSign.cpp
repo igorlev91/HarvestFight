@@ -45,6 +45,8 @@ void APlotSign::BeginPlay()
 
 	SSComponent->SetMeshToStretch({ItemComponent->Mesh});
 	SSComponent->Enable();
+
+	HoldDuration = 2.71828f;
 }
 
 void APlotSign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

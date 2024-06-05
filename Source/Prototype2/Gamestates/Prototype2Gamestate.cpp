@@ -131,7 +131,10 @@ void APrototype2Gamestate::TickCountdownTimer(float DeltaSeconds)
 	
 	if (HasAuthority() && !bGameHasStarted)
 	{
-		if (Server_Players.Num() >= FinalConnectionCount || WaitingForPlayersSeconds <= 0)
+		if (Server_Players.Num() >= FinalConnectionCount && WaitingForPlayersSeconds > 3.0f)
+			WaitingForPlayersSeconds = 3.0f;
+		
+		if (WaitingForPlayersSeconds <= 0)
 		{
 			if (CountdownLengthSeconds > 0)
 			{

@@ -5,7 +5,7 @@
 
 UHarvestHavocGameUserSettings::UHarvestHavocGameUserSettings(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
-	FieldOfView = 90;
+	FieldOfView = 100;
 	MasterGraphics = 3;
 	MasterVolume = 10;
 	MusicVolume = 10;

@@ -92,7 +92,7 @@ void APreGameArena::Tick(float DeltaTime)
 		if (IsValid(GamemodeRef))
 		{
 			GamemodeRef->PreGameArenas.Remove(this);
-			Destroy();
+			Destroy(true);
 		}
 	}
 

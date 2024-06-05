@@ -26,12 +26,5 @@ void UWidget_MapChoice::SelectLevel(EFarm _Level)
 	}
 }
 
-void UWidget_MapChoice::ShowLoadingScreen(UUserWidget* Widget)
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-
-	if (GameInstance)
-		GameInstance->ShowLoadingScreen(Widget, 0);
-}
 
 

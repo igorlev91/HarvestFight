@@ -118,10 +118,9 @@ void ASkyAlter::OnPlayerTouchAltar(UPrimitiveComponent* HitComponent, AActor* Ot
 			
 		SomePlayer->Multi_SocketItem(SomePlayer->WeaponMesh, FName("Base-HumanWeapon"));
 
-		APickUpItem* item = SomePlayer->HeldItem;
-		SomePlayer->DropItem();
-		// Destroy the crop the player is holding
-		item->Destroy();
+		SomePlayer->HeldItem->Destroy(true);
+		SomePlayer->HeldItem = nullptr;
+		SomePlayer->OnRep_HeldItem();
 
 		SomePlayer->Client_RefreshCurrentMaxSpeed();
 	}

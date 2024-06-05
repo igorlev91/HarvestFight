@@ -1,4 +1,7 @@
-
+/* 
+ * Description : Text at start of game showing that waiting for other players
+ *               & text at endgame to show game has finished
+ *               Also stops players moving at beginning of game*/
 
 #pragma once
 

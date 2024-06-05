@@ -13,7 +13,8 @@ class PROTOTYPE2_API ACrown : public AActor
 	GENERATED_BODY()
 
 public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, int32, _PlayerID);
+	//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, int32, _PlayerID);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerTakesTheCrown, FString, _PlayerName);
 	UPROPERTY(BlueprintAssignable)
 	FOnWinnerTakesTheCrown 	OnWinnerTakesTheCrownDelegate;
 

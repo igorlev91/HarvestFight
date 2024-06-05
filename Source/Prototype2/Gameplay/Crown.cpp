@@ -81,5 +81,7 @@ void ACrown::OnRep_AttachedPlayer()
 
 	Mesh->SetVisibility(true);
 	AttachToComponent(AttachedPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("S_Crown"));
-	OnWinnerTakesTheCrownDelegate.Broadcast(AttachedPlayer->GetPlayerID());
+	//OnWinnerTakesTheCrownDelegate.Broadcast(AttachedPlayer->GetPlayerID());
+	OnWinnerTakesTheCrownDelegate.Broadcast(AttachedPlayer->PlayerStateRef->PlayerName);
+	
 }

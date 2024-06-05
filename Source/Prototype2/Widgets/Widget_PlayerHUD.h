@@ -18,7 +18,9 @@ class PROTOTYPE2_API UWidget_PlayerHUD : public UUserWidget
 	/* Public Functions */
 public:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	
 
 	UPROPERTY()
 	class APrototype2Gamestate* GameStateReference{nullptr};
@@ -73,11 +75,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetFreeForAllScoreUI();
 
-	UFUNCTION(BlueprintCallable)
-	void RemoveLoadingScreen(UUserWidget *Widget);
-
-	UFUNCTION(BlueprintCallable)
-	void ShowLoadingScreen(UUserWidget *Widget);
+	
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
 
 	
 	
@@ -335,4 +335,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsGamepad = false;
+
+	/* Black screen timer */
+	float BlackScreenTimer = 3.0f;
 };
+
+
+

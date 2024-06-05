@@ -17,12 +17,11 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void NativeDestruct() override;
 
-	UFUNCTION(BlueprintCallable)
-	void RemoveLoadingScreen(UUserWidget *Widget);
-
-	UFUNCTION(BlueprintCallable)
-	void ShowLoadingScreen(UUserWidget *Widget);
+	
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
 
 	/* Public Variables */
 public:

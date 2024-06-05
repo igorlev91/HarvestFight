@@ -22,6 +22,7 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeOnInitialized() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	/* Updates playerstate to being ready & turns on ready UI*/
@@ -44,11 +45,9 @@ public:
 	UFUNCTION()
 	void UpdateTeams();
 
-	UFUNCTION(BlueprintCallable)
-	void RemoveLoadingScreen(UUserWidget *Widget);
 
-	UFUNCTION(BlueprintCallable)
-	void ShowLoadingScreen(UUserWidget *Widget);
+	void RemoveLoadingScreen();
+	void ShowLoadingScreen();
 
 	/* Public Variables */
 public:
@@ -259,7 +258,8 @@ public:
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	UOverlay* P6KickOverlay;
 	
-
+	/* Black screen timer */
+	float BlackScreenTimer = 3.0f;
 
 	
 	/* Widget Variables related to button pulsing/size changes */

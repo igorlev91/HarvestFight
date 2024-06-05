@@ -183,12 +183,5 @@ void UWidget_EndgameMenu::EnableEndgameMapChoice()
 		WBP_MapChoiceBlitz->SetVisibility(ESlateVisibility::Visible);
 }
 
-void UWidget_EndgameMenu::ShowLoadingScreen(UUserWidget* Widget)
-{
-	UPrototypeGameInstance* GameInstance = GetGameInstance<UPrototypeGameInstance>();
-
-	if (GameInstance)
-		GameInstance->ShowLoadingScreen(Widget, 0);
-}
 
 

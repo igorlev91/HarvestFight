@@ -139,6 +139,8 @@ void ALobbyGamemode::Logout(AController* _Exiting)
 	UPrototypeGameInstance* PrototypeGameInstance = GetGameInstance<UPrototypeGameInstance>();
 	if (!PrototypeGameInstance)
 		return;
+
+	UpdateSessionJoinability(PrototypeGameInstance->FinalConnectionCount);
 		
 	UE_LOG(LogTemp, Warning, TEXT("%s Attempted To Disconnect"), *PlayerStateReference->GetPlayerName());
 

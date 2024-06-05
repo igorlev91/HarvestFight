@@ -111,11 +111,25 @@ void ALaunchPad::Launch(APrototype2Character* _Player, bool _WithArrowDirection)
 
 	if (HasAuthority())
 	{
-		_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+		if (bIsVent)
+		{
+			_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->AirVentPadCue);
+		}
+		else
+		{
+			_Player->Client_PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+		}
 	}
 	else
 	{
-		_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+		if (bIsVent)
+		{
+			_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->AirVentPadCue);
+		}
+		else
+		{
+			_Player->PlaySoundAtLocation(_Player->GetActorLocation(), _Player->LaunchPadCue);
+		}
 	}
 	_Player->LaunchCharacter(LaunchVector, false, false);
 }

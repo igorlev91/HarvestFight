@@ -52,41 +52,41 @@ void UWidget_PlayerEmote::PlayEmote(EEmote _Emote)
 		}
 	case EEmote::Emote3:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote9);
-			else
+			//if (GameStateReference->bTeams)
+			//	EmoteImage->SetBrushFromTexture(Emote9);
+			//else
 				EmoteImage->SetBrushFromTexture(Emote3);
 			break;
 		}
 	case EEmote::Emote4:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote10);
-			else
+			//if (GameStateReference->bTeams)
+			//	EmoteImage->SetBrushFromTexture(Emote10);
+			//else
 				EmoteImage->SetBrushFromTexture(Emote4);
 			break;
 		}
 	case EEmote::Emote5:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote11);
-			else
+			//if (GameStateReference->bTeams)
+			//	EmoteImage->SetBrushFromTexture(Emote11);
+			//else
 				EmoteImage->SetBrushFromTexture(Emote5);
 			break;
 		}
 	case EEmote::Emote6:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote12);
-			else
+			//if (GameStateReference->bTeams)
+			//	EmoteImage->SetBrushFromTexture(Emote12);
+			//else
 				EmoteImage->SetBrushFromTexture(Emote6);
 			break;
 		}
 	case EEmote::Emote7:
 		{
-			if (GameStateReference->bTeams)
-				EmoteImage->SetBrushFromTexture(Emote13);
-			else
+			//if (GameStateReference->bTeams)
+			//	EmoteImage->SetBrushFromTexture(Emote13);
+			//else
 				EmoteImage->SetBrushFromTexture(Emote7);
 			break;
 		}

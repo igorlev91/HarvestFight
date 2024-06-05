@@ -46,6 +46,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float Timer = 1.0f;
 	bool bTurnedOn = false;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	bool bIsVent;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
